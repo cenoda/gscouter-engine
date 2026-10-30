@@ -129,6 +129,7 @@ pub fn mod_add(mods: &mut Vec<Mod>, m: Mod) {
     }
 }
 
+pub const PYRO_RESONANCE: ModKey = ModKey::new("pyro-res");
 pub const HYDRO_RESONANCE: ModKey = ModKey::new("hydro-res-hpp");
 
 // ---------------------------------------------------------------- attacks
@@ -547,6 +548,17 @@ pub struct Construct {
 }
 
 #[derive(Clone, Copy, Debug)]
+pub struct Infusion {
+    pub key: ModKey,
+    pub ele: Element,
+    /// The attack tags it applies to, as bits.
+    pub tags: u32,
+    /// Hitlag extends it by fractions of a frame.
+    pub expiry: f64,
+    pub can_be_overridden: bool,
+}
+
+#[derive(Clone, Copy, Debug)]
 pub struct Shield {
     pub owner: u8,
     pub key: ModKey,
@@ -590,6 +602,10 @@ pub struct Sim {
     /// Constructs (gcsim's Constructs) and shields, by owner.
     pub constructs: Vec<Construct>,
     pub shields: Vec<Shield>,
+    /// Weapon infusions by character (gcsim's infusion handler).
+    pub infusion: [Option<Infusion>; 4],
+    /// Statuses of the whole fight (gcsim's Status), with their expiry.
+    pub statuses: Vec<(ModKey, i32)>,
     // normal attack energy
     pub na_icd: i32,
     pub na_chance: [f64; 4],
@@ -655,6 +671,8 @@ impl Sim {
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
             shields: Vec::with_capacity(4),
+            infusion: [None; 4],
+            statuses: Vec::new(),
             na_icd: 0,
             na_chance: [0.0; 4],
             window_start: ((warmup * 60.0) as i32 / 30) * 30,
@@ -739,11 +757,15 @@ impl Sim {
                 crate::sets::dispatch::init(k, self, i, si, count);
             }
         }
-        // resonance
+        // resonance; profile::config rejects the ones not implemented
         if n >= 4 {
-            let hydro = self.chars.iter().filter(|c| c.element == Element::Hydro).count();
-            if hydro >= 2 {
-                for c in &mut self.chars {
+            let count = |e: Element| self.chars.iter().filter(|c| c.element == e).count();
+            let (pyro, hydro) = (count(Element::Pyro), count(Element::Hydro));
+            for c in &mut self.chars {
+                if pyro >= 2 {
+                    c.mods.push(Mod::stat(PYRO_RESONANCE, st::ATKP, 0.25, false, false, -1));
+                }
+                if hydro >= 2 {
                     c.mods.push(Mod::stat(HYDRO_RESONANCE, st::HPP, 0.25, false, false, -1));
                 }
             }
@@ -1018,6 +1040,42 @@ impl Sim {
         mod_add(&mut self.enemy.mods, m);
     }
 
+    // ------------------------------------------------------------ infusion and statuses
+
+    /// gcsim's AddWeaponInfuse: the character's attacks with these tags
+    /// take the element for dur frames.
+    pub fn add_infusion(&mut self, ci: usize, key: ModKey, ele: Element, dur: i32, can_be_overridden: bool, tags: &[AttackTag]) {
+        let f = self.f as f64;
+        if let Some(cur) = &self.infusion[ci] {
+            if !cur.can_be_overridden && cur.expiry > f {
+                return;
+            }
+        }
+        let tags = tags.iter().fold(0u32, |m, t| m | 1 << *t as u32);
+        let expiry = if dur == -1 { -1.0 } else { (self.f + dur) as f64 };
+        self.infusion[ci] = Some(Infusion { key, ele, tags, expiry, can_be_overridden });
+    }
+
+    /// gcsim's Infused.
+    pub fn infused(&self, ci: usize, tag: AttackTag) -> Option<Element> {
+        let inf = self.infusion[ci].as_ref()?;
+        (inf.tags & (1 << tag as u32) != 0 && (inf.expiry > self.f as f64 || inf.expiry == -1.0)).then_some(inf.ele)
+    }
+
+    /// gcsim's Status.Add: a status of the whole fight, not hitlag affected.
+    pub fn add_core_status(&mut self, key: ModKey, dur: i32) {
+        let expiry = self.f + dur;
+        match self.statuses.iter_mut().find(|s| s.0 == key) {
+            Some(s) => s.1 = expiry,
+            None => self.statuses.push((key, expiry)),
+        }
+    }
+
+    /// gcsim's Status.Duration.
+    pub fn core_status(&self, name: &str) -> i32 {
+        self.statuses.iter().find(|s| s.0.name == name).map(|s| (s.1 - self.f).max(0)).unwrap_or(0)
+    }
+
     // ------------------------------------------------------------ tasks
 
     pub fn queue_char_task(&mut self, ci: usize, t: Task, delay: i32) {
@@ -1129,6 +1187,9 @@ impl Sim {
     pub fn make_snapshot(&self, info: &mut AttackInfo) -> (Stats, i32) {
         let ci = info.actor as usize;
         let stats = self.stats(ci);
+        if let Some(e) = self.infused(ci, info.tag) {
+            info.element = e;
+        }
         crate::chars::dispatch::snapshot(self.chars[ci].kind, self, ci, info);
         (stats, self.chars[ci].level)
     }
@@ -1227,7 +1288,9 @@ impl Sim {
         if ev.info.durability > 0.0 {
             ev.info.durability *= self.will_apply_ele(&ev.info);
             if ev.info.durability > 0.0 && ev.info.element != Element::Physical {
-                self.react(&mut ev);
+                for _ in 0..self.react(&mut ev) {
+                    self.emit(Event::Reaction(&ev));
+                }
             }
         }
         let (dmg, crit) = self.calc(&mut ev, grp);
@@ -1247,29 +1310,33 @@ impl Sim {
     }
 
     /// gcsim's Reactable.React for the elements of this team.
-    fn react(&mut self, ev: &mut AttackEvent) {
+    /// Returns how many reactions the attack caused.
+    fn react(&mut self, ev: &mut AttackEvent) -> u32 {
         let a = &mut self.enemy.aura;
         let dur = ev.info.durability;
+        let mut n = 0;
         match ev.info.element {
             Element::Pyro => {
                 if dur < ZERO_DUR || a.get(AURA_HYDRO) < ZERO_DUR {
-                    return;
+                    return 0;
                 }
                 let consumed = a.reduce(AURA_HYDRO, dur, 0.5);
                 ev.info.amp_mult = 1.5;
                 ev.info.durability = (dur - consumed).max(0.0);
                 ev.reacted = true;
                 ev.info.amped = true;
+                n = 1;
             }
             Element::Hydro => {
                 if dur < ZERO_DUR || a.get(AURA_PYRO) < ZERO_DUR {
-                    return;
+                    return 0;
                 }
                 let consumed = a.reduce(AURA_PYRO, dur, 2.0);
                 ev.info.amp_mult = 2.0;
                 ev.info.durability = (dur - consumed).max(0.0);
                 ev.reacted = true;
                 ev.info.amped = true;
+                n = 1;
             }
             Element::Geo => {
                 for m in [AURA_HYDRO, AURA_PYRO] {
@@ -1286,10 +1353,12 @@ impl Sim {
                     let consumed = self.enemy.aura.reduce(m, ev.info.durability, 0.5);
                     ev.info.durability = (ev.info.durability - consumed).max(0.0);
                     ev.reacted = true;
+                    n += 1;
                 }
             }
             _ => {}
         }
+        n
     }
 
     fn calc(&mut self, ev: &mut AttackEvent, grp: f64) -> (f64, bool) {
@@ -1399,6 +1468,12 @@ impl Sim {
             }
         }
         c.queue.extend(ext);
+        // ExtendInfusion
+        if let Some(inf) = &mut self.infusion[ci] {
+            if !(inf.expiry < f as f64 || inf.expiry == -1.0) {
+                inf.expiry += dur * (1.0 - factor);
+            }
+        }
         if self.player.dash_cd_exp > f {
             self.player.dash_cd_exp += (dur * (1.0 - factor)).ceil() as i32;
         }
@@ -1989,7 +2064,11 @@ impl Sim {
             "previous-action" => Ok(int(self.player.last.action as i64)),
             "previous-char" => Ok(int(self.chars[self.player.last.char as usize].key as i64)),
             "airborne" => Ok(b(false)),
-            "status" | "dew" | "verdant-dew" | "moonridge-dew" => Ok(int(0)),
+            "status" => {
+                need(2, "status")?;
+                Ok(int(self.core_status(&fields[1]) as i64))
+            }
+            "dew" | "verdant-dew" | "moonridge-dew" => Ok(int(0)),
             "action" => {
                 need(2, "action")?;
                 action_key(&fields[1]).map(|a| int(a as i64)).ok_or(format!("bad action condition: invalid action {}", fields[1]))

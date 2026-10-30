@@ -34,8 +34,9 @@ pub enum EventKind {
     Skill,
     Swap,
     StateChange,
+    Reaction,
 }
-pub const N_EVENTS: usize = 4;
+pub const N_EVENTS: usize = 5;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -47,6 +48,9 @@ pub enum Event<'a> {
     Swap { prev: usize, next: usize },
     /// OnStateChange to this state.
     StateChange(AnimState),
+    /// A reaction event (gcsim's OnVaporize, OnCrystallize and the
+    /// others), with the attack that caused it.
+    Reaction(&'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -56,6 +60,7 @@ impl Event<'_> {
             Event::Skill => EventKind::Skill,
             Event::Swap { .. } => EventKind::Swap,
             Event::StateChange(_) => EventKind::StateChange,
+            Event::Reaction(_) => EventKind::Reaction,
         }
     }
 }

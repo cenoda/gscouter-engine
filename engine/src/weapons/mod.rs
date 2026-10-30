@@ -5,4 +5,8 @@ crate::weapons! {
     StaffOfHoma => staffofhoma,
     SacrificialSword => sacrificialsword,
     AquaSimulacra => aquasimulacra,
+    Deathmatch => deathmatch,
+    TheAlleyFlash => thealleyflash,
+    HarbingerOfDawn => harbingerofdawn,
+    FavoniusWarbow => favoniuswarbow,
 }

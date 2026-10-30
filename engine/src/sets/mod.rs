@@ -5,4 +5,5 @@ crate::sets! {
     Shimenawa => shimenawasreminiscence,
     Emblem => emblemofseveredfate,
     Tenacity => tenacityofthemillelith,
+    Instructor => instructor,
 }

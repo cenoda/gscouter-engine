@@ -154,6 +154,19 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
     if p.hurt {
         errs.push("unsupported: hurt".into());
     }
+    if p.chars.len() >= 4 {
+        let mut count = [0; 11];
+        for c in &p.chars {
+            if let Some(d) = data::CHARS.iter().find(|d| d.key == char_name(c.key)) {
+                count[d.element as usize] += 1;
+            }
+        }
+        for (e, name) in [(3, "dendro"), (4, "electro"), (5, "cryo"), (6, "anemo"), (7, "geo")] {
+            if count[e] >= 2 {
+                errs.push(format!("unsupported: resonance {name}"));
+            }
+        }
+    }
     let mut chars = Vec::new();
     for c in &p.chars {
         match char_setup(c) {

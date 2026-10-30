@@ -8,4 +8,5 @@ crate::chars! {
     Xingqiu => xingqiu,
     Zhongli => zhongli,
     Yelan => yelan,
+    Bennett => bennett,
 }
