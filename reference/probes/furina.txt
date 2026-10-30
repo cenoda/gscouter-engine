@@ -1,0 +1,3 @@
+# Furina C0 with Favonius Sword in place of Festering Desire.
+team bennett-fischl-furina-xingqiu
+furina add weapon="favoniussword" refine=5 lvl=90/90;

@@ -10,4 +10,5 @@ crate::chars! {
     Yelan => yelan,
     Bennett => bennett,
     Fischl => fischl,
+    Furina => furina,
 }

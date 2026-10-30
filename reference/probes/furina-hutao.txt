@@ -1,0 +1,3 @@
+# Furina C0 with Hu Tao, Yelan with Favonius Warbow in place of Slingshot.
+team hutao-furina-yelan-xingqiu
+yelan add weapon="favoniuswarbow" refine=5 lvl=90/90;

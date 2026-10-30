@@ -1,0 +1,4 @@
+# Furina C2, with Favonius Sword.
+team bennett-fischl-furina-xingqiu
+furina char lvl=90/90 cons=2 talent=9,9,9;
+furina add weapon="favoniussword" refine=5 lvl=90/90;

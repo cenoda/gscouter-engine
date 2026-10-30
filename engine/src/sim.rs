@@ -49,6 +49,9 @@ pub enum ModKind {
     Attack,
     Status,
     Resist,
+    /// gcsim's HealBonusMod: incoming healing bonus, its amount in
+    /// st::HEAL.
+    HealBonus,
 }
 
 /// What a stat or attack mod adds: a fixed amount of one stat, or what
@@ -152,6 +155,7 @@ pub struct AttackInfo {
     pub amped: bool,
     pub amp_mult: f64,
     pub ignore_def: f64,
+    pub ignore_infusion: bool,
 }
 
 impl AttackInfo {
@@ -173,6 +177,7 @@ impl AttackInfo {
             amped: false,
             amp_mult: 1.0,
             ignore_def: 0.0,
+            ignore_infusion: false,
         }
     }
 }
@@ -1019,9 +1024,52 @@ impl Sim {
         self.set_hp(ci, hp);
     }
 
-    pub fn heal(&mut self, ci: usize, src: f64, bonus: f64) {
-        let amt = src * (1.0 + bonus);
-        self.modify_hp(ci, amt);
+    /// gcsim's HealBonus: the incoming healing bonus of a character.
+    pub fn heal_bonus(&self, ci: usize) -> f64 {
+        let mut amt = 0.0;
+        for m in &self.chars[ci].mods {
+            if m.kind == ModKind::HealBonus && m.applies(self.f) {
+                let mut t = [0.0; N_STATS];
+                if self.mod_amount(ci, m, &mut t) {
+                    amt += t[st::HEAL];
+                }
+            }
+        }
+        amt
+    }
+
+    /// gcsim's Player.Heal: target None heals the whole party, src is HP
+    /// (or a fraction of each healed character's max HP when percent),
+    /// bonus the healer's. There is no HP debt.
+    pub fn heal_info(&mut self, caller: usize, target: Option<usize>, percent: bool, src: f64, bonus: f64) {
+        match target {
+            Some(t) => self.heal_one(caller, target, t, percent, src, bonus),
+            None => {
+                for t in 0..self.chars.len() {
+                    self.heal_one(caller, target, t, percent, src, bonus);
+                }
+            }
+        }
+    }
+
+    fn heal_one(&mut self, caller: usize, target: Option<usize>, on: usize, percent: bool, src: f64, bonus: f64) {
+        let hp = if percent { self.max_hp(on) * src } else { src };
+        let heal = hp * (1.0 + self.heal_bonus(on) + bonus);
+        let prev = self.current_hp(on);
+        self.modify_hp(on, heal);
+        let overheal = (prev + heal - self.max_hp(on)).max(0.0);
+        self.emit(Event::Heal { caller, target, on, amount: heal, overheal });
+    }
+
+    /// A heal of src HP by caller on one character.
+    pub fn heal(&mut self, caller: usize, target: usize, src: f64, bonus: f64) {
+        self.heal_info(caller, Some(target), false, src, bonus);
+    }
+
+    /// gcsim's Player.Drain: the character loses amount HP.
+    pub fn drain(&mut self, on: usize, amount: f64) {
+        self.modify_hp(on, -amount);
+        self.emit(Event::Drain { on, amount });
     }
 
     // ------------------------------------------------------------ mods
@@ -1233,8 +1281,10 @@ impl Sim {
     pub fn make_snapshot(&self, info: &mut AttackInfo) -> (Stats, i32) {
         let ci = info.actor as usize;
         let stats = self.stats(ci);
-        if let Some(e) = self.infused(ci, info.tag) {
-            info.element = e;
+        if !info.ignore_infusion {
+            if let Some(e) = self.infused(ci, info.tag) {
+                info.element = e;
+            }
         }
         crate::chars::dispatch::snapshot(self.chars[ci].kind, self, ci, info);
         (stats, self.chars[ci].level)

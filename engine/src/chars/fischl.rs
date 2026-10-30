@@ -215,7 +215,7 @@ impl Character for Char {
             TASK_C4_HEAL => {
                 let hp = s.max_hp(ci);
                 let bonus = s.stat(ci, st::HEAL);
-                s.heal(ci, 0.2 * hp, bonus);
+                s.heal(ci, ci, 0.2 * hp, bonus);
             }
             TASK_RECAST => {
                 let f = s.f;

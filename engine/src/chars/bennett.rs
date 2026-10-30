@@ -224,7 +224,7 @@ fn field_tick(s: &mut Sim, ci: usize, first: bool) {
     let active = s.player.active as usize;
     if !first && s.chars[active].hp_ratio < 0.7 {
         let bonus = s.st::<State>(ci).heal_bonus;
-        s.heal(active, heal, bonus);
+        s.heal(ci, active, heal, bonus);
     }
     let threshold = if s.chars[ci].cons >= 1 { 0.0 } else { 0.7 };
     if s.chars[active].hp_ratio > threshold {

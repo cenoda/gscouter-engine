@@ -658,7 +658,7 @@ func (v variant) apply(build string) string {
 		vals := map[string]float64{}
 		for _, kv := range strings.Fields(m[4]) {
 			k, s, ok := strings.Cut(kv, "=")
-			x, err := strconv.ParseFloat(s, 64)
+			x, err := product(s)
 			if !ok || err != nil {
 				fail(fmt.Errorf("build line %q: cannot read %q", l, kv))
 			}
@@ -843,6 +843,19 @@ func (pr probe) apply(build string) string {
 		}
 	}
 	return strings.Join(out, "\n")
+}
+
+// product reads a stat value, which gcsim lets be a product (0.0496*6).
+func product(s string) (float64, error) {
+	x := 1.0
+	for _, f := range strings.Split(s, "*") {
+		v, err := strconv.ParseFloat(f, 64)
+		if err != nil {
+			return 0, err
+		}
+		x *= v
+	}
+	return x, nil
 }
 
 func markdown(rep *Report) string {

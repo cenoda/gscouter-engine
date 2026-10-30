@@ -36,8 +36,10 @@ pub enum EventKind {
     Swap,
     StateChange,
     Reaction,
+    Heal,
+    Drain,
 }
-pub const N_EVENTS: usize = 6;
+pub const N_EVENTS: usize = 8;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -54,6 +56,12 @@ pub enum Event<'a> {
     /// A reaction event (gcsim's OnVaporize, OnCrystallizeHydro and the
     /// others) on the enemy, with the attack that caused it.
     Reaction(Reaction, &'a AttackEvent),
+    /// OnHeal, once for each character healed: the healer, the heal's
+    /// target (None for the whole party), the character healed, the HP it
+    /// gained and the overheal.
+    Heal { caller: usize, target: Option<usize>, on: usize, amount: f64, overheal: f64 },
+    /// OnPlayerHPDrain: the character drained and the HP it lost.
+    Drain { on: usize, amount: f64 },
 }
 
 impl Event<'_> {
@@ -65,6 +73,8 @@ impl Event<'_> {
             Event::Swap { .. } => EventKind::Swap,
             Event::StateChange(_) => EventKind::StateChange,
             Event::Reaction(..) => EventKind::Reaction,
+            Event::Heal { .. } => EventKind::Heal,
+            Event::Drain { .. } => EventKind::Drain,
         }
     }
 }

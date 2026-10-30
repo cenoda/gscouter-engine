@@ -1,0 +1,4 @@
+# Furina C6 with Hu Tao, Yelan with Favonius Warbow.
+team hutao-furina-yelan-xingqiu
+furina char lvl=90/90 cons=6 talent=9,9,9;
+yelan add weapon="favoniuswarbow" refine=5 lvl=90/90;

@@ -173,7 +173,7 @@ impl Character for Char {
         s.st_mut::<State>(ci).apply_a1 = true;
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_A1, arg: 0 }, 540 + g::SKILL_START);
         let drain = 0.30 * s.current_hp(ci);
-        s.modify_hp(ci, -drain);
+        s.drain(ci, drain);
         // the 0 dmg attack at skillStart changes nothing here
         s.set_cd_with_delay(ci, Action::Skill, 960, 14);
         ActInfo::new(Frames::Table(&g::SKILL_FRAMES), g::SKILL_FRAMES[0], g::SKILL_FRAMES[Action::Burst as usize], AnimState::Skill)
@@ -278,5 +278,5 @@ fn burst_heal_cb(s: &mut Sim, ci: usize) {
     st.heal_count += 1;
     let src = st.heal_src;
     let bonus = s.stat(ci, st::HEAL);
-    s.heal(ci, src, bonus);
+    s.heal(ci, ci, src, bonus);
 }
