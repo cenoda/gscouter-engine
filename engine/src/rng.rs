@@ -39,6 +39,13 @@ impl Rng {
         (self.next_u64() >> 11) as f64 * (1.0 / (1u64 << 53) as f64)
     }
 
+    /// A standard normal sample, as Go's rand.NormFloat64 (Box-Muller here).
+    pub fn norm_float64(&mut self) -> f64 {
+        let u = 1.0 - self.float64();
+        let v = self.float64();
+        (-2.0 * u.ln()).sqrt() * (std::f64::consts::TAU * v).cos()
+    }
+
     /// An int in [0, n), as Go's rand.Intn.
     #[inline]
     pub fn intn(&mut self, n: i32) -> i32 {

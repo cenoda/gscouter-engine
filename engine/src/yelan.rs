@@ -79,7 +79,7 @@ impl Sim {
             return;
         }
         self.add_status(ci, ModKey::YelanParticleIcd, 18, true);
-        self.queue_particle(4.0, Element::Hydro, 100);
+        self.queue_particle(4.0, Element::Hydro, self.particle_delay[ci]);
     }
 
     pub fn yelan_skill_cb(&mut self, ci: usize) {

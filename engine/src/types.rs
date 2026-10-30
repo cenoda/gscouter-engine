@@ -73,19 +73,20 @@ pub fn total_def(s: &Stats) -> f64 {
     s[st::BASEDEF] * (1.0 + s[st::DEFP]) + s[st::DEF]
 }
 
+/// gcsim's attributes.Element, in its order.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Element {
-    Electro,
+    NoElement,
     Pyro,
-    Cryo,
     Hydro,
     Dendro,
-    Quicken,
-    Frozen,
+    Electro,
+    Cryo,
     Anemo,
     Geo,
-    NoElement,
     Physical,
+    Frozen,
+    Quicken,
 }
 
 impl Element {

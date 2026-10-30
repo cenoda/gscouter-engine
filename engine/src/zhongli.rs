@@ -85,7 +85,7 @@ impl Sim {
         }
         self.add_status(ci, ModKey::ZhongliParticleIcd, 90, true);
         if self.rng.float64() < 0.5 {
-            self.queue_particle(1.0, Element::Geo, 100);
+            self.queue_particle(1.0, Element::Geo, self.particle_delay[ci]);
         }
     }
 

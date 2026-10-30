@@ -1,0 +1,80 @@
+# Exercises gcsl: functions, switch with fallthrough, for, while with
+# break, else if, wait, delay, fields and execute_action.
+options iteration=1000 duration=200 swap_delay=12;
+target lvl=100 resist=0.1 radius=2 pos=0,2.4;
+energy every interval=480,720 amount=1;
+
+hutao char lvl=90/90 cons=1 talent=10,10,10;
+hutao add weapon="staffofhoma" refine=1 lvl=90/90;
+hutao add set="shimenawasreminiscence" count=4;
+hutao add stats def=21 hp=5587 hp%=0.19899999999999998 atk=367 atk%=0.157 er=0.12 em=268 cr=0.7659999999999999 cd=0.575 pyro%=0.466;
+
+xingqiu char lvl=90/90 cons=6 talent=9,9,10;
+xingqiu add weapon="sacrificialsword" refine=4 lvl=90/90;
+xingqiu add set="emblemofseveredfate" count=4;
+xingqiu add stats def%=0.23399999999999999 def=63 hp=5288 atk=327 atk%=0.6409999999999999 er=0.22 em=147 cr=0.474 cd=0.855 hydro%=0.466;
+
+zhongli char lvl=90/90 cons=0 talent=9,10,9;
+zhongli add weapon="staffofhoma" refine=1 lvl=90/90;
+zhongli add set="tenacityofthemillelith" count=4;
+zhongli add stats def%=0.057999999999999996 def=42 hp=5318 hp%=0.396 atk=344 atk%=0.6759999999999999 er=0.324 em=40 cr=0.509 cd=0.498 geo%=0.466;
+
+yelan char lvl=90/90 cons=0 talent=1,9,10;
+yelan add weapon="aquasimulacra" refine=1 lvl=90/90;
+yelan add set="emblemofseveredfate" count=4;
+yelan add set="noblesseoblige" count=1;
+yelan add stats def%=0.182 def=19 hp=4780 hp%=0.658 atk=329 er=0.725 em=100 cr=0.432 cd=0.6759999999999999 hydro%=0.466;
+
+active zhongli;
+
+let combos = 0;
+fn hutao_combo(n) {
+  let i = 0;
+  while 1 {
+    if i >= n { break; }
+    hutao attack:2, charge, dash;
+    i = i + 1;
+  }
+  return n * 2;
+}
+fn pick(x) {
+  switch x {
+  case 0:
+    return 3;
+  case 1:
+    fallthrough;
+  case 2:
+    return 4;
+  default:
+    return 5;
+  }
+}
+let rounds = 0;
+while 1 {
+  zhongli skill[hold=1];
+  yelan skill;
+  if .yelan.burst.ready && .yelan.energy >= .yelan.energymax {
+    yelan burst, attack;
+  }
+  if .xingqiu.burst.ready {
+    xingqiu burst;
+  } else if .xingqiu.skill.cd > 120 {
+    wait(10);
+  } else {
+    delay(5);
+  }
+  for let k = 0; k < 3; k = k + 1 {
+    if .xingqiu.skill.ready { break; }
+    xingqiu attack;
+  }
+  while !.xingqiu.skill.ready { xingqiu attack; }
+  xingqiu skill;
+  if .xingqiu.skill.ready { xingqiu skill; }
+  execute_action(.keys.char.hutao, .action.skill, []);
+  hutao attack, charge, dash;
+  combos = combos + hutao_combo(pick(rounds - (rounds / 3) * 3) + 3);
+  if .hutao.burst.ready && .hutao.hpratio <= 0.5 || f() > 100000 {
+    hutao burst;
+  }
+  rounds = rounds + 1;
+}

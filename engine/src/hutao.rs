@@ -197,7 +197,7 @@ impl Sim {
         }
         self.add_status(ci, ModKey::ParamitaIcd, 300, true);
         let count = if self.rng.float64() < 0.5 { 3.0 } else { 2.0 };
-        self.queue_particle(count, Element::Pyro, 100);
+        self.queue_particle(count, Element::Pyro, self.particle_delay[ci]);
     }
 
     pub fn hutao_apply_bb(&mut self, ci: usize) {

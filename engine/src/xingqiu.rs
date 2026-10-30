@@ -88,7 +88,7 @@ impl Sim {
             return;
         }
         self.add_status(ci, ModKey::XingqiuParticleIcd, 60, true);
-        self.queue_particle(5.0, Element::Hydro, 100);
+        self.queue_particle(5.0, Element::Hydro, self.particle_delay[ci]);
     }
 
     fn xq_apply_orbital(&mut self, ci: usize, duration: i32, delay: i32) {
