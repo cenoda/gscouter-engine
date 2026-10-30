@@ -3040,9 +3040,12 @@ impl Sim {
                         need(3, &what)?;
                         Ok(int(self.mod_duration(ci, &fields[2]) as i64))
                     }
+                    // gcsim's WeaponInfuseIsActive: the character's infusion
+                    // has this key and has not expired
                     "infusion" => {
                         need(3, &what)?;
-                        Ok(b(false))
+                        let f = self.f as f64;
+                        Ok(b(self.infusion[ci].is_some_and(|i| i.key.name == fields[2] && !(i.expiry < f && i.expiry > -1.0))))
                     }
                     "tags" => {
                         need(3, &what)?;
