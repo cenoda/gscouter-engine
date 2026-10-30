@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/cinnabar.
 
-use crate::types::FrameTable;
-
 pub const DURATION_KEY: &str = "cinnabar-buff-active";
 pub const ICD_KEY: &str = "cinnabar-icd";

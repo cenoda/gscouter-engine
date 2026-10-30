@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/tulaytullahsremembrance.
 
-use crate::types::FrameTable;
-
 pub const ATK_SPD_KEY: &str = "tulaytullahsremembrance-atkspd";
 pub const BUFF_KEY: &str = "tulaytullahsremembrance-na-dmg";
 pub const ICD_KEY: &str = "tulaytullahsremembrance-icd";

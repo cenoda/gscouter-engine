@@ -2,7 +2,5 @@
 
 //! gcsim's internal/artifacts/fragmentofharmonicwhimsy.
 
-use crate::types::FrameTable;
-
 pub const FOHW2PC: &str = "fragmentofharmonicwhimsy-2pc";
 pub const FOHW4PC: &str = "fragmentofharmonicwhimsy-4pc";

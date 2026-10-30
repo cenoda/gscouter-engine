@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/foliar.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "foliar-whitemoon-bristle";
 pub const ICD_KEY: &str = "foliar-icd";

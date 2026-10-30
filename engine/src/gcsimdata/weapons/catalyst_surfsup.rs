@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/surfsup.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "surfs-up-buff";
 pub const GAIN_STACK_ICD: &str = "surfs-up-stack-gain-icd";
 pub const ICD_KEY: &str = "surfs-up-icd";

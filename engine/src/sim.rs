@@ -1,49 +1,47 @@
 //! The fight: gcsim's frame loop, task queues, actions, hitlag, mods,
 //! elemental gauges and damage, kept in the order gcsim runs them.
 
+pub use crate::chars::{CharKind, CharState};
+pub use crate::content::{Event, EventKind, Owner, StateOf, N_EVENTS};
 use crate::gcsl::Num;
 use crate::queue::Queue;
+pub use crate::sets::{SetKind, SetState};
+pub use crate::weapons::{WeaponKind, WeaponState};
 use crate::rng::Rng;
 use crate::types::*;
 
 // ---------------------------------------------------------------- mods
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum ModKey {
-    HomaHp,
-    HomaAtk,
-    Shim2,
-    Shim4,
-    Shim4Icd,
-    HutaoA4,
-    HutaoA1,
-    Paramita,
-    ParamitaIcd,
-    HydroResonance,
-    Emblem2,
-    Emblem4,
-    Tenacity2,
-    Tenacity4,
-    Tenacity4Icd,
-    SacIcd,
-    AquaHp,
-    AquaDmg,
-    XingqiuA4,
-    XingqiuOrbital,
-    XingqiuParticleIcd,
-    XingqiuBurst,
-    XingqiuBurstIcd,
-    YelanA1,
-    YelanA4,
-    YelanBurst,
-    YelanBurstIcd,
-    YelanParticleIcd,
-    ZhongliParticleIcd,
-    // enemy
-    BloodBlossom,
-    XingqiuC2Res,
-    ZhongliRes(u8),
+/// A mod's key: gcsim's key name, which .char.mods.<key> reads, and its
+/// hash, which lookups compare.
+#[derive(Clone, Copy, Debug)]
+pub struct ModKey {
+    pub hash: u32,
+    pub name: &'static str,
 }
+
+impl ModKey {
+    pub const fn new(name: &'static str) -> ModKey {
+        // FNV-1a
+        let b = name.as_bytes();
+        let mut h: u32 = 0x811c9dc5;
+        let mut i = 0;
+        while i < b.len() {
+            h ^= b[i] as u32;
+            h = h.wrapping_mul(0x01000193);
+            i += 1;
+        }
+        ModKey { hash: h, name }
+    }
+}
+
+impl PartialEq for ModKey {
+    #[inline]
+    fn eq(&self, o: &ModKey) -> bool {
+        self.hash == o.hash
+    }
+}
+impl Eq for ModKey {}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum ModKind {
@@ -53,25 +51,48 @@ pub enum ModKind {
     Resist,
 }
 
+/// What a stat or attack mod adds: a fixed amount of one stat, or what
+/// its owner computes.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Amount {
+    Fixed,
+    Owner(Owner),
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Mod {
     pub key: ModKey,
     pub kind: ModKind,
+    pub amount: Amount,
+    /// The stat it affects (gcsim's AffectedStat; NONE for any), which is
+    /// also the stat a fixed amount adds to.
     pub affected: usize,
     pub extra: bool,
     pub hitlag: bool,
     pub expiry_base: i32,
     pub extension: i32,
-    /// Resist mods: the element and amount.
+    /// Resist mods: the element. Fixed and resist mods: the amount.
     pub ele: Element,
     pub value: f64,
-    /// Yelan's A4: the frame it started.
+    /// The frame it was added.
     pub started: i32,
 }
 
 impl Mod {
     pub fn new(key: ModKey, kind: ModKind, affected: usize, extra: bool, hitlag: bool, expiry: i32) -> Mod {
-        Mod { key, kind, affected, extra, hitlag, expiry_base: expiry, extension: 0, ele: Element::NoElement, value: 0.0, started: 0 }
+        Mod { key, kind, amount: Amount::Fixed, affected, extra, hitlag, expiry_base: expiry, extension: 0, ele: Element::NoElement, value: 0.0, started: 0 }
+    }
+    /// A stat mod adding value to stat.
+    pub fn stat(key: ModKey, stat: usize, value: f64, extra: bool, hitlag: bool, expiry: i32) -> Mod {
+        let mut m = Mod::new(key, ModKind::Stat, stat, extra, hitlag, expiry);
+        m.value = value;
+        m
+    }
+    /// A mod whose amount its owner computes.
+    pub fn owned(key: ModKey, kind: ModKind, owner: Owner, affected: usize, extra: bool, hitlag: bool, expiry: i32) -> Mod {
+        let mut m = Mod::new(key, kind, affected, extra, hitlag, expiry);
+        m.amount = Amount::Owner(owner);
+        m
     }
     #[inline]
     pub fn expiry(&self) -> i32 {
@@ -101,24 +122,16 @@ fn mod_find(mods: &[Mod], key: ModKey) -> Option<usize> {
     mods.iter().position(|m| m.key == key)
 }
 
-fn mod_add(mods: &mut Vec<Mod>, m: Mod) {
+pub fn mod_add(mods: &mut Vec<Mod>, m: Mod) {
     match mod_find(mods, m.key) {
         Some(i) => mods[i] = m,
         None => mods.push(m),
     }
 }
 
-// ---------------------------------------------------------------- attacks
+pub const HYDRO_RESONANCE: ModKey = ModKey::new("hydro-res-hpp");
 
-pub const CB_HUTAO_PARTICLE: u16 = 1 << 0;
-pub const CB_HUTAO_BB: u16 = 1 << 1;
-pub const CB_HUTAO_HEAL: u16 = 1 << 2;
-pub const CB_XQ_PARTICLE: u16 = 1 << 3;
-pub const CB_XQ_C2: u16 = 1 << 4;
-pub const CB_XQ_C6: u16 = 1 << 5;
-pub const CB_ZL_PARTICLE: u16 = 1 << 6;
-pub const CB_YELAN_PARTICLE: u16 = 1 << 7;
-pub const CB_YELAN_SKILL: u16 = 1 << 8;
+// ---------------------------------------------------------------- attacks
 
 #[derive(Clone, Copy, Debug)]
 pub struct AttackInfo {
@@ -166,6 +179,8 @@ pub struct AttackEvent {
     pub info: AttackInfo,
     pub stats: Stats,
     pub char_lvl: i32,
+    /// The attacker's callbacks for when it hits: bits its character's
+    /// module defines.
     pub callbacks: u16,
     pub reacted: bool,
     pub damage: f64,
@@ -179,12 +194,6 @@ impl AttackEvent {
 }
 
 // ---------------------------------------------------------------- tasks
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Watcher {
-    Xingqiu,
-    Yelan,
-}
 
 #[derive(Clone, Copy, Debug)]
 pub enum Task {
@@ -202,20 +211,11 @@ pub enum Task {
     IcdResetDmg { i: u16 },
     IcdResetTag { i: u16 },
     Swap { to: u8 },
-    HutaoA1 { c: u8 },
-    HutaoBBTick { c: u8, src: i32 },
-    WatcherTrigger { w: Watcher },
-    WatcherTick { w: Watcher, src: i32 },
-    XqOrbitalTick { c: u8 },
-    XqC2Res,
-    ZlNewStele { c: u8 },
-    ZlJadeShield { c: u8 },
-    ZlShred { c: u8, i: i32 },
-    ZlResonance { c: u8, src: i32 },
-    YelanMark { c: u8 },
-    YelanSkillHit { c: u8 },
-    YelanBurstStatus { c: u8 },
-    AquaCheck { c: u8 },
+    /// A task of the character in slot c, of its weapon, or of its set at
+    /// index si: the module reads id and arg.
+    Char { c: u8, id: u8, arg: i32 },
+    Weapon { c: u8, id: u8, arg: i32 },
+    Set { c: u8, si: u8, id: u8, arg: i32 },
 }
 
 // ---------------------------------------------------------------- actions
@@ -224,7 +224,8 @@ pub enum Task {
 pub enum Frames {
     Table(&'static FrameTable),
     Attack { table: &'static FrameTable, atkspd: f64 },
-    HutaoPPCharge { prev: i8 },
+    /// The character's own frames function, with an argument.
+    Char { id: u8, arg: i8 },
     Dash { len: i32, jump: i32 },
     Const(i32),
 }
@@ -232,7 +233,8 @@ pub enum Frames {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum OnRemoved {
     None,
-    HutaoPPCharge,
+    /// The character's on_removed, with an id.
+    Char(u8),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -263,14 +265,6 @@ pub fn atk_spd_adjust(f: i32, atkspd: f64) -> i32 {
 }
 
 // ---------------------------------------------------------------- characters
-
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum CharKind {
-    Hutao,
-    Xingqiu,
-    Zhongli,
-    Yelan,
-}
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum WeaponClass {
@@ -304,21 +298,12 @@ impl Body {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Weapon {
-    Homa,
-    SacrificialSword,
-    AquaSimulacra,
+/// An artifact set a character wears, with two pieces or more.
+pub struct SetSlot {
+    pub kind: SetKind,
+    pub count: i32,
+    pub state: SetState,
 }
-
-/// The artifact sets the engine implements; a character holds a count of each.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum Set {
-    Shimenawa,
-    Emblem,
-    Tenacity,
-}
-pub const N_SETS: usize = 3;
 
 #[derive(Clone, Copy, Default)]
 pub struct Cooldown {
@@ -328,38 +313,6 @@ pub struct Cooldown {
     pub len: usize,
     pub started: i32,
     pub token: u32,
-}
-
-#[derive(Clone, Copy, Default)]
-pub struct HutaoState {
-    pub ppbuff_atk: f64,
-    pub apply_a1: bool,
-    pub heal_count: i32,
-    pub heal_src: f64,
-}
-
-#[derive(Clone, Copy, Default)]
-pub struct XingqiuState {
-    pub num_swords: i32,
-    pub next_regen: bool,
-    pub orbital_active: bool,
-}
-
-#[derive(Clone, Copy)]
-pub struct ZhongliState {
-    pub stele_count: i32,
-    pub max_stele: i32,
-    pub stele: Option<(i32, i32)>,
-    pub stele_snap: AttackEvent,
-    pub shielded: bool,
-    pub shield_expiry: i32,
-}
-
-#[derive(Clone, Copy, Default)]
-pub struct YelanState {
-    pub marked: bool,
-    /// The skill's damage, from Yelan's HP when it was cast.
-    pub skill_flat: f64,
 }
 
 pub struct Char {
@@ -380,9 +333,10 @@ pub struct Char {
     pub talent_cons: [i32; 3],
     /// AnimationStartDelay by gcsim's AnimationDelayKey.
     pub anim_delay: [i32; 3],
-    pub weapon: Weapon,
+    pub weapon: WeaponKind,
+    pub weapon_state: WeaponState,
     pub refine: i32,
-    pub sets: [i32; N_SETS],
+    pub sets: Vec<SetSlot>,
     pub energy: f64,
     pub energy_max: f64,
     pub hp_ratio: f64,
@@ -397,10 +351,8 @@ pub struct Char {
     pub dash_lockout: bool,
     pub dash_len: i32,
     pub dash_jump: i32,
-    pub hutao: HutaoState,
-    pub xq: XingqiuState,
-    pub zl: ZhongliState,
-    pub yelan: YelanState,
+    /// The character module's own state.
+    pub state: CharState,
 }
 
 impl Char {
@@ -519,7 +471,6 @@ pub struct Enemy {
     pub frozen: i32,
     pub queue: Queue<Task>,
     pub mods: Vec<Mod>,
-    pub bb_src: i32,
     pub icd: Vec<IcdState>,
     pub aura: Aura,
     pub crystallize_gcd: i32,
@@ -576,13 +527,30 @@ pub struct CharSetup {
     pub cons: i32,
     pub ascension: i32,
     pub talents: [i32; 3],
-    pub weapon: Weapon,
+    pub weapon: WeaponKind,
     pub refine: i32,
-    pub sets: [i32; N_SETS],
+    /// The sets worn with two pieces or more.
+    pub sets: Vec<(SetKind, i32)>,
     /// gcsim's start_hp, start_hp% and start_energy params; -1 when unset.
     pub start_hp: f64,
     pub start_hp_ratio: f64,
     pub start_energy: f64,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Construct {
+    pub owner: u8,
+    pub key: ModKey,
+    /// The frame it was made.
+    pub src: i32,
+    pub expiry: i32,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Shield {
+    pub owner: u8,
+    pub key: ModKey,
+    pub expiry: i32,
 }
 
 pub struct Sim {
@@ -617,7 +585,11 @@ pub struct Sim {
     pub enemy_hp: f64,
     pub enemy_alive: bool,
     pub no_more_actions: bool,
-    pub watch_src: [i32; 2],
+    /// Subscribers to each event, in the order gcsim subscribes them.
+    pub subs: [Vec<Owner>; N_EVENTS],
+    /// Constructs (gcsim's Constructs) and shields, by owner.
+    pub constructs: Vec<Construct>,
+    pub shields: Vec<Shield>,
     // normal attack energy
     pub na_icd: i32,
     pub na_chance: [f64; 4],
@@ -645,7 +617,6 @@ impl Sim {
                 frozen: 0,
                 queue: Queue::new(),
                 mods: Vec::with_capacity(16),
-                bb_src: -1,
                 icd: Vec::with_capacity(16),
                 aura: Aura::default(),
                 crystallize_gcd: -1,
@@ -681,7 +652,9 @@ impl Sim {
             enemy_hp: cfg.enemy_hp,
             enemy_alive: true,
             no_more_actions: false,
-            watch_src: [0; 2],
+            subs: Default::default(),
+            constructs: Vec::with_capacity(4),
+            shields: Vec::with_capacity(4),
             na_icd: 0,
             na_chance: [0.0; 4],
             window_start: ((warmup * 60.0) as i32 / 30) * 30,
@@ -733,8 +706,9 @@ impl Sim {
             talent_cons: d.cons,
             anim_delay: d.anim_delay,
             weapon: cs.weapon,
+            weapon_state: cs.weapon.new_state(),
             refine: cs.refine,
-            sets: cs.sets,
+            sets: cs.sets.iter().map(|&(kind, count)| SetSlot { kind, count, state: kind.new_state() }).collect(),
             energy: energy_max,
             energy_max,
             hp_ratio: 1.0,
@@ -749,17 +723,7 @@ impl Sim {
             dash_lockout: false,
             dash_len,
             dash_jump,
-            hutao: HutaoState::default(),
-            xq: XingqiuState::default(),
-            zl: ZhongliState {
-                stele_count: 0,
-                max_stele: if cs.cons >= 1 { 2 } else { 1 },
-                stele: None,
-                stele_snap: AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Geo, 0.0, 0.0), 0),
-                shielded: false,
-                shield_expiry: -1,
-            },
-            yelan: YelanState::default(),
+            state: cs.kind.new_state(cs),
         }
     }
 
@@ -767,30 +731,12 @@ impl Sim {
     /// and sets, resonance, character inits, then one frame.
     fn setup(&mut self) {
         let n = self.chars.len();
+        // AddChar: the weapon, then the sets
         for i in 0..n {
-            match self.chars[i].weapon {
-                Weapon::Homa => {
-                    self.chars[i].mods.push(perm(ModKey::HomaHp, st::NONE, false));
-                    self.chars[i].mods.push(perm(ModKey::HomaAtk, st::ATK, true));
-                }
-                Weapon::AquaSimulacra => {
-                    self.chars[i].mods.push(perm(ModKey::AquaHp, st::NONE, false));
-                    self.queue_char_task(i, Task::AquaCheck { c: i as u8 }, 30);
-                }
-                Weapon::SacrificialSword => {}
-            }
-            let sets = self.chars[i].sets;
-            if sets[Set::Shimenawa as usize] >= 2 {
-                self.chars[i].mods.push(perm(ModKey::Shim2, st::ATKP, false));
-            }
-            if sets[Set::Emblem as usize] >= 2 {
-                self.chars[i].mods.push(perm(ModKey::Emblem2, st::ER, false));
-            }
-            if sets[Set::Emblem as usize] >= 4 {
-                self.chars[i].mods.push(Mod::new(ModKey::Emblem4, ModKind::Attack, st::NONE, false, false, -1));
-            }
-            if sets[Set::Tenacity as usize] >= 2 {
-                self.chars[i].mods.push(perm(ModKey::Tenacity2, st::HPP, false));
+            crate::weapons::dispatch::init(self.chars[i].weapon, self, i);
+            for si in 0..self.chars[i].sets.len() {
+                let (k, count) = (self.chars[i].sets[si].kind, self.chars[i].sets[si].count);
+                crate::sets::dispatch::init(k, self, i, si, count);
             }
         }
         // resonance
@@ -798,22 +744,20 @@ impl Sim {
             let hydro = self.chars.iter().filter(|c| c.element == Element::Hydro).count();
             if hydro >= 2 {
                 for c in &mut self.chars {
-                    c.mods.push(perm(ModKey::HydroResonance, st::HPP, false));
+                    c.mods.push(Mod::stat(HYDRO_RESONANCE, st::HPP, 0.25, false, false, -1));
                 }
             }
         }
+        // Core.Init: energy from normal attacks, then the characters' inits
         for (i, c) in self.chars.iter().enumerate() {
             if c.class == WeaponClass::Sword {
                 self.na_chance[i] = 0.10;
             }
         }
+        self.subscribe(EventKind::EnemyDamage, Owner::Core);
+        self.subscribe(EventKind::Swap, Owner::Core);
         for i in 0..n {
-            match self.chars[i].kind {
-                CharKind::Hutao => self.hutao_init(i),
-                CharKind::Xingqiu => self.xq_init(i),
-                CharKind::Zhongli => {}
-                CharKind::Yelan => self.yelan_init(i),
-            }
+            crate::chars::dispatch::init(self.chars[i].kind, self, i);
         }
         for i in 0..n {
             let (hp, ratio) = (self.starts[i].0, self.starts[i].1);
@@ -836,6 +780,77 @@ impl Sim {
         (c.talents[i] - 1 + add) as usize
     }
 
+    /// The state of the character in slot ci, of its module's State type.
+    #[inline]
+    pub fn st<T: StateOf<CharState>>(&self, ci: usize) -> &T {
+        T::of(&self.chars[ci].state)
+    }
+    #[inline]
+    pub fn st_mut<T: StateOf<CharState>>(&mut self, ci: usize) -> &mut T {
+        T::of_mut(&mut self.chars[ci].state)
+    }
+    #[inline]
+    pub fn weapon_st_mut<T: StateOf<WeaponState>>(&mut self, ci: usize) -> &mut T {
+        T::of_mut(&mut self.chars[ci].weapon_state)
+    }
+    #[inline]
+    pub fn set_st_mut<T: StateOf<SetState>>(&mut self, ci: usize, si: usize) -> &mut T {
+        T::of_mut(&mut self.chars[ci].sets[si].state)
+    }
+
+    // ------------------------------------------------------------ events
+
+    pub fn subscribe(&mut self, e: EventKind, o: Owner) {
+        self.subs[e as usize].push(o);
+    }
+
+    /// Runs an event's subscribers, in the order they subscribed.
+    pub fn emit(&mut self, e: Event) {
+        let k = e.kind() as usize;
+        for i in 0..self.subs[k].len() {
+            match self.subs[k][i] {
+                Owner::Char(c) => crate::chars::dispatch::event(self.chars[c as usize].kind, self, c as usize, &e),
+                Owner::Weapon(c) => crate::weapons::dispatch::event(self.chars[c as usize].weapon, self, c as usize, &e),
+                Owner::Set(c, si) => {
+                    let kind = self.chars[c as usize].sets[si as usize].kind;
+                    crate::sets::dispatch::event(kind, self, c as usize, si as usize, &e)
+                }
+                Owner::Core => self.core_event(&e),
+            }
+        }
+    }
+
+    /// gcsim's SetupOnNormalHitEnergy.
+    fn core_event(&mut self, e: &Event) {
+        match *e {
+            Event::EnemyDamage(ev) => {
+                let ci = ev.info.actor as usize;
+                if matches!(ev.info.tag, AttackTag::Normal | AttackTag::Extra) && self.na_icd <= self.f {
+                    let (inc, reset) = match self.chars[ci].class {
+                        WeaponClass::Sword => (0.05, 0.10),
+                        WeaponClass::Claymore => (0.10, 0.0),
+                        WeaponClass::Spear => (0.04, 0.0),
+                        WeaponClass::Bow => (0.05, 0.0),
+                        WeaponClass::Catalyst => (0.10, 0.0),
+                    };
+                    if self.rng.float64() > self.na_chance[ci] {
+                        self.na_chance[ci] += inc;
+                    } else {
+                        self.add_energy(ci, 1.0);
+                        self.na_icd = self.f + 12;
+                        self.na_chance[ci] = reset;
+                    }
+                }
+            }
+            Event::Swap { .. } => {
+                for (i, c) in self.chars.iter().enumerate() {
+                    self.na_chance[i] = if c.class == WeaponClass::Sword { 0.10 } else { 0.0 };
+                }
+            }
+            _ => {}
+        }
+    }
+
     // ------------------------------------------------------------ slots
 
     pub fn alloc(&mut self, ev: AttackEvent) -> u16 {
@@ -852,37 +867,19 @@ impl Sim {
 
     #[inline]
     pub fn mod_amount(&self, ci: usize, m: &Mod, out: &mut Stats) -> bool {
-        let c = &self.chars[ci];
-        match m.key {
-            ModKey::HomaHp => out[st::HPP] += 0.15 + c.refine as f64 * 0.05,
-            ModKey::HomaAtk => {
-                let maxhp = self.max_hp(ci);
-                let mut per = 0.006 + c.refine as f64 * 0.002;
-                if c.hp_ratio <= 0.5 {
-                    per += 0.008 + c.refine as f64 * 0.002;
-                }
-                out[st::ATK] += per * maxhp;
+        match m.amount {
+            Amount::Fixed => {
+                out[m.affected] += m.value;
+                true
             }
-            ModKey::Shim2 => out[st::ATKP] += 0.18,
-            ModKey::HutaoA4 => {
-                if c.hp_ratio <= 0.5 {
-                    out[st::PYROP] += 0.33;
-                } else {
-                    return false;
-                }
+            Amount::Owner(Owner::Char(o)) => crate::chars::dispatch::mod_amount(self.chars[o as usize].kind, self, o as usize, ci, m, out),
+            Amount::Owner(Owner::Weapon(o)) => crate::weapons::dispatch::mod_amount(self.chars[o as usize].weapon, self, o as usize, ci, m, out),
+            Amount::Owner(Owner::Set(o, si)) => {
+                let kind = self.chars[o as usize].sets[si as usize].kind;
+                crate::sets::dispatch::mod_amount(kind, self, o as usize, si as usize, ci, m, out)
             }
-            ModKey::HutaoA1 => out[st::CR] += 0.12,
-            ModKey::Paramita => out[st::ATK] += c.hutao.ppbuff_atk,
-            ModKey::HydroResonance => out[st::HPP] += 0.25,
-            ModKey::Emblem2 => out[st::ER] += 0.20,
-            ModKey::Tenacity2 => out[st::HPP] += 0.20,
-            ModKey::Tenacity4 => out[st::ATKP] += 0.2,
-            ModKey::AquaHp => out[st::HPP] += 0.12 + c.refine as f64 * 0.04,
-            ModKey::XingqiuA4 => out[st::HYDROP] += 0.2,
-            ModKey::YelanA1 => out[st::HPP] += m.value,
-            _ => return false,
+            Amount::Owner(Owner::Core) => false,
         }
-        true
     }
 
     /// gcsim's Stats(): base stats plus every stat mod in effect.
@@ -963,13 +960,22 @@ impl Sim {
 
     // ------------------------------------------------------------ mods
 
-    pub fn add_mod(&mut self, ci: usize, key: ModKey, kind: ModKind, affected: usize, extra: bool, dur: i32, hitlag: bool) {
-        let expiry = if dur < 0 { -1 } else { self.f + dur };
-        mod_add(&mut self.chars[ci].mods, Mod::new(key, kind, affected, extra, hitlag, expiry));
+    /// gcsim's AddStatMod and AddAttackMod: adds the mod for dur frames
+    /// (forever when negative), replacing one with its key. Its expiry is
+    /// set from dur; its amount and started frame come from m.
+    pub fn add_mod(&mut self, ci: usize, mut m: Mod, dur: i32) {
+        m.expiry_base = if dur < 0 { -1 } else { self.f + dur };
+        m.extension = 0;
+        mod_add(&mut self.chars[ci].mods, m);
+    }
+
+    /// A stat mod of a fixed amount for dur frames.
+    pub fn add_stat_mod(&mut self, ci: usize, key: ModKey, stat: usize, value: f64, dur: i32, hitlag: bool) {
+        self.add_mod(ci, Mod::stat(key, stat, value, false, hitlag, -1), dur);
     }
 
     pub fn add_status(&mut self, ci: usize, key: ModKey, dur: i32, hitlag: bool) {
-        self.add_mod(ci, key, ModKind::Status, st::NONE, false, dur, hitlag);
+        self.add_mod(ci, Mod::new(key, ModKind::Status, st::NONE, false, hitlag, -1), dur);
     }
 
     pub fn mod_active(&self, ci: usize, key: ModKey) -> bool {
@@ -1069,23 +1075,11 @@ impl Sim {
                 s.tag_on = false;
             }
             Task::Swap { to } => self.do_swap(to as usize),
-            Task::HutaoA1 { c } => self.hutao_a1(c as usize),
-            Task::HutaoBBTick { c, src } => self.hutao_bb_tick(c as usize, src),
-            Task::WatcherTrigger { w } => self.watcher_trigger(w),
-            Task::WatcherTick { w, src } => self.watcher_tick(w, src),
-            Task::XqOrbitalTick { c } => self.xq_orbital_tick(c as usize),
-            Task::XqC2Res => self.enemy_add_resist(ModKey::XingqiuC2Res, Element::Hydro, -0.15, 240),
-            Task::ZlNewStele { c } => self.zl_new_stele(c as usize),
-            Task::ZlJadeShield { c } => self.zl_jade_shield(c as usize),
-            Task::ZlShred { c, i } => self.zl_shred(c as usize, i),
-            Task::ZlResonance { c, src } => self.zl_resonance(c as usize, src),
-            Task::YelanMark { c } => self.chars[c as usize].yelan.marked = true,
-            Task::YelanSkillHit { c } => self.yelan_skill_hit(c as usize),
-            Task::YelanBurstStatus { c } => self.yelan_burst_status(c as usize),
-            Task::AquaCheck { c } => {
-                let c = c as usize;
-                self.add_mod(c, ModKey::AquaDmg, ModKind::Attack, st::NONE, false, 72, true);
-                self.queue_char_task(c, Task::AquaCheck { c: c as u8 }, 30);
+            Task::Char { c, id, arg } => crate::chars::dispatch::task(self.chars[c as usize].kind, self, c as usize, id, arg),
+            Task::Weapon { c, id, arg } => crate::weapons::dispatch::task(self.chars[c as usize].weapon, self, c as usize, id, arg),
+            Task::Set { c, si, id, arg } => {
+                let kind = self.chars[c as usize].sets[si as usize].kind;
+                crate::sets::dispatch::task(kind, self, c as usize, si as usize, id, arg)
             }
         }
     }
@@ -1135,9 +1129,7 @@ impl Sim {
     pub fn make_snapshot(&self, info: &mut AttackInfo) -> (Stats, i32) {
         let ci = info.actor as usize;
         let stats = self.stats(ci);
-        if self.chars[ci].kind == CharKind::Hutao {
-            self.hutao_snapshot(ci, info);
-        }
+        crate::chars::dispatch::snapshot(self.chars[ci].kind, self, ci, info);
         (stats, self.chars[ci].level)
     }
 
@@ -1209,32 +1201,20 @@ impl Sim {
 
     fn apply_attack_mods(&mut self, ci: usize, ev: &mut AttackEvent) {
         let f = self.f;
-        let active = self.player.active as usize;
         for k in 0..self.chars[ci].mods.len() {
             let m = self.chars[ci].mods[k];
             if m.kind != ModKind::Attack || !m.applies(f) {
                 continue;
             }
-            match m.key {
-                ModKey::Shim4 => {
-                    if matches!(ev.info.tag, AttackTag::Normal | AttackTag::Extra | AttackTag::Plunge) {
-                        ev.stats[st::DMGP] += 0.5;
-                    }
+            match m.amount {
+                Amount::Owner(Owner::Char(o)) => crate::chars::dispatch::attack_mod(self.chars[o as usize].kind, self, o as usize, ci, &m, ev),
+                Amount::Owner(Owner::Weapon(o)) => crate::weapons::dispatch::attack_mod(self.chars[o as usize].weapon, self, o as usize, ci, &m, ev),
+                Amount::Owner(Owner::Set(o, si)) => {
+                    let kind = self.chars[o as usize].sets[si as usize].kind;
+                    crate::sets::dispatch::attack_mod(kind, self, o as usize, si as usize, ci, &m, ev)
                 }
-                ModKey::Emblem4 => {
-                    if ev.info.tag == AttackTag::ElementalBurst {
-                        let er = self.stat_ex(ci, st::ER, true);
-                        ev.stats[st::DMGP] += (0.25 * er).min(0.75);
-                    }
-                }
-                ModKey::AquaDmg => ev.stats[st::DMGP] += 0.15 + self.chars[ci].refine as f64 * 0.05,
-                ModKey::YelanA4 => {
-                    if active == ci {
-                        let dmg = ((f - m.started) / 60) as f64 * 0.035 + 0.01;
-                        ev.stats[st::DMGP] += dmg.min(0.5);
-                    }
-                }
-                _ => {}
+                Amount::Fixed => ev.stats[m.affected] += m.value,
+                Amount::Owner(Owner::Core) => {}
             }
         }
     }
@@ -1394,84 +1374,11 @@ impl Sim {
                 None => abils.push((name, 1, ev.damage)),
             }
         }
-        self.on_enemy_damage(&ev);
-        let cbs = ev.callbacks;
-        if cbs & CB_HUTAO_PARTICLE != 0 {
-            self.hutao_particle_cb(ci);
-        }
-        if cbs & CB_HUTAO_BB != 0 {
-            self.hutao_apply_bb(ci);
-        }
-        if cbs & CB_HUTAO_HEAL != 0 {
-            self.hutao_burst_heal_cb(ci);
-        }
-        if cbs & CB_XQ_PARTICLE != 0 {
-            self.xq_particle_cb(ci);
-        }
-        if cbs & CB_XQ_C2 != 0 {
-            self.add_task(Task::XqC2Res, 1);
-        }
-        if cbs & CB_XQ_C6 != 0 {
-            self.add_energy(ci, 3.0);
-        }
-        if cbs & CB_ZL_PARTICLE != 0 {
-            self.zl_particle_cb(ci);
-        }
-        if cbs & CB_YELAN_PARTICLE != 0 {
-            self.yelan_particle_cb(ci);
-        }
-        if cbs & CB_YELAN_SKILL != 0 {
-            self.yelan_skill_cb(ci);
+        self.emit(Event::EnemyDamage(&ev));
+        if ev.callbacks != 0 {
+            crate::chars::dispatch::attack_cb(self.chars[ci].kind, self, ci, ev.callbacks);
         }
         self.free.push(slot);
-    }
-
-    /// The OnEnemyDamage subscribers: Sacrificial weapons, Tenacity of the
-    /// Millelith and energy from normal and charged attacks, in the order
-    /// gcsim subscribes them.
-    fn on_enemy_damage(&mut self, ev: &AttackEvent) {
-        let ci = ev.info.actor as usize;
-        let active = self.player.active as usize;
-        if self.chars[ci].weapon == Weapon::SacrificialSword
-            && active == ci
-            && ev.info.tag == AttackTag::ElementalArt
-            && !self.mod_active(ci, ModKey::SacIcd)
-            && self.cooldown(ci, Action::Skill) != 0
-            && ev.damage != 0.0
-        {
-            let r = self.chars[ci].refine;
-            let prob = 0.3 + r as f64 * 0.1;
-            let cd = if r >= 4 { (19 - (r - 4) * 3) * 60 } else { (34 - r * 4) * 60 };
-            if self.rng.float64() < prob {
-                self.reset_cd(ci, Action::Skill);
-                self.add_status(ci, ModKey::SacIcd, cd, true);
-            }
-        }
-        if self.chars[ci].sets[Set::Tenacity as usize] >= 4
-            && matches!(ev.info.tag, AttackTag::ElementalArt | AttackTag::ElementalArtHold)
-            && !self.mod_active(ci, ModKey::Tenacity4Icd)
-        {
-            self.add_status(ci, ModKey::Tenacity4Icd, 30, true);
-            for i in 0..self.chars.len() {
-                self.add_mod(i, ModKey::Tenacity4, ModKind::Stat, st::ATKP, false, 180, true);
-            }
-        }
-        if matches!(ev.info.tag, AttackTag::Normal | AttackTag::Extra) && self.na_icd <= self.f {
-            let (inc, reset) = match self.chars[ci].class {
-                WeaponClass::Sword => (0.05, 0.10),
-                WeaponClass::Claymore => (0.10, 0.0),
-                WeaponClass::Spear => (0.04, 0.0),
-                WeaponClass::Bow => (0.05, 0.0),
-                WeaponClass::Catalyst => (0.10, 0.0),
-            };
-            if self.rng.float64() > self.na_chance[ci] {
-                self.na_chance[ci] += inc;
-            } else {
-                self.add_energy(ci, 1.0);
-                self.na_icd = self.f + 12;
-                self.na_chance[ci] = reset;
-            }
-        }
     }
 
     // ------------------------------------------------------------ hitlag
@@ -1665,8 +1572,8 @@ impl Sim {
         let c = &self.chars[ci];
         match a {
             Action::Charge => {
-                if c.kind == CharKind::Hutao && c.cons >= 1 && self.mod_active(ci, ModKey::Paramita) {
-                    return 0.0;
+                if let Some(x) = crate::chars::dispatch::charge_stam(c.kind, self, ci) {
+                    return x;
                 }
                 match c.class {
                     WeaponClass::Sword => 20.0,
@@ -1702,16 +1609,7 @@ impl Sim {
         for c in &mut self.chars {
             c.normal_counter = 0;
         }
-        // OnCharacterSwap
-        for i in 0..self.chars.len() {
-            if self.chars[i].kind == CharKind::Hutao && self.mod_active(i, ModKey::Paramita) {
-                self.hutao_a1(i);
-                self.delete_mod(i, ModKey::Paramita);
-            }
-        }
-        for (i, c) in self.chars.iter().enumerate() {
-            self.na_chance[i] = if c.class == WeaponClass::Sword { 0.10 } else { 0.0 };
-        }
+        self.emit(Event::Swap { prev, next: to });
     }
 
     // ------------------------------------------------------------ frames
@@ -1720,7 +1618,7 @@ impl Sim {
         match a.frames {
             Frames::Table(t) => t[next as usize],
             Frames::Attack { table, atkspd } => atk_spd_adjust(table[next as usize], atkspd),
-            Frames::HutaoPPCharge { prev } => crate::hutao::pp_charge_frames(prev, next),
+            Frames::Char { id, arg } => crate::chars::dispatch::frames(self.chars[a.char as usize].kind, id, arg, next),
             Frames::Dash { len, jump } => {
                 if next == Action::Jump {
                     jump
@@ -1768,11 +1666,7 @@ impl Sim {
     fn on_removed(&mut self, a: &ActInfo, next: AnimState) {
         match a.on_removed {
             OnRemoved::None => {}
-            OnRemoved::HutaoPPCharge => {
-                if next != AnimState::Burst {
-                    self.extend_mod(a.char as usize, ModKey::Paramita, -108);
-                }
-            }
+            OnRemoved::Char(id) => crate::chars::dispatch::on_removed(self.chars[a.char as usize].kind, self, a.char as usize, id, next),
         }
     }
 
@@ -1801,80 +1695,13 @@ impl Sim {
 
     // ------------------------------------------------------------ bursts that watch normal attacks
 
-    fn watcher_caster(&self, w: Watcher) -> Option<usize> {
-        let kind = match w {
-            Watcher::Xingqiu => CharKind::Xingqiu,
-            Watcher::Yelan => CharKind::Yelan,
-        };
-        self.chars.iter().position(|c| c.kind == kind)
-    }
-
-    /// AnimationStartDelay of the active character for a watcher's key.
-    fn start_delay(&self, w: Watcher) -> i32 {
-        let c = &self.chars[self.player.active as usize];
-        match w {
-            Watcher::Yelan => c.anim_delay[1],
-            Watcher::Xingqiu => c.anim_delay[2],
-        }
+    /// The active character's AnimationStartDelay for a key.
+    pub fn start_delay(&self, key: usize) -> i32 {
+        self.chars[self.player.active as usize].anim_delay[key]
     }
 
     fn on_state_change(&mut self, next: AnimState) {
-        if next != AnimState::Normal {
-            return;
-        }
-        for w in [Watcher::Xingqiu, Watcher::Yelan] {
-            if self.watcher_caster(w).is_none() {
-                continue;
-            }
-            let delay = self.start_delay(w);
-            if delay > 0 {
-                self.add_task(Task::WatcherTrigger { w }, delay);
-            } else {
-                self.watcher_trigger(w);
-            }
-        }
-    }
-
-    fn watcher_keys(w: Watcher) -> (ModKey, ModKey) {
-        match w {
-            Watcher::Xingqiu => (ModKey::XingqiuBurst, ModKey::XingqiuBurstIcd),
-            Watcher::Yelan => (ModKey::YelanBurst, ModKey::YelanBurstIcd),
-        }
-    }
-
-    fn watcher_trigger(&mut self, w: Watcher) {
-        let c = self.watcher_caster(w).unwrap();
-        let (status, icd) = Self::watcher_keys(w);
-        if !self.mod_active(c, status) || self.mod_active(c, icd) {
-            return;
-        }
-        self.watcher_fire(w, c);
-        let f = self.f;
-        self.watch_src[w as usize] = f;
-        self.queue_char_task(c, Task::WatcherTick { w, src: f }, 60);
-    }
-
-    fn watcher_tick(&mut self, w: Watcher, src: i32) {
-        let c = self.watcher_caster(w).unwrap();
-        let (status, _) = Self::watcher_keys(w);
-        if !self.mod_active(c, status) || self.watch_src[w as usize] != src || self.current_state() != AnimState::Normal {
-            return;
-        }
-        if self.chars[self.player.active as usize].normal_counter == 1 && self.f - self.player.state_start < self.start_delay(w) {
-            return;
-        }
-        self.watcher_fire(w, c);
-        self.queue_char_task(c, Task::WatcherTick { w, src }, 60);
-    }
-
-    fn watcher_fire(&mut self, w: Watcher, c: usize) {
-        match w {
-            Watcher::Xingqiu => self.xq_sword_wave(c),
-            Watcher::Yelan => {
-                self.yelan_throw(c);
-                self.add_status(c, ModKey::YelanBurstIcd, 60, true);
-            }
-        }
+        self.emit(Event::StateChange(next));
     }
 
     // ------------------------------------------------------------ frame loop
@@ -1896,14 +1723,13 @@ impl Sim {
             self.enemy.aura.tick();
         }
         // Constructs.Tick
-        for i in 0..self.chars.len() {
-            if let Some((_, exp)) = self.chars[i].zl.stele {
-                if exp == f {
-                    self.chars[i].zl.stele = None;
-                    if self.chars[i].zl.stele_count > 0 {
-                        self.chars[i].zl.stele_count -= 1;
-                    }
-                }
+        let mut k = 0;
+        while k < self.constructs.len() {
+            if self.constructs[k].expiry == f {
+                let c = self.constructs.remove(k);
+                crate::chars::dispatch::construct_expired(self.chars[c.owner as usize].kind, self, c.owner as usize, c.key);
+            } else {
+                k += 1;
             }
         }
         // Player.Tick
@@ -1913,11 +1739,7 @@ impl Sim {
         if self.player.swap_cd > 0 {
             self.player.swap_cd -= 1;
         }
-        for i in 0..self.chars.len() {
-            if self.chars[i].zl.shielded && self.chars[i].zl.shield_expiry == f {
-                self.chars[i].zl.shielded = false;
-            }
-        }
+        self.shields.retain(|s| s.expiry != f);
         self.anim_tick();
         for i in 0..self.chars.len() {
             let c = &mut self.chars[i];
@@ -1980,20 +1802,22 @@ impl Sim {
     }
 
     fn exec(&mut self, c: usize, a: Action, p: &Params) {
+        use crate::chars;
         let ci = self.player.active as usize;
+        let kind = self.chars[ci].kind;
         let info = match a {
             Action::Charge => {
                 let req = self.abil_stam_cost(ci, a);
                 self.use_stam(req);
-                self.char_charge(ci)
+                chars::dispatch::charge(kind, self, ci, p)
             }
             Action::Dash => self.char_dash(ci),
             Action::Skill => {
-                self.on_skill_event(ci);
-                self.char_skill(ci, p.get("hold").unwrap_or(0) as i32)
+                self.emit(Event::Skill);
+                chars::dispatch::skill(kind, self, ci, p)
             }
-            Action::Burst => self.char_burst(ci),
-            Action::Attack => self.char_attack(ci),
+            Action::Burst => chars::dispatch::burst(kind, self, ci, p),
+            Action::Attack => chars::dispatch::attack(kind, self, ci, p),
             Action::Swap => {
                 if self.player.swap_cd > 0 {
                     self.player.swap_cd = 0;
@@ -2017,53 +1841,6 @@ impl Sim {
             for c in &mut self.chars {
                 c.normal_counter = 0;
             }
-        }
-    }
-
-    fn on_skill_event(&mut self, _ci: usize) {
-        // Shimenawa 4pc
-        let active = self.player.active as usize;
-        for i in 0..self.chars.len() {
-            if self.chars[i].sets[Set::Shimenawa as usize] < 4 || active != i {
-                continue;
-            }
-            if self.chars[i].energy < 15.0 || self.mod_active(i, ModKey::Shim4Icd) {
-                continue;
-            }
-            self.add_status(i, ModKey::Shim4Icd, 600, true);
-            self.add_task(Task::AddEnergy { c: i as u8, amt: -15.0 }, 10);
-            self.add_mod(i, ModKey::Shim4, ModKind::Attack, st::NONE, false, 600, true);
-        }
-    }
-
-    fn char_attack(&mut self, ci: usize) -> ActInfo {
-        match self.chars[ci].kind {
-            CharKind::Hutao => self.hutao_attack(ci),
-            CharKind::Xingqiu => self.xq_attack(ci),
-            CharKind::Yelan => self.yelan_attack(ci),
-            CharKind::Zhongli => unimplemented!("zhongli attack"),
-        }
-    }
-    fn char_charge(&mut self, ci: usize) -> ActInfo {
-        match self.chars[ci].kind {
-            CharKind::Hutao => self.hutao_charge(ci),
-            k => unimplemented!("{k:?} charge"),
-        }
-    }
-    fn char_skill(&mut self, ci: usize, param: i32) -> ActInfo {
-        match self.chars[ci].kind {
-            CharKind::Hutao => self.hutao_skill(ci),
-            CharKind::Xingqiu => self.xq_skill(ci),
-            CharKind::Zhongli => self.zl_skill(ci, param),
-            CharKind::Yelan => self.yelan_skill(ci),
-        }
-    }
-    fn char_burst(&mut self, ci: usize) -> ActInfo {
-        match self.chars[ci].kind {
-            CharKind::Hutao => self.hutao_burst(ci),
-            CharKind::Xingqiu => self.xq_burst(ci),
-            CharKind::Yelan => self.yelan_burst(ci),
-            CharKind::Zhongli => unimplemented!("zhongli burst"),
         }
     }
 
@@ -2188,7 +1965,7 @@ impl Sim {
         self.chars[ci]
             .mods
             .iter()
-            .find(|m| m.key.name() == key)
+            .find(|m| m.key.name == key)
             .map(|m| if m.expiry() > self.f { m.expiry() - self.f } else { 0 })
             .unwrap_or(0)
     }
@@ -2244,7 +2021,7 @@ impl Sim {
                 need(4, "debuff")?;
                 self.target(&fields[2])?;
                 let f = self.f;
-                let active = |kind: ModKind| self.enemy.mods.iter().any(|m| m.kind == kind && m.key.name() == fields[3] && m.active(f));
+                let active = |kind: ModKind| self.enemy.mods.iter().any(|m| m.kind == kind && m.key.name == fields[3] && m.active(f));
                 match fields[1].as_str() {
                     "res" => Ok(b(active(ModKind::Resist))),
                     "def" => Ok(b(false)),
@@ -2258,13 +2035,11 @@ impl Sim {
             }
             "construct" => {
                 need(3, "construct")?;
-                if fields[2] != "zhongli" {
-                    return Err(format!("construct {} is not supported", fields[2]));
-                }
-                let stele = self.chars.iter().find_map(|c| c.zl.stele);
+                let owner = char_key(&fields[2]).and_then(|k| self.index_of(k));
+                let mine = || self.constructs.iter().filter(move |c| Some(c.owner as usize) == owner);
                 match fields[1].as_str() {
-                    "count" => Ok(int(stele.is_some() as i64)),
-                    "duration" => Ok(int(stele.map(|s| s.1 as i64).unwrap_or(0))),
+                    "count" => Ok(int(mine().count() as i64)),
+                    "duration" => Ok(int(mine().map(|c| c.expiry as i64).max().unwrap_or(0))),
                     v => Err(format!("bad construct condition: invalid criteria {v}")),
                 }
             }
@@ -2296,6 +2071,9 @@ impl Sim {
                         t => Err(format!("bad character ability condition: invalid type {t}")),
                     };
                 }
+                if let Some(r) = crate::chars::dispatch::condition(c.kind, self, ci, &fields[1..]) {
+                    return r;
+                }
                 let what = format!("character {typ}");
                 match typ {
                     "id" => Ok(int(c.key as i64)),
@@ -2318,10 +2096,7 @@ impl Sim {
                     }
                     "tags" => {
                         need(3, &what)?;
-                        Ok(int(match (c.kind, fields[2].as_str()) {
-                            (CharKind::Zhongli, "shielded") => c.zl.shielded as i64,
-                            _ => 0,
-                        }))
+                        Ok(int(0))
                     }
                     "stats" => {
                         need(3, &what)?;
@@ -2334,11 +2109,7 @@ impl Sim {
                         let k = set_key(&fields[2]).ok_or(format!("invalid set key {} in character set condition", fields[2]))?;
                         Ok(Num::Float(c.set_counts.iter().find(|s| s.0 == k).map(|s| s.1 as f64).unwrap_or(0.0)))
                     }
-                    _ => match (c.kind, typ) {
-                        (CharKind::Zhongli, "shielded") => Ok(int(c.zl.shielded as i64)),
-                        (CharKind::Yelan, "breakthrough") => Ok(b(true)),
-                        _ => Err(format!("unsupported: field .{}", fields.join("."))),
-                    },
+                    _ => Err(format!("unsupported: field .{}", fields.join("."))),
                 }
             }
         }
@@ -2356,21 +2127,10 @@ impl Sim {
 /// The action, as gcsl names it, if the engine does not implement it for
 /// the character with these params.
 pub fn unsupported_action(kind: CharKind, a: Action, p: &Params) -> Option<String> {
-    let ok = match a {
-        Action::Swap | Action::Dash | Action::Jump | Action::Walk => true,
-        Action::Attack => kind != CharKind::Zhongli,
-        Action::Charge => kind == CharKind::Hutao,
-        Action::Skill if kind == CharKind::Zhongli => {
-            if p.get("hold").unwrap_or(0) <= 0 {
-                return Some("skill (press)".into());
-            }
-            true
-        }
-        Action::Skill => true,
-        Action::Burst => kind != CharKind::Zhongli,
-        _ => false,
-    };
-    if ok { None } else { Some(crate::gcsl::action_name(a).into()) }
+    match a {
+        Action::Swap | Action::Dash | Action::Jump | Action::Walk => None,
+        _ => crate::chars::dispatch::unsupported(kind, a, p),
+    }
 }
 
 /// An action's params, such as hold=1.
@@ -2383,50 +2143,3 @@ impl Params {
     }
 }
 
-impl ModKey {
-    /// The key gcsim gives the mod, which .char.mods.<key> and
-    /// .char.status.<key> read.
-    pub fn name(self) -> &'static str {
-        match self {
-            ModKey::HomaHp => "homa-hp",
-            ModKey::HomaAtk => "homa-atk-buff",
-            ModKey::Shim2 => "shim-2pc",
-            ModKey::Shim4 => "shim-4pc",
-            ModKey::Shim4Icd => "shim-4pc-icd",
-            ModKey::HutaoA4 => "hutao-a4",
-            ModKey::HutaoA1 => "hutao-a1",
-            ModKey::Paramita => "paramita",
-            ModKey::ParamitaIcd => "paramita-ball-icd",
-            ModKey::HydroResonance => "hydro-res-hpp",
-            ModKey::Emblem2 => "emblem-2pc",
-            ModKey::Emblem4 => "emblem-4pc",
-            ModKey::Tenacity2 => "tom-2pc",
-            ModKey::Tenacity4 => "tom-4pc",
-            ModKey::Tenacity4Icd => "tom-4pc-icd",
-            ModKey::SacIcd => "sacrificial-cd",
-            ModKey::AquaHp => "aquasimulacra-hp",
-            ModKey::AquaDmg => "aquasimulacra-dmg",
-            ModKey::XingqiuA4 => "xingqiu-a4",
-            ModKey::XingqiuOrbital => "xingqiu-orbital",
-            ModKey::XingqiuParticleIcd => "xingqiu-particle-icd",
-            ModKey::XingqiuBurst => "xingqiuburst",
-            ModKey::XingqiuBurstIcd => "xingqiu-burst-icd",
-            ModKey::YelanA1 => "yelan-a1",
-            ModKey::YelanA4 => "yelan-a4",
-            ModKey::YelanBurst => "yelanburst",
-            ModKey::YelanBurstIcd => "yelanburstICD",
-            ModKey::YelanParticleIcd => "yelan-particle-icd",
-            ModKey::ZhongliParticleIcd => "zhongli-particle-icd",
-            ModKey::BloodBlossom => "blood-blossom",
-            ModKey::XingqiuC2Res => "xingqiu-c2",
-            ModKey::ZhongliRes(0) => "zhongli-pyro",
-            ModKey::ZhongliRes(1) => "zhongli-hydro",
-            ModKey::ZhongliRes(2) => "zhongli-geo",
-            ModKey::ZhongliRes(_) => "zhongli-physical",
-        }
-    }
-}
-
-fn perm(key: ModKey, affected: usize, extra: bool) -> Mod {
-    Mod::new(key, ModKind::Stat, affected, extra, false, -1)
-}

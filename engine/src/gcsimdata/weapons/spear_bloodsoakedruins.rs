@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/spear/bloodsoakedruins.
 
-use crate::types::FrameTable;
-
 pub const ENERGY_ICD_KEY: &str = "bloodsoakedruins-energy-icd";

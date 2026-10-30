@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/haran.
 
-use crate::types::FrameTable;
-
 pub const ICD_KEY: &str = "haran-icd";
 pub const MAX_WAVESPIKE_STACKS: i32 = 2;

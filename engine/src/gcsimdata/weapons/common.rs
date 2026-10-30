@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/common.
 
-use crate::types::FrameTable;
-
 pub const MILLENNIAL_KEY: &str = "millennial-atk%";
 pub const ICD_KEY: &str = "royal-icd";

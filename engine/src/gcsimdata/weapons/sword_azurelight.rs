@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/sword/azurelight.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "azurelight-buff";

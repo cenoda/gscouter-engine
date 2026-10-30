@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/bow/flowerwreathedfeathers.
 
-use crate::types::FrameTable;
-
 pub const BUFF_STATUS: &str = "flowerwreathedfeathers";
 pub const ICD_STATUS: &str = "flowerwreathedfeathers-icd";

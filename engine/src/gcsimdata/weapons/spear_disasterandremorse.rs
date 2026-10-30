@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/spear/disasterandremorse.
 
-use crate::types::FrameTable;
-
 pub const IRREPARABLE: &str = "irreparable";
 pub const NA_CA_ICD: &str = "disaster-remorse-na-ca-icd";
 pub const PATH_OF_CONFLICT: &str = "path-of-conflict";

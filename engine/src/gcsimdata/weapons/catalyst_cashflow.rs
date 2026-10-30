@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/cashflow.
 
-use crate::types::FrameTable;
-
 pub const ATK_SPD_KEY: &str = "cashflow-atkspd";
 pub const BUFF_ICD: &str = "cashflow-icd";
 pub const BUFF_KEY: &str = "cashflow-buff";

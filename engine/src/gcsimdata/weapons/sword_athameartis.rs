@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/athameartis.
 
-use crate::types::FrameTable;
-
 pub const BLADE_OF_DAYLIGHT_HOURS_BUFF: &str = "blade-of-the-daylight-hours-buff";
 pub const BUFF_DUR: i32 = 180;
 pub const TEAM_BUFF_KEY: &str = "athameartis-team-buff";

@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/sword/urakumisugiri.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "urakumisugiri-increase-buff";

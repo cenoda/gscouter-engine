@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/claymore/fangofthemountainking.
 
-use crate::types::FrameTable;
-
 pub const CANOPY_FAVOR_KEY: &str = "canopy-favor";
 pub const REACT_ICD_KEY: &str = "fotmk-react-icd";
 pub const SKILL_ICD_KEY: &str = "fotmk-skill-icd";

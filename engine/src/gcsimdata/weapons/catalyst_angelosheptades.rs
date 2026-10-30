@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/angelosheptades.
 
-use crate::types::FrameTable;
-
 pub const ANGELOS_HEPTADES_ENERGY_ICD_KEY: &str = "angelos-heptades-energy-icd";
 pub const ANGELOS_HEPTADES_ENERGY_KEY: &str = "angelos-heptades-energy";
 pub const ANGELOS_HEPTADES_HOLDER_BUFF_KEY: &str = "angelos-heptades-buff";

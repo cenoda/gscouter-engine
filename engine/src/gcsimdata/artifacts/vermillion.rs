@@ -2,6 +2,4 @@
 
 //! gcsim's internal/artifacts/vermillion.
 
-use crate::types::FrameTable;
-
 pub const VERM4PCKEY: &str = "verm-4pc";

@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/beyondthechrysalis.
 
-use crate::types::FrameTable;
-
 pub const CD_KEY: &str = "beyond-the-chrysalis-crit-dmg";
 pub const ENERGY_ICD_KEY: &str = "beyond-the-chrysalis-energy-icd";
 pub const STELLAR_BUFF_KEY: &str = "beyond-the-chrysalis-stellar-buff";

@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/peakpatrolsong.
 
-use crate::types::FrameTable;
-
 pub const BUFF_DUR: i32 = 360;
 pub const BUFF_KEY: &str = "peakpatrolsong-buff";
 pub const ICD_DUR: f64 = 6.0;

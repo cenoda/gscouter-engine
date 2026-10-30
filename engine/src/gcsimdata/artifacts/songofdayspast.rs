@@ -2,8 +2,6 @@
 
 //! gcsim's internal/artifacts/songofdayspast.
 
-use crate::types::FrameTable;
-
 pub const HEAL_SNAP_KEY: &str = "sodp-heal-snap";
 pub const HEAL_STACKS_KEY: &str = "sodp-heal-stacks";
 pub const WAVES_OF_DAYS_PAST_KEY: &str = "waves-of-days-past";

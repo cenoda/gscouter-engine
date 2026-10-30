@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/bow/sequenceofsolitude.
 
-use crate::types::FrameTable;
-
 pub const ICD_KEY: &str = "sequence-of-solitude-icd";

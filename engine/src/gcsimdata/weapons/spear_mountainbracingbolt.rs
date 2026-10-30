@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/spear/mountainbracingbolt.
 
-use crate::types::FrameTable;
-
 pub const BASE_BUFF_KEY: &str = "mountain-bracing-bolt-base";
 pub const OTHER_BUFF_KEY: &str = "mountain-bracing-bolt-other";

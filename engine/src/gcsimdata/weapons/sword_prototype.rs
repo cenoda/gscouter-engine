@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/prototype.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "prototype-rancour";
 pub const ICD_KEY: &str = "prototype-rancour-icd";

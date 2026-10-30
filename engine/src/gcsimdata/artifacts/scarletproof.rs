@@ -2,7 +2,5 @@
 
 //! gcsim's internal/artifacts/scarletproof.
 
-use crate::types::FrameTable;
-
 pub const CR_KEY: &str = "scarletproof-4pc-cr";
 pub const DMG_KEY: &str = "scarletproof-4pc-dmg";

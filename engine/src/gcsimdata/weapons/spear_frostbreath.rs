@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/spear/frostbreath.
 
-use crate::types::FrameTable;
-
 pub const BUFF_ICD_KEY: &str = "frostbreath-buff-icd";
 pub const BUFF_KEY: &str = "frostbreath-atk";
 pub const ENERGY_ICD_KEY: &str = "frostbreath-energy-icd";

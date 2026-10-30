@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/bow/heartstrings.
 
-use crate::types::FrameTable;
-
 pub const BOND_KEY: &str = "heartstrings-bond";
 pub const BURST_CR_KEY: &str = "heartstrings-cr";
 pub const BURST_CR_KEY_CANCEL: &str = "heartstrings-cr-cancel";

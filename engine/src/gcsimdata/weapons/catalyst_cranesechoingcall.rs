@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/cranesechoingcall.
 
-use crate::types::FrameTable;
-
 pub const BUFF_DURATION: i32 = 1200;
 pub const BUFF_KEY: &str = "crane-dmg%";
 pub const ENERGY_ICD: i32 = 42;

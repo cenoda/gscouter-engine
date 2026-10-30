@@ -2,6 +2,4 @@
 
 //! gcsim's internal/artifacts/crimson.
 
-use crate::types::FrameTable;
-
 pub const CW4PC: &str = "crimson-4pc-stacks";

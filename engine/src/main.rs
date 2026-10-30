@@ -11,20 +11,20 @@
 //! that the engine does not implement, as {"unsupported": [...]}, without
 //! running it.
 
+mod chars;
 mod check;
+mod content;
 mod data;
 mod eval;
-mod gcsl;
 mod gcsimdata;
-mod hutao;
+mod gcsl;
 mod profile;
 mod queue;
 mod rng;
+mod sets;
 mod sim;
 mod types;
-mod xingqiu;
-mod yelan;
-mod zhongli;
+mod weapons;
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -84,7 +84,9 @@ fn main() {
 
     let start = Instant::now();
     let mut results: Vec<Row> = (0..iters).map(|_| Row { team: 0.0, chars: [0.0; 4], waits: [[0; N_FAILURES]; 4], frames: 0 }).collect();
-    let abils = std::sync::Mutex::new(BTreeMap::<String, (f64, f64)>::new());
+    // hits and damage by ability, per thread, summed in thread order so that
+    // the totals do not depend on which thread finishes first
+    let abils = std::sync::Mutex::new(vec![BTreeMap::<String, (f64, f64)>::new(); threads.max(1)]);
     let chunk = iters.div_ceil(threads).max(1);
     // each thread parses the config itself: the program's AST is not Sync
     let run_part = |t: usize, part: &mut [Row]| -> Result<(), String> {
@@ -110,12 +112,7 @@ fn main() {
                 }
             }
         }
-        let mut a = abils.lock().unwrap();
-        for (k, v) in local {
-            let e = a.entry(k).or_default();
-            e.0 += v.0;
-            e.1 += v.1;
-        }
+        abils.lock().unwrap()[t] = local;
         Ok(())
     };
     let res = if threads == 1 {
@@ -169,7 +166,14 @@ fn main() {
         })
         .collect();
     let _ = writeln!(o, "  \"waits\": {{\n{}\n  }},", waits.join(",\n"));
-    let a = abils.lock().unwrap();
+    let mut a = BTreeMap::<String, (f64, f64)>::new();
+    for part in abils.lock().unwrap().iter() {
+        for (k, v) in part {
+            let e = a.entry(k.clone()).or_default();
+            e.0 += v.0;
+            e.1 += v.1;
+        }
+    }
     let rows: Vec<String> = a.iter().map(|(k, v)| format!("    {}: [{}, {}]", json_str(k), v.0 / n, v.1 / n)).collect();
     let _ = writeln!(o, "  \"abils\": {{\n{}\n  }}\n}}", rows.join(",\n"));
     print!("{o}");

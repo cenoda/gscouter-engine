@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/hereticsmoltenblade.
 
-use crate::types::FrameTable;
-
 pub const BUFF_DUR: i32 = 840;
 pub const BUFF_KEY: &str = "heretics-molten-blade-gleam";
 pub const CD_DUR: i32 = 840;

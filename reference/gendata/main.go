@@ -274,7 +274,7 @@ func writeData(d *Dump, path string) {
 	var b strings.Builder
 	w := func(f string, a ...any) { fmt.Fprintf(&b, f, a...) }
 	w(header)
-	w("#![allow(clippy::all)]\n\n")
+	w("#![allow(dead_code, clippy::all)]\n\n")
 
 	names := func(title string, m map[string]int) {
 		w("pub static %s: &[(&str, u16)] = &[\n", title)
@@ -545,7 +545,8 @@ func writeGen(d *Dump, dir string) {
 			continue
 		}
 		var b strings.Builder
-		fmt.Fprintf(&b, "%s//! gcsim's %s.\n\nuse crate::types::FrameTable;\n\n", header, path)
+		fmt.Fprintf(&b, "%s//! gcsim's %s.\n\n", header, path)
+		body := len(b.String())
 		used := map[string]bool{}
 		any := false
 		for _, name := range slices.Sorted(maps.Keys(vals)) {
@@ -573,6 +574,10 @@ func writeGen(d *Dump, dir string) {
 		}
 		if !any {
 			continue
+		}
+		if text := b.String(); strings.Contains(text[body:], "FrameTable") {
+			b.Reset()
+			b.WriteString(text[:body] + "use crate::types::FrameTable;\n\n" + text[body:])
 		}
 		mod := moduleName(path)
 		mods[kind] = append(mods[kind], mod)

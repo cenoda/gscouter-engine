@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/spear/scarletsands.
 
-use crate::types::FrameTable;
-
 pub const SKILL_BUFF: &str = "scarletsands-skill";

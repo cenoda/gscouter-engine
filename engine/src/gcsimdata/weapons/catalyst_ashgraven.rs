@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/catalyst/ashgraven.
 
-use crate::types::FrameTable;
-
 pub const ICD_KEY: &str = "ash-graven-drinking-horn-icd";

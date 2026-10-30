@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/spear/crimsonmoonssemblance.
 
-use crate::types::FrameTable;
-
 pub const ICD_DURATION: i32 = 840;
 pub const ICD_KEY: &str = "crimsonmoonssemblance-icd";

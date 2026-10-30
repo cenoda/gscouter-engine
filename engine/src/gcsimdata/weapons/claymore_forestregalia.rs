@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/claymore/forestregalia.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "forest-sanctuary";
 pub const ICD_KEY: &str = "forestregalia-icd";
 pub static PROC_EVENTS: &[i32] = &[30, 26, 24, 25, 27, 32, 28, 29];

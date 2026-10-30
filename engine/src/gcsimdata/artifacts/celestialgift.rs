@@ -2,8 +2,6 @@
 
 //! gcsim's internal/artifacts/celestialgift.
 
-use crate::types::FrameTable;
-
 pub const DURATION: i32 = 1200;
 pub const SET4_KEY: &str = "celestialgift-4pc";
 pub const SET4_KEY_ACTIVE: &str = "celestialgift-4pc-active";

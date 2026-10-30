@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/swordofnarzissenkreuz.
 
-use crate::types::FrameTable;
-
 pub const HITMARK: f64 = 6.0;
 pub const ICD: i32 = 720;
 pub const ICD_KEY: &str = "swordofnarzissenkreuz-icd";

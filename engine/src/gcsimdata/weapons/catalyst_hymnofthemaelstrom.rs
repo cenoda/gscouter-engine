@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/hymnofthemaelstrom.
 
-use crate::types::FrameTable;
-
 pub const MAX_STACKS: i32 = 3;
 pub const MIN_HP: f64 = 40000.0;
 pub const STACK_DUR: i32 = 600;

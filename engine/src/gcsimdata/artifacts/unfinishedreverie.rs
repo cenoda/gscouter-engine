@@ -2,8 +2,6 @@
 
 //! gcsim's internal/artifacts/unfinishedreverie.
 
-use crate::types::FrameTable;
-
 pub const ICD_KEY: &str = "unfinishedreverie-4pc-icd";
 pub const CHECK_INTERVAL: i32 = 30;
 pub const ICD: i32 = 60;

@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/bow/rangegauge.
 
-use crate::types::FrameTable;
-
 pub const BUFF_DURATION: i32 = 600;
 pub const BUFF_KEY: &str = "range-gauge";
 pub const ICD_DURATION: i32 = 900;

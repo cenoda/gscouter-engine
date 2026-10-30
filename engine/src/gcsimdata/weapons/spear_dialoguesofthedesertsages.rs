@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/spear/dialoguesofthedesertsages.
 
-use crate::types::FrameTable;
-
 pub const ENERGY_SRC: &str = "dialoguesofthedesertsages";
 pub const ICD: i32 = 600;
 pub const ICD_KEY: &str = "dialoguesofthedesertsages-icd";

@@ -2,6 +2,4 @@
 
 //! gcsim's internal/artifacts/paleflame.
 
-use crate::types::FrameTable;
-
 pub const PF4KEY: &str = "pf-4pc";

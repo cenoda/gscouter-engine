@@ -58,7 +58,7 @@ var (
 	censusOnly  = flag.Bool("census", false, "only classify teams as supported or not; run nothing")
 	noVariants  = flag.Bool("no-variants", false, "compare library builds only")
 	iter0       = flag.Int("iter", 1000, "iterations of the first batch")
-	maxIter     = flag.Int("max-iter", 32000, "most iterations a config may grow to")
+	maxIter     = flag.Int("max-iter", 512000, "most iterations a config may grow to")
 	targetSE    = flag.Float64("target-se", 0.003, "standard error, relative to the mean, each engine must reach")
 	warmup      = flag.Float64("warmup", 150, "seconds of the looped fight excluded from the window")
 	workers     = flag.Int("j", runtime.NumCPU(), "workers")
@@ -87,6 +87,7 @@ var variants = []variant{
 	{"er-0", "no ER from artifacts", []op{{"er", 0, 0}}, false},
 	{"er-0-forced", "no ER from artifacts, bursts used without their readiness checks so that they wait for energy", []op{{"er", 0, 0}}, true},
 	{"er-half", "half the ER from artifacts", []op{{"er", 0.5, 0}}, false},
+	{"er-half-forced", "half the ER from artifacts, bursts used without their readiness checks", []op{{"er", 0.5, 0}}, true},
 	{"er+", "ER +30%", []op{{"er", 1, 0.3}}, false},
 	{"crit-", "CR −20%, CD −40%", []op{{"cr", 1, -0.2}, {"cd", 1, -0.4}}, false},
 	{"crit+", "CR +20%, CD +40%", []op{{"cr", 1, 0.2}, {"cd", 1, 0.4}}, false},

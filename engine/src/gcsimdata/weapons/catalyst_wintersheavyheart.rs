@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/wintersheavyheart.
 
-use crate::types::FrameTable;
-
 pub const ATK_KEY: &str = "winters-heavy-heart-atk";
 pub const EM_KEY: &str = "winters-heavy-heart-em";
 pub const MAX_MEMBERS: i32 = 4;

@@ -2,6 +2,4 @@
 
 //! gcsim's internal/artifacts/aubade.
 
-use crate::types::FrameTable;
-
 pub const AUBADE4PC_ON_FIELD_KEY: &str = "aubade-4pc-onfield";

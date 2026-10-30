@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/ironsting.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "ironsting";
 pub const ICD_KEY: &str = "ironsting-icd";

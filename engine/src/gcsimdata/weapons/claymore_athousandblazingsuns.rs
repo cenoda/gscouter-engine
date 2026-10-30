@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/claymore/athousandblazingsuns.
 
-use crate::types::FrameTable;
-
 pub const BUFF_DUR: i32 = 360;
 pub const BUFF_ICD_DUR: i32 = 600;
 pub const BUFF_ICD_KEY: &str = "athousandblazingsuns-buff-icd";

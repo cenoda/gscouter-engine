@@ -2,7 +2,5 @@
 
 //! gcsim's internal/artifacts/finaleofthedeepgalleries.
 
-use crate::types::FrameTable;
-
 pub const BURST_DEBUFF_KEY: &str = "deep-galleries-4pc-burst-debuff";
 pub const NORMAL_DEBUFF_KEY: &str = "deep-galleries-4pc-normal-debuff";

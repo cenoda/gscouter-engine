@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/whitelakefrostfeather.
 
-use crate::types::FrameTable;
-
 pub const ENERGY_ICD_KEY: &str = "whitelake-frostfeather-energy-icd";
 pub const STACK_GAIN_ICD_KEY: &str = "whitelake-frostfeather-stack-icd";
 pub const STELLAR_BUFF_KEY: &str = "whitelake-frostfeather-stellar";

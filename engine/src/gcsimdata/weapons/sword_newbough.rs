@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/newbough.
 
-use crate::types::FrameTable;
-
 pub const ATK_KEY: &str = "new-bough-verdant-atk";
 pub const BUFF_DUR: i32 = 360;
 pub const EM_KEY: &str = "new-bough-verdant-em";

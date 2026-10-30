@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/sword/alley.
 
-use crate::types::FrameTable;
-
 pub const LOCKOUT_KEY: &str = "alley-flash-lockout";

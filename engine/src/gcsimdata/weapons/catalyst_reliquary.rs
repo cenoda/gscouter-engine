@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/catalyst/reliquary.
 
-use crate::types::FrameTable;
-
 pub const MOON_OF_TRUTH_KEY: &str = "reliquary-moonoftruth";
 pub const SECRET_OF_LIES_KEY: &str = "reliquary-secretoflies";

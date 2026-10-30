@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/claymore/gestofthemightywolf.
 
-use crate::types::FrameTable;
-
 pub const GEST_ATTACK_SPEED_KEY: &str = "gest-of-the-mighty-wolf-atkspd";
 pub const GEST_STACKS_KEY: &str = "gest-of-the-mighty-wolf-stacks";

@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/absolution.
 
-use crate::types::FrameTable;
-
 pub const CD_KEY: &str = "absolution-crit-dmg";
 pub const DMG_BONUS_KEY: &str = "absolution-dmg-bonus";

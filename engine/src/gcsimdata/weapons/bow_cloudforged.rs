@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/bow/cloudforged.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "cloudforged-em";

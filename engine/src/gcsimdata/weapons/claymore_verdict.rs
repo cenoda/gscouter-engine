@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/claymore/verdict.
 
-use crate::types::FrameTable;
-
 pub const BUFF_DURATION: i32 = 900;
 pub const BUFF_KEY: &str = "verdict-skill-dmg";
 pub const DMG_WINDOW_DURATION: f64 = 12.0;

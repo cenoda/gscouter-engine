@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/flute.
 
-use crate::types::FrameTable;
-
 pub const DURATION_KEY: &str = "flute-stack-duration";
 pub const ICD_KEY: &str = "flute-icd";

@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/splendoroftranquilwaters.
 
-use crate::types::FrameTable;
-
 pub const HP_BUFF_ICD: &str = "splendoroftranquilwaters-hp-icd";
 pub const HP_BUFF_KEY: &str = "splendoroftranquilwaters-hp-buff";
 pub const SKILL_BUFF_ICD: &str = "splendoroftranquilwaters-skill-buff-icd";

@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/eternalflow.
 
-use crate::types::FrameTable;
-
 pub const BUFF_ICD: &str = "eternalflow-icd";
 pub const BUFF_KEY: &str = "eternalflow-buff";
 pub const ENERGY_ICD: &str = "eternalflow-energy-icd";

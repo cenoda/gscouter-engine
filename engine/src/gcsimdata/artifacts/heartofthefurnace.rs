@@ -2,8 +2,6 @@
 
 //! gcsim's internal/artifacts/heartofthefurnace.
 
-use crate::types::FrameTable;
-
 pub const ATK_KEY: &str = "furnace-4pc-atk";
 pub const REACTION_KEY: &str = "furnace-4pc-react";
 pub const SET_KEY2: &str = "furnace-2pc";

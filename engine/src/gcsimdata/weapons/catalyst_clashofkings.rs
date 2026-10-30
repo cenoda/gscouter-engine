@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/clashofkings.
 
-use crate::types::FrameTable;
-
 pub const BUFF_ICD_KEY: &str = "clash-of-kings-icd";
 pub const BUFF_KEY: &str = "clash-of-kings";
 pub const CHARGE_EXTENSION_KEY: &str = "clash-of-kings-ca-extension";

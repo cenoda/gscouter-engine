@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/catalyst/hakushin.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "hakushin-%v-buff";
 pub const ICD_KEY: &str = "hakushin-%v-icd";

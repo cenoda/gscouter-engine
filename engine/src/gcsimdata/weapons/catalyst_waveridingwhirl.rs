@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/waveridingwhirl.
 
-use crate::types::FrameTable;
-
 pub const ICD_DUR: i32 = 900;
 pub const BUFF_DUR: i32 = 600;
 pub const BUFF_ICD: &str = "waveridingwhirl-icd";

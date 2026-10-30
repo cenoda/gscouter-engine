@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/spear/lumidouceelegy.
 
-use crate::types::FrameTable;
-
 pub const ATK_BUFF_KEY: &str = "lumidouceelegy-atk-buff";
 pub const BONUS_BUFF_KEY: &str = "lumidouceelegy-bonus-buff";
 pub const ENERGY_ICD_KEY: &str = "lumidouceelegy-energy-icd";

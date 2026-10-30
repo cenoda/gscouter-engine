@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/toukaboushigure.
 
-use crate::types::FrameTable;
-
 pub const DEBUFF_KEY: &str = "toukaboushigure-cursed-parasol";
 pub const ICD_KEY: &str = "toukaboushigure-icd";

@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/sword/kagotsurubeisshin.
 
-use crate::types::FrameTable;
-
 pub const ICD_KEY: &str = "kagotsurube-isshin-icd";

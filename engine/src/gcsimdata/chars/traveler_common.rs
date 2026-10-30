@@ -2,6 +2,4 @@
 
 //! gcsim's internal/characters/traveler/common.
 
-use crate::types::FrameTable;
-
 pub const TRUE_MOON_PARAM: &str = "true_moon_story_buff";

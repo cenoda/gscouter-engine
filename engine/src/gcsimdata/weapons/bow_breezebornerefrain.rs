@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/bow/breezebornerefrain.
 
-use crate::types::FrameTable;
-
 pub const ER_BUFFF_KEY: &str = "breezeborne-refrain-er";
 pub const HYMN_STACK_ICD_KEY: &str = "hymn-of-the-pure-stack-icd";
 pub const VIPER_KEY: &str = "thus-lied-the-viper";

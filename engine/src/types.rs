@@ -134,27 +134,6 @@ pub enum Action {
 pub const N_ACTIONS: usize = 15;
 pub type FrameTable = [i32; N_ACTIONS];
 
-/// `frames.InitAbilSlice`
-pub const fn abil_slice(anim: i32) -> FrameTable {
-    [anim; N_ACTIONS]
-}
-/// `frames.InitNormalCancelSlice`
-pub const fn normal_cancel_slice(hitmark: i32, anim: i32) -> FrameTable {
-    let mut t = [anim; N_ACTIONS];
-    t[Action::Aim as usize] = hitmark;
-    t[Action::Skill as usize] = hitmark;
-    t[Action::Burst as usize] = hitmark;
-    t[Action::Dash as usize] = hitmark;
-    t[Action::Jump as usize] = hitmark;
-    t[Action::Swap as usize] = hitmark;
-    t
-}
-pub const fn set(mut t: FrameTable, a: Action, v: i32) -> FrameTable {
-    t[a as usize] = v;
-    t
-}
-
-/// gcsim's `action.Failure`: why an action waits.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Failure {
     SwapCd = 1,

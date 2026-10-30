@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/keyofkhajnisut.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "khaj-nisut-buff";
 pub const ICD_KEY: &str = "khaj-nisut-icd";
 pub const TEAM_BUFF_KEY: &str = "khaj-nisut-team-buff";

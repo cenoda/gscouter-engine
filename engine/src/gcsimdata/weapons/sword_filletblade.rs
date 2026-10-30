@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/sword/filletblade.
 
-use crate::types::FrameTable;
-
 pub const ICD_KEY: &str = "fillet-blade-icd";

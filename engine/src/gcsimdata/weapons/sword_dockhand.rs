@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/sword/dockhand.
 
-use crate::types::FrameTable;
-
 pub const BUFF_DURATION: i32 = 600;
 pub const BUFF_KEY: &str = "dockhands-assistant-em";
 pub const ICD_DURATION: i32 = 900;

@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/claymore/flameforgedinsight.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "flame-forged-insight-buff";
 pub const ICD_KEY: &str = "flame-forged-insight-icd";

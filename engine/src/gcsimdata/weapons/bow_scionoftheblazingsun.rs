@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/bow/scionoftheblazingsun.
 
-use crate::types::FrameTable;
-
 pub const DEBUFF_KEY: &str = "scion-heartsearer";
 pub const ICD_KEY: &str = "scion-icd";

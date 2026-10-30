@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/spear/symphonist.
 
-use crate::types::FrameTable;
-
 pub const BUF_DUR: i32 = 180;
 pub const BUFF_KEY: &str = "symphonist-chanson-de-baies";

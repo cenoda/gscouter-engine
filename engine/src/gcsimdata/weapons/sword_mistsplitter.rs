@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/sword/mistsplitter.
 
-use crate::types::FrameTable;
-
 pub const BURST_BUFF_KEY: &str = "mistsplitter-burst";
 pub const NORMAL_BUFF_KEY: &str = "mistsplitter-normal";

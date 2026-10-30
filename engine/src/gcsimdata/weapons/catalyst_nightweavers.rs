@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/catalyst/nightweavers.
 
-use crate::types::FrameTable;
-
 pub const NEW_MOON_KEY: &str = "new-moon-verse";
 pub const PRAYER_KEY: &str = "prayer-of-the-far-north";

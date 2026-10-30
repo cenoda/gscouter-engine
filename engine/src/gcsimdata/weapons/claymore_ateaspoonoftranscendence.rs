@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/claymore/ateaspoonoftranscendence.
 
-use crate::types::FrameTable;
-
 pub const STACK_GAIN_ICD_KEY: &str = "a-teaspoon-of-transcendence-stack-icd";
 pub const STELLAR_BUFF_KEY: &str = "a-teaspoon-of-transcendence-stellar";

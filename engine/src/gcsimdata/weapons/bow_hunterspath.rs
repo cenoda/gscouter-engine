@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/bow/hunterspath.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "hunterspath-tireless-hunt";
 pub const ICD_KEY: &str = "hunterspath-icd";

@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/catalyst/nocturnes.
 
-use crate::types::FrameTable;
-
 pub const ICD_KEY: &str = "nocturnes-curtain-call-icd";
 pub const BUFF_KEY: &str = "nocturnes-curtain-call-buff";

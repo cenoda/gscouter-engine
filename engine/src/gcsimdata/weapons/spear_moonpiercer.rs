@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/spear/moonpiercer.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "stillwood-moonshadow";
 pub const ICD_KEY: &str = "moonpiercer-icd";
 pub static PROC_EVENTS: &[i32] = &[30, 26, 24, 25, 27, 32, 28, 29];

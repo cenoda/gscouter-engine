@@ -2,8 +2,6 @@
 
 //! gcsim's internal/artifacts/nightoftheskysunveiling.
 
-use crate::types::FrameTable;
-
 pub const GLEAMING_MOON_INTENT_CR_KEY: &str = "gleaming-moon-intent-cr";
 pub const GLEAMING_MOON_INTENT_REACT_KEY: &str = "gleaming-moon-intent-reaction";
 pub const SET_KEY2: &str = "skys-unveiling-2pc";

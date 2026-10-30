@@ -61,13 +61,7 @@ fn weapon_base(p: &CharProfile, d: &data::WeaponData) -> Stats {
 
 /// The engine's character for a gcsim key name, if it implements it.
 pub fn char_kind(name: &str) -> Option<CharKind> {
-    Some(match name {
-        "hutao" => CharKind::Hutao,
-        "xingqiu" => CharKind::Xingqiu,
-        "zhongli" => CharKind::Zhongli,
-        "yelan" => CharKind::Yelan,
-        _ => return None,
-    })
+    CharKind::from_name(name)
 }
 
 fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
@@ -78,25 +72,20 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
         errs.push(format!("unsupported: character {name}"));
     }
     let wname = weapon_name(p.weapon.key);
-    let weapon = match wname {
-        "staffofhoma" => Some(Weapon::Homa),
-        "sacrificialsword" => Some(Weapon::SacrificialSword),
-        "aquasimulacra" => Some(Weapon::AquaSimulacra),
-        _ => {
-            errs.push(format!("unsupported: weapon {wname}"));
-            None
-        }
-    };
-    let mut sets = [0; N_SETS];
+    let weapon = WeaponKind::from_name(wname);
+    if weapon.is_none() {
+        errs.push(format!("unsupported: weapon {wname}"));
+    }
+    let mut sets = Vec::new();
     for (k, count) in &p.sets {
         let s = set_name(*k);
-        match s {
-            "shimenawasreminiscence" => sets[Set::Shimenawa as usize] = *count,
-            "emblemofseveredfate" => sets[Set::Emblem as usize] = *count,
-            "tenacityofthemillelith" => sets[Set::Tenacity as usize] = *count,
-            // a single piece of a set does nothing
-            _ if *count < 2 => {}
-            _ => errs.push(format!("unsupported: set {s}")),
+        // a single piece of a set does nothing
+        if *count < 2 {
+            continue;
+        }
+        match SetKind::from_name(s) {
+            Some(kind) => sets.push((kind, *count)),
+            None => errs.push(format!("unsupported: set {s}")),
         }
     }
     if p.talents.iter().any(|t| !(1..=10).contains(t)) {

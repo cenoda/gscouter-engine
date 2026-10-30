@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/catalyst/vividnotions.
 
-use crate::types::FrameTable;
-
 pub const PLUNGE_BUFF: &str = "dawns-first-hue";
 pub const SKILL_BURST_BUFF: &str = "twilights-splendor";

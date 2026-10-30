@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/claymore/forgedbythegoldenmelody.
 
-use crate::types::FrameTable;
-
 pub const ATK_BUFF: i32 = 0;
 pub const EM_BUFF: i32 = 1;
 pub const STELLAR_BUFF: i32 = 2;

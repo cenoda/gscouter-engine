@@ -2,8 +2,6 @@
 
 //! gcsim's internal/artifacts/silkenmoonsserenade.
 
-use crate::types::FrameTable;
-
 pub const GLEAMING_MOON_DEVOTION_EM_KEY: &str = "gleaming-moon-devotion-em";
 pub const GLEAMING_MOON_DEVOTION_REACT_KEY: &str = "gleaming-moon-devotion-reaction";
 pub const SET_KEY2: &str = "silken-moon-2pc";

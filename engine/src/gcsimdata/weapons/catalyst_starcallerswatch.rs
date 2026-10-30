@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/catalyst/starcallerswatch.
 
-use crate::types::FrameTable;
-
 pub const ICD_DUR: i32 = 840;
 pub const ICD_KEY: &str = "starcallerswatch-icd";
 pub const BUFF_DUR: i32 = 900;

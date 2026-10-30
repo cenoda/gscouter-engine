@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/spear/songofthevigil.
 
-use crate::types::FrameTable;
-
 pub const ENERGY_ICD_KEY: &str = "song-of-the-vigil-energy-icd";

@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/spear/sacrificersstaff.
 
-use crate::types::FrameTable;
-
 pub const BUFF_KEY: &str = "sacrificersstaff-buff";

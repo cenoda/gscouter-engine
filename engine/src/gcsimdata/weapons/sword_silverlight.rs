@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/sword/silverlight.
 
-use crate::types::FrameTable;
-
 pub const STACK_GAIN_ICD_KEY: &str = "silver-light-stack-icd";

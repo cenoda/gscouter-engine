@@ -2,7 +2,5 @@
 
 //! gcsim's internal/weapons/spear/fracturedhalo.
 
-use crate::types::FrameTable;
-
 pub const ATKP_BUFF: &str = "fracturedhalo-atkp";
 pub const LC_BUFF: &str = "fracturedhalo-lc-buff";

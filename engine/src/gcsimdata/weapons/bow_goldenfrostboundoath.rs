@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/bow/goldenfrostboundoath.
 
-use crate::types::FrameTable;
-
 pub const DEF_BUFF_KEY: &str = "golden-frostbound-oath-def";
 pub const GEO_BUFF_KEY: &str = "golden-frostbound-oath-geo";
 pub const LCR_BUFF_KEY: &str = "golden-frostbound-oath-lcr";

@@ -2,8 +2,6 @@
 
 //! gcsim's internal/weapons/claymore/powersaw.
 
-use crate::types::FrameTable;
-
 pub const BUFF_DURATION: i32 = 600;
 pub const BUFF_KEY: &str = "portable-power-saw-em";
 pub const ICD_DURATION: i32 = 900;

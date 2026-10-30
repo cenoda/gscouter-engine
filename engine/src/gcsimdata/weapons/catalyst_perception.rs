@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/catalyst/perception.
 
-use crate::types::FrameTable;
-
 pub const BOUNCE_KEY: &str = "eye-of-perception-bounce";

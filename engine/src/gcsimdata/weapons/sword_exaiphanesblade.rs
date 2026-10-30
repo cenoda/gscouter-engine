@@ -2,6 +2,4 @@
 
 //! gcsim's internal/weapons/sword/exaiphanesblade.
 
-use crate::types::FrameTable;
-
 pub const ON_HIT_ICD_KEY: &str = "exaiphanes-blade-on-hit-icd";
