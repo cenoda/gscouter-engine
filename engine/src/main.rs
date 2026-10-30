@@ -9,6 +9,9 @@ mod queue;
 mod rng;
 mod sim;
 mod types;
+mod xingqiu;
+mod yelan;
+mod zhongli;
 
 use std::time::Instant;
 
@@ -24,33 +27,38 @@ fn main() {
     let start = Instant::now();
     let mut results: Vec<(f64, [f64; 4], [f64; 4])> = vec![(0.0, [0.0; 4], [0.0; 4]); iters];
     let abils = std::sync::Mutex::new([[(0.0f64, 0.0f64); 32]; 4]);
-    std::thread::scope(|s| {
-        let chunk = iters.div_ceil(threads);
-        for (t, part) in results.chunks_mut(chunk).enumerate() {
-            let cfg = &cfg;
-            let abils = &abils;
-            s.spawn(move || {
-                for (j, r) in part.iter_mut().enumerate() {
-                    let i = t * chunk + j;
-                    let mut sim = sim::Sim::new(cfg, 1 + i as u64, warmup);
-                    sim.run();
-                    let window = (sim.f - sim.window_start) as f64 / 60.0;
-                    let mut chars = [0.0; 4];
-                    for c in 0..n_chars {
-                        chars[c] = sim.window_char[c] / window;
-                    }
-                    *r = (chars.iter().sum(), chars, sim.waits);
-                    let mut a = abils.lock().unwrap();
-                    for c in 0..4 {
-                        for k in 0..32 {
-                            a[c][k].0 += sim.abils[c][k].0;
-                            a[c][k].1 += sim.abils[c][k].1;
-                        }
-                    }
+    let chunk = iters.div_ceil(threads);
+    let run_part = |t: usize, part: &mut [(f64, [f64; 4], [f64; 4])]| {
+        for (j, r) in part.iter_mut().enumerate() {
+            let i = t * chunk + j;
+            let mut sim = sim::Sim::new(&cfg, 1 + i as u64, warmup);
+            sim.run();
+            let window = (sim.f - sim.window_start) as f64 / 60.0;
+            let mut chars = [0.0; 4];
+            for c in 0..n_chars {
+                chars[c] = sim.window_char[c] / window;
+            }
+            *r = (chars.iter().sum(), chars, sim.waits);
+            let mut a = abils.lock().unwrap();
+            for c in 0..4 {
+                for k in 0..32 {
+                    a[c][k].0 += sim.abils[c][k].0;
+                    a[c][k].1 += sim.abils[c][k].1;
                 }
-            });
+            }
         }
-    });
+    };
+    if threads == 1 {
+        // also the WebAssembly build, which has no threads
+        run_part(0, &mut results);
+    } else {
+        std::thread::scope(|s| {
+            for (t, part) in results.chunks_mut(chunk).enumerate() {
+                let run_part = &run_part;
+                s.spawn(move || run_part(t, part));
+            }
+        });
+    }
     let secs = start.elapsed().as_secs_f64();
 
     let stat = |xs: &[f64]| {

@@ -83,20 +83,9 @@ pub fn pp_charge_frames(prev: i8, next: Action) -> i32 {
 }
 
 impl Sim {
-    fn talent(&self, ci: usize, i: usize) -> usize {
-        // skill +3 from C3, burst +3 from C5
-        let c = &self.chars[ci];
-        let add = match i {
-            1 if c.cons >= 3 => 3,
-            2 if c.cons >= 5 => 3,
-            _ => 0,
-        };
-        (c.talents[i] - 1 + add) as usize
-    }
-
     pub fn hutao_init(&mut self, ci: usize) {
         if self.chars[ci].ascension >= 4 {
-            self.chars[ci].mods.push(Mod { key: ModKey::HutaoA4, kind: ModKind::Stat, affected: st::PYROP, extra: false, hitlag: false, expiry_base: -1, extension: 0 });
+            self.chars[ci].mods.push(Mod::new(ModKey::HutaoA4, ModKind::Stat, st::PYROP, false, false, -1));
         }
     }
 
@@ -185,7 +174,7 @@ impl Sim {
         ai.abil = if low { 13 } else { 12 };
         let cb = CB_HUTAO_HEAL | if self.chars[ci].cons >= 2 { CB_HUTAO_BB } else { 0 };
         self.queue_attack(ai, cb, 0, BURST_HITMARK);
-        self.add_task(Task::ConsumeEnergy { c: ci as u8 }, 68);
+        self.consume_energy(ci, 68);
         self.set_cd_with_delay(ci, Action::Burst, 900, 62);
         ActInfo::new(Frames::Table(&BURST_FRAMES), BURST_FRAMES[0], BURST_FRAMES[Action::Swap as usize], AnimState::Burst)
     }
@@ -212,16 +201,16 @@ impl Sim {
     }
 
     pub fn hutao_apply_bb(&mut self, ci: usize) {
-        if !self.enemy_status_active(ModKey::Other(0)) {
+        if !self.enemy_status_active(ModKey::BloodBlossom) {
             let f = self.f;
             self.queue_enemy_task(Task::HutaoBBTick { c: ci as u8, src: f }, 240);
             self.enemy.bb_src = f;
         }
-        self.enemy_add_status(ModKey::Other(0), 570, true);
+        self.enemy_add_status(ModKey::BloodBlossom, 570, true);
     }
 
     pub fn hutao_bb_tick(&mut self, ci: usize, src: i32) {
-        if self.enemy.bb_src != src || !self.enemy_status_active(ModKey::Other(0)) {
+        if self.enemy.bb_src != src || !self.enemy_status_active(ModKey::BloodBlossom) {
             return;
         }
         let lvl = self.talent(ci, 1);

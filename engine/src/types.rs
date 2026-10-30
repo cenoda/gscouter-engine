@@ -186,7 +186,8 @@ pub enum IcdTag {
 }
 
 /// gcsim's ICD groups that the engine's characters use, with their
-/// tables from `attacks/icd_groups.dm.go`.
+/// tables from `attacks/icd_groups.dm.go` (Yelan's burst group has the
+/// default group's sequences and a 2 s timer).
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum IcdGroup {
     Default,
@@ -209,7 +210,7 @@ impl IcdGroup {
             IcdGroup::Default => &DEFAULT_ELE,
             IcdGroup::PoleExtraAttack => &POLE_ELE,
             IcdGroup::XingqiuBurst => &XQ_BURST_ELE,
-            IcdGroup::YelanBurst => &YELAN_BURST_ELE,
+            IcdGroup::YelanBurst => &DEFAULT_ELE,
         }
     }
     pub fn dmg_seq(self) -> &'static [f64] {
@@ -217,7 +218,7 @@ impl IcdGroup {
             IcdGroup::Default => &DEFAULT_DMG,
             IcdGroup::PoleExtraAttack => &POLE_DMG,
             IcdGroup::XingqiuBurst => &XQ_BURST_DMG,
-            IcdGroup::YelanBurst => &YELAN_BURST_DMG,
+            IcdGroup::YelanBurst => &DEFAULT_DMG,
         }
     }
 }
@@ -237,8 +238,6 @@ static POLE_DMG: [f64; 15] = {
     a[0] = 1.0;
     a
 };
-// Filled in for the team stage from icd_groups.dm.go.
+// Unused: Xingqiu's swords are in the default group.
 static XQ_BURST_ELE: [f64; 1] = [1.0];
 static XQ_BURST_DMG: [f64; 1] = [1.0];
-static YELAN_BURST_ELE: [f64; 1] = [1.0];
-static YELAN_BURST_DMG: [f64; 1] = [1.0];
