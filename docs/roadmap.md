@@ -47,12 +47,13 @@ What had to be in place before dozens of characters, so that they are not rewrit
 
 Progress so far, taken in the order that makes the most library teams supported (`README.md` has the results):
 
-- **10 of 4,570 teams supported** (2 at the start), every build of each passing the comparison runner.
+- **16 of 4,570 teams supported** (2 at the start), every build of each passing the comparison runner.
 - **Electro, overload and electro-charged** (with Fischl), each reaction emitting its event as gcsim's `Reactable.React` does; reaction damage and `REACTION_LVL_BASE` from gcsim's combat package.
 - **HP changes** (with Furina): `Player.Heal` and `Player.Drain` with `OnHeal` and `OnPlayerHPDrain`, overheal, and incoming healing bonus mods. HP debt is still missing.
-- **Content**: Fischl and Furina; Noblesse Oblige, Golden Troupe, Cinder City, Marechaussee Hunter; the Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane; Zhongli's normal attacks.
+- **Swirl, the player's aura and electro resonance** (with Kazuha and Raiden): swirl's hit on its own enemy, reaction bonus mods, Bennett's self infusion read by absorb checks; OnEnergyBurst and OnParticleReceived.
+- **Content**: Fischl, Furina, Kazuha, Raiden; Noblesse Oblige, Golden Troupe, Cinder City, Marechaussee Hunter, Viridescent Venerer; the Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane, Xiphos' Moonlight; Zhongli's normal attacks.
 - **Probes** in the runner, so that content no supported team carries is compared too.
-- Viridescent Venerer, electro resonance and cryo resonance need a second anemo, electro or cryo character, and swirl or the cryo reactions, before they can be checked; Kazuha with swirl comes next.
+- Cryo resonance (774 teams) needs cryo characters and the cryo aura and reactions (melt, freeze, superconduct, cryo swirl and crystallize); it comes next, with Rosaria and Escoffier the closest.
 
 - **Reactions.** Overloaded, superconduct, electro-charged, swirl, frozen and shatter, burning, bloom, hyperbloom and burgeon, quicken, aggravate and spread, and the lunar reactions. Only vaporize and crystallize (without shards) exist; reaction events are already emitted, so sets like Instructor work for the new ones once they emit.
 - **Resonances.** Electro (961 teams), cryo (774), geo (418), dendro (328), anemo (263) are named errors now.
