@@ -637,6 +637,8 @@ func overall(ms []Metric) string {
 // burstReady is a rotation's check that a burst is ready.
 var burstReady = regexp.MustCompile(`\.\w+\.burst\.ready\b`)
 
+var spacedEq = regexp.MustCompile(`\s*=\s*`)
+
 var statsLine = regexp.MustCompile(`^(\s*)(\S+)(\s+add\s+stats\s+)(.*?);(.*)$`)
 
 // apply moves the build's stats: each op scales its stat in every
@@ -656,7 +658,8 @@ func (v variant) apply(build string) string {
 		}
 		var keys []string
 		vals := map[string]float64{}
-		for _, kv := range strings.Fields(m[4]) {
+		// gcsl allows spaces around "=" (hp% = 0.466)
+		for _, kv := range strings.Fields(spacedEq.ReplaceAllString(m[4], "=")) {
 			k, s, ok := strings.Cut(kv, "=")
 			x, err := product(s)
 			if !ok || err != nil {
