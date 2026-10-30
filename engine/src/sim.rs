@@ -1295,8 +1295,9 @@ impl Sim {
         if ev.info.durability > 0.0 {
             ev.info.durability *= self.will_apply_ele(&ev.info);
             if ev.info.durability > 0.0 && ev.info.element != Element::Physical {
-                for _ in 0..self.react(&mut ev) {
-                    self.emit(Event::Reaction(&ev));
+                let (rs, n) = self.react(&mut ev);
+                for &r in &rs[..n] {
+                    self.emit(Event::Reaction(r, &ev));
                 }
             }
         }
@@ -1317,15 +1318,16 @@ impl Sim {
     }
 
     /// gcsim's Reactable.React for the elements of this team.
-    /// Returns how many reactions the attack caused.
-    fn react(&mut self, ev: &mut AttackEvent) -> u32 {
+    /// Returns the reactions the attack caused, in order.
+    fn react(&mut self, ev: &mut AttackEvent) -> ([Reaction; 2], usize) {
         let a = &mut self.enemy.aura;
         let dur = ev.info.durability;
+        let mut rs = [Reaction::Vaporize; 2];
         let mut n = 0;
         match ev.info.element {
             Element::Pyro => {
                 if dur < ZERO_DUR || a.get(AURA_HYDRO) < ZERO_DUR {
-                    return 0;
+                    return (rs, 0);
                 }
                 let consumed = a.reduce(AURA_HYDRO, dur, 0.5);
                 ev.info.amp_mult = 1.5;
@@ -1336,7 +1338,7 @@ impl Sim {
             }
             Element::Hydro => {
                 if dur < ZERO_DUR || a.get(AURA_PYRO) < ZERO_DUR {
-                    return 0;
+                    return (rs, 0);
                 }
                 let consumed = a.reduce(AURA_PYRO, dur, 2.0);
                 ev.info.amp_mult = 2.0;
@@ -1360,12 +1362,13 @@ impl Sim {
                     let consumed = self.enemy.aura.reduce(m, ev.info.durability, 0.5);
                     ev.info.durability = (ev.info.durability - consumed).max(0.0);
                     ev.reacted = true;
+                    rs[n] = if m == AURA_HYDRO { Reaction::CrystallizeHydro } else { Reaction::CrystallizePyro };
                     n += 1;
                 }
             }
             _ => {}
         }
-        n
+        (rs, n)
     }
 
     fn calc(&mut self, ev: &mut AttackEvent, grp: f64) -> (f64, bool) {

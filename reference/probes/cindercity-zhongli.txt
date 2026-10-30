@@ -1,0 +1,3 @@
+# Zhongli with Cinder City 4: his crystallizes buff geo and the aura.
+team hutao-xingqiu-zhongli-yelan
+zhongli add set="scrolloftheheroofcindercity" count=4;

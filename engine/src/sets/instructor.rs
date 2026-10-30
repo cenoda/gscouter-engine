@@ -26,7 +26,7 @@ impl SetImpl for Set {
 
     /// A reaction by the wearer, on field: 120 EM to the team for 8 s.
     fn event(s: &mut Sim, ci: usize, _: usize, e: &Event) {
-        let Event::Reaction(ev) = *e else { return };
+        let Event::Reaction(_, ev) = *e else { return };
         if s.player.active as usize != ci || ev.info.actor as usize != ci {
             return;
         }

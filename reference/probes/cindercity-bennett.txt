@@ -1,0 +1,3 @@
+# Bennett with Cinder City 4: his vaporizes buff pyro and hydro.
+team hutao-yelan-bennett-xingqiu
+bennett add set="scrolloftheheroofcindercity" count=4;

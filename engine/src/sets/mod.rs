@@ -8,4 +8,5 @@ crate::sets! {
     Instructor => instructor,
     NoblesseOblige => noblesseoblige,
     GoldenTroupe => goldentroupe,
+    CinderCity => scrolloftheheroofcindercity,
 }

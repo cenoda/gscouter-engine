@@ -187,3 +187,22 @@ impl IcdGroup {
         icd::GROUPS[self.0 as usize].2
     }
 }
+
+/// gcsim's info.ReactionType, for the reactions the engine causes.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Reaction {
+    Vaporize,
+    CrystallizeHydro,
+    CrystallizePyro,
+}
+
+impl Reaction {
+    /// The elements gcsim's Cinder City counts as involved in it.
+    pub fn elements(self) -> &'static [Element] {
+        match self {
+            Reaction::Vaporize => &[Element::Pyro, Element::Hydro],
+            Reaction::CrystallizeHydro => &[Element::Geo, Element::Hydro],
+            Reaction::CrystallizePyro => &[Element::Geo, Element::Pyro],
+        }
+    }
+}

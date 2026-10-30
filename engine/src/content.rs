@@ -51,9 +51,9 @@ pub enum Event<'a> {
     Swap { prev: usize, next: usize },
     /// OnStateChange to this state.
     StateChange(AnimState),
-    /// A reaction event (gcsim's OnVaporize, OnCrystallize and the
-    /// others), with the attack that caused it.
-    Reaction(&'a AttackEvent),
+    /// A reaction event (gcsim's OnVaporize, OnCrystallizeHydro and the
+    /// others) on the enemy, with the attack that caused it.
+    Reaction(Reaction, &'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -64,7 +64,7 @@ impl Event<'_> {
             Event::Burst => EventKind::Burst,
             Event::Swap { .. } => EventKind::Swap,
             Event::StateChange(_) => EventKind::StateChange,
-            Event::Reaction(_) => EventKind::Reaction,
+            Event::Reaction(..) => EventKind::Reaction,
         }
     }
 }
