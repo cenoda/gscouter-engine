@@ -40,8 +40,9 @@ pub enum EventKind {
     Drain,
     ParticleReceived,
     EnergyBurst,
+    EnemyHit,
 }
-pub const N_EVENTS: usize = 10;
+pub const N_EVENTS: usize = 11;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -62,12 +63,16 @@ pub enum Event<'a> {
     /// target (None for the whole party), the character healed, the HP it
     /// gained and the overheal.
     Heal { caller: usize, target: Option<usize>, on: usize, amount: f64, overheal: f64 },
-    /// OnPlayerHPDrain: the character drained and the HP it lost.
-    Drain { on: usize, amount: f64 },
+    /// OnPlayerHPDrain: the character drained, the HP it lost, and whether
+    /// it came from outside the party (gcsim's DrainInfo.External).
+    Drain { on: usize, amount: f64, external: bool },
     /// OnParticleReceived, after the party took a particle.
     ParticleReceived,
     /// OnEnergyBurst: a character's burst drained amount of its energy.
     EnergyBurst { on: usize, amount: f64 },
+    /// OnEnemyHit, before attack mods: a subscriber adds flat damage to
+    /// the hit through `Sim::hit_flat`.
+    EnemyHit(&'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -83,6 +88,7 @@ impl Event<'_> {
             Event::Drain { .. } => EventKind::Drain,
             Event::ParticleReceived => EventKind::ParticleReceived,
             Event::EnergyBurst { .. } => EventKind::EnergyBurst,
+            Event::EnemyHit(_) => EventKind::EnemyHit,
         }
     }
 }
@@ -91,6 +97,8 @@ impl Event<'_> {
 pub trait Character {
     /// gcsim's key name.
     const KEY: &'static str;
+    /// The highest constellation it implements; a higher one is an error.
+    const MAX_CONS: i32 = 6;
     type State;
     fn new_state(cs: &CharSetup) -> Self::State;
 
@@ -117,6 +125,9 @@ pub trait Character {
     fn high_plunge(_s: &mut Sim, _ci: usize, _p: &Params) -> ActInfo {
         unreachable!()
     }
+    fn low_plunge(_s: &mut Sim, _ci: usize, _p: &Params) -> ActInfo {
+        unreachable!()
+    }
     /// gcsim's errors from an action that cannot be used now, such as a
     /// plunge on the ground: the fight stops with it.
     fn invalid(s: &Sim, _ci: usize, a: Action, _p: &Params) -> Option<String> {
@@ -137,7 +148,7 @@ pub trait Character {
     /// A task it queued with `Task::Char`.
     fn task(_s: &mut Sim, _ci: usize, _id: u8, _arg: i32) {}
     /// The callbacks (its own bits) of an attack of its that hit.
-    fn attack_cb(_s: &mut Sim, _ci: usize, _cbs: u16) {}
+    fn attack_cb(_s: &mut Sim, _ci: usize, _cbs: u16, _ev: &AttackEvent) {}
     /// Changes to an attack of its as it is snapshot.
     fn snapshot(_s: &Sim, _ci: usize, _info: &mut AttackInfo) {}
     /// The amount of a mod it owns on character `on`; false when the mod
@@ -149,7 +160,7 @@ pub trait Character {
     fn attack_mod(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _ev: &mut AttackEvent) {}
     fn event(_s: &mut Sim, _ci: usize, _e: &Event) {}
     /// The frames of an action of its whose ActInfo has Frames::Char.
-    fn frames(_id: u8, _arg: i8, _next: Action) -> i32 {
+    fn frames(_id: u8, _arg: i16, _next: Action) -> i32 {
         unreachable!()
     }
     /// An action of its with OnRemoved::Char ends, for the next state.
@@ -164,6 +175,9 @@ pub trait Character {
     }
     /// A construct of its expired.
     fn construct_expired(_s: &mut Sim, _ci: usize, _key: ModKey) {}
+    /// A gadget of its ticked, `timer` ticks after it was added (it may
+    /// have just expired and be gone).
+    fn gadget_tick(_s: &mut Sim, _ci: usize, _id: u8, _timer: i32) {}
 }
 
 /// gcsim's template NextQueueItemIsValid: swords and polearms charge
@@ -251,6 +265,10 @@ macro_rules! chars {
                 $(if name == $m::Char::KEY { return Some(CharKind::$kind); })*
                 None
             }
+            pub fn max_cons(self) -> i32 {
+                use $crate::content::Character;
+                match self { $(CharKind::$kind => $m::Char::MAX_CONS),* }
+            }
             pub fn new_state(self, cs: &$crate::sim::CharSetup) -> CharState {
                 use $crate::content::Character;
                 match self { $(CharKind::$kind => CharState::$kind($m::Char::new_state(cs))),* }
@@ -279,6 +297,8 @@ macro_rules! chars {
             #[inline]
             pub fn high_plunge(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::high_plunge(s, ci, p)),* } }
             #[inline]
+            pub fn low_plunge(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::low_plunge(s, ci, p)),* } }
+            #[inline]
             pub fn own_hit(k: CharKind, s: &Sim, ci: usize, ev: &mut AttackEvent) { match k { $(CharKind::$kind => $m::Char::own_hit(s, ci, ev)),* } }
             pub fn invalid(k: CharKind, s: &Sim, ci: usize, a: Action, p: &Params) -> Option<String> { match k { $(CharKind::$kind => $m::Char::invalid(s, ci, a, p)),* } }
             pub fn react_bonus(k: CharKind, s: &Sim, ci: usize, on: usize, m: &Mod, info: &AttackInfo) -> f64 { match k { $(CharKind::$kind => $m::Char::react_bonus(s, ci, on, m, info)),* } }
@@ -289,7 +309,7 @@ macro_rules! chars {
             #[inline]
             pub fn task(k: CharKind, s: &mut Sim, ci: usize, id: u8, arg: i32) { match k { $(CharKind::$kind => $m::Char::task(s, ci, id, arg)),* } }
             #[inline]
-            pub fn attack_cb(k: CharKind, s: &mut Sim, ci: usize, cbs: u16) { match k { $(CharKind::$kind => $m::Char::attack_cb(s, ci, cbs)),* } }
+            pub fn attack_cb(k: CharKind, s: &mut Sim, ci: usize, cbs: u16, ev: &AttackEvent) { match k { $(CharKind::$kind => $m::Char::attack_cb(s, ci, cbs, ev)),* } }
             #[inline]
             pub fn snapshot(k: CharKind, s: &Sim, ci: usize, info: &mut AttackInfo) { match k { $(CharKind::$kind => $m::Char::snapshot(s, ci, info)),* } }
             #[inline]
@@ -299,13 +319,14 @@ macro_rules! chars {
             #[inline]
             pub fn event(k: CharKind, s: &mut Sim, ci: usize, e: &Event) { match k { $(CharKind::$kind => $m::Char::event(s, ci, e)),* } }
             #[inline]
-            pub fn frames(k: CharKind, id: u8, arg: i8, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames(id, arg, next)),* } }
+            pub fn frames(k: CharKind, id: u8, arg: i16, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames(id, arg, next)),* } }
             #[inline]
             pub fn on_removed(k: CharKind, s: &mut Sim, ci: usize, id: u8, next: AnimState) { match k { $(CharKind::$kind => $m::Char::on_removed(s, ci, id, next)),* } }
             #[inline]
             pub fn charge_stam(k: CharKind, s: &Sim, ci: usize) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::charge_stam(s, ci)),* } }
             pub fn condition(k: CharKind, s: &Sim, ci: usize, f: &[String]) -> Option<Result<Num, String>> { match k { $(CharKind::$kind => $m::Char::condition(s, ci, f)),* } }
             pub fn construct_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::construct_expired(s, ci, key)),* } }
+            pub fn gadget_tick(k: CharKind, s: &mut Sim, ci: usize, id: u8, timer: i32) { match k { $(CharKind::$kind => $m::Char::gadget_tick(s, ci, id, timer)),* } }
         }
     };
 }

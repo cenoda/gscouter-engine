@@ -72,8 +72,10 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
     let mut errs = Vec::new();
     let name = char_name(p.key);
     let kind = char_kind(name);
-    if kind.is_none() {
-        errs.push(format!("unsupported: character {name}"));
+    match kind {
+        None => errs.push(format!("unsupported: character {name}")),
+        Some(k) if p.cons > k.max_cons() => errs.push(format!("unsupported: constellation {name} C{}", p.cons)),
+        _ => {}
     }
     let wname = weapon_name(p.weapon.key);
     let weapon = WeaponKind::from_name(wname);
@@ -168,7 +170,7 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
                 count[d.element as usize] += 1;
             }
         }
-        for (e, name) in [(3, "dendro"), (5, "cryo"), (6, "anemo"), (7, "geo")] {
+        for (e, name) in [(3, "dendro"), (6, "anemo"), (7, "geo")] {
             if count[e] >= 2 {
                 errs.push(format!("unsupported: resonance {name}"));
             }
@@ -206,5 +208,7 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
         defhalt: p.defhalt,
         ignore_burst_energy: p.ignore_burst_energy,
         enemy_hp: t.hp,
+        target_dist: t.pos.0.hypot(t.pos.1),
+        target_radius: t.radius,
     })
 }

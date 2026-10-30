@@ -22,7 +22,7 @@ impl WeaponImpl for Weapon {
 
     /// DMG against an enemy with hydro or pyro.
     fn attack_mod(s: &Sim, ci: usize, _: usize, _: &Mod, ev: &mut AttackEvent) {
-        if s.enemy.aura.get(AURA_HYDRO) > ZERO_DUR || s.enemy.aura.get(AURA_PYRO) > ZERO_DUR {
+        if s.enemy_aura_contains(Element::Hydro) || s.enemy_aura_contains(Element::Pyro) {
             ev.stats[st::DMGP] += 0.16 + s.chars[ci].refine as f64 * 0.04;
         }
     }

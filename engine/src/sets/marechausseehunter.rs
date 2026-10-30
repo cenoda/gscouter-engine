@@ -48,7 +48,7 @@ impl SetImpl for Set {
             return;
         }
         match *e {
-            Event::Drain { on, amount } if on == ci && amount > 0.0 => {}
+            Event::Drain { on, amount, .. } if on == ci && amount > 0.0 => {}
             Event::Heal { on, amount, overheal, .. } if on == ci && amount > 0.0 && (amount - overheal).abs() > 1e-9 => {}
             _ => return,
         }

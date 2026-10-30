@@ -127,7 +127,7 @@ impl Character for Char {
         }
     }
 
-    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16) {
+    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
         if cbs & CB_PARTICLE != 0 {
             particle_cb(s, ci);
         }

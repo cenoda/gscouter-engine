@@ -21,7 +21,7 @@ pub struct State {
     q_tick: AttackEvent,
     q_tick_absorb: AttackEvent,
     /// A4's per-element guard: no second proc in the same frame.
-    a4_icd: [i32; 3],
+    a4_icd: [i32; 4],
 }
 
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
@@ -29,7 +29,7 @@ const BURST_STATUS: ModKey = ModKey::new(g::BURST_STATUS);
 const C2: ModKey = ModKey::new("kazuha-c2");
 const C6_INFUSION: ModKey = ModKey::new("kazuha-c6-infusion");
 const C6_DMG: ModKey = ModKey::new("kazuha-c6-dmgup");
-const A4: [ModKey; 3] = [ModKey::new("kazuha-a4-pyro"), ModKey::new("kazuha-a4-hydro"), ModKey::new("kazuha-a4-electro")];
+const A4: [ModKey; 4] = [ModKey::new("kazuha-a4-pyro"), ModKey::new("kazuha-a4-hydro"), ModKey::new("kazuha-a4-electro"), ModKey::new("kazuha-a4-cryo")];
 
 const CB_PARTICLE_3: u16 = 1 << 0;
 const CB_PARTICLE_4: u16 = 1 << 1;
@@ -46,9 +46,8 @@ const TASK_Q_TICK: u8 = 5;
 const TASK_C2: u8 = 6;
 const TASK_C6: u8 = 7;
 
-/// The elements Chihayaburu and the burst absorb, in gcsim's order. Cryo
-/// is last; the engine has no cryo aura.
-const ABSORB: [(usize, Element); 3] = [(AURA_PYRO, Element::Pyro), (AURA_HYDRO, Element::Hydro), (AURA_ELECTRO, Element::Electro)];
+/// The elements Chihayaburu and the burst absorb, in gcsim's order.
+const ABSORB: [(usize, Element); 4] = [(AURA_PYRO, Element::Pyro), (AURA_HYDRO, Element::Hydro), (AURA_ELECTRO, Element::Electro), (AURA_CRYO, Element::Cryo)];
 
 fn absorb_check(s: &Sim) -> Element {
     s.absorb_check(&ABSORB)
@@ -68,7 +67,7 @@ impl Character for Char {
             q_field_src: 0,
             q_tick: empty,
             q_tick_absorb: empty,
-            a4_icd: [-1; 3],
+            a4_icd: [-1; 4],
         }
     }
 
@@ -158,6 +157,8 @@ impl Character for Char {
         }
         let mut ai = AttackInfo::new(ci, AttackTag::Plunge, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 25.0, g::HIGH_PLUNGE[lvl]);
         ai.abil = "High Plunge";
+        ai.blunt = true;
+        ai.poise = 150.0;
         ai.ignore_infusion = true;
         s.queue_attack(ai, 0, hitmark, hitmark);
         // A1: the absorbed element
@@ -165,6 +166,8 @@ impl Character for Char {
         if absorbed != Element::NoElement {
             let mut ai = AttackInfo::new(ci, AttackTag::Plunge, icd::TAG_NONE, icd::GROUP_DEFAULT, absorbed, 25.0, 2.0);
             ai.abil = "Soumon Swordsmanship (A1)";
+            ai.blunt = true;
+            ai.poise = 20.0;
             ai.ignore_infusion = true;
             s.queue_attack(ai, 0, hitmark - 1, hitmark - 1);
             s.st_mut::<State>(ci).a1_absorb = Element::NoElement;
@@ -263,7 +266,7 @@ impl Character for Char {
         }
     }
 
-    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16) {
+    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
         if s.mod_active(ci, PARTICLE_ICD) {
             return;
         }
@@ -293,6 +296,7 @@ impl Character for Char {
             Reaction::SwirlPyro => (0, st::PYROP),
             Reaction::SwirlHydro => (1, st::HYDROP),
             Reaction::SwirlElectro => (2, st::ELECTROP),
+            Reaction::SwirlCryo => (3, st::CRYOP),
             _ => return,
         };
         if ev.info.actor as usize != ci {

@@ -21,7 +21,7 @@ fn key(e: Element) -> ModKey {
 }
 
 fn is_swirl(tag: AttackTag) -> bool {
-    matches!(tag, AttackTag::SwirlPyro | AttackTag::SwirlHydro | AttackTag::SwirlElectro)
+    matches!(tag, AttackTag::SwirlPyro | AttackTag::SwirlHydro | AttackTag::SwirlElectro | AttackTag::SwirlCryo)
 }
 
 impl SetImpl for Set {
@@ -57,6 +57,7 @@ impl SetImpl for Set {
                 Reaction::SwirlPyro => Element::Pyro,
                 Reaction::SwirlHydro => Element::Hydro,
                 Reaction::SwirlElectro => Element::Electro,
+                Reaction::SwirlCryo => Element::Cryo,
                 _ => return,
             },
             Event::EnemyDamage(ev) if ev.info.actor as usize == ci && is_swirl(ev.info.tag) => ev.info.element,

@@ -236,10 +236,10 @@ impl Character for Char {
         // a frame after the hit, so that C6 reads the old Arkhe
         let to_pneuma = !s.st::<State>(ci).pneuma;
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_ARKHE_SWITCH, arg: to_pneuma as i32 }, g::CHARGE_HITMARK - windup + 1);
-        ActInfo::new(Frames::Char { id: FRAMES_CHARGE, arg: windup as i8 }, g::CHARGE_FRAMES[0] - windup, g::CHARGE_HITMARK - windup, AnimState::Charge)
+        ActInfo::new(Frames::Char { id: FRAMES_CHARGE, arg: windup as i16 }, g::CHARGE_FRAMES[0] - windup, g::CHARGE_HITMARK - windup, AnimState::Charge)
     }
 
-    fn frames(_: u8, windup: i8, next: Action) -> i32 {
+    fn frames(_: u8, windup: i16, next: Action) -> i32 {
         g::CHARGE_FRAMES[next as usize] - windup as i32
     }
 
@@ -352,7 +352,7 @@ impl Character for Char {
         }
     }
 
-    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16) {
+    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
         if cbs & CB_ARKHE != 0 {
             arkhe_cb(s, ci);
         }
@@ -380,7 +380,7 @@ impl Character for Char {
                 let amt = (amount - overheal) / s.max_hp(on) * 100.0;
                 queue_fanfare_gain(s, ci, amt);
             }
-            Event::Drain { on, amount } => {
+            Event::Drain { on, amount, .. } => {
                 if !s.mod_active(ci, BURST) || amount <= 0.0 {
                     return;
                 }

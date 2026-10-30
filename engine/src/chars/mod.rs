@@ -13,4 +13,12 @@ crate::chars! {
     Furina => furina,
     Kazuha => kazuha,
     Raiden => raiden,
+    Xiangling => xiangling,
+    Yoimiya => yoimiya,
+    Chevreuse => chevreuse,
+    Rosaria => rosaria,
+    Escoffier => escoffier,
+    Diluc => diluc,
+    Gaming => gaming,
+    Candace => candace,
 }

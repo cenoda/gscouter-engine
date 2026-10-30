@@ -1,0 +1,3 @@
+# Crimson Witch of Flames on Hu Tao (its vaporize bonus and skill stacks).
+team hutao-xingqiu-xiangling-bennett
+hutao add set="crimsonwitchofflames" count=4;

@@ -171,6 +171,8 @@ impl Character for Char {
         let lvl = s.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_FISCHL, Element::Electro, 25.0, g::BURST[lvl]);
         ai.abil = "Midnight Phantasmagoria";
+        ai.blunt = true;
+        ai.poise = 150.0;
         s.queue_attack(ai, 0, g::BURST_HITMARK, g::BURST_HITMARK);
         if s.chars[ci].cons >= 4 {
             // C4's hit lands before the burst's
@@ -237,7 +239,7 @@ impl Character for Char {
         }
     }
 
-    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16) {
+    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
         if cbs & CB_PARTICLE == 0 || s.mod_active(ci, PARTICLE_ICD) {
             return;
         }
@@ -326,7 +328,7 @@ fn with_oz_snapshot(s: &Sim, ci: usize, ai: AttackInfo) -> AttackEvent {
 /// A4: an electro reaction by the active character while Oz is out calls
 /// down Thundering Retribution, with Oz's snapshot.
 fn a4(s: &mut Sim, ci: usize, r: Reaction, ev: &AttackEvent) {
-    if !matches!(r, Reaction::Overload | Reaction::ElectroCharged | Reaction::SwirlElectro | Reaction::CrystallizeElectro) {
+    if !matches!(r, Reaction::Overload | Reaction::ElectroCharged | Reaction::Superconduct | Reaction::SwirlElectro | Reaction::CrystallizeElectro) {
         return;
     }
     let active = s.player.active as usize;

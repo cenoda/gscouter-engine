@@ -1,0 +1,3 @@
+# Yelan C2 (the extra throw) with Hu Tao and Xiangling.
+team hutao-yelan-xiangling-xingqiu
+yelan char lvl=90/90 cons=2 talent=9,9,9;

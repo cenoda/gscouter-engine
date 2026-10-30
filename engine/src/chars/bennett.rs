@@ -130,7 +130,7 @@ impl Character for Char {
         }
     }
 
-    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16) {
+    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
         if cbs & CB_PRESS_PARTICLE != 0 && !s.mod_active(ci, PRESS_PARTICLE_ICD) {
             s.add_status(ci, PRESS_PARTICLE_ICD, 18, true);
             let count = if s.rng.float64() < 0.25 { 3.0 } else { 2.0 };

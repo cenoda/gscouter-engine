@@ -1,0 +1,3 @@
+# Hu Tao C6 (Furina drains her below 25%).
+team hutao-furina-yelan-xingqiu
+hutao char lvl=90/90 cons=6 talent=9,9,9;

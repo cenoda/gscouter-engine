@@ -1,5 +1,5 @@
-//! Zhongli's normal attacks, hold skill, stele and Jade Shield, from
-//! gcsim's internal/characters/zhongli.
+//! Zhongli's normal attacks, skill (pressed and held), steles and Jade
+//! Shield, A4 and C1, from gcsim's internal/characters/zhongli.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::zhongli as g;
@@ -40,6 +40,8 @@ const TASK_RESONANCE: u8 = 3;
 
 impl Character for Char {
     const KEY: &'static str = "zhongli";
+    // C2, C4 and C6 are not ported
+    const MAX_CONS: i32 = 1;
     type State = State;
 
     fn new_state(cs: &CharSetup) -> State {
@@ -53,8 +55,7 @@ impl Character for Char {
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
             Action::Attack => None,
-            Action::Skill if p.get("hold").unwrap_or(0) > 0 => None,
-            Action::Skill => Some("skill (press)".into()),
+            Action::Skill => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
     }
@@ -89,14 +90,23 @@ impl Character for Char {
         info
     }
 
-    fn skill(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+    fn skill(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        let nostele = p.get("hold_nostele").unwrap_or(0) > 0;
+        if p.get("hold").unwrap_or(0) <= 0 && !nostele {
+            s.add_task(Task::Char { c: ci as u8, id: TASK_NEW_STELE, arg: 0 }, g::SKILL_PRESS_HIMARK);
+            s.set_cd_with_delay(ci, Action::Skill, 240, 22);
+            let t = &g::SKILL_PRESS_FRAMES;
+            return ActInfo::new(Frames::Table(t), t[0], t[Action::Dash as usize], AnimState::Skill);
+        }
         let lvl = s.talent(ci, 1);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Geo, 25.0, g::SKILL_HOLD[lvl]);
         ai.abil = "Stone Stele (Hold)";
+        ai.blunt = true;
+        ai.poise = 142.9;
         ai.flat_dmg = a4_skill(s, ci);
         s.queue_attack(ai, 0, 0, g::SKILL_HOLD_HITMARK);
         let st = s.st::<State>(ci);
-        if st.stele_count < st.max_stele {
+        if st.stele_count < st.max_stele && !nostele {
             s.add_task(Task::Char { c: ci as u8, id: TASK_NEW_STELE, arg: 0 }, g::SKILL_HOLD_HITMARK);
         }
         s.add_task(Task::Char { c: ci as u8, id: TASK_JADE_SHIELD, arg: 0 }, g::SKILL_HOLD_HITMARK);
@@ -114,7 +124,7 @@ impl Character for Char {
         }
     }
 
-    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16) {
+    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
         if cbs & CB_PARTICLE != 0 {
             particle_cb(s, ci);
         }
@@ -135,8 +145,8 @@ fn a4_skill(s: &Sim, ci: usize) -> f64 {
     0.019 * s.max_hp(ci)
 }
 
-fn stele(s: &Sim, ci: usize) -> Option<&Construct> {
-    s.constructs.iter().find(|c| c.owner as usize == ci && c.key == STELE)
+fn steles(s: &Sim, ci: usize) -> impl Iterator<Item = &Construct> {
+    s.constructs.iter().filter(move |c| c.owner as usize == ci && c.key == STELE)
 }
 
 fn new_stele(s: &mut Sim, ci: usize) {
@@ -144,35 +154,37 @@ fn new_stele(s: &mut Sim, ci: usize) {
     let flat = a4_skill(s, ci);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Geo, 50.0, g::SKILL[lvl]);
     ai.abil = "Stone Stele (Initial)";
+    ai.blunt = true;
+    ai.poise = 200.0;
     ai.flat_dmg = flat;
     s.queue_attack(ai, CB_PARTICLE, 0, 0);
 
     let f = s.f;
-    let had = stele(s, ci).is_some();
-    let st = s.st_mut::<State>(ci);
-    if had && st.stele_count == st.max_stele {
-        // replaced: the old one is destroyed
-        if st.stele_count > 0 {
-            st.stele_count -= 1;
-        }
-    }
-    st.stele_count = 1;
-    s.constructs.retain(|c| !(c.owner as usize == ci && c.key == STELE));
-    s.constructs.push(Construct { owner: ci as u8, key: STELE, src: f, expiry: f + 1860 });
+    let num = steles(s, ci).count() as i32;
+    let refresh = num == s.st::<State>(ci).max_stele;
+    s.new_construct(Construct { owner: ci as u8, key: STELE, src: f, expiry: f + 1860 }, refresh);
+    s.st_mut::<State>(ci).stele_count = steles(s, ci).count() as i32;
 
     let mut tick = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Geo, 25.0, g::SKILL_TICK[lvl]);
     tick.abil = "Stone Stele (Tick)";
+    tick.blunt = true;
+    tick.poise = 0.0;
     tick.flat_dmg = flat;
     s.st_mut::<State>(ci).stele_snap = s.snapshot_event(tick, 0);
     s.add_task(Task::Char { c: ci as u8, id: TASK_RESONANCE, arg: f }, 120);
 }
 
+/// A stele's tick: its own hit, and one for each other construct (not a
+/// stele) near it, which is every one with no positions.
 fn resonance(s: &mut Sim, ci: usize, src: i32) {
-    if stele(s, ci).map(|c| c.src) != Some(src) {
+    if !s.constructs.iter().any(|c| c.src == src) {
         return;
     }
     let ev = s.st::<State>(ci).stele_snap;
-    s.queue_attack_with_snap(ev, CB_PARTICLE, 0);
+    let others = s.constructs.iter().filter(|c| !(c.owner as usize == ci && c.key == STELE)).count();
+    for _ in 0..1 + others {
+        s.queue_attack_with_snap(ev, CB_PARTICLE, 0);
+    }
     s.add_task(Task::Char { c: ci as u8, id: TASK_RESONANCE, arg: src }, 120);
 }
 

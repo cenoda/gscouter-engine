@@ -25,4 +25,9 @@ crate::weapons! {
     Slingshot => slingshot,
     DragonsBane => dragonsbane,
     XiphosMoonlight => xiphosmoonlight,
+    TheCatch => thecatch,
+    Rust => rust,
+    SerpentSpine => serpentspine,
+    LionsRoar => lionsroar,
+    TheViridescentHunt => theviridescenthunt,
 }

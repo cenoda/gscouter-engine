@@ -157,6 +157,8 @@ pub fn mod_add(mods: &mut Vec<Mod>, m: Mod) {
 
 pub const PYRO_RESONANCE: ModKey = ModKey::new("pyro-res");
 pub const HYDRO_RESONANCE: ModKey = ModKey::new("hydro-res-hpp");
+pub const CRYO_RESONANCE: ModKey = ModKey::new("cryo-res");
+const SUPERCONDUCT_SHRED: ModKey = ModKey::new("superconduct-phys-shred");
 
 // ---------------------------------------------------------------- attacks
 
@@ -179,6 +181,12 @@ pub struct AttackInfo {
     pub amp_mult: f64,
     pub ignore_def: f64,
     pub ignore_infusion: bool,
+    /// gcsim's StrikeTypeBlunt, and the attack's PoiseDMG: they break
+    /// frozen.
+    pub blunt: bool,
+    pub poise: f64,
+    /// gcsim's SourceIsSim: no attack mods and no ICD, and not recorded.
+    pub sim: bool,
 }
 
 impl AttackInfo {
@@ -201,6 +209,9 @@ impl AttackInfo {
             amp_mult: 1.0,
             ignore_def: 0.0,
             ignore_infusion: false,
+            blunt: false,
+            poise: 0.0,
+            sim: false,
         }
     }
 }
@@ -261,7 +272,7 @@ pub enum Frames {
     Table(&'static FrameTable),
     Attack { table: &'static FrameTable, atkspd: f64 },
     /// The character's own frames function, with an argument.
-    Char { id: u8, arg: i8 },
+    Char { id: u8, arg: i16 },
     Dash { len: i32, jump: i32 },
     Const(i32),
 }
@@ -421,13 +432,19 @@ pub struct IcdState {
 }
 
 pub const ZERO_DUR: f64 = 0.00000000001;
-/// Aura slots the engine models, in gcsim's ReactionModKey order:
-/// electro, pyro, hydro. Cryo, dendro and their reactions do not exist in
-/// the engine yet, and nothing it implements applies them.
+/// Aura slots the engine models: electro, pyro, hydro, cryo and frozen.
+/// Dendro and its reactions do not exist in the engine yet, and nothing it
+/// implements applies dendro.
 pub const AURA_ELECTRO: usize = 0;
 pub const AURA_PYRO: usize = 1;
 pub const AURA_HYDRO: usize = 2;
-const N_AURAS: usize = 3;
+pub const AURA_CRYO: usize = 3;
+pub const AURA_FROZEN: usize = 4;
+const N_AURAS: usize = 5;
+/// Frozen's decay ramps up by this each frame frozen lasts, and down by
+/// twice it to the cap after (gcsim's frzDelta and frzDecayCap).
+const FRZ_DELTA: f64 = 2.5 / (60.0 * 60.0);
+const FRZ_DECAY_CAP: f64 = 10.0 / 60.0;
 
 #[derive(Clone, Copy, Default)]
 pub struct Aura {
@@ -438,6 +455,12 @@ pub struct Aura {
 }
 
 impl Aura {
+    /// A reactable's aura as gcsim's Init sets it up.
+    pub fn new() -> Aura {
+        let mut a = Aura::default();
+        a.decay[AURA_FROZEN] = FRZ_DECAY_CAP;
+        a
+    }
     #[inline]
     pub fn get(&self, m: usize) -> f64 {
         let d = &self.dur[m];
@@ -468,8 +491,10 @@ impl Aura {
         self.reduce_mod(m, red);
         red / factor
     }
-    fn tick(&mut self) {
-        for m in 0..N_AURAS {
+    /// gcsim's Reactable.Tick; true when frozen ran out this tick (its
+    /// checkFreeze, which the caller runs).
+    fn tick(&mut self) -> bool {
+        for m in 0..AURA_FROZEN {
             if !self.live[m] {
                 continue;
             }
@@ -480,6 +505,47 @@ impl Aura {
                 }
             } else if self.below(m, ZERO_DUR) {
                 self.live[m] = false;
+            }
+        }
+        // frozen: d(t) = -1.25 (t/60)^2 - k (t/60) + d(0), with no freeze
+        // resistance
+        let f = AURA_FROZEN;
+        if self.live[f] && self.above(f, ZERO_DUR) {
+            self.decay[f] += FRZ_DELTA;
+            self.reduce_mod(f, self.decay[f]);
+            return self.at_most(f, ZERO_DUR);
+        } else if self.decay[f] > FRZ_DECAY_CAP {
+            if self.below(f, ZERO_DUR) {
+                self.live[f] = false;
+            }
+            self.decay[f] -= FRZ_DELTA * 2.0;
+            if self.decay[f] < FRZ_DECAY_CAP {
+                self.decay[f] = FRZ_DECAY_CAP;
+            }
+        }
+        false
+    }
+    /// gcsim's attachOverlapSrcs, for the sources in the mask.
+    fn attach_overlap_srcs(&mut self, m: usize, amt: f64, length: f64, srcs: u8) {
+        if self.get(m) > ZERO_DUR {
+            for src in 0..4 {
+                if srcs & 1 << src != 0 {
+                    let add = (amt - self.dur[m][src]).max(0.0);
+                    if add > 0.0 {
+                        self.dur[m][src] += add;
+                        self.live[m] = true;
+                    }
+                }
+            }
+        } else {
+            for src in 0..4 {
+                if srcs & 1 << src != 0 {
+                    self.dur[m][src] = amt;
+                    self.live[m] = true;
+                }
+            }
+            if length > ZERO_DUR {
+                self.decay[m] = amt / length;
             }
         }
     }
@@ -521,6 +587,8 @@ pub struct Enemy {
     pub aura: Aura,
     pub crystallize_gcd: i32,
     pub overload_gcd: i32,
+    pub superconduct_gcd: i32,
+    pub shatter_gcd: i32,
     /// Swirl's GCD by aura slot.
     pub swirl_gcd: [i32; N_AURAS],
     /// Electro-charged: the attack of its next ticks, the frame its ticks
@@ -569,6 +637,9 @@ pub struct Config {
     pub ignore_burst_energy: bool,
     /// The enemy's HP in damage mode (a target with hp); 0 otherwise.
     pub enemy_hp: f64,
+    /// The enemy's distance from the player and its radius.
+    pub target_dist: f64,
+    pub target_radius: f64,
 }
 
 #[derive(Clone)]
@@ -617,6 +688,20 @@ pub struct Infusion {
     pub can_be_overridden: bool,
 }
 
+/// A gadget (gcsim's gadget.Gadget) that a character owns: it ticks in
+/// Combat.Tick after the enemy, with an aura of its own that absorb checks
+/// read. `id` says which of its owner's gadgets it is.
+#[derive(Clone, Copy)]
+pub struct Gadget {
+    pub owner: u8,
+    pub id: u8,
+    /// Ticks since it was added (the first tick is the frame after).
+    pub timer: i32,
+    /// Ticks left, -1 for no end.
+    pub duration: i32,
+    pub aura: Aura,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Shield {
     pub owner: u8,
@@ -657,6 +742,8 @@ pub struct Sim {
     /// the program has no more actions.
     pub damage_mode: bool,
     pub enemy_hp: f64,
+    pub target_dist: f64,
+    pub target_radius: f64,
     pub enemy_alive: bool,
     pub no_more_actions: bool,
     /// The holder of gcsim's "utility-dash" stamina mod (dash stamina
@@ -669,11 +756,17 @@ pub struct Sim {
     pub subs: [Vec<Owner>; N_EVENTS],
     /// Constructs (gcsim's Constructs) and shields, by owner.
     pub constructs: Vec<Construct>,
+    /// Gadgets, in the order they were added.
+    pub gadgets: Vec<Gadget>,
     pub shields: Vec<Shield>,
     /// Weapon infusions by character (gcsim's infusion handler).
     pub infusion: [Option<Infusion>; 4],
     /// Statuses of the whole fight (gcsim's Status), with their expiry.
     pub statuses: Vec<(ModKey, i32)>,
+    /// gcsim's Flags.Custom: values the whole fight shares.
+    pub flags: Vec<(ModKey, f64)>,
+    /// Flat damage EnemyHit subscribers add to the hit.
+    pub hit_flat: f64,
     // normal attack energy
     pub na_icd: i32,
     pub na_chance: [f64; 4],
@@ -695,7 +788,7 @@ impl Sim {
             rng: Rng::new(seed),
             core: Queue::new(),
             chars,
-            player_aura: Aura::default(),
+            player_aura: Aura::new(),
             enemy: Enemy {
                 level: cfg.enemy_level,
                 resist: cfg.resist,
@@ -703,9 +796,11 @@ impl Sim {
                 queue: Queue::new(),
                 mods: Vec::with_capacity(16),
                 icd: Vec::with_capacity(16),
-                aura: Aura::default(),
+                aura: Aura::new(),
                 crystallize_gcd: -1,
                 overload_gcd: -1,
+                superconduct_gcd: -1,
+                shatter_gcd: -1,
                 swirl_gcd: [-1; N_AURAS],
                 ec_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::ECDamage, icd::TAG_EC_DAMAGE, icd::GROUP_REACTION_B, Element::Electro, 0.0, 0.0), 0),
                 ec_tick_src: -1,
@@ -740,15 +835,20 @@ impl Sim {
             done: false,
             damage_mode: cfg.enemy_hp > 0.0,
             enemy_hp: cfg.enemy_hp,
+            target_dist: cfg.target_dist,
+            target_radius: cfg.target_radius,
             enemy_alive: true,
             no_more_actions: false,
             utility_dash: None,
             electro_res: None,
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
+            gadgets: Vec::with_capacity(4),
             shields: Vec::with_capacity(4),
             infusion: [None; 4],
             statuses: Vec::new(),
+            flags: Vec::new(),
+            hit_flat: 0.0,
             na_icd: 0,
             na_chance: [0.0; 4],
             window_start: ((warmup * 60.0) as i32 / 30) * 30,
@@ -837,8 +937,11 @@ impl Sim {
         // resonance; profile::config rejects the ones not implemented
         if n >= 4 {
             let count = |e: Element| self.chars.iter().filter(|c| c.element == e).count();
-            let (pyro, hydro, electro) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro));
+            let (pyro, hydro, electro, cryo) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro), count(Element::Cryo));
             for c in &mut self.chars {
+                if cryo >= 2 {
+                    c.mods.push(Mod::owned(CRYO_RESONANCE, ModKind::Attack, Owner::Core, st::NONE, false, false, -1));
+                }
                 if pyro >= 2 {
                     c.mods.push(Mod::stat(PYRO_RESONANCE, st::ATKP, 0.25, false, false, -1));
                 }
@@ -939,6 +1042,10 @@ impl Sim {
     fn core_event(&mut self, e: &Event) {
         match *e {
             Event::EnemyDamage(ev) => {
+                // SetupMisc: superconduct shreds physical
+                if ev.info.tag == AttackTag::SuperconductDamage {
+                    self.enemy_add_resist(SUPERCONDUCT_SHRED, Element::Physical, -0.4, 12 * 60);
+                }
                 let ci = ev.info.actor as usize;
                 if matches!(ev.info.tag, AttackTag::Normal | AttackTag::Extra) && self.na_icd <= self.f {
                     let (inc, reset) = match self.chars[ci].class {
@@ -959,7 +1066,7 @@ impl Sim {
             }
             // electro resonance: an electro reaction gives a particle, once
             // every 5 s
-            Event::Reaction(r, _) if matches!(r, Reaction::Overload | Reaction::ElectroCharged) => {
+            Event::Reaction(r, _) if matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::ElectroCharged) => {
                 let Some(last) = self.electro_res else { return };
                 if self.f - last < 300 && last != 0 {
                     return;
@@ -1142,7 +1249,7 @@ impl Sim {
     /// gcsim's Player.Drain: the character loses amount HP.
     pub fn drain(&mut self, on: usize, amount: f64) {
         self.modify_hp(on, -amount);
-        self.emit(Event::Drain { on, amount });
+        self.emit(Event::Drain { on, amount, external: false });
     }
 
     // ------------------------------------------------------------ mods
@@ -1234,6 +1341,23 @@ impl Sim {
             Some(s) => s.1 = expiry,
             None => self.statuses.push((key, expiry)),
         }
+    }
+
+    /// gcsim's Flags.Custom[key], 0 when unset.
+    pub fn flag(&self, key: ModKey) -> f64 {
+        self.flags.iter().find(|f| f.0 == key).map_or(0.0, |f| f.1)
+    }
+
+    pub fn set_flag(&mut self, key: ModKey, v: f64) {
+        match self.flags.iter_mut().find(|f| f.0 == key) {
+            Some(f) => f.1 = v,
+            None => self.flags.push((key, v)),
+        }
+    }
+
+    /// gcsim's Status.Delete.
+    pub fn delete_core_status(&mut self, key: ModKey) {
+        self.statuses.retain(|s| s.0 != key);
     }
 
     /// gcsim's Status.Duration.
@@ -1453,17 +1577,40 @@ impl Sim {
                     crate::sets::dispatch::attack_mod(kind, self, o as usize, si as usize, ci, &m, ev)
                 }
                 Amount::Fixed => ev.stats[m.affected] += m.value,
-                Amount::Owner(Owner::Core) => {}
+                // cryo resonance: CRIT Rate against an enemy with cryo or
+                // frozen
+                Amount::Owner(Owner::Core) => {
+                    let a = &self.enemy.aura;
+                    if m.key == CRYO_RESONANCE && (a.get(AURA_CRYO) > ZERO_DUR || a.get(AURA_FROZEN) > ZERO_DUR) {
+                        ev.stats[st::CR] += 0.15;
+                    }
+                }
             }
         }
     }
 
     fn handle_attack(&mut self, slot: u16) {
         let mut ev = self.slots[slot as usize];
-        let grp = self.group_dmg_mult(&ev.info);
+        let grp = if ev.info.sim { 1.0 } else { self.group_dmg_mult(&ev.info) };
         let actor = ev.info.actor as usize;
-        crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
-        self.apply_attack_mods(actor, &mut ev);
+        // OnEnemyHit, unless the group takes no damage from this hit:
+        // subscribers (sets and weapons first), then the attacker's own
+        if grp > 0.0 {
+            if !self.subs[EventKind::EnemyHit as usize].is_empty() {
+                self.hit_flat = 0.0;
+                self.emit(Event::EnemyHit(&ev));
+                ev.info.flat_dmg += self.hit_flat;
+            }
+            crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
+        }
+        if !ev.info.sim {
+            self.apply_attack_mods(actor, &mut ev);
+        }
+        // poise, then shatter, on a frozen enemy
+        if self.enemy.aura.get(AURA_FROZEN) >= ZERO_DUR {
+            self.poise_check(&ev);
+            self.shatter_check(&ev);
+        }
 
         if ev.info.durability > 0.0 {
             ev.info.durability *= self.will_apply_ele(&ev.info);
@@ -1494,22 +1641,39 @@ impl Sim {
             Element::Electro => {
                 self.try_overload(ev);
                 self.try_add_ec(ev);
+                self.try_frozen_superconduct(ev);
+                self.try_superconduct(ev);
             }
             Element::Pyro => {
                 self.try_overload(ev);
                 self.try_vaporize(ev);
+                self.try_melt(ev);
+            }
+            Element::Cryo => {
+                self.try_superconduct(ev);
+                self.try_melt(ev);
+                self.try_freeze(ev);
             }
             Element::Hydro => {
                 self.try_vaporize(ev);
+                self.try_freeze(ev);
                 self.try_add_ec(ev);
             }
             Element::Anemo => {
                 self.try_swirl(ev, AURA_ELECTRO);
                 self.try_swirl(ev, AURA_PYRO);
                 self.try_swirl(ev, AURA_HYDRO);
+                self.try_swirl(ev, AURA_CRYO);
+                self.try_swirl(ev, AURA_FROZEN);
             }
             Element::Geo => {
-                for (m, r) in [(AURA_ELECTRO, Reaction::CrystallizeElectro), (AURA_HYDRO, Reaction::CrystallizeHydro), (AURA_PYRO, Reaction::CrystallizePyro)] {
+                for (m, r) in [
+                    (AURA_ELECTRO, Reaction::CrystallizeElectro),
+                    (AURA_HYDRO, Reaction::CrystallizeHydro),
+                    (AURA_CRYO, Reaction::CrystallizeCryo),
+                    (AURA_PYRO, Reaction::CrystallizePyro),
+                    (AURA_FROZEN, Reaction::CrystallizeCryo),
+                ] {
                     if self.enemy.aura.get(m) > ZERO_DUR {
                         self.try_crystallize(ev, m, r);
                     }
@@ -1527,7 +1691,8 @@ impl Sim {
         let a = &mut self.enemy.aura;
         let consumed = match ev.info.element {
             Element::Pyro => {
-                if a.get(AURA_HYDRO) < ZERO_DUR {
+                // frozen rejects vaporize
+                if a.get(AURA_HYDRO) < ZERO_DUR || a.get(AURA_FROZEN) > ZERO_DUR {
                     return;
                 }
                 ev.info.amp_mult = 1.5;
@@ -1574,6 +1739,170 @@ impl Sim {
         }
     }
 
+    fn try_melt(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        let consumed = match ev.info.element {
+            Element::Pyro => {
+                if a.get(AURA_CRYO) < ZERO_DUR && a.get(AURA_FROZEN) < ZERO_DUR {
+                    return;
+                }
+                let c = a.reduce(AURA_CRYO, dur, 2.0);
+                let f = a.reduce(AURA_FROZEN, dur, 2.0);
+                ev.info.amp_mult = 2.0;
+                c.max(f)
+            }
+            Element::Cryo => {
+                if a.get(AURA_PYRO) < ZERO_DUR {
+                    return;
+                }
+                // gcsim keeps the cryo's durability
+                a.reduce(AURA_PYRO, dur, 0.5);
+                ev.info.amp_mult = 1.5;
+                0.0
+            }
+            _ => return,
+        };
+        ev.info.durability = (dur - consumed).max(0.0);
+        ev.reacted = true;
+        ev.info.amped = true;
+        self.emit(Event::Reaction(Reaction::Melt, ev));
+    }
+
+    fn try_freeze(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        let consumed = match ev.info.element {
+            Element::Hydro => {
+                // every cryo source contributes to frozen
+                let mut srcs = 0u8;
+                for (i, &d) in a.dur[AURA_CRYO].iter().enumerate() {
+                    if d > ZERO_DUR {
+                        srcs |= 1 << i;
+                    }
+                }
+                if srcs == 0 {
+                    return;
+                }
+                let d = a.get(AURA_CRYO).min(dur);
+                a.attach_overlap_srcs(AURA_FROZEN, 2.0 * d, ZERO_DUR, srcs);
+                a.reduce_mod(AURA_CRYO, d);
+                d
+            }
+            Element::Cryo => {
+                if a.get(AURA_HYDRO) < ZERO_DUR {
+                    return;
+                }
+                let d = a.get(AURA_HYDRO).min(dur);
+                a.attach_overlap_srcs(AURA_FROZEN, 2.0 * d, ZERO_DUR, 1 << ev.info.actor);
+                a.reduce_mod(AURA_HYDRO, d);
+                d
+            }
+            _ => return,
+        };
+        ev.reacted = true;
+        ev.info.durability = (dur - consumed).max(0.0);
+        self.emit(Event::Reaction(Reaction::Frozen, ev));
+    }
+
+    fn try_superconduct(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        // this is the one without frozen
+        if a.get(AURA_FROZEN) >= ZERO_DUR {
+            return;
+        }
+        let consumed = match ev.info.element {
+            Element::Electro if a.get(AURA_CRYO) >= ZERO_DUR => a.reduce(AURA_CRYO, dur, 1.0),
+            Element::Cryo if a.get(AURA_ELECTRO) >= ZERO_DUR => a.reduce(AURA_ELECTRO, dur, 1.0),
+            _ => return,
+        };
+        ev.info.durability = (dur - consumed).max(0.0);
+        ev.reacted = true;
+        self.queue_superconduct(ev);
+    }
+
+    /// Electro on frozen: cryo first, then frozen with what is left, and
+    /// the attack's durability is all spent.
+    fn try_frozen_superconduct(&mut self, ev: &mut AttackEvent) {
+        if ev.info.durability < ZERO_DUR || ev.info.element != Element::Electro {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        if a.get(AURA_FROZEN) < ZERO_DUR {
+            return;
+        }
+        ev.info.durability -= a.reduce(AURA_CRYO, ev.info.durability, 1.0);
+        a.reduce(AURA_FROZEN, ev.info.durability, 1.0);
+        ev.info.durability = 0.0;
+        ev.reacted = true;
+        self.queue_superconduct(ev);
+    }
+
+    fn queue_superconduct(&mut self, ev: &AttackEvent) {
+        self.emit(Event::Reaction(Reaction::Superconduct, ev));
+        if self.enemy.superconduct_gcd != -1 && self.f < self.enemy.superconduct_gcd {
+            return;
+        }
+        self.enemy.superconduct_gcd = self.f + 6;
+        let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::SuperconductDamage, icd::TAG_SUPERCONDUCT_DAMAGE, icd::GROUP_REACTION_A, Element::Cryo, 0.0, 0.0);
+        ai.abil = "superconduct";
+        ai.ignore_def = 1.0;
+        let mut atk = self.reaction_attack(ai);
+        atk.info.flat_dmg *= 1.5;
+        self.queue_attack_with_snap(atk, 0, 1);
+    }
+
+    /// gcsim's PoiseDMGCheck: a blunt attack wears frozen down by its
+    /// poise damage.
+    fn poise_check(&mut self, ev: &AttackEvent) {
+        if self.enemy.aura.get(AURA_FROZEN) < ZERO_DUR || !ev.info.blunt {
+            return;
+        }
+        self.enemy.aura.reduce_mod(AURA_FROZEN, 0.15 * ev.info.poise);
+        self.check_freeze();
+    }
+
+    /// gcsim's ShatterCheck: a blunt or geo attack shatters frozen.
+    fn shatter_check(&mut self, ev: &AttackEvent) {
+        if self.enemy.aura.get(AURA_FROZEN) < ZERO_DUR || (!ev.info.blunt && ev.info.element != Element::Geo) {
+            return;
+        }
+        self.enemy.aura.reduce_mod(AURA_FROZEN, 200.0);
+        self.check_freeze();
+        self.emit(Event::Reaction(Reaction::Shatter, ev));
+        if self.enemy.shatter_gcd == -1 || self.f >= self.enemy.shatter_gcd {
+            self.enemy.shatter_gcd = self.f + 12;
+            let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::Shatter, icd::TAG_SHATTER, icd::GROUP_REACTION_A, Element::Physical, 0.0, 0.0);
+            ai.abil = "shatter";
+            ai.ignore_def = 1.0;
+            let mut atk = self.reaction_attack(ai);
+            atk.info.flat_dmg *= 3.0;
+            self.queue_attack_with_snap(atk, 0, 0);
+        }
+    }
+
+    /// gcsim's checkFreeze: when frozen is gone, an empty attack from the
+    /// fight itself ("Freeze Broken").
+    fn check_freeze(&mut self) {
+        if self.enemy.aura.get(AURA_FROZEN) > ZERO_DUR {
+            return;
+        }
+        let mut ai = AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0);
+        ai.abil = "Freeze Broken";
+        ai.sim = true;
+        self.queue_attack(ai, 0, -1, 0);
+    }
+
     /// gcsim's CalcReactionDmg: the attack with its flat damage and the
     /// snapshot it takes (the level and EM only).
     fn reaction_attack(&self, mut ai: AttackInfo) -> AttackEvent {
@@ -1590,6 +1919,10 @@ impl Sim {
     fn try_add_ec(&mut self, ev: &mut AttackEvent) {
         let dur = ev.info.durability;
         if dur < ZERO_DUR {
+            return;
+        }
+        // frozen rejects electro-charged
+        if self.enemy.aura.get(AURA_FROZEN) > ZERO_DUR {
             return;
         }
         let src = ev.info.actor as usize;
@@ -1686,17 +2019,107 @@ impl Sim {
     }
 
     /// gcsim's Combat.AbsorbCheck for one enemy always in range: the first
-    /// element of prio on the enemy, else on the player.
+    /// element of prio on the enemy, else on a gadget, else on the player.
+    /// Every gadget is taken to be in range.
     pub fn absorb_check(&self, prio: &[(usize, Element)]) -> Element {
+        // AuraContains(cryo) is true on frozen too
+        let has = |a: &Aura, m: usize| a.get(m) > ZERO_DUR || (m == AURA_CRYO && a.get(AURA_FROZEN) > ZERO_DUR);
         for &(m, e) in prio {
-            if self.enemy.aura.get(m) > ZERO_DUR || self.player_aura.get(m) > ZERO_DUR {
+            if has(&self.enemy.aura, m) || self.gadgets.iter().any(|g| has(&g.aura, m)) || has(&self.player_aura, m) {
                 return e;
             }
         }
         Element::NoElement
     }
 
-    /// gcsim's TrySwirlElectro, TrySwirlPyro and TrySwirlHydro. Swirl
+    /// gcsim's Constructs.New: with refresh, the last construct of the same
+    /// owner and key is destroyed; past three, the oldest are. A destroyed
+    /// construct calls its owner's construct_expired (OnDestruct).
+    pub fn new_construct(&mut self, c: Construct, refresh: bool) {
+        if refresh {
+            if let Some(i) = self.constructs.iter().rposition(|x| x.owner == c.owner && x.key == c.key) {
+                let old = self.constructs.remove(i);
+                crate::chars::dispatch::construct_expired(self.chars[old.owner as usize].kind, self, old.owner as usize, old.key);
+            }
+        }
+        self.constructs.push(c);
+        while self.constructs.len() > 3 {
+            let old = self.constructs.remove(0);
+            crate::chars::dispatch::construct_expired(self.chars[old.owner as usize].kind, self, old.owner as usize, old.key);
+        }
+    }
+
+    /// gcsim's AuraContains for one element on the enemy: every aura slot
+    /// of that element, and frozen for cryo.
+    pub fn enemy_aura_contains(&self, e: Element) -> bool {
+        let a = &self.enemy.aura;
+        let has = |m: usize| a.get(m) > ZERO_DUR;
+        match e {
+            Element::Electro => has(AURA_ELECTRO),
+            Element::Pyro => has(AURA_PYRO),
+            Element::Hydro => has(AURA_HYDRO),
+            Element::Cryo => has(AURA_CRYO) || has(AURA_FROZEN),
+            Element::Frozen => has(AURA_FROZEN),
+            _ => false,
+        }
+    }
+
+    /// Whether a box hit lands on the enemy: a box `w` wide and `h` long,
+    /// centered `y` ahead of the player, who stands at the origin facing
+    /// the enemy (gcsim's direction from setup; the player never moves).
+    pub fn box_hits(&self, y: f64, w: f64, h: f64) -> bool {
+        let r = self.target_radius;
+        let dy = (self.target_dist - y).abs() - h / 2.0;
+        let dx = -w / 2.0;
+        let (dx, dy) = (dx.max(0.0), dy.max(0.0));
+        dx * dx + dy * dy <= r * r
+    }
+
+    /// gcsim's Combat.AddGadget.
+    pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32) {
+        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new() });
+    }
+
+    /// The index of a character's gadget, if it is there.
+    pub fn gadget_index(&self, owner: usize, id: u8) -> Option<usize> {
+        self.gadgets.iter().position(|g| g.owner as usize == owner && g.id == id)
+    }
+
+    /// Sets a gadget's aura durability in one slot (SetAuraDurability, no
+    /// decay), when the gadget is still there.
+    pub fn set_gadget_aura(&mut self, owner: usize, id: u8, m: usize, dur: f64) {
+        if let Some(k) = self.gadget_index(owner, id) {
+            let a = &mut self.gadgets[k].aura;
+            a.dur[m][0] = dur;
+            a.live[m] = true;
+        }
+    }
+
+    /// Each gadget's Tick: its aura, then Gadget.Tick (expiry), then its
+    /// owner's hook with the ticks so far.
+    fn tick_gadgets(&mut self) {
+        let n = self.gadgets.len();
+        let mut k = 0;
+        for _ in 0..n {
+            let g = &mut self.gadgets[k];
+            g.aura.tick();
+            let mut expired = false;
+            if g.duration > 0 {
+                g.duration -= 1;
+                expired = g.duration == 0;
+            }
+            g.timer += 1;
+            let (owner, id, timer) = (g.owner as usize, g.id, g.timer);
+            if expired {
+                self.gadgets.remove(k);
+            } else {
+                k += 1;
+            }
+            crate::chars::dispatch::gadget_tick(self.chars[owner].kind, self, owner, id, timer);
+        }
+    }
+
+    /// gcsim's TrySwirlElectro, Pyro, Hydro, Cryo and Frozen. Swirl
     /// hits the enemy itself without gauge, then its aoe the others: with
     /// one enemy, the aoe hits nothing.
     fn try_swirl(&mut self, ev: &mut AttackEvent, m: usize) {
@@ -1710,10 +2133,12 @@ impl Sim {
         let (r, tag, icd_tag, ele, abil) = match m {
             AURA_ELECTRO => (Reaction::SwirlElectro, AttackTag::SwirlElectro, icd::TAG_SWIRL_ELECTRO, Element::Electro, "swirl-electro"),
             AURA_PYRO => (Reaction::SwirlPyro, AttackTag::SwirlPyro, icd::TAG_SWIRL_PYRO, Element::Pyro, "swirl-pyro"),
-            _ => (Reaction::SwirlHydro, AttackTag::SwirlHydro, icd::TAG_SWIRL_HYDRO, Element::Hydro, "swirl-hydro"),
+            AURA_HYDRO => (Reaction::SwirlHydro, AttackTag::SwirlHydro, icd::TAG_SWIRL_HYDRO, Element::Hydro, "swirl-hydro"),
+            _ => (Reaction::SwirlCryo, AttackTag::SwirlCryo, icd::TAG_SWIRL_CRYO, Element::Cryo, "swirl-cryo"),
         };
         self.emit(Event::Reaction(r, ev));
-        let gcd = &mut self.enemy.swirl_gcd[m];
+        // frozen shares cryo's GCD
+        let gcd = &mut self.enemy.swirl_gcd[if m == AURA_FROZEN { AURA_CRYO } else { m }];
         if *gcd == -1 || self.f >= *gcd {
             *gcd = self.f + 6;
             let mut ai = AttackInfo::new(ev.info.actor as usize, tag, icd_tag, icd::GROUP_REACTION_A, ele, 0.0, 0.0);
@@ -1727,6 +2152,9 @@ impl Sim {
         if m == AURA_ELECTRO && ev.info.durability > ZERO_DUR && self.enemy.aura.get(AURA_HYDRO) > ZERO_DUR {
             self.try_swirl(ev, AURA_HYDRO);
             self.check_ec();
+        }
+        if m == AURA_FROZEN {
+            self.check_freeze();
         }
     }
 
@@ -1744,6 +2172,8 @@ impl Sim {
         self.emit(Event::Reaction(r, ev));
         if m == AURA_ELECTRO && self.enemy.aura.get(AURA_HYDRO) > ZERO_DUR {
             self.check_ec();
+        } else if m == AURA_FROZEN {
+            self.check_freeze();
         }
     }
 
@@ -1815,12 +2245,13 @@ impl Sim {
                 Element::Pyro => self.enemy.aura.attach_refresh(AURA_PYRO, 0.8 * d, 6.0 * d + 420.0, src),
                 Element::Hydro => self.enemy.aura.attach_overlap(AURA_HYDRO, 0.8 * d, 6.0 * d + 420.0, src),
                 Element::Electro => self.enemy.aura.attach_overlap(AURA_ELECTRO, 0.8 * d, 6.0 * d + 420.0, src),
+                Element::Cryo => self.enemy.aura.attach_overlap(AURA_CRYO, 0.8 * d, 6.0 * d + 420.0, src),
                 _ => {}
             }
         }
         self.total += ev.damage;
         let ci = ev.info.actor as usize;
-        if self.f >= self.window_start {
+        if self.f >= self.window_start && !ev.info.sim {
             self.window_char[ci] += ev.damage;
             let abils = &mut self.abils[ci];
             let name = ev.info.abil;
@@ -1836,7 +2267,7 @@ impl Sim {
         // electro-charged's hook subscribes when it starts, after the others
         self.ec_wane_hook(&ev);
         if ev.callbacks != 0 {
-            crate::chars::dispatch::attack_cb(self.chars[ci].kind, self, ci, ev.callbacks);
+            crate::chars::dispatch::attack_cb(self.chars[ci].kind, self, ci, ev.callbacks, &ev);
         }
         self.free.push(slot);
     }
@@ -2218,11 +2649,17 @@ impl Sim {
             while let Some(t) = self.enemy.queue.pop_due(f) {
                 self.run_task(t);
             }
-            self.enemy.aura.tick();
+            if self.enemy.aura.tick() {
+                self.check_freeze();
+            }
             // electro-charged ends with either aura
             if self.enemy.ec_tick_src > -1 && (self.enemy.aura.below(AURA_ELECTRO, ZERO_DUR) || self.enemy.aura.below(AURA_HYDRO, ZERO_DUR)) {
                 self.enemy.ec_tick_src = -1;
             }
+        }
+        // gadgets, those already there when the tick starts
+        if !self.gadgets.is_empty() {
+            self.tick_gadgets();
         }
         // Constructs.Tick
         let mut k = 0;
@@ -2325,6 +2762,7 @@ impl Sim {
             Action::Attack => chars::dispatch::attack(kind, self, ci, p),
             Action::Aim => chars::dispatch::aim(kind, self, ci, p),
             Action::HighPlunge => chars::dispatch::high_plunge(kind, self, ci, p),
+            Action::LowPlunge => chars::dispatch::low_plunge(kind, self, ci, p),
             Action::Swap => {
                 if self.player.swap_cd > 0 {
                     self.player.swap_cd = 0;

@@ -179,12 +179,18 @@ pub enum AttackTag {
     SwirlPyro,
     SwirlHydro,
     SwirlElectro,
+    SwirlCryo,
+    SuperconductDamage,
+    Shatter,
+    // not caused yet: their reactions are not in the engine
+    BurningDamage,
+    Burgeon,
 }
 
 impl AttackTag {
     /// gcsim's IsReaction: damage that ignores the attacker's DMG bonus.
     pub fn is_reaction(self) -> bool {
-        matches!(self, AttackTag::OverloadDamage | AttackTag::ECDamage | AttackTag::SwirlPyro | AttackTag::SwirlHydro | AttackTag::SwirlElectro)
+        matches!(self, AttackTag::OverloadDamage | AttackTag::ECDamage | AttackTag::SwirlPyro | AttackTag::SwirlHydro | AttackTag::SwirlElectro | AttackTag::SwirlCryo | AttackTag::SuperconductDamage | AttackTag::Shatter | AttackTag::BurningDamage | AttackTag::Burgeon)
     }
 }
 
@@ -214,6 +220,13 @@ pub enum Reaction {
     SwirlPyro,
     SwirlHydro,
     SwirlElectro,
+    Melt,
+    Frozen,
+    Superconduct,
+    CrystallizeCryo,
+    SwirlCryo,
+    /// Not an elemental reaction to gcsim, but among its reaction events.
+    Shatter,
 }
 
 impl Reaction {
@@ -229,6 +242,12 @@ impl Reaction {
             Reaction::SwirlPyro => &[Element::Anemo, Element::Pyro],
             Reaction::SwirlHydro => &[Element::Anemo, Element::Hydro],
             Reaction::SwirlElectro => &[Element::Anemo, Element::Electro],
+            Reaction::Melt => &[Element::Pyro, Element::Cryo],
+            Reaction::Frozen => &[Element::Cryo, Element::Hydro],
+            Reaction::Superconduct => &[Element::Electro, Element::Cryo],
+            Reaction::CrystallizeCryo => &[Element::Geo, Element::Cryo],
+            Reaction::SwirlCryo => &[Element::Anemo, Element::Cryo],
+            Reaction::Shatter => &[],
         }
     }
 }

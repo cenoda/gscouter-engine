@@ -11,4 +11,6 @@ crate::sets! {
     CinderCity => scrolloftheheroofcindercity,
     MarechausseeHunter => marechausseehunter,
     ViridescentVenerer => viridescentvenerer,
+    CrimsonWitch => crimsonwitchofflames,
+    SongOfDaysPast => songofdayspast,
 }

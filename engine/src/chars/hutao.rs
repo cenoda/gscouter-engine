@@ -21,6 +21,8 @@ const PARAMITA_ICD: ModKey = ModKey::new(g::PARAMITA_ENERGY_ICD);
 const A1: ModKey = ModKey::new(g::A1_BUFF_KEY);
 const A4: ModKey = ModKey::new("hutao-a4");
 const BLOOD_BLOSSOM: ModKey = ModKey::new(g::BB_DEBUFF);
+const C6: ModKey = ModKey::new("hutao-c6");
+const C6_ICD: ModKey = ModKey::new("hutao-c6-icd");
 
 // attack callbacks
 const CB_PARTICLE: u16 = 1 << 0;
@@ -30,11 +32,13 @@ const CB_HEAL: u16 = 1 << 2;
 // tasks
 const TASK_A1: u8 = 0;
 const TASK_BB_TICK: u8 = 1;
+// arg: 1 for the check every 2 s, which needs HP under 2
+const TASK_C6_CHECK: u8 = 2;
 
 // frames and on_removed ids
 const PP_CHARGE: u8 = 0;
 
-fn pp_charge_frames(prev: i8, next: Action) -> i32 {
+fn pp_charge_frames(prev: i16, next: Action) -> i32 {
     if prev == -1 || !matches!(next, Action::Dash | Action::Jump) {
         return g::PP_CHARGE_FRAMES[next as usize];
     }
@@ -73,6 +77,12 @@ impl Character for Char {
         s.subscribe(EventKind::Swap, Owner::Char(ci as u8));
         if s.chars[ci].ascension >= 4 {
             s.chars[ci].mods.push(Mod::owned(A4, ModKind::Stat, Owner::Char(ci as u8), st::PYROP, false, false, -1));
+        }
+        // C4 needs an enemy with Blood Blossom to die, which ends the fight
+        if s.chars[ci].cons >= 6 {
+            s.subscribe(EventKind::Drain, Owner::Char(ci as u8));
+            // every 2 s from the start, once HP is set
+            s.add_task(Task::Char { c: ci as u8, id: TASK_C6_CHECK, arg: 1 }, 1);
         }
     }
 
@@ -138,13 +148,13 @@ impl Character for Char {
         }
         s.extend_mod(ci, PARAMITA, 108);
         s.queue_attack(ai, CB_PARTICLE | CB_BB, 0, g::PP_CHARGE_HITMARK);
-        let mut prev: i8 = -1;
+        let mut prev: i16 = -1;
         let last = &s.player.last;
         if last.char as usize == ci && last.action == Action::Attack {
             let c = &s.chars[ci];
-            prev = (c.normal_counter - 1) as i8;
+            prev = (c.normal_counter - 1) as i16;
             if prev < 0 {
-                prev = (c.normal_hit_num - 1) as i8;
+                prev = (c.normal_hit_num - 1) as i16;
             }
         }
         let mut info = ActInfo::new(Frames::Char { id: PP_CHARGE, arg: prev }, g::PP_CHARGE_FRAMES[0], 1, AnimState::Charge);
@@ -152,7 +162,7 @@ impl Character for Char {
         info
     }
 
-    fn frames(_: u8, prev: i8, next: Action) -> i32 {
+    fn frames(_: u8, prev: i16, next: Action) -> i32 {
         pp_charge_frames(prev, next)
     }
 
@@ -200,11 +210,12 @@ impl Character for Char {
         match id {
             TASK_A1 => a1(s, ci),
             TASK_BB_TICK => bb_tick(s, ci, arg),
+            TASK_C6_CHECK => c6_check(s, ci, arg == 1),
             _ => unreachable!(),
         }
     }
 
-    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16) {
+    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
         if cbs & CB_PARTICLE != 0 {
             particle_cb(s, ci);
         }
@@ -217,13 +228,34 @@ impl Character for Char {
     }
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
-        if let Event::Swap { .. } = e {
-            if s.mod_active(ci, PARAMITA) {
-                a1(s, ci);
-                s.delete_mod(ci, PARAMITA);
+        match *e {
+            Event::Swap { .. } => {
+                if s.mod_active(ci, PARAMITA) {
+                    a1(s, ci);
+                    s.delete_mod(ci, PARAMITA);
+                }
             }
+            Event::Drain { amount, .. } if amount > 0.0 => c6_check(s, ci, false),
+            _ => {}
         }
     }
+}
+
+/// C6: under 25% HP (under 2 HP for the check every 2 s), CRIT Rate 100%
+/// for 10 s, once a minute. Every check queues the next one.
+fn c6_check(s: &mut Sim, ci: usize, every_2s: bool) {
+    s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_C6_CHECK, arg: 1 }, 120);
+    if s.mod_active(ci, C6_ICD) || s.chars[ci].hp_ratio > 0.25 {
+        return;
+    }
+    if every_2s && s.current_hp(ci) >= 2.0 {
+        return;
+    }
+    if s.chars[ci].hp_ratio <= 0.0 {
+        s.set_hp(ci, 1.0);
+    }
+    s.add_stat_mod(ci, C6, st::CR, 1.0, 600, true);
+    s.add_status(ci, C6_ICD, 3600, false);
 }
 
 fn a1(s: &mut Sim, ci: usize) {
