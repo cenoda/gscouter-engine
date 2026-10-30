@@ -342,6 +342,7 @@ pub struct Char {
     pub weapon: WeaponKind,
     pub weapon_state: WeaponState,
     pub refine: i32,
+    pub weapon_params: Vec<(String, i64)>,
     pub sets: Vec<SetSlot>,
     pub energy: f64,
     pub energy_max: f64,
@@ -362,6 +363,11 @@ pub struct Char {
 }
 
 impl Char {
+    /// A weapon param, 0 when unset as in gcsim.
+    pub fn weapon_param(&self, k: &str) -> i64 {
+        self.weapon_params.iter().find(|p| p.0 == k).map_or(0, |p| p.1)
+    }
+
     pub fn cd_index(a: Action) -> usize {
         match a {
             Action::Skill => 0,
@@ -554,6 +560,9 @@ pub struct CharSetup {
     pub start_energy: f64,
     /// The character's own params (char ... key=value).
     pub params: Vec<(String, i64)>,
+    /// The weapon's params (add weapon=... +params=[...]); a weapon reads
+    /// the ones its gcsim package reads.
+    pub weapon_params: Vec<(String, i64)>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -748,6 +757,7 @@ impl Sim {
             weapon: cs.weapon,
             weapon_state: cs.weapon.new_state(),
             refine: cs.refine,
+            weapon_params: cs.weapon_params.clone(),
             sets: cs.sets.iter().map(|&(kind, count)| SetSlot { kind, count, state: kind.new_state() }).collect(),
             energy: energy_max,
             energy_max,
@@ -836,6 +846,10 @@ impl Sim {
     #[inline]
     pub fn st_mut<T: StateOf<CharState>>(&mut self, ci: usize) -> &mut T {
         T::of_mut(&mut self.chars[ci].state)
+    }
+    #[inline]
+    pub fn weapon_st<T: StateOf<WeaponState>>(&self, ci: usize) -> &T {
+        T::of(&self.chars[ci].weapon_state)
     }
     #[inline]
     pub fn weapon_st_mut<T: StateOf<WeaponState>>(&mut self, ci: usize) -> &mut T {

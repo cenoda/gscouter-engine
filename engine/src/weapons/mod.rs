@@ -18,4 +18,7 @@ crate::weapons! {
     FavoniusCodex => favoniuscodex,
     TheStringless => thestringless,
     BalladOfTheFjords => balladofthefjords,
+    WolfFang => wolffang,
+    AlleyHunter => alleyhunter,
+    SapwoodBlade => sapwoodblade,
 }

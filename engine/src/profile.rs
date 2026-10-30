@@ -139,6 +139,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
         start_hp_ratio,
         start_energy,
         params: p.params.clone(),
+        weapon_params: p.weapon.params.clone(),
     })
 }
 
