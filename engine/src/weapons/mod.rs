@@ -24,4 +24,5 @@ crate::weapons! {
     FesteringDesire => festeringdesire,
     Slingshot => slingshot,
     DragonsBane => dragonsbane,
+    XiphosMoonlight => xiphosmoonlight,
 }

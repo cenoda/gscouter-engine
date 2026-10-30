@@ -35,6 +35,27 @@ impl ModKey {
     }
 }
 
+impl ModKey {
+    /// A key whose name is built at run time, such as gcsim's
+    /// "xiphos-<character>". Each name is interned once for the whole
+    /// process, so fights may make them.
+    pub fn named(name: String) -> ModKey {
+        use std::collections::HashMap;
+        use std::sync::{Mutex, OnceLock};
+        static NAMES: OnceLock<Mutex<HashMap<String, &'static str>>> = OnceLock::new();
+        let mut names = NAMES.get_or_init(Default::default).lock().unwrap();
+        let s: &'static str = match names.get(&name) {
+            Some(s) => s,
+            None => {
+                let s: &'static str = Box::leak(name.clone().into_boxed_str());
+                names.insert(name, s);
+                s
+            }
+        };
+        ModKey::new(s)
+    }
+}
+
 impl PartialEq for ModKey {
     #[inline]
     fn eq(&self, o: &ModKey) -> bool {
@@ -641,6 +662,9 @@ pub struct Sim {
     /// The holder of gcsim's "utility-dash" stamina mod (dash stamina
     /// -20% while it lives), if any.
     pub utility_dash: Option<u8>,
+    /// Electro resonance, with the frame of its last particle (0 before
+    /// the first).
+    pub electro_res: Option<i32>,
     /// Subscribers to each event, in the order gcsim subscribes them.
     pub subs: [Vec<Owner>; N_EVENTS],
     /// Constructs (gcsim's Constructs) and shields, by owner.
@@ -719,6 +743,7 @@ impl Sim {
             enemy_alive: true,
             no_more_actions: false,
             utility_dash: None,
+            electro_res: None,
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
             shields: Vec::with_capacity(4),
@@ -812,7 +837,7 @@ impl Sim {
         // resonance; profile::config rejects the ones not implemented
         if n >= 4 {
             let count = |e: Element| self.chars.iter().filter(|c| c.element == e).count();
-            let (pyro, hydro) = (count(Element::Pyro), count(Element::Hydro));
+            let (pyro, hydro, electro) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro));
             for c in &mut self.chars {
                 if pyro >= 2 {
                     c.mods.push(Mod::stat(PYRO_RESONANCE, st::ATKP, 0.25, false, false, -1));
@@ -820,6 +845,10 @@ impl Sim {
                 if hydro >= 2 {
                     c.mods.push(Mod::stat(HYDRO_RESONANCE, st::HPP, 0.25, false, false, -1));
                 }
+            }
+            if electro >= 2 {
+                self.electro_res = Some(0);
+                self.subscribe(EventKind::Reaction, Owner::Core);
             }
         }
         // Core.Init: energy from normal attacks, then the characters' inits
@@ -927,6 +956,16 @@ impl Sim {
                         self.na_chance[ci] = reset;
                     }
                 }
+            }
+            // electro resonance: an electro reaction gives a particle, once
+            // every 5 s
+            Event::Reaction(r, _) if matches!(r, Reaction::Overload | Reaction::ElectroCharged) => {
+                let Some(last) = self.electro_res else { return };
+                if self.f - last < 300 && last != 0 {
+                    return;
+                }
+                self.distribute_particle(1.0, Element::Electro);
+                self.electro_res = Some(self.f);
             }
             Event::Swap { .. } => {
                 for (i, c) in self.chars.iter().enumerate() {
@@ -1238,10 +1277,7 @@ impl Sim {
             Task::DamageApplied { slot } => self.damage_applied(slot),
             Task::SetCd { c, a, dur } => self.set_cd(c as usize, a, dur),
             Task::CdWorker { c, a, token } => self.cd_worker(c as usize, a, token),
-            Task::ConsumeEnergy { c, .. } => {
-                let ch = &mut self.chars[c as usize];
-                ch.energy = (ch.energy - ch.energy_max).max(0.0);
-            }
+            Task::ConsumeEnergy { c, .. } => self.drain_energy(c as usize),
             Task::AddEnergy { c, amt } => self.add_energy(c as usize, amt),
             Task::Particle { num, ele } => self.distribute_particle(num, ele),
             Task::DashStam { c } => {
@@ -1877,12 +1913,20 @@ impl Sim {
             let c = &mut self.chars[i];
             c.energy = (c.energy + amt * r * er * num).min(c.energy_max);
         }
+        self.emit(Event::ParticleReceived);
+    }
+
+    /// gcsim's ConsumeEnergy, which emits OnEnergyBurst.
+    fn drain_energy(&mut self, ci: usize) {
+        let c = &mut self.chars[ci];
+        let amount = c.energy_max;
+        c.energy = (c.energy - amount).max(0.0);
+        self.emit(Event::EnergyBurst { on: ci, amount });
     }
 
     pub fn consume_energy(&mut self, ci: usize, delay: i32) {
         if delay == 0 {
-            let c = &mut self.chars[ci];
-            c.energy = (c.energy - c.energy_max).max(0.0);
+            self.drain_energy(ci);
         } else {
             self.add_task(Task::ConsumeEnergy { c: ci as u8, delay_amount: false }, delay);
         }

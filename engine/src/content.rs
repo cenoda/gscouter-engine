@@ -38,8 +38,10 @@ pub enum EventKind {
     Reaction,
     Heal,
     Drain,
+    ParticleReceived,
+    EnergyBurst,
 }
-pub const N_EVENTS: usize = 8;
+pub const N_EVENTS: usize = 10;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -62,6 +64,10 @@ pub enum Event<'a> {
     Heal { caller: usize, target: Option<usize>, on: usize, amount: f64, overheal: f64 },
     /// OnPlayerHPDrain: the character drained and the HP it lost.
     Drain { on: usize, amount: f64 },
+    /// OnParticleReceived, after the party took a particle.
+    ParticleReceived,
+    /// OnEnergyBurst: a character's burst drained amount of its energy.
+    EnergyBurst { on: usize, amount: f64 },
 }
 
 impl Event<'_> {
@@ -75,6 +81,8 @@ impl Event<'_> {
             Event::Reaction(..) => EventKind::Reaction,
             Event::Heal { .. } => EventKind::Heal,
             Event::Drain { .. } => EventKind::Drain,
+            Event::ParticleReceived => EventKind::ParticleReceived,
+            Event::EnergyBurst { .. } => EventKind::EnergyBurst,
         }
     }
 }
