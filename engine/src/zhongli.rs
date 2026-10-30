@@ -27,7 +27,7 @@ impl Sim {
         assert!(hold > 0, "only the hold skill is ported");
         let lvl = self.talent(ci, 1);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::ElementalArt, IcdGroup::Default, Element::Geo, 25.0, SKILL_HOLD[lvl]);
-        ai.abil = 10;
+        ai.abil = "Stone Stele (Hold)";
         ai.flat_dmg = self.zl_a4_skill(ci);
         self.queue_attack(ai, 0, 0, SKILL_HOLD_HITMARK);
         let zl = &self.chars[ci].zl;
@@ -43,7 +43,7 @@ impl Sim {
         let lvl = self.talent(ci, 1);
         let flat = self.zl_a4_skill(ci);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::ElementalArt, IcdGroup::Default, Element::Geo, 50.0, SKILL[lvl]);
-        ai.abil = 11;
+        ai.abil = "Stone Stele (Initial)";
         ai.flat_dmg = flat;
         self.queue_attack(ai, CB_ZL_PARTICLE, 0, 0);
 
@@ -59,7 +59,7 @@ impl Sim {
         zl.stele_count = 1;
 
         let mut tick = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::ElementalArt, IcdGroup::Default, Element::Geo, 25.0, SKILL_TICK[lvl]);
-        tick.abil = 12;
+        tick.abil = "Stone Stele (Tick)";
         tick.flat_dmg = flat;
         let (stats, clvl) = self.make_snapshot(&mut tick);
         let mut ev = AttackEvent::new(tick, 0);

@@ -201,6 +201,24 @@ pub fn action_key(s: &str) -> Option<Action> {
     })
 }
 
+/// The gcsl name of an action.
+pub fn action_name(a: Action) -> &'static str {
+    match a {
+        Action::Skill => "skill",
+        Action::Burst => "burst",
+        Action::Attack => "attack",
+        Action::Charge => "charge",
+        Action::HighPlunge => "high_plunge",
+        Action::LowPlunge => "low_plunge",
+        Action::Aim => "aim",
+        Action::Dash => "dash",
+        Action::Jump => "jump",
+        Action::Walk => "walk",
+        Action::Swap => "swap",
+        Action::Invalid => "invalid",
+    }
+}
+
 fn names(table: &'static [(&'static str, u16)]) -> HashMap<&'static str, u16> {
     table.iter().copied().collect()
 }
@@ -933,7 +951,8 @@ impl Parser {
                 }
                 Tok::TerminateLine => return Ok(()),
                 Tok::Error => return Err(format!("ln{}: {}", n.line, n.val)),
-                _ => return Err(format!("ln{}: unrecognized token parsing character: {}", n.line, n.val)),
+                // gcsim skips any other token, such as start_hp=5000 or commas
+                _ => {}
             }
         }
     }
@@ -1029,7 +1048,7 @@ impl Parser {
                     }
                     return Ok(());
                 }
-                Tok::Identifier if n.val == "random" => return Err(format!("ln{}: random substats are not supported", n.line)),
+                Tok::Identifier if n.val == "random" => return Err("unsupported: random substats".into()),
                 _ => return Err(format!("ln{}: unrecognized token parsing add stats: {}", n.line, n.val)),
             }
         }

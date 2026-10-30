@@ -46,7 +46,7 @@ impl Sim {
         let lvl = self.talent(ci, 0);
         for (i, mult) in ATTACK[n].iter().enumerate() {
             let mut ai = AttackInfo::new(ci, AttackTag::Normal, IcdTag::None, IcdGroup::Default, Element::Physical, 25.0, mult[lvl]);
-            ai.abil = n as u16;
+            ai.abil = NORMAL_NAMES[n];
             self.queue_attack(ai, 0, HITMARKS[n][i], HITMARKS[n][i] + TRAVEL);
         }
         let atkspd = self.stat(ci, st::ATKSPD);
@@ -69,7 +69,7 @@ impl Sim {
     /// then explode the marks. The damage uses Yelan's HP at the cast.
     pub fn yelan_skill_hit(&mut self, ci: usize) {
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::None, IcdGroup::Default, Element::Hydro, 25.0, 0.0);
-        ai.abil = 10;
+        ai.abil = "Lingering Lifeline";
         ai.flat_dmg = self.chars[ci].yelan.skill_flat;
         self.queue_attack(ai, CB_YELAN_PARTICLE | CB_YELAN_SKILL, 1, 1);
     }
@@ -93,7 +93,7 @@ impl Sim {
     pub fn yelan_burst(&mut self, ci: usize) -> ActInfo {
         let lvl = self.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, IcdTag::None, IcdGroup::Default, Element::Hydro, 50.0, 0.0);
-        ai.abil = 11;
+        ai.abil = "Depth-Clarion Dice";
         ai.flat_dmg = BURST[lvl] * self.max_hp(ci);
         ai.hitlag_halt = 0.05 * 60.0;
         ai.hitlag_factor = 0.05;
@@ -126,7 +126,7 @@ impl Sim {
         let lvl = self.talent(ci, 2);
         let hp = self.max_hp(ci);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, IcdTag::YelanBurst, IcdGroup::YelanBurst, Element::Hydro, 25.0, 0.0);
-        ai.abil = 12;
+        ai.abil = "Exquisite Throw";
         ai.flat_dmg = BURST_DICE[lvl] * hp;
         let (stats, clvl) = self.make_snapshot(&mut ai);
         let mut ev = AttackEvent::new(ai, 0);

@@ -59,21 +59,33 @@ fn weapon_base(p: &CharProfile, d: &data::WeaponData) -> Stats {
     res
 }
 
-fn char_setup(p: &CharProfile) -> Result<CharSetup, String> {
-    let name = char_name(p.key);
-    let kind = match name {
+/// The engine's character for a gcsim key name, if it implements it.
+pub fn char_kind(name: &str) -> Option<CharKind> {
+    Some(match name {
         "hutao" => CharKind::Hutao,
         "xingqiu" => CharKind::Xingqiu,
         "zhongli" => CharKind::Zhongli,
         "yelan" => CharKind::Yelan,
-        _ => return Err(format!("character {name} is not implemented")),
-    };
+        _ => return None,
+    })
+}
+
+fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
+    let mut errs = Vec::new();
+    let name = char_name(p.key);
+    let kind = char_kind(name);
+    if kind.is_none() {
+        errs.push(format!("unsupported: character {name}"));
+    }
     let wname = weapon_name(p.weapon.key);
     let weapon = match wname {
-        "staffofhoma" => Weapon::Homa,
-        "sacrificialsword" => Weapon::SacrificialSword,
-        "aquasimulacra" => Weapon::AquaSimulacra,
-        _ => return Err(format!("{name}: weapon {wname} is not implemented")),
+        "staffofhoma" => Some(Weapon::Homa),
+        "sacrificialsword" => Some(Weapon::SacrificialSword),
+        "aquasimulacra" => Some(Weapon::AquaSimulacra),
+        _ => {
+            errs.push(format!("unsupported: weapon {wname}"));
+            None
+        }
     };
     let mut sets = [0; N_SETS];
     for (k, count) in &p.sets {
@@ -84,11 +96,11 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, String> {
             "tenacityofthemillelith" => sets[Set::Tenacity as usize] = *count,
             // a single piece of a set does nothing
             _ if *count < 2 => {}
-            _ => return Err(format!("{name}: set {s} is not implemented")),
+            _ => errs.push(format!("unsupported: set {s}")),
         }
     }
     if p.talents.iter().any(|t| !(1..=10).contains(t)) {
-        return Err(format!("{name}: invalid talent levels {:?}", p.talents));
+        errs.push(format!("{name}: invalid talent levels {:?}", p.talents));
     }
     let (mut start_hp, mut start_hp_ratio, mut start_energy) = (-1.0, -1.0, -1.0);
     for (k, v) in &p.params {
@@ -96,10 +108,15 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, String> {
             ("start_hp", _) => start_hp = *v as f64,
             ("start_hp%", _) => start_hp_ratio = *v as f64,
             ("start_energy", _) => start_energy = *v as f64,
-            ("breakthrough", CharKind::Yelan) => {}
-            _ => return Err(format!("{name}: param {k} is not implemented")),
+            ("breakthrough", Some(CharKind::Yelan)) => {}
+            // the character itself is unsupported
+            (_, None) => {}
+            _ => errs.push(format!("unsupported: param {name} {k}")),
         }
     }
+    let (Some(kind), Some(weapon), true) = (kind, weapon, errs.is_empty()) else {
+        return Err(errs);
+    };
     let cd = data::CHARS.iter().find(|c| c.key == name).unwrap();
     let wd = data::WEAPONS.iter().find(|w| w.key == wname).unwrap();
     let mut base = p.stats;
@@ -130,21 +147,35 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, String> {
     })
 }
 
-pub fn config(p: &ParsedConfig) -> Result<Config, String> {
+/// The fight a parsed config describes, or every reason the engine cannot
+/// run it, each unsupported feature as "unsupported: <what> <name>".
+pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
+    let mut errs = Vec::new();
     if p.targets.len() != 1 {
-        return Err(format!("the engine fights one target; the config has {}", p.targets.len()));
+        errs.push(format!("unsupported: targets {}", p.targets.len()));
     }
-    let t = &p.targets[0];
-    if t.typed {
-        return Err("target types are not implemented".into());
-    }
-    if t.particle_threshold > 0.0 {
-        return Err("target particle drops are not implemented".into());
+    for t in &p.targets {
+        if t.typed {
+            errs.push("unsupported: target type".into());
+        }
+        if t.particle_threshold > 0.0 {
+            errs.push("unsupported: target particle drops".into());
+        }
     }
     if p.hurt {
-        return Err("hurt is not implemented".into());
+        errs.push("unsupported: hurt".into());
     }
-    let chars = p.chars.iter().map(char_setup).collect::<Result<Vec<_>, _>>()?;
+    let mut chars = Vec::new();
+    for c in &p.chars {
+        match char_setup(c) {
+            Ok(c) => chars.push(c),
+            Err(e) => errs.extend(e),
+        }
+    }
+    if !errs.is_empty() {
+        return Err(errs);
+    }
+    let t = &p.targets[0];
     let active = p.chars.iter().position(|c| Some(c.key) == p.active).unwrap();
     let e = &p.energy;
     Ok(Config {

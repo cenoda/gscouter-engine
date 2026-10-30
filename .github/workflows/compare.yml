@@ -1,0 +1,53 @@
+# Compares the engine with gcsim on every library team the engine supports
+# (library builds and builds with their stats moved), and counts what
+# blocks the others. Gscouter is checked out at a fixed commit; gcsim is
+# fixed by reference/go.mod (Gscouter's fork, cenoda/gcsim@eb21884, the
+# same commit Gscouter's go.mod pins).
+name: compare
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GSCOUTER_COMMIT: 2e804aa200994ec69f9ff10574d15578f8a470a4
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: cenoda/Gscouter
+          ref: ${{ env.GSCOUTER_COMMIT }}
+          path: gscouter
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go.mod
+          cache-dependency-path: |
+            reference/go.sum
+            gscouter/go.sum
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the engine
+        working-directory: engine
+        run: cargo build --release
+      - name: Engine tests
+        working-directory: engine
+        run: cargo test --release
+      - name: Compare with gcsim
+        working-directory: reference
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -json ../compare.json -md ../compare.md
+      - name: Summary
+        if: always()
+        run: test -f compare.md && cat compare.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compare
+          path: |
+            compare.json
+            compare.md

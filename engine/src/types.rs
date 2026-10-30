@@ -1,6 +1,9 @@
 //! Enums and tables shared by the whole engine. Their numbering follows
 //! gcsim's, so values read off gcsim's source and data line up.
 
+/// gcsim's `Normal N` ability names.
+pub const NORMAL_NAMES: [&str; 8] = ["Normal 0", "Normal 1", "Normal 2", "Normal 3", "Normal 4", "Normal 5", "Normal 6", "Normal 7"];
+
 pub const N_STATS: usize = 26;
 pub type Stats = [f64; N_STATS];
 
@@ -144,6 +147,20 @@ pub const fn set(mut t: FrameTable, a: Action, v: i32) -> FrameTable {
     t[a as usize] = v;
     t
 }
+
+/// gcsim's `action.Failure`: why an action waits.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Failure {
+    SwapCd = 1,
+    SkillCd,
+    BurstCd,
+    InsufficientEnergy,
+    InsufficientStamina,
+    DashCd = 7,
+}
+pub const N_FAILURES: usize = 8;
+pub const FAILURE_NAMES: [&str; N_FAILURES] =
+    ["no_failure", "swap_cd", "skill_cd", "burst_cd", "insufficient_energy", "insufficient_stamina", "character_deceased", "dash_cd"];
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AnimState {

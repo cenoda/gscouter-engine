@@ -102,7 +102,7 @@ impl Sim {
         let hitmarks = if pp { PP_HITMARKS[n] } else { HITMARKS[n] };
         for (i, mult) in ATTACK[n].iter().enumerate() {
             let mut ai = AttackInfo::new(ci, AttackTag::Normal, IcdTag::NormalAttack, IcdGroup::Default, Element::Physical, 25.0, mult[lvl]);
-            ai.abil = n as u16;
+            ai.abil = NORMAL_NAMES[n];
             ai.hitlag_factor = 0.01;
             ai.hitlag_halt = HALT[n][i] * 60.0;
             ai.def_halt = DEF_HALT[n][i];
@@ -122,7 +122,7 @@ impl Sim {
     pub fn hutao_charge(&mut self, ci: usize) -> ActInfo {
         let lvl = self.talent(ci, 0);
         let mut ai = AttackInfo::new(ci, AttackTag::Extra, IcdTag::ExtraAttack, IcdGroup::PoleExtraAttack, Element::Physical, 25.0, CHARGE[lvl]);
-        ai.abil = 10;
+        ai.abil = "Charge Attack";
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
         ai.deployable = true;
@@ -171,7 +171,7 @@ impl Sim {
         self.chars[ci].hutao.heal_count = 0;
         self.chars[ci].hutao.heal_src = self.max_hp(ci) * regen;
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, IcdTag::None, IcdGroup::Default, Element::Pyro, 50.0, mult);
-        ai.abil = if low { 13 } else { 12 };
+        ai.abil = if low { "Spirit Soother (Low HP)" } else { "Spirit Soother" };
         let cb = CB_HUTAO_HEAL | if self.chars[ci].cons >= 2 { CB_HUTAO_BB } else { 0 };
         self.queue_attack(ai, cb, 0, BURST_HITMARK);
         self.consume_energy(ci, 68);
@@ -215,7 +215,7 @@ impl Sim {
         }
         let lvl = self.talent(ci, 1);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::None, IcdGroup::Default, Element::Pyro, 25.0, BB[lvl]);
-        ai.abil = 11;
+        ai.abil = "Blood Blossom";
         if self.chars[ci].cons >= 2 {
             ai.flat_dmg += self.max_hp(ci) * 0.1;
         }

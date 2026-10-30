@@ -123,7 +123,7 @@ pub const CB_YELAN_SKILL: u16 = 1 << 8;
 #[derive(Clone, Copy, Debug)]
 pub struct AttackInfo {
     pub actor: u8,
-    pub abil: u16,
+    pub abil: &'static str,
     pub tag: AttackTag,
     pub icd_tag: IcdTag,
     pub icd_group: IcdGroup,
@@ -143,7 +143,7 @@ impl AttackInfo {
     pub fn new(actor: usize, tag: AttackTag, icd_tag: IcdTag, icd_group: IcdGroup, element: Element, durability: f64, mult: f64) -> Self {
         AttackInfo {
             actor: actor as u8,
-            abil: 0,
+            abil: "",
             tag,
             icd_tag,
             icd_group,
@@ -597,9 +597,10 @@ pub struct Sim {
     pub window_start: i32,
     pub total: f64,
     pub window_char: [f64; 4],
-    pub waits: [f64; 4],
-    /// Hits and damage in the window by character and ability code.
-    pub abils: [[(f64, f64); 32]; 4],
+    /// Frames in the window that actions waited, by character and reason.
+    pub waits: [[u32; N_FAILURES]; 4],
+    /// Hits and damage in the window by character and ability.
+    pub abils: [Vec<(&'static str, u32, f64)>; 4],
 }
 
 impl Sim {
@@ -658,8 +659,8 @@ impl Sim {
             window_start: ((warmup * 60.0) as i32 / 30) * 30,
             total: 0.0,
             window_char: [0.0; 4],
-            waits: [0.0; 4],
-            abils: [[(0.0, 0.0); 32]; 4],
+            waits: [[0; N_FAILURES]; 4],
+            abils: Default::default(),
         };
         s.setup();
         for (i, c) in cfg.chars.iter().enumerate() {
@@ -1351,9 +1352,15 @@ impl Sim {
         let ci = ev.info.actor as usize;
         if self.f >= self.window_start {
             self.window_char[ci] += ev.damage;
-            let a = &mut self.abils[ci][ev.info.abil as usize];
-            a.0 += 1.0;
-            a.1 += ev.damage;
+            let abils = &mut self.abils[ci];
+            let name = ev.info.abil;
+            match abils.iter_mut().find(|a| std::ptr::eq(a.0, name) || a.0 == name) {
+                Some(a) => {
+                    a.1 += 1;
+                    a.2 += ev.damage;
+                }
+                None => abils.push((name, 1, ev.damage)),
+            }
         }
         self.on_enemy_damage(&ev);
         let cbs = ev.callbacks;
@@ -1586,24 +1593,37 @@ impl Sim {
     }
 
     pub fn action_ready(&self, ci: usize, a: Action) -> bool {
+        self.action_failure(ci, a).is_none()
+    }
+
+    /// gcsim's ActionReady: why the action cannot be used, if it cannot.
+    pub fn action_failure(&self, ci: usize, a: Action) -> Option<Failure> {
         let c = &self.chars[ci];
         match a {
-            Action::Burst => (self.ignore_burst_energy || c.energy == c.energy_max) && c.cd[1].available > 0,
-            Action::Skill => c.cd[0].available > 0,
-            Action::Charge => self.player.stam >= self.abil_stam_cost(ci, a),
+            Action::Burst => {
+                if !self.ignore_burst_energy && c.energy != c.energy_max {
+                    return Some(Failure::InsufficientEnergy);
+                }
+                if c.cd[1].available <= 0 {
+                    return Some(Failure::BurstCd);
+                }
+                None
+            }
+            Action::Skill if c.cd[0].available <= 0 => Some(Failure::SkillCd),
+            Action::Charge if self.player.stam < self.abil_stam_cost(ci, a) => Some(Failure::InsufficientStamina),
             Action::Dash => {
                 if self.player.stam < self.abil_stam_cost(ci, a) {
-                    return false;
+                    return Some(Failure::InsufficientStamina);
                 }
                 if self.player.active as usize == ci && self.player.dash_lockout && self.player.dash_cd_exp > self.f {
-                    return false;
+                    return Some(Failure::DashCd);
                 }
                 if self.player.active as usize != ci && c.dash_lockout && c.remaining_dash_cd > 0 {
-                    return false;
+                    return Some(Failure::DashCd);
                 }
-                true
+                None
             }
-            _ => true,
+            _ => None,
         }
     }
 
@@ -1916,15 +1936,15 @@ impl Sim {
             }
             if self.player.swap_cd > 0 {
                 if counted {
-                    self.waits[active] += 1.0 / 60.0;
+                    self.waits[active][Failure::SwapCd as usize] += 1;
                 }
                 return false;
             }
             return true;
         }
-        if !self.action_ready(active, a) {
+        if let Some(why) = self.action_failure(active, a) {
             if counted {
-                self.waits[active] += 1.0 / 60.0;
+                self.waits[active][why as usize] += 1;
             }
             return false;
         }
@@ -2068,18 +2088,6 @@ impl Sim {
     /// The team index of a character key, if it is on the team.
     pub fn index_of(&self, key: u16) -> Option<usize> {
         self.chars.iter().position(|c| c.key == key)
-    }
-
-    /// Whether the engine implements an action for a character.
-    pub fn supports(&self, ci: usize, a: Action) -> bool {
-        match a {
-            Action::Swap | Action::Dash | Action::Jump | Action::Walk => true,
-            Action::Attack => self.chars[ci].kind != CharKind::Zhongli,
-            Action::Charge => self.chars[ci].kind == CharKind::Hutao,
-            Action::Skill => true,
-            Action::Burst => self.chars[ci].kind != CharKind::Zhongli,
-            _ => false,
-        }
     }
 
     /// gcsim's execAction: waits until the action can be used, runs it, then
@@ -2299,7 +2307,7 @@ impl Sim {
                     _ => match (c.kind, typ) {
                         (CharKind::Zhongli, "shielded") => Ok(int(c.zl.shielded as i64)),
                         (CharKind::Yelan, "breakthrough") => Ok(b(true)),
-                        _ => Err(format!("invalid character condition: .{}", fields.join("."))),
+                        _ => Err(format!("unsupported: field .{}", fields.join("."))),
                     },
                 }
             }
@@ -2313,6 +2321,26 @@ impl Sim {
         }
         Ok(())
     }
+}
+
+/// The action, as gcsl names it, if the engine does not implement it for
+/// the character with these params.
+pub fn unsupported_action(kind: CharKind, a: Action, p: &Params) -> Option<String> {
+    let ok = match a {
+        Action::Swap | Action::Dash | Action::Jump | Action::Walk => true,
+        Action::Attack => kind != CharKind::Zhongli,
+        Action::Charge => kind == CharKind::Hutao,
+        Action::Skill if kind == CharKind::Zhongli => {
+            if p.get("hold").unwrap_or(0) <= 0 {
+                return Some("skill (press)".into());
+            }
+            true
+        }
+        Action::Skill => true,
+        Action::Burst => kind != CharKind::Zhongli,
+        _ => false,
+    };
+    if ok { None } else { Some(crate::gcsl::action_name(a).into()) }
 }
 
 /// An action's params, such as hold=1.

@@ -60,6 +60,11 @@ const BUILTINS: &[(&str, Builtin)] = &[
     ("set_on_tick", Builtin::Unsupported("set_on_tick")),
 ];
 
+/// Whether gcsl has the built-in and the engine does not implement it.
+pub fn unsupported_builtin(name: &str) -> bool {
+    BUILTINS.iter().any(|(n, b)| *n == name && matches!(b, Builtin::Unsupported(_)))
+}
+
 #[derive(Clone)]
 enum Value<'a> {
     Null,
@@ -447,8 +452,8 @@ impl<'s> Eval<'s> {
                 let Some(action) = action_from(a.i()) else {
                     return err(format!("ln{line}: invalid action {}", a.i()));
                 };
-                if !self.sim.supports(ci, action) {
-                    return err(format!("ln{line}: {}: action {action:?} is not implemented", char_name(key)));
+                if let Some(what) = crate::sim::unsupported_action(self.sim.chars[ci].kind, action, &params) {
+                    return err(format!("unsupported: action {} {what}", char_name(key)));
                 }
                 if ci != self.sim.player.active as usize && !self.sim.queue_action(ci, Action::Swap, &Params::default()) {
                     return Err(Stop::Terminated);
@@ -494,12 +499,12 @@ impl<'s> Eval<'s> {
             Builtin::Cos => float(self.num(args, line, env)?.f().cos()),
             Builtin::Asin => float(self.num(args, line, env)?.f().asin()),
             Builtin::Acos => float(self.num(args, line, env)?.f().acos()),
-            Builtin::Unsupported(name) => err(format!("ln{line}: {name} is not implemented")),
+            Builtin::Unsupported(name) => err(format!("unsupported: builtin {name}")),
         }
     }
 }
 
-fn action_from(i: i64) -> Option<Action> {
+pub fn action_from(i: i64) -> Option<Action> {
     Some(match i {
         1 => Action::Skill,
         2 => Action::Burst,

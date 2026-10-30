@@ -50,7 +50,7 @@ impl Sim {
         let lvl = self.talent(ci, 0);
         for (i, mult) in ATTACK[n].iter().enumerate() {
             let mut ai = AttackInfo::new(ci, AttackTag::Normal, IcdTag::NormalAttack, IcdGroup::Default, Element::Physical, 25.0, mult[lvl]);
-            ai.abil = n as u16;
+            ai.abil = NORMAL_NAMES[n];
             ai.hitlag_halt = HALT[n] * 60.0;
             ai.hitlag_factor = 0.01;
             ai.def_halt = true;
@@ -72,7 +72,7 @@ impl Sim {
                 mult *= 1.5;
             }
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::None, IcdGroup::Default, Element::Hydro, 25.0, mult);
-            ai.abil = 10 + i as u16;
+            ai.abil = ["Guhua Sword: Fatal Rainscreen 0", "Guhua Sword: Fatal Rainscreen 1"][i];
             ai.hitlag_halt = 0.02 * 60.0;
             ai.hitlag_factor = 0.01;
             ai.def_halt = true;
@@ -105,7 +105,7 @@ impl Sim {
             return;
         }
         let mut ai = AttackInfo::new(ci, AttackTag::None, IcdTag::None, IcdGroup::Default, Element::Hydro, 25.0, 0.0);
-        ai.abil = 13;
+        ai.abil = "Xingqiu Orbital";
         self.queue_char_task(ci, Task::XqOrbitalTick { c: ci as u8 }, 135);
         self.queue_attack(ai, 0, -1, 1);
     }
@@ -128,7 +128,7 @@ impl Sim {
     pub fn xq_sword_wave(&mut self, ci: usize) {
         let lvl = self.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, IcdTag::ElementalBurst, IcdGroup::Default, Element::Hydro, 25.0, BURST[lvl]);
-        ai.abil = 12;
+        ai.abil = "Guhua Sword: Raincutter";
         let (stats, lvl) = self.make_snapshot(&mut ai);
         let mut ev = AttackEvent::new(ai, 0);
         ev.stats = stats;
