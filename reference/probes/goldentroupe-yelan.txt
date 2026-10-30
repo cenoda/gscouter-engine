@@ -1,0 +1,5 @@
+# Yelan with Golden Troupe 4, Xingqiu with Golden Troupe 2 and Emblem 2.
+team hutao-yelan-bennett-xingqiu
+yelan add set="goldentroupe" count=4;
+xingqiu add set="goldentroupe" count=2;
+xingqiu add set="emblemofseveredfate" count=2;

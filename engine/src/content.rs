@@ -148,6 +148,8 @@ pub trait SetImpl {
     fn new_state() -> Self::State;
     /// gcsim's NewSet, with the pieces worn.
     fn init(s: &mut Sim, ci: usize, si: usize, count: i32);
+    /// gcsim's Set.Init, after the character's Init.
+    fn post_init(_s: &mut Sim, _ci: usize, _si: usize) {}
     fn task(_s: &mut Sim, _ci: usize, _si: usize, _id: u8, _arg: i32) {}
     fn mod_amount(_s: &Sim, _ci: usize, _si: usize, _on: usize, _m: &Mod, _out: &mut Stats) -> bool {
         false
@@ -342,6 +344,7 @@ macro_rules! sets {
             use $crate::types::*;
 
             pub fn init(k: SetKind, s: &mut Sim, ci: usize, si: usize, count: i32) { match k { $(SetKind::$kind => $m::Set::init(s, ci, si, count)),* } }
+            pub fn post_init(k: SetKind, s: &mut Sim, ci: usize, si: usize) { match k { $(SetKind::$kind => $m::Set::post_init(s, ci, si)),* } }
             #[inline]
             pub fn task(k: SetKind, s: &mut Sim, ci: usize, si: usize, id: u8, arg: i32) { match k { $(SetKind::$kind => $m::Set::task(s, ci, si, id, arg)),* } }
             #[inline]

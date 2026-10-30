@@ -780,6 +780,9 @@ impl Sim {
         self.subscribe(EventKind::Swap, Owner::Core);
         for i in 0..n {
             crate::chars::dispatch::init(self.chars[i].kind, self, i);
+            for si in 0..self.chars[i].sets.len() {
+                crate::sets::dispatch::post_init(self.chars[i].sets[si].kind, self, i, si);
+            }
         }
         for i in 0..n {
             let (hp, ratio) = (self.starts[i].0, self.starts[i].1);
@@ -814,6 +817,10 @@ impl Sim {
     #[inline]
     pub fn weapon_st_mut<T: StateOf<WeaponState>>(&mut self, ci: usize) -> &mut T {
         T::of_mut(&mut self.chars[ci].weapon_state)
+    }
+    #[inline]
+    pub fn set_st<T: StateOf<SetState>>(&self, ci: usize, si: usize) -> &T {
+        T::of(&self.chars[ci].sets[si].state)
     }
     #[inline]
     pub fn set_st_mut<T: StateOf<SetState>>(&mut self, ci: usize, si: usize) -> &mut T {

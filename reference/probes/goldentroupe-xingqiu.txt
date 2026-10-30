@@ -1,0 +1,3 @@
+# Xingqiu with Golden Troupe 4.
+team hutao-xingqiu-zhongli-yelan
+xingqiu add set="goldentroupe" count=4;

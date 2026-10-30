@@ -7,4 +7,5 @@ crate::sets! {
     Tenacity => tenacityofthemillelith,
     Instructor => instructor,
     NoblesseOblige => noblesseoblige,
+    GoldenTroupe => goldentroupe,
 }
