@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phase 0 done, Phase 1 next · Last updated: 2026-10-30
+> Status: Phases 0 and 1 done, Phase 2 next · Last updated: 2026-10-30
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
@@ -32,19 +32,25 @@ Measured on Gscouter's library (4,573 teams, October 2026) and on gcsim at `ceno
 
 Hu Tao / Xingqiu / Zhongli / Yelan and the gcsl parser, within 0.03% of gcsim; about 8× faster native and about 30× faster in WebAssembly (`README.md`).
 
-### Phase 1: foundations for porting at scale
+### Phase 1: foundations for porting at scale (done)
 
-What has to be in place before dozens of characters, so that they are not rewritten later.
+What had to be in place before dozens of characters, so that they are not rewritten later (`README.md` has the details and the full tables).
 
-- **Comparison runner.** Run each library team's looped config under gcsim and under the engine, and compare team DPS, per-character DPS, waits and per-ability damage against the 1% bound. Run it in CI.
-  - Library builds alone are not enough: also compare builds with their stats moved (ER, crit, ATK). Players' builds often lack ER, and the waits that follow decide fillers.
-- **Generated data.** Take the talent multipliers, frames, hitlag and ICD data from gcsim's generated files and catalog through `reference/gendata`, so that porting a character is only its logic.
-- **Core structure.** Characters are dispatched by `match` today. Make characters, weapons and sets attach to events and mods in one general way, which 168 characters and 316 weapons and sets need.
+- **Comparison runner** (`reference/compare`, in CI). For each library team it assembles Gscouter's looped config, asks the engine what it lacks, and runs the supported ones under both engines: the library build and nine builds with their stats moved, among them ER-starved builds whose bursts wait for energy. Team and per-character DPS pass when the 95% interval of the difference lies within ±1%; iterations grow until each engine's standard error is at most 0.3% and further, up to 512,000, while a verdict is inconclusive. Waits by reason and per-ability hits and damage are reported beside them, as a Markdown report and JSON.
+  - Result: both supported teams and all their builds pass, 20 of 20; the largest team difference is −0.15%, the largest character difference −0.38% ± 0.55 (Yelan, crit +20%).
+- **Generated data** (`reference/gendata`). Every character's, weapon's and set's package variables and constants as gcsim computes them (talent multipliers, frames, hitmarks, hitlag, mod keys), every ICD tag and group, base stats and what each character's `NewChar` and `Init` set: all 168 member keys of the library, 252 weapons, 55 sets. The four ported characters take their tables from it; their scores did not move (72,266.73 and 24,607.03 at 1,000 iterations).
+- **Core structure** (`engine/src/content.rs`). Characters, weapons and sets are modules on hooks (actions, tasks, attack callbacks, mod amounts, attack mods, events in gcsim's subscription order, frames, conditions), dispatched statically through macro-generated `match`es. The restructure gave byte-identical output and the same speed (+0.8%, 1.47 s against 1.46 s for 500 iterations on one thread).
+- **Check of the structure**: Bennett, with Deathmatch, Favonius Warbow, The Alley Flash, Harbinger of Dawn and Instructor, makes `hutao-yelan-bennett-xingqiu` a supported library team (team −0.03%). The core gained only general systems for it: weapon infusion, reaction events, fight-wide statuses, pyro resonance.
+- **Progress measure**: the runner's census. 2 of 4,570 teams are supported. The largest blockers: Noblesse Oblige (2,087 teams), Golden Troupe (1,852), Favonius Sword (1,845), Scroll of the Hero of Cinder City (1,493), Favonius Lance (1,376), Furina (1,324), Viridescent Venerer (1,290), Fischl (1,001); electro resonance 961, cryo 774; `pick_up_crystallize` 511.
 
 ### Phase 2: the rest of the engine
 
-- **Reactions.** Overloaded, superconduct, electro-charged, swirl, frozen and shatter, burning, bloom, hyperbloom and burgeon, quicken, aggravate and spread, and the lunar reactions.
-- **Systems.** Nightsoul, healing and HP changes (Furina's fanfare follows them), shields, gadgets (dendro cores, crystallize shards and `pick_up_crystallize`), positions (`set_player_pos`), stamina, `rand` and `randnorm`.
+- **Reactions.** Overloaded, superconduct, electro-charged, swirl, frozen and shatter, burning, bloom, hyperbloom and burgeon, quicken, aggravate and spread, and the lunar reactions. Only vaporize and crystallize (without shards) exist; reaction events are already emitted, so sets like Instructor work for the new ones once they emit.
+- **Resonances.** Electro (961 teams), cryo (774), geo (418), dendro (328), anemo (263) are named errors now.
+- **HP changes, for Furina (1,324 teams).** Her fanfare counts every HP change of the party, so she needs drains (`Drain` and `OnPlayerHPDrain`, which the Salon Members cause), `OnHeal` with the healed and overhealed amounts, incoming healing bonus mods (her burst's), and Ousia and Pneuma (Arkhe). HP debt (Arlecchino) belongs with them. Today HP is a ratio changed by heals and Hu Tao's drain, with no events.
+- **Systems.** Nightsoul, shields beyond Zhongli's (strength, absorption), gadgets (dendro cores, crystallize shards and `pick_up_crystallize`, 511 teams), positions (`set_player_pos`, 45), stamina mods.
+- **Actions of the ported characters** the library uses: Zhongli's normal attack (280 teams), press skill (46) and burst (36), Yelan's aimed shots (134), Bennett's charge (19), plunges.
+- **The runner's noisy cases.** Builds that spend most of the fight waiting for energy need up to about 320,000 iterations to reach a verdict and take most of the runner's time. As supported teams grow, run the variants on a schedule and only the library builds on every push.
 
 ### Phase 3: content (most of the work)
 
