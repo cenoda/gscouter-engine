@@ -20,7 +20,11 @@
 //
 // Usage:
 //
-//	compare -gscouter ../Gscouter [-teams id,id] [-census] [-json out.json] [-md out.md]
+//	compare -gscouter ../Gscouter [-teams id,id] [-census] [-only library,variants,probes] [-shard k/n] [-json out.json] [-md out.md]
+//
+// The variants take about an hour per team, so CI compares library builds
+// and probes on every push (-only library,probes) and the variants on a
+// schedule, a few parts of the teams a day (-only variants -shard k/n).
 //
 // A weapon, set or character no supported team carries would go
 // unchecked, so the probes (probes/*.txt) put it on one: each names a
@@ -62,7 +66,10 @@ var (
 	gsePath     = flag.String("gse", "../engine/target/release/gse", "the engine's executable")
 	teamsFlag   = flag.String("teams", "", "comma-separated team ids (default: the whole library)")
 	censusOnly  = flag.Bool("census", false, "only classify teams as supported or not; run nothing")
-	noVariants  = flag.Bool("no-variants", false, "compare library builds only")
+	noVariants  = flag.Bool("no-variants", false, "compare library builds and probes only (same as -only library,probes)")
+	onlyFlag    = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, probes")
+	dryRun      = flag.Bool("dry-run", false, "list the builds that would be compared, and compare none")
+	shardFlag   = flag.String("shard", "", "k/n: compare only the k-th of n parts of the teams that have builds to compare (k from 0); the census still covers every team")
 	iter0       = flag.Int("iter", 1000, "iterations of the first batch")
 	maxIter     = flag.Int("max-iter", 512000, "most iterations a config may grow to")
 	targetSE    = flag.Float64("target-se", 0.003, "standard error, relative to the mean, each engine must reach")
@@ -178,7 +185,10 @@ type Report struct {
 	Variants []variant `json:"variants"`
 	Results  []Result  `json:"results"`
 	Census   Census    `json:"census"`
-	Pass     bool      `json:"pass"`
+	// Only is the kinds of build compared, Shard the part of the teams.
+	Only  []string `json:"only"`
+	Shard string   `json:"shard,omitempty"`
+	Pass  bool     `json:"pass"`
 }
 
 func main() {
@@ -206,8 +216,19 @@ func main() {
 	if *teamsFlag != "" {
 		ids = strings.Split(*teamsFlag, ",")
 	}
-	rep := &Report{Date: time.Now().UTC().Format(time.RFC3339), Gscouter: gitHead(*gscouterDir), Bound: bound, TargetSE: *targetSE, Warmup: *warmup}
-	if !*noVariants {
+	kinds, err := parseOnly(*onlyFlag)
+	if err != nil {
+		fail(err)
+	}
+	if *noVariants {
+		delete(kinds, "variants")
+	}
+	shard, shards, err := parseShard(*shardFlag)
+	if err != nil {
+		fail(err)
+	}
+	rep := &Report{Date: time.Now().UTC().Format(time.RFC3339), Gscouter: gitHead(*gscouterDir), Bound: bound, TargetSE: *targetSE, Warmup: *warmup, Only: slices.Sorted(mapsKeys(kinds)), Shard: *shardFlag}
+	if kinds["variants"] {
 		rep.Variants = variants
 	}
 
@@ -232,23 +253,33 @@ func main() {
 	})
 
 	if !*censusOnly {
+		// the teams with builds to compare, in the order listed, split
+		// into parts by position
+		part := 0
 		for i, id := range ids {
 			supported := statuses[i].Status == "supported"
-			probes := probesFor(id)
-			if !supported && len(probes) == 0 {
+			var probes []probe
+			if kinds["probes"] {
+				probes = probesFor(id)
+			}
+			if !(supported && (kinds["library"] || kinds["variants"])) && len(probes) == 0 {
+				continue
+			}
+			part++
+			if (part-1)%shards != shard {
 				continue
 			}
 			var jobs []struct {
 				v   variant
 				cfg string
 			}
-			if supported {
+			if supported && kinds["library"] {
 				jobs = append(jobs, struct {
 					v   variant
 					cfg string
 				}{variant{Name: "library", Desc: "library build"}, configs[i]})
 			}
-			if supported && !*noVariants {
+			if supported && kinds["variants"] {
 				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
 				if err != nil {
 					fail(err)
@@ -295,6 +326,10 @@ func main() {
 				}{pr.v, cfg})
 			}
 			for _, j := range jobs {
+				if *dryRun {
+					fmt.Fprintf(os.Stderr, "%s / %s\n", id, j.v.Name)
+					continue
+				}
 				fmt.Fprintf(os.Stderr, "%s / %s ...\n", id, j.v.Name)
 				r := compare(gse, tmp, id, j.v, j.cfg)
 				fmt.Fprintf(os.Stderr, "%s / %s: %s at %d iterations\n", id, j.v.Name, r.Verdict, r.Iter)
@@ -335,6 +370,39 @@ func main() {
 	if !rep.Pass {
 		os.Exit(1)
 	}
+}
+
+// parseOnly reads -only: library, variants, probes.
+func parseOnly(s string) (map[string]bool, error) {
+	kinds := map[string]bool{}
+	for _, k := range strings.Split(s, ",") {
+		k = strings.TrimSpace(k)
+		switch k {
+		case "library", "variants", "probes":
+			kinds[k] = true
+		case "":
+		default:
+			return nil, fmt.Errorf("-only: unknown kind %q (library, variants, probes)", k)
+		}
+	}
+	if len(kinds) == 0 {
+		return nil, errors.New("-only: no kind given")
+	}
+	return kinds, nil
+}
+
+// parseShard reads -shard k/n; empty is the whole, 0/1.
+func parseShard(s string) (int, int, error) {
+	if s == "" {
+		return 0, 1, nil
+	}
+	a, b, ok := strings.Cut(s, "/")
+	k, err1 := strconv.Atoi(a)
+	n, err2 := strconv.Atoi(b)
+	if !ok || err1 != nil || err2 != nil || n < 1 || k < 0 || k >= n {
+		return 0, 0, fmt.Errorf("-shard: want k/n with 0 <= k < n, got %q", s)
+	}
+	return k, n, nil
 }
 
 func fail(err error) {
@@ -865,7 +933,17 @@ func markdown(rep *Report) string {
 	var b strings.Builder
 	w := func(f string, a ...any) { fmt.Fprintf(&b, f, a...) }
 	if len(rep.Results) > 0 {
-		w("## Accuracy\n\n")
+		passed := 0
+		for _, r := range rep.Results {
+			if r.Verdict == "pass" {
+				passed++
+			}
+		}
+		scope := strings.Join(rep.Only, ", ")
+		if rep.Shard != "" {
+			scope += ", part " + rep.Shard + " of the teams"
+		}
+		w("## Accuracy\n\nCompared: %s. %d of %d pass.\n\n", scope, passed, len(rep.Results))
 		w("Bound ±%.0f%% of gcsim; a verdict is pass when the 95%% interval of the difference lies inside it, fail when it lies outside, inconclusive otherwise. DPS over the window from %.0f s.\n\n", 100*bound, rep.Warmup)
 		w("| Team | Build | Iterations | Verdict | Who | gcsim | gse | Difference | ±95%% |\n|---|---|---|---|---|---|---|---|---|\n")
 		for _, r := range rep.Results {

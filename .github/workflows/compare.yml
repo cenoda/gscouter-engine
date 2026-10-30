@@ -1,23 +1,76 @@
-# Compares the engine with gcsim on every library team the engine supports
-# (library builds and builds with their stats moved), and counts what
-# blocks the others. Gscouter is checked out at a fixed commit; gcsim is
-# fixed by reference/go.mod (Gscouter's fork, cenoda/gcsim@eb21884, the
-# same commit Gscouter's go.mod pins).
+# Compares the engine with gcsim on the library teams the engine supports,
+# and counts what blocks the others. Gscouter is checked out at a fixed
+# commit; gcsim is fixed by reference/go.mod (Gscouter's fork,
+# cenoda/gcsim@eb21884, the same commit Gscouter's go.mod pins).
+#
+# Every push compares the library builds and the probes, in four parallel
+# parts. The variants (builds with their stats moved) take about an hour
+# per team, so they run on a schedule: the teams are split into PARTS
+# parts, and each day runs PER_DAY of them, so every team's variants run
+# every PARTS / PER_DAY days. A manual run can name the parts to run, e.g.
+# "0-39" for all of them, or "library" for the push run.
 name: compare
 
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      parts:
+        description: 'Variant parts to run ("0-39", "3,7,12"), or "library" for the library builds and probes'
+        default: library
 
 env:
-  GSCOUTER_COMMIT: 2e804aa200994ec69f9ff10574d15578f8a470a4
+  GSCOUTER_COMMIT: 14e187fab1fb0695f527347f419aad977e27a92c
+  PARTS: 40
+  PER_DAY: 8
 
 jobs:
-  compare:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      library: ${{ steps.plan.outputs.library }}
+      parts: ${{ steps.plan.outputs.parts }}
+    steps:
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT: ${{ inputs.parts }}
+        run: |
+          parts=""
+          if [ "$EVENT" = schedule ]; then
+            day=$(( $(date -u +%s) / 86400 ))
+            first=$(( (day % (PARTS / PER_DAY)) * PER_DAY ))
+            parts=$(seq -s, $first $(( first + PER_DAY - 1 )))
+          elif [ "$EVENT" = workflow_dispatch ] && [ "$INPUT" != library ]; then
+            for r in ${INPUT//,/ }; do
+              if [[ $r == *-* ]]; then parts+="$(seq -s, ${r%-*} ${r#*-}),"; else parts+="$r,"; fi
+            done
+            parts=${parts%,}
+          fi
+          if [ -z "$parts" ]; then
+            echo "library=true" >> "$GITHUB_OUTPUT"
+            echo "parts=[]" >> "$GITHUB_OUTPUT"
+          else
+            for p in ${parts//,/ }; do
+              [ "$p" -ge 0 ] && [ "$p" -lt "$PARTS" ] || { echo "part $p out of 0..$((PARTS-1))"; exit 1; }
+            done
+            echo "library=false" >> "$GITHUB_OUTPUT"
+            echo "parts=[$parts]" >> "$GITHUB_OUTPUT"
+          fi
+
+  library:
+    needs: plan
+    if: needs.plan.outputs.library == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [0, 1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -36,18 +89,59 @@ jobs:
         working-directory: engine
         run: cargo build --release
       - name: Engine tests
+        if: matrix.part == 0
         working-directory: engine
         run: cargo test --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -json ../compare.json -md ../compare.md
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes -shard ${{ matrix.part }}/4 -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && cat compare.md >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: compare
+          name: compare-library-${{ matrix.part }}
+          path: |
+            compare.json
+            compare.md
+
+  variants:
+    needs: plan
+    if: needs.plan.outputs.parts != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.plan.outputs.parts) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: cenoda/Gscouter
+          ref: ${{ env.GSCOUTER_COMMIT }}
+          path: gscouter
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go.mod
+          cache-dependency-path: |
+            reference/go.sum
+            gscouter/go.sum
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the engine
+        working-directory: engine
+        run: cargo build --release
+      - name: Compare with gcsim
+        working-directory: reference
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only variants -shard ${{ matrix.part }}/${{ env.PARTS }} -json ../compare.json -md ../compare.md
+      - name: Summary
+        if: always()
+        run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compare-variants-${{ matrix.part }}
           path: |
             compare.json
             compare.md

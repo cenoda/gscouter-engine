@@ -144,11 +144,12 @@ cd reference
 go run . -config ../configs/team-looped.txt -iter 10000 -warmup 150 -j 4 -abil   # the same under gcsim
 go run ./compare -gscouter ../../Gscouter -json compare.json -md compare.md      # the whole library
 go run ./compare -gscouter ../../Gscouter -teams hutao-yelan-bennett-xingqiu     # one team
+go run ./compare -gscouter ../../Gscouter -only variants -shard 3/40             # the variants of one part of the teams
 go run ./gendata                                                                 # regenerate engine/src/data.rs and engine/src/gcsimdata
 go run ./dump ../configs/team-looped.txt                                         # base stats as gcsim sets them up
 ```
 
-`compare` exits with 1 when a comparison fails or stays inconclusive. CI (`.github/workflows/compare.yml`) runs it on every push with Gscouter at a fixed commit; gcsim is fixed by `reference/go.mod`. The report is the job summary and an artifact.
+`compare` exits with 1 when a comparison fails or stays inconclusive. `-only library,variants,probes` picks the kinds of build to compare, `-shard k/n` the k-th of n parts of the teams (the census still covers every team), and `-dry-run` lists the builds without comparing them. CI (`.github/workflows/compare.yml`) runs it with Gscouter at a fixed commit; gcsim is fixed by `reference/go.mod`. Every push compares the library builds and probes in four parallel parts. The variants take about an hour per team, so a daily schedule runs 8 of their 40 parts, every team's variants once in five days; a manual run takes the parts to run (`0-39` for all). The reports are the job summaries and artifacts.
 
 WebAssembly: `cargo build --release --target wasm32-wasip1` and `GOOS=wasip1 GOARCH=wasm go build`, run with `node:wasi` (not remeasured in Phase 1).
 
