@@ -1,0 +1,3 @@
+# Bennett with Noblesse Oblige 4.
+team hutao-yelan-bennett-xingqiu
+bennett add set="noblesseoblige" count=4;

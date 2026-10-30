@@ -21,6 +21,11 @@
 // Usage:
 //
 //	compare -gscouter ../Gscouter [-teams id,id] [-census] [-json out.json] [-md out.md]
+//
+// A weapon or set no supported team carries would go unchecked, so the
+// probes (probes/*.txt) put it on one: each names a supported team and the
+// lines that replace those of its library build, and is compared like a
+// variant of it.
 package main
 
 import (
@@ -64,6 +69,7 @@ var (
 	workers     = flag.Int("j", runtime.NumCPU(), "workers")
 	jsonOut     = flag.String("json", "", "write the results as JSON to this file")
 	mdOut       = flag.String("md", "", "also write the report to this file")
+	probesDir   = flag.String("probes", "probes", "directory of probes: library builds with a weapon, set or character line changed")
 )
 
 // A variant moves stats of every character's build.
@@ -261,10 +267,32 @@ func main() {
 					}{v, cfg})
 				}
 			}
+			for _, pr := range probesFor(id) {
+				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
+				if err != nil {
+					fail(err)
+				}
+				path := filepath.Join(tmp, id+"-"+pr.v.Name+".txt")
+				if err := os.WriteFile(path, []byte(pr.apply(string(base))), 0o644); err != nil {
+					fail(err)
+				}
+				cfg, err := dump(gscouter, id, path)
+				if err != nil {
+					fail(fmt.Errorf("%s %s: %w", id, pr.v.Name, err))
+				}
+				jobs = append(jobs, struct {
+					v   variant
+					cfg string
+				}{pr.v, cfg})
+			}
 			for _, j := range jobs {
 				fmt.Fprintf(os.Stderr, "%s / %s ...\n", id, j.v.Name)
 				r := compare(gse, tmp, id, j.v, j.cfg)
 				fmt.Fprintf(os.Stderr, "%s / %s: %s at %d iterations\n", id, j.v.Name, r.Verdict, r.Iter)
+				// a probe exists to check what it adds, so it must run
+				if r.Verdict == "unsupported" && strings.HasPrefix(j.v.Name, "probe:") {
+					r.Verdict = "error"
+				}
 				// a feature only the run finds makes the team unsupported
 				if r.Verdict == "unsupported" {
 					statuses[i].Status = "unsupported"
@@ -719,6 +747,95 @@ func waitStr(w map[string]float64) string {
 	return fmt.Sprintf("%.2f (%s)", total, strings.Join(parts, ", "))
 }
 
+// A probe replaces lines of a team's library build.
+type probe struct {
+	v     variant
+	team  string
+	lines []string
+}
+
+var probeLine = regexp.MustCompile(`^\s*(\S+)\s+(char|add\s+weapon|add\s+set|add\s+stats)\b`)
+
+// probesFor reads the probes of a team. A probe file is comments (#), a
+// line "team <id>", and build lines: a character's char or weapon line
+// replaces its own, and its set or stats lines replace all of its set or
+// stats lines.
+func probesFor(id string) []probe {
+	ents, err := os.ReadDir(*probesDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		fail(err)
+	}
+	var out []probe
+	for _, e := range ents {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".txt") {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(*probesDir, e.Name()))
+		if err != nil {
+			fail(err)
+		}
+		pr := probe{v: variant{Name: "probe:" + strings.TrimSuffix(e.Name(), ".txt")}}
+		for _, l := range strings.Split(string(b), "\n") {
+			t := strings.TrimSpace(l)
+			switch {
+			case t == "":
+			case strings.HasPrefix(t, "#"):
+				if pr.v.Desc == "" {
+					pr.v.Desc = strings.TrimSpace(strings.TrimPrefix(t, "#"))
+				}
+			case strings.HasPrefix(t, "team "):
+				pr.team = strings.TrimSpace(strings.TrimPrefix(t, "team "))
+			case probeLine.MatchString(t):
+				pr.lines = append(pr.lines, t)
+			default:
+				fail(fmt.Errorf("probe %s: cannot read %q", e.Name(), t))
+			}
+		}
+		if pr.team == id {
+			out = append(out, pr)
+		}
+	}
+	return out
+}
+
+func lineKey(l string) (string, bool) {
+	m := probeLine.FindStringSubmatch(l)
+	if m == nil {
+		return "", false
+	}
+	return m[1] + " " + strings.Join(strings.Fields(m[2]), " "), true
+}
+
+func (pr probe) apply(build string) string {
+	repl := map[string][]string{}
+	for _, l := range pr.lines {
+		k, _ := lineKey(l)
+		repl[k] = append(repl[k], l)
+	}
+	var out []string
+	done := map[string]bool{}
+	for _, l := range strings.Split(build, "\n") {
+		k, ok := lineKey(l)
+		if !ok || repl[k] == nil {
+			out = append(out, l)
+			continue
+		}
+		if !done[k] {
+			out = append(out, repl[k]...)
+			done[k] = true
+		}
+	}
+	for k := range repl {
+		if !done[k] {
+			fail(fmt.Errorf("probe %s: the build has no line %q to replace", pr.v.Name, k))
+		}
+	}
+	return strings.Join(out, "\n")
+}
+
 func markdown(rep *Report) string {
 	var b strings.Builder
 	w := func(f string, a ...any) { fmt.Fprintf(&b, f, a...) }
@@ -843,6 +960,21 @@ func markdown(rep *Report) string {
 			}
 			w("| %s | %d | %d |\n", bl.Name, bl.Teams, bl.Only)
 		}
+	}
+	// the teams closest to support show what to port for them
+	var near []string
+	for _, s := range c.Status {
+		if s.Status == "unsupported" && len(s.Unsupported) <= 2 {
+			var what []string
+			for _, u := range s.Unsupported {
+				what = append(what, strings.TrimPrefix(u, "unsupported: "))
+			}
+			near = append(near, fmt.Sprintf("- %s: %s", s.ID, strings.Join(what, ", ")))
+		}
+	}
+	if len(near) > 0 {
+		sort.Strings(near)
+		w("\nTeams one or two items from support:\n\n%s\n", strings.Join(near, "\n"))
 	}
 	var errs []TeamStatus
 	for _, s := range c.Status {

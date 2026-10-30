@@ -1891,7 +1891,10 @@ impl Sim {
                 self.emit(Event::Skill);
                 chars::dispatch::skill(kind, self, ci, p)
             }
-            Action::Burst => chars::dispatch::burst(kind, self, ci, p),
+            Action::Burst => {
+                self.emit(Event::Burst);
+                chars::dispatch::burst(kind, self, ci, p)
+            }
             Action::Attack => chars::dispatch::attack(kind, self, ci, p),
             Action::Swap => {
                 if self.player.swap_cd > 0 {

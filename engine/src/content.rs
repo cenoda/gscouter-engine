@@ -32,11 +32,12 @@ pub enum Owner {
 pub enum EventKind {
     EnemyDamage,
     Skill,
+    Burst,
     Swap,
     StateChange,
     Reaction,
 }
-pub const N_EVENTS: usize = 5;
+pub const N_EVENTS: usize = 6;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -44,6 +45,8 @@ pub enum Event<'a> {
     EnemyDamage(&'a AttackEvent),
     /// OnSkill, before the skill runs.
     Skill,
+    /// OnBurst, before the burst runs.
+    Burst,
     /// OnCharacterSwap.
     Swap { prev: usize, next: usize },
     /// OnStateChange to this state.
@@ -58,6 +61,7 @@ impl Event<'_> {
         match self {
             Event::EnemyDamage(_) => EventKind::EnemyDamage,
             Event::Skill => EventKind::Skill,
+            Event::Burst => EventKind::Burst,
             Event::Swap { .. } => EventKind::Swap,
             Event::StateChange(_) => EventKind::StateChange,
             Event::Reaction(_) => EventKind::Reaction,

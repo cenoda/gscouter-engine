@@ -1,0 +1,4 @@
+# Xingqiu with Noblesse Oblige 2 and Emblem 2.
+team hutao-xingqiu-zhongli-yelan
+xingqiu add set="noblesseoblige" count=2;
+xingqiu add set="emblemofseveredfate" count=2;

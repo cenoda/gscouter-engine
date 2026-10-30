@@ -6,4 +6,5 @@ crate::sets! {
     Emblem => emblemofseveredfate,
     Tenacity => tenacityofthemillelith,
     Instructor => instructor,
+    NoblesseOblige => noblesseoblige,
 }
