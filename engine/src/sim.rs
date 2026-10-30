@@ -1461,7 +1461,9 @@ impl Sim {
     fn handle_attack(&mut self, slot: u16) {
         let mut ev = self.slots[slot as usize];
         let grp = self.group_dmg_mult(&ev.info);
-        self.apply_attack_mods(ev.info.actor as usize, &mut ev);
+        let actor = ev.info.actor as usize;
+        crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
+        self.apply_attack_mods(actor, &mut ev);
 
         if ev.info.durability > 0.0 {
             ev.info.durability *= self.will_apply_ele(&ev.info);
@@ -1987,6 +1989,22 @@ impl Sim {
     }
 
     /// gcsim's ResetActionCooldown.
+    /// gcsim's ReduceActionCooldown.
+    pub fn reduce_cd(&mut self, ci: usize, a: Action, v: i32) {
+        let f = self.f;
+        let cd = &mut self.chars[ci].cd[Char::cd_index(a)];
+        if cd.available == 1 + cd.max_extra {
+            return;
+        }
+        let remain = cd.started + cd.queue[0] - f;
+        if v >= remain {
+            self.reset_cd(ci, a);
+            return;
+        }
+        cd.queue[0] = remain - v;
+        self.start_cd_worker(ci, a);
+    }
+
     pub fn reset_cd(&mut self, ci: usize, a: Action) {
         let f = self.f;
         let cd = &mut self.chars[ci].cd[Char::cd_index(a)];

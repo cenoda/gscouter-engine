@@ -88,11 +88,9 @@ impl Character for Char {
 
     fn invalid(s: &Sim, ci: usize, a: Action, _: &Params) -> Option<String> {
         match a {
-            // the template's: swords charge only after a normal attack
-            Action::Charge if s.chars[s.player.active as usize].normal_counter == 0 => Some("need to use attack right before charge".into()),
             Action::HighPlunge if s.player.last.action != Action::Skill => Some("high_plunge can only be used while airborne".into()),
             Action::HighPlunge if s.st::<State>(ci).skill_glide => Some("only plunge after skill without glide cancel".into()),
-            _ => None,
+            _ => crate::content::template_invalid(s, a),
         }
     }
 

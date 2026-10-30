@@ -168,7 +168,7 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
                 count[d.element as usize] += 1;
             }
         }
-        for (e, name) in [(3, "dendro"), (4, "electro"), (5, "cryo"), (6, "anemo"), (7, "geo")] {
+        for (e, name) in [(3, "dendro"), (5, "cryo"), (6, "anemo"), (7, "geo")] {
             if count[e] >= 2 {
                 errs.push(format!("unsupported: resonance {name}"));
             }

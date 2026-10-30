@@ -12,4 +12,5 @@ crate::chars! {
     Fischl => fischl,
     Furina => furina,
     Kazuha => kazuha,
+    Raiden => raiden,
 }

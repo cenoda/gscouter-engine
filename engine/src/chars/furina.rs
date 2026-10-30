@@ -178,6 +178,11 @@ impl Character for Char {
         }
     }
 
+    /// Furina charges without a normal attack before it.
+    fn invalid(_: &Sim, _: usize, _: Action, _: &Params) -> Option<String> {
+        None
+    }
+
     fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {
         let st = s.st::<State>(ci);
         match fields[0].as_str() {

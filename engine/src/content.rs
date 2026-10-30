@@ -119,9 +119,12 @@ pub trait Character {
     }
     /// gcsim's errors from an action that cannot be used now, such as a
     /// plunge on the ground: the fight stops with it.
-    fn invalid(_s: &Sim, _ci: usize, _a: Action, _p: &Params) -> Option<String> {
-        None
+    fn invalid(s: &Sim, _ci: usize, a: Action, _p: &Params) -> Option<String> {
+        template_invalid(s, a)
     }
+    /// A hook on each of its own attacks as it hits, before attack mods
+    /// (as gcsim's OnEnemyHit subscribers that change the attack).
+    fn own_hit(_s: &Sim, _ci: usize, _ev: &mut AttackEvent) {}
     /// A ReactBonusMod it owns: the bonus to a reaction of character `on`.
     fn react_bonus(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _info: &AttackInfo) -> f64 {
         0.0
@@ -161,6 +164,16 @@ pub trait Character {
     }
     /// A construct of its expired.
     fn construct_expired(_s: &mut Sim, _ci: usize, _key: ModKey) {}
+}
+
+/// gcsim's template NextQueueItemIsValid: swords and polearms charge
+/// only after a normal attack.
+pub fn template_invalid(s: &Sim, a: Action) -> Option<String> {
+    let active = &s.chars[s.player.active as usize];
+    if a == Action::Charge && matches!(active.class, WeaponClass::Sword | WeaponClass::Spear) && active.normal_counter == 0 {
+        return Some("need to use attack right before charge".into());
+    }
+    None
 }
 
 /// A weapon's logic, on the character in slot `ci`.
@@ -265,6 +278,8 @@ macro_rules! chars {
             pub fn burst(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::burst(s, ci, p)),* } }
             #[inline]
             pub fn high_plunge(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::high_plunge(s, ci, p)),* } }
+            #[inline]
+            pub fn own_hit(k: CharKind, s: &Sim, ci: usize, ev: &mut AttackEvent) { match k { $(CharKind::$kind => $m::Char::own_hit(s, ci, ev)),* } }
             pub fn invalid(k: CharKind, s: &Sim, ci: usize, a: Action, p: &Params) -> Option<String> { match k { $(CharKind::$kind => $m::Char::invalid(s, ci, a, p)),* } }
             pub fn react_bonus(k: CharKind, s: &Sim, ci: usize, on: usize, m: &Mod, info: &AttackInfo) -> f64 { match k { $(CharKind::$kind => $m::Char::react_bonus(s, ci, on, m, info)),* } }
             #[inline]
