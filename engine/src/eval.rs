@@ -458,6 +458,9 @@ impl<'s> Eval<'s> {
                 if ci != self.sim.player.active as usize && !self.sim.queue_action(ci, Action::Swap, &Params::default()) {
                     return Err(Stop::Terminated);
                 }
+                if let Some(why) = crate::chars::dispatch::invalid(self.sim.chars[ci].kind, self.sim, ci, action, &params) {
+                    return err(format!("{}: {why}", char_name(key)));
+                }
                 if !self.sim.queue_action(ci, action, &params) {
                     return Err(Stop::Terminated);
                 }

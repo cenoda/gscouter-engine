@@ -1,7 +1,6 @@
 //! Bennett, from gcsim's internal/characters/bennett: normal attacks,
 //! the skill pressed and held (levels 1 and 2, and the C4 variant) and the
-//! burst's field. The field also infuses Bennett, the player, with pyro;
-//! the engine has no player to infuse, and nothing here reads it.
+//! burst's field, which also infuses the player with pyro.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::bennett as g;
@@ -214,6 +213,7 @@ fn skill_hold(s: &mut Sim, ci: usize, level: usize, c4: bool) -> ActInfo {
 /// first tick), and buffs its ATK when over the threshold (any HP from C1),
 /// infusing its weapon with pyro from C6.
 fn field_tick(s: &mut Sim, ci: usize, first: bool) {
+    s.apply_self_infusion(AURA_PYRO, 25.0, g::BURST_BUFF_DURATION);
     let lvl = s.talent(ci, 2);
     let heal = g::BURSTHP[lvl] + g::BURSTHPP[lvl] * s.max_hp(ci);
     let mut pc = g::BURSTATK[lvl];

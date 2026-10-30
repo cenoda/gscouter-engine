@@ -176,12 +176,15 @@ pub enum AttackTag {
     // gcsim's tags past AttackTagNoneStat: reaction damage
     OverloadDamage,
     ECDamage,
+    SwirlPyro,
+    SwirlHydro,
+    SwirlElectro,
 }
 
 impl AttackTag {
     /// gcsim's IsReaction: damage that ignores the attacker's DMG bonus.
     pub fn is_reaction(self) -> bool {
-        matches!(self, AttackTag::OverloadDamage | AttackTag::ECDamage)
+        matches!(self, AttackTag::OverloadDamage | AttackTag::ECDamage | AttackTag::SwirlPyro | AttackTag::SwirlHydro | AttackTag::SwirlElectro)
     }
 }
 
@@ -208,6 +211,9 @@ pub enum Reaction {
     CrystallizeElectro,
     CrystallizeHydro,
     CrystallizePyro,
+    SwirlPyro,
+    SwirlHydro,
+    SwirlElectro,
 }
 
 impl Reaction {
@@ -220,6 +226,9 @@ impl Reaction {
             Reaction::CrystallizeElectro => &[Element::Geo, Element::Electro],
             Reaction::CrystallizeHydro => &[Element::Geo, Element::Hydro],
             Reaction::CrystallizePyro => &[Element::Geo, Element::Pyro],
+            Reaction::SwirlPyro => &[Element::Anemo, Element::Pyro],
+            Reaction::SwirlHydro => &[Element::Anemo, Element::Hydro],
+            Reaction::SwirlElectro => &[Element::Anemo, Element::Electro],
         }
     }
 }

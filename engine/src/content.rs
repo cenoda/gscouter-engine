@@ -106,6 +106,18 @@ pub trait Character {
     fn aim(_s: &mut Sim, _ci: usize, _p: &Params) -> ActInfo {
         unreachable!()
     }
+    fn high_plunge(_s: &mut Sim, _ci: usize, _p: &Params) -> ActInfo {
+        unreachable!()
+    }
+    /// gcsim's errors from an action that cannot be used now, such as a
+    /// plunge on the ground: the fight stops with it.
+    fn invalid(_s: &Sim, _ci: usize, _a: Action, _p: &Params) -> Option<String> {
+        None
+    }
+    /// A ReactBonusMod it owns: the bonus to a reaction of character `on`.
+    fn react_bonus(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _info: &AttackInfo) -> f64 {
+        0.0
+    }
     /// Its own ActionReady, when it has one: None to use the template's,
     /// Some(None) when ready, Some(Some(why)) when not.
     fn action_ready(_s: &Sim, _ci: usize, _a: Action, _p: &Params) -> Option<Option<Failure>> {
@@ -175,6 +187,9 @@ pub trait SetImpl {
         false
     }
     fn attack_mod(_s: &Sim, _ci: usize, _si: usize, _on: usize, _m: &Mod, _ev: &mut AttackEvent) {}
+    fn react_bonus(_s: &Sim, _ci: usize, _si: usize, _on: usize, _m: &Mod, _info: &AttackInfo) -> f64 {
+        0.0
+    }
     fn event(_s: &mut Sim, _ci: usize, _si: usize, _e: &Event) {}
 }
 
@@ -240,6 +255,10 @@ macro_rules! chars {
             pub fn skill(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::skill(s, ci, p)),* } }
             #[inline]
             pub fn burst(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::burst(s, ci, p)),* } }
+            #[inline]
+            pub fn high_plunge(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::high_plunge(s, ci, p)),* } }
+            pub fn invalid(k: CharKind, s: &Sim, ci: usize, a: Action, p: &Params) -> Option<String> { match k { $(CharKind::$kind => $m::Char::invalid(s, ci, a, p)),* } }
+            pub fn react_bonus(k: CharKind, s: &Sim, ci: usize, on: usize, m: &Mod, info: &AttackInfo) -> f64 { match k { $(CharKind::$kind => $m::Char::react_bonus(s, ci, on, m, info)),* } }
             #[inline]
             pub fn aim(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::aim(s, ci, p)),* } }
             #[inline]
@@ -376,6 +395,7 @@ macro_rules! sets {
             pub fn mod_amount(k: SetKind, s: &Sim, ci: usize, si: usize, on: usize, m: &Mod, out: &mut Stats) -> bool { match k { $(SetKind::$kind => $m::Set::mod_amount(s, ci, si, on, m, out)),* } }
             #[inline]
             pub fn attack_mod(k: SetKind, s: &Sim, ci: usize, si: usize, on: usize, m: &Mod, ev: &mut AttackEvent) { match k { $(SetKind::$kind => $m::Set::attack_mod(s, ci, si, on, m, ev)),* } }
+            pub fn react_bonus(k: SetKind, s: &Sim, ci: usize, si: usize, on: usize, m: &Mod, info: &AttackInfo) -> f64 { match k { $(SetKind::$kind => $m::Set::react_bonus(s, ci, si, on, m, info)),* } }
             #[inline]
             pub fn event(k: SetKind, s: &mut Sim, ci: usize, si: usize, e: &Event) { match k { $(SetKind::$kind => $m::Set::event(s, ci, si, e)),* } }
         }

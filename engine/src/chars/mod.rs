@@ -11,4 +11,5 @@ crate::chars! {
     Bennett => bennett,
     Fischl => fischl,
     Furina => furina,
+    Kazuha => kazuha,
 }

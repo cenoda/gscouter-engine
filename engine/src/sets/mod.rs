@@ -10,4 +10,5 @@ crate::sets! {
     GoldenTroupe => goldentroupe,
     CinderCity => scrolloftheheroofcindercity,
     MarechausseeHunter => marechausseehunter,
+    ViridescentVenerer => viridescentvenerer,
 }

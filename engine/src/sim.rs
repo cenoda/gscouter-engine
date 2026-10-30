@@ -52,6 +52,8 @@ pub enum ModKind {
     /// gcsim's HealBonusMod: incoming healing bonus, its amount in
     /// st::HEAL.
     HealBonus,
+    /// gcsim's ReactBonusMod: its owner's react_bonus.
+    ReactBonus,
 }
 
 /// What a stat or attack mod adds: a fixed amount of one stat, or what
@@ -498,6 +500,8 @@ pub struct Enemy {
     pub aura: Aura,
     pub crystallize_gcd: i32,
     pub overload_gcd: i32,
+    /// Swirl's GCD by aura slot.
+    pub swirl_gcd: [i32; N_AURAS],
     /// Electro-charged: the attack of its next ticks, the frame its ticks
     /// started (-1 without electro-charged), and whether the wane hook on
     /// enemy damage is subscribed.
@@ -605,6 +609,9 @@ pub struct Sim {
     pub core: Queue<Task>,
     pub chars: Vec<Char>,
     pub enemy: Enemy,
+    /// The player's own aura (gcsim's avatar.Player is a Reactable), which
+    /// self infusions apply and absorb checks read.
+    pub player_aura: Aura,
     pub player: Player,
     pub slots: Vec<AttackEvent>,
     pub free: Vec<u16>,
@@ -631,6 +638,9 @@ pub struct Sim {
     pub enemy_hp: f64,
     pub enemy_alive: bool,
     pub no_more_actions: bool,
+    /// The holder of gcsim's "utility-dash" stamina mod (dash stamina
+    /// -20% while it lives), if any.
+    pub utility_dash: Option<u8>,
     /// Subscribers to each event, in the order gcsim subscribes them.
     pub subs: [Vec<Owner>; N_EVENTS],
     /// Constructs (gcsim's Constructs) and shields, by owner.
@@ -661,6 +671,7 @@ impl Sim {
             rng: Rng::new(seed),
             core: Queue::new(),
             chars,
+            player_aura: Aura::default(),
             enemy: Enemy {
                 level: cfg.enemy_level,
                 resist: cfg.resist,
@@ -671,6 +682,7 @@ impl Sim {
                 aura: Aura::default(),
                 crystallize_gcd: -1,
                 overload_gcd: -1,
+                swirl_gcd: [-1; N_AURAS],
                 ec_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::ECDamage, icd::TAG_EC_DAMAGE, icd::GROUP_REACTION_B, Element::Electro, 0.0, 0.0), 0),
                 ec_tick_src: -1,
                 ec_wane_sub: false,
@@ -706,6 +718,7 @@ impl Sim {
             enemy_hp: cfg.enemy_hp,
             enemy_alive: true,
             no_more_actions: false,
+            utility_dash: None,
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
             shields: Vec::with_capacity(4),
@@ -1024,6 +1037,25 @@ impl Sim {
     pub fn modify_hp(&mut self, ci: usize, amt: f64) {
         let hp = self.current_hp(ci) + amt;
         self.set_hp(ci, hp);
+    }
+
+    /// gcsim's ReactBonus: a character's bonus to a reaction it causes.
+    pub fn react_bonus(&self, ci: usize, info: &AttackInfo) -> f64 {
+        let mut amt = 0.0;
+        for m in &self.chars[ci].mods {
+            if m.kind != ModKind::ReactBonus || !m.applies(self.f) {
+                continue;
+            }
+            amt += match m.amount {
+                Amount::Owner(Owner::Char(o)) => crate::chars::dispatch::react_bonus(self.chars[o as usize].kind, self, o as usize, ci, m, info),
+                Amount::Owner(Owner::Set(o, si)) => {
+                    let kind = self.chars[o as usize].sets[si as usize].kind;
+                    crate::sets::dispatch::react_bonus(kind, self, o as usize, si as usize, ci, m, info)
+                }
+                _ => 0.0,
+            };
+        }
+        amt
     }
 
     /// gcsim's HealBonus: the incoming healing bonus of a character.
@@ -1433,6 +1465,11 @@ impl Sim {
                 self.try_vaporize(ev);
                 self.try_add_ec(ev);
             }
+            Element::Anemo => {
+                self.try_swirl(ev, AURA_ELECTRO);
+                self.try_swirl(ev, AURA_PYRO);
+                self.try_swirl(ev, AURA_HYDRO);
+            }
             Element::Geo => {
                 for (m, r) in [(AURA_ELECTRO, Reaction::CrystallizeElectro), (AURA_HYDRO, Reaction::CrystallizeHydro), (AURA_PYRO, Reaction::CrystallizePyro)] {
                     if self.enemy.aura.get(m) > ZERO_DUR {
@@ -1505,7 +1542,7 @@ impl Sim {
         let ci = ai.actor as usize;
         let em = self.stat(ci, st::EM);
         let lvl = self.chars[ci].level;
-        ai.flat_dmg = (1.0 + (16.0 * em) / (2000.0 + em)) * crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
+        ai.flat_dmg = (1.0 + (16.0 * em) / (2000.0 + em) + self.react_bonus(ci, &ai)) * crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
         let mut atk = AttackEvent::new(ai, 0);
         atk.stats[st::EM] = em;
         atk.char_lvl = lvl;
@@ -1592,6 +1629,69 @@ impl Sim {
         }
     }
 
+    /// gcsim's Player.ApplySelfInfusion: the element on the player for f
+    /// frames, its source the active character.
+    pub fn apply_self_infusion(&mut self, m: usize, dur: f64, f: i32) {
+        let src = self.player.active as usize;
+        let a = &mut self.player_aura;
+        let active = a.get(m);
+        if active > ZERO_DUR {
+            if active < dur {
+                a.dur[m][src] = dur;
+                a.live[m] = true;
+            }
+            return;
+        }
+        a.dur[m][src] = dur;
+        a.live[m] = true;
+        a.decay[m] = dur / f as f64;
+    }
+
+    /// gcsim's Combat.AbsorbCheck for one enemy always in range: the first
+    /// element of prio on the enemy, else on the player.
+    pub fn absorb_check(&self, prio: &[(usize, Element)]) -> Element {
+        for &(m, e) in prio {
+            if self.enemy.aura.get(m) > ZERO_DUR || self.player_aura.get(m) > ZERO_DUR {
+                return e;
+            }
+        }
+        Element::NoElement
+    }
+
+    /// gcsim's TrySwirlElectro, TrySwirlPyro and TrySwirlHydro. Swirl
+    /// hits the enemy itself without gauge, then its aoe the others: with
+    /// one enemy, the aoe hits nothing.
+    fn try_swirl(&mut self, ev: &mut AttackEvent, m: usize) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR || self.enemy.aura.get(m) < ZERO_DUR {
+            return;
+        }
+        let rd = self.enemy.aura.reduce(m, dur, 0.5);
+        ev.info.durability -= rd;
+        ev.reacted = true;
+        let (r, tag, icd_tag, ele, abil) = match m {
+            AURA_ELECTRO => (Reaction::SwirlElectro, AttackTag::SwirlElectro, icd::TAG_SWIRL_ELECTRO, Element::Electro, "swirl-electro"),
+            AURA_PYRO => (Reaction::SwirlPyro, AttackTag::SwirlPyro, icd::TAG_SWIRL_PYRO, Element::Pyro, "swirl-pyro"),
+            _ => (Reaction::SwirlHydro, AttackTag::SwirlHydro, icd::TAG_SWIRL_HYDRO, Element::Hydro, "swirl-hydro"),
+        };
+        self.emit(Event::Reaction(r, ev));
+        let gcd = &mut self.enemy.swirl_gcd[m];
+        if *gcd == -1 || self.f >= *gcd {
+            *gcd = self.f + 6;
+            let mut ai = AttackInfo::new(ev.info.actor as usize, tag, icd_tag, icd::GROUP_REACTION_A, ele, 0.0, 0.0);
+            ai.abil = abil;
+            ai.ignore_def = 1.0;
+            let mut atk = self.reaction_attack(ai);
+            atk.info.flat_dmg *= 0.6;
+            self.queue_attack_with_snap(atk, 0, 1);
+        }
+        // swirling electro off electro-charged swirls the hydro too
+        if m == AURA_ELECTRO && ev.info.durability > ZERO_DUR && self.enemy.aura.get(AURA_HYDRO) > ZERO_DUR {
+            self.try_swirl(ev, AURA_HYDRO);
+            self.check_ec();
+        }
+    }
+
     fn try_crystallize(&mut self, ev: &mut AttackEvent, m: usize, r: Reaction) {
         if ev.info.durability < ZERO_DUR {
             return;
@@ -1638,7 +1738,8 @@ impl Sim {
         if ev.info.amped {
             let em = s[st::EM];
             let em_bonus = (2.78 * em) / (1400.0 + em);
-            damage *= ev.info.amp_mult * (1.0 + em_bonus);
+            let react_bonus = self.react_bonus(ev.info.actor as usize, &ev.info);
+            damage *= ev.info.amp_mult * (1.0 + em_bonus + react_bonus);
         }
         damage *= grp;
         (damage, crit)
@@ -1912,7 +2013,11 @@ impl Sim {
                     _ => 0.0,
                 }
             }
-            Action::Dash => 18.0,
+            // gcsim's "utility-dash" stamina mod (Kazuha's and others')
+            Action::Dash => match self.utility_dash {
+                Some(o) if self.chars[o as usize].hp_ratio > 0.0 => (1.0 - 0.2) * 18.0,
+                _ => 18.0,
+            },
             _ => 0.0,
         }
     }
@@ -2040,7 +2145,8 @@ impl Sim {
     pub fn next_frame(&mut self) -> bool {
         self.f += 1;
         let f = self.f;
-        // Combat.Tick: the enemy
+        // Combat.Tick: the player's aura, then the enemy
+        self.player_aura.tick();
         if self.enemy.frozen > 0 {
             self.enemy.frozen -= 1;
             while let Some(t) = self.enemy.queue.pop_due(f) {
@@ -2156,6 +2262,7 @@ impl Sim {
             }
             Action::Attack => chars::dispatch::attack(kind, self, ci, p),
             Action::Aim => chars::dispatch::aim(kind, self, ci, p),
+            Action::HighPlunge => chars::dispatch::high_plunge(kind, self, ci, p),
             Action::Swap => {
                 if self.player.swap_cd > 0 {
                     self.player.swap_cd = 0;
