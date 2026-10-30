@@ -31,4 +31,11 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
   - Gauges are kept per source character.
   - In damage mode, a kill returns before the element attaches.
   - gcsl evaluates both sides of `&&` and `||`, ignores `return` inside loops, and lexes `-` as an identifier character.
+- Pitfalls found so far; check for them in new code:
+  - A param, field or constellation the engine does not handle must be an error, not a default. Found silently wrong: constellations above what a character implements (now `MAX_CONS`), Yelan's `breakthrough`, `.char.infusion.<key>` (was always false).
+  - Lists of reactions, swirls or elements must cover every one the engine has (VV's swirl bonus missed cryo swirl). Grep for the existing variants when adding one.
+  - Absorb checks read the enemy, then gadgets, then the player.
+  - Most hits are taken to land, but some abilities move their hitbox away (Diluc's burst): compare hits per ability, and use `Sim::box_hits` where gcsim's geometry decides.
+  - Before trusting a quick check, look at per-ability hits and damage (`gse` output and the harness's `-abil`), and at waits.
+- Workflow notes: `compare` grows iterations until every character's standard error is 0.3%, so a full run of 100 teams' library builds takes hours; build experiments into another `--target-dir` while it runs. Quick checks: dump the looped config with Gscouter's `cmd/gscouter -team <dir> -build <file> -dump`, then run `gse` and `go run . -config` at 1,000 iterations.
 - After each phase, update the measurements and status in `README.md` and `docs/roadmap.md`.

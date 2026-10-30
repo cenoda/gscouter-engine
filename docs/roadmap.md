@@ -57,15 +57,19 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **More content, by the census's list of teams one or two items from support**: Xiangling (Guoba is a gadget, with the pyro window absorb checks read), Yoimiya, Chevreuse, Diluc, Gaming, Candace; The Catch, Rust, Serpent Spine, Lion's Roar, The Viridescent Hunt; Crimson Witch of Flames, Song of Days Past (OnEnemyHit, gcsim's Flags.Custom); Yelan's constellations and aimed shots, Zhongli's press skill and C1, Hu Tao's C6.
 - **Constellations**: one a character does not implement is now an error (it was silently ignored); Zhongli's C2, C4 and C6 and Escoffier's are not ported.
 - **Geometry, where it decides hits**: Diluc's burst ticks fly away from the player, and gcsim hits four of eight at Gscouter's target distance. The engine tests such boxes against the target's circle; every other hit still lands.
-- Next, by the census: The Widsith (700 teams) with a catalyst character to check it on (Klee, Yae Miko), reactions on the player (Jean), Xilonen and Nightsoul, dendro, geo and anemo resonance.
 
-- **Reactions.** Burning, bloom, hyperbloom and burgeon, quicken, aggravate and spread, and the lunar reactions; reactions on the player (gcsim's ReactWithSelf). The ones among pyro, hydro, electro, cryo, anemo and geo exist.
-- **Resonances.** Geo (418 teams), dendro (328), anemo (263) are named errors now.
-- **Hexerei.** Two Hexerei characters (394 teams, Fischl with Mona, Sucrose, Razor and others) are an error until a second one is ported.
-- **HP changes, for Furina (1,324 teams).** Her fanfare counts every HP change of the party, so she needs drains (`Drain` and `OnPlayerHPDrain`, which the Salon Members cause), `OnHeal` with the healed and overhealed amounts, incoming healing bonus mods (her burst's), and Ousia and Pneuma (Arkhe). HP debt (Arlecchino) belongs with them. Today HP is a ratio changed by heals and Hu Tao's drain, with no events.
-- **Systems.** Nightsoul, shields beyond Zhongli's (strength, absorption), gadgets (dendro cores, crystallize shards and `pick_up_crystallize`, 511 teams), positions (`set_player_pos`, 45), stamina mods.
-- **Actions of the ported characters** the library uses: Zhongli's burst (36), Bennett's charge (19), plunges after Xianyun's burst (43). Zhongli's normal attack and press skill and Yelan's aimed shots are done.
-- **The runner's noisy cases.** Builds that spend most of the fight waiting for energy need up to about 320,000 iterations to reach a verdict and take most of the runner's time. As supported teams grow, run the variants on a schedule and only the library builds on every push.
+What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-30, 104 supported):
+
+1. **The runner, first.** Variants take about an hour per team, so only the first sixteen teams and three Xiangling teams have them; the other 85 have their library builds and probes only. Make CI run the library builds and probes on every push, and the variants on a schedule in parts; then run the missing variants. Checking is already the bottleneck.
+2. **Dendro** (with Nahida, 683 teams; Deepwood Memories 946; dendro resonance 328): the dendro, quicken, burning-fuel and burning auras; burning, bloom with dendro cores (gadgets exist now), hyperbloom, burgeon, quicken, aggravate, spread; the reaction tags already listed for Crimson Witch (`BurningDamage`, `Burgeon`) and every subscriber that lists reactions (Fischl's A4, Cinder City, Instructor, electro resonance) need the new ones.
+3. **Shields, crystallize shards and geo resonance** (`pick_up_crystallize` 511, geo resonance 418): shields with HP, element and strength, absorption; crystallize shards as gadgets that give a shield when picked up; geo resonance's shield strength and DMG while shielded.
+4. **Reactions on the player and anemo resonance** (263): gcsim's `ReactWithSelf` (Jean's burst swirls the player's aura, e.g. Bennett's pyro), then a second anemo character: Jean, Sucrose or Lynette.
+5. **Hexerei** (394): the bonuses when two Hexerei characters are in the team (Fischl with Mona, Sucrose, Razor and others).
+6. **Actions and constellations of ported characters**: Zhongli's burst (36) and C2, C4, C6 (5); Bennett's charge (19); plunges after Xianyun's burst (43, with Xianyun); Escoffier's constellations.
+7. **Systems**: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); `set_player_pos` (45); stamina mods; the lunar reactions.
+8. **Close the phase**: measurements and status in `README.md` and here, and speed (Phase 2 so far costs about 4.5% more instructions on `team-looped.txt`).
+
+Weapons and sets that block many teams (The Widsith 700, Thrilling Tales 497, Wandering Evenstar 470, Sacrificial Jade 401, Gilded Dreams 417, Ocean-Hued Clam 391) are Phase 3 content; the catalysts need a catalyst character to be checked on first (Klee, Yae Miko). The Widsith is written but not registered for that reason.
 
 ### Phase 3: content (most of the work)
 
