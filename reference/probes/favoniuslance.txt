@@ -1,0 +1,4 @@
+# Hu Tao with Favonius Lance R5, Zhongli with Favonius Lance R1.
+team hutao-xingqiu-zhongli-yelan
+hutao add weapon="favoniuslance" refine=5 lvl=90/90;
+zhongli add weapon="favoniuslance" refine=1 lvl=90/90;

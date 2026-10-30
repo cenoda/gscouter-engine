@@ -1,0 +1,3 @@
+# Bennett with Favonius Sword R3.
+team hutao-yelan-bennett-xingqiu
+bennett add weapon="favoniussword" refine=3 lvl=90/90;

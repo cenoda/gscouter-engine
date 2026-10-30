@@ -1,0 +1,3 @@
+# Xingqiu with Favonius Sword R5.
+team hutao-xingqiu-zhongli-yelan
+xingqiu add weapon="favoniussword" refine=5 lvl=90/90;

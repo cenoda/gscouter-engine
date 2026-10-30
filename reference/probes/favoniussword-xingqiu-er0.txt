@@ -1,0 +1,4 @@
+# Xingqiu with Favonius Sword R5 and no ER from artifacts, so that its particles decide his bursts.
+team hutao-xingqiu-zhongli-yelan
+xingqiu add weapon="favoniussword" refine=5 lvl=90/90;
+xingqiu add stats def%=0.23399999999999999 def=63 hp=5288 atk=327 atk%=0.6409999999999999 em=147 cr=0.474 cd=0.855 hydro%=0.466;
