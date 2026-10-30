@@ -16,4 +16,6 @@ crate::weapons! {
     FavoniusLance => favoniuslance,
     FavoniusGreatsword => favoniusgreatsword,
     FavoniusCodex => favoniuscodex,
+    TheStringless => thestringless,
+    BalladOfTheFjords => balladofthefjords,
 }

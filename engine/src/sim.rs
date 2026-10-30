@@ -802,6 +802,7 @@ impl Sim {
         self.subscribe(EventKind::Swap, Owner::Core);
         for i in 0..n {
             crate::chars::dispatch::init(self.chars[i].kind, self, i);
+            crate::weapons::dispatch::post_init(self.chars[i].weapon, self, i);
             for si in 0..self.chars[i].sets.len() {
                 crate::sets::dispatch::post_init(self.chars[i].sets[si].kind, self, i, si);
             }

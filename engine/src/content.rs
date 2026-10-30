@@ -140,6 +140,8 @@ pub trait WeaponImpl {
     fn new_state() -> Self::State;
     /// gcsim's NewWeapon.
     fn init(s: &mut Sim, ci: usize);
+    /// gcsim's Weapon.Init, after the character's Init.
+    fn post_init(_s: &mut Sim, _ci: usize) {}
     fn task(_s: &mut Sim, _ci: usize, _id: u8, _arg: i32) {}
     fn mod_amount(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _out: &mut Stats) -> bool {
         false
@@ -300,6 +302,7 @@ macro_rules! weapons {
             use $crate::types::*;
 
             pub fn init(k: WeaponKind, s: &mut Sim, ci: usize) { match k { $(WeaponKind::$kind => $m::Weapon::init(s, ci)),* } }
+            pub fn post_init(k: WeaponKind, s: &mut Sim, ci: usize) { match k { $(WeaponKind::$kind => $m::Weapon::post_init(s, ci)),* } }
             #[inline]
             pub fn task(k: WeaponKind, s: &mut Sim, ci: usize, id: u8, arg: i32) { match k { $(WeaponKind::$kind => $m::Weapon::task(s, ci, id, arg)),* } }
             #[inline]
