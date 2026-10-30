@@ -137,11 +137,7 @@ fn new_stele(s: &mut Sim, ci: usize) {
     let mut tick = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Geo, 25.0, g::SKILL_TICK[lvl]);
     tick.abil = "Stone Stele (Tick)";
     tick.flat_dmg = flat;
-    let (stats, clvl) = s.make_snapshot(&mut tick);
-    let mut ev = AttackEvent::new(tick, 0);
-    ev.stats = stats;
-    ev.char_lvl = clvl;
-    s.st_mut::<State>(ci).stele_snap = ev;
+    s.st_mut::<State>(ci).stele_snap = s.snapshot_event(tick, 0);
     s.add_task(Task::Char { c: ci as u8, id: TASK_RESONANCE, arg: f }, 120);
 }
 

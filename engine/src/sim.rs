@@ -187,6 +187,8 @@ pub struct AttackEvent {
     pub info: AttackInfo,
     pub stats: Stats,
     pub char_lvl: i32,
+    /// The frame its snapshot was taken (gcsim's Snapshot.SourceFrame).
+    pub snap_f: i32,
     /// The attacker's callbacks for when it hits: bits its character's
     /// module defines.
     pub callbacks: u16,
@@ -197,7 +199,7 @@ pub struct AttackEvent {
 
 impl AttackEvent {
     pub fn new(info: AttackInfo, callbacks: u16) -> Self {
-        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, callbacks, reacted: false, damage: 0.0, crit: false }
+        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false }
     }
 }
 
@@ -1293,10 +1295,22 @@ impl Sim {
     fn snapshot(&mut self, slot: u16) {
         let mut info = self.slots[slot as usize].info;
         let (stats, lvl) = self.make_snapshot(&mut info);
+        let f = self.f;
         let ev = &mut self.slots[slot as usize];
         ev.stats = stats;
         ev.char_lvl = lvl;
+        ev.snap_f = f;
         ev.info = info;
+    }
+
+    /// An attack with its snapshot taken now, for QueueAttackWithSnap.
+    pub fn snapshot_event(&self, mut info: AttackInfo, callbacks: u16) -> AttackEvent {
+        let (stats, lvl) = self.make_snapshot(&mut info);
+        let mut ev = AttackEvent::new(info, callbacks);
+        ev.stats = stats;
+        ev.char_lvl = lvl;
+        ev.snap_f = self.f;
+        ev
     }
 
     fn apply_attack(&mut self, slot: u16) {

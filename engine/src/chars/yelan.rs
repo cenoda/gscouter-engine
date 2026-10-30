@@ -193,10 +193,7 @@ fn throw(s: &mut Sim, ci: usize) {
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_YELAN_BURST, icd::GROUP_YELAN_BURST, Element::Hydro, 25.0, 0.0);
     ai.abil = "Exquisite Throw";
     ai.flat_dmg = g::BURST_DICE[lvl] * hp;
-    let (stats, clvl) = s.make_snapshot(&mut ai);
-    let mut ev = AttackEvent::new(ai, 0);
-    ev.stats = stats;
-    ev.char_lvl = clvl;
+    let ev = s.snapshot_event(ai, 0);
     for i in 0..3 {
         s.queue_attack_with_snap(ev, 0, g::BURST_TRAVEL + i * 6);
     }

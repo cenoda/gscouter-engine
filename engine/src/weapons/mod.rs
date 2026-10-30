@@ -21,4 +21,6 @@ crate::weapons! {
     WolfFang => wolffang,
     AlleyHunter => alleyhunter,
     SapwoodBlade => sapwoodblade,
+    FesteringDesire => festeringdesire,
+    Slingshot => slingshot,
 }

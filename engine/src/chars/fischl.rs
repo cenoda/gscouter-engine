@@ -221,11 +221,8 @@ impl Character for Char {
                 let f = s.f;
                 s.st_mut::<State>(ci).oz_tick_src = f;
                 s.add_task(Task::Char { c: ci as u8, id: TASK_OZ_TICK, arg: f }, 60);
-                let mut info = s.st::<State>(ci).oz.info;
-                let (stats, lvl) = s.make_snapshot(&mut info);
-                let oz = &mut s.st_mut::<State>(ci).oz;
-                oz.stats = stats;
-                oz.char_lvl = lvl;
+                let oz = s.st::<State>(ci).oz;
+                s.st_mut::<State>(ci).oz = s.snapshot_event(oz.info, oz.callbacks);
             }
             TASK_TRIGGER => {
                 if let Some(src) = WATCH.trigger(s, ci) {
@@ -289,11 +286,7 @@ fn oz_spawn(s: &mut Sim, ci: usize, burst: bool, first_tick: i32) {
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_FISCHL, Element::Electro, 25.0, g::BIRD_ATK[lvl]);
     ai.abil = if burst { "Oz (Burst)" } else { "Oz (Skill)" };
-    let (stats, clvl) = s.make_snapshot(&mut ai);
-    let mut oz = AttackEvent::new(ai, CB_PARTICLE);
-    oz.stats = stats;
-    oz.char_lvl = clvl;
-    s.st_mut::<State>(ci).oz = oz;
+    s.st_mut::<State>(ci).oz = s.snapshot_event(ai, CB_PARTICLE);
     s.add_task(Task::Char { c: ci as u8, id: TASK_OZ_TICK, arg: f }, first_tick);
 }
 
@@ -326,6 +319,7 @@ fn with_oz_snapshot(s: &Sim, ci: usize, ai: AttackInfo) -> AttackEvent {
     let mut ev = AttackEvent::new(ai, 0);
     ev.stats = oz.stats;
     ev.char_lvl = oz.char_lvl;
+    ev.snap_f = oz.snap_f;
     ev
 }
 

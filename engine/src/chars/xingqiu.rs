@@ -179,10 +179,7 @@ fn sword_wave(s: &mut Sim, ci: usize) {
     let lvl = s.talent(ci, 2);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_DEFAULT, Element::Hydro, 25.0, g::BURST[lvl]);
     ai.abil = "Guhua Sword: Raincutter";
-    let (stats, lvl) = s.make_snapshot(&mut ai);
-    let mut ev = AttackEvent::new(ai, 0);
-    ev.stats = stats;
-    ev.char_lvl = lvl;
+    let ev = s.snapshot_event(ai, 0);
     let (num_swords, next_regen) = {
         let st = s.st::<State>(ci);
         (st.num_swords, st.next_regen)
