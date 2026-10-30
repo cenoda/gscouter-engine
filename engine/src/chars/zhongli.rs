@@ -1,5 +1,5 @@
-//! Zhongli's hold skill, stele and Jade Shield, from gcsim's
-//! internal/characters/zhongli. The rotation uses no other ability.
+//! Zhongli's normal attacks, hold skill, stele and Jade Shield, from
+//! gcsim's internal/characters/zhongli.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::zhongli as g;
@@ -19,13 +19,16 @@ pub struct State {
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
 const STELE: ModKey = ModKey::new("zhongli-stele");
 const JADE_SHIELD: ModKey = ModKey::new("zhongli-jade-shield");
-/// The Jade Shield shreds every element; these are the ones this team's
-/// attacks have.
-const SHRED: [(ModKey, Element); 4] = [
+/// The Jade Shield shreds every element, in gcsim's order.
+const SHRED: [(ModKey, Element); 8] = [
     (ModKey::new("zhongli-pyro"), Element::Pyro),
     (ModKey::new("zhongli-hydro"), Element::Hydro),
+    (ModKey::new("zhongli-cryo"), Element::Cryo),
+    (ModKey::new("zhongli-electro"), Element::Electro),
     (ModKey::new("zhongli-geo"), Element::Geo),
+    (ModKey::new("zhongli-anemo"), Element::Anemo),
     (ModKey::new("zhongli-physical"), Element::Physical),
+    (ModKey::new("zhongli-dendro"), Element::Dendro),
 ];
 
 const CB_PARTICLE: u16 = 1 << 0;
@@ -49,6 +52,7 @@ impl Character for Char {
 
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::Attack => None,
             Action::Skill if p.get("hold").unwrap_or(0) > 0 => None,
             Action::Skill => Some("skill (press)".into()),
             _ => Some(crate::gcsl::action_name(a).into()),
@@ -61,6 +65,28 @@ impl Character for Char {
             ("shielded", _) | ("tags", Some("shielded")) => shielded(),
             _ => None,
         }
+    }
+
+    fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        let n = s.chars[ci].normal_counter as usize;
+        let lvl = s.talent(ci, 0);
+        // A4: from max HP when the attack starts
+        let flat = if s.chars[ci].ascension >= 4 { 0.0139 * s.max_hp(ci) } else { 0.0 };
+        for i in 0..g::ATTACK_HITS[n] as usize {
+            let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, g::ATTACK[n][lvl]);
+            ai.abil = NORMAL_NAMES[n];
+            ai.flat_dmg = flat;
+            ai.hitlag_factor = 0.01;
+            ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
+            ai.def_halt = g::ATTACK_DEF_HALT[n][i];
+            let h = g::ATTACK_HITMARKS[n][i];
+            s.queue_attack(ai, 0, h, h);
+        }
+        let atkspd = s.stat(ci, st::ATKSPD);
+        let table = &g::ATTACK_FRAMES[n];
+        let info = ActInfo::new(Frames::Attack { table, atkspd }, table[0], g::ATTACK_EARLIEST_CANCEL[n], AnimState::Normal);
+        s.advance_normal(ci);
+        info
     }
 
     fn skill(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {

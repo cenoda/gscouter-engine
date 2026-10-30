@@ -23,4 +23,5 @@ crate::weapons! {
     SapwoodBlade => sapwoodblade,
     FesteringDesire => festeringdesire,
     Slingshot => slingshot,
+    DragonsBane => dragonsbane,
 }

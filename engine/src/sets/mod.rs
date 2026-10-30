@@ -9,4 +9,5 @@ crate::sets! {
     NoblesseOblige => noblesseoblige,
     GoldenTroupe => goldentroupe,
     CinderCity => scrolloftheheroofcindercity,
+    MarechausseeHunter => marechausseehunter,
 }
