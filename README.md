@@ -54,3 +54,7 @@ go run ./dump ../configs/team-looped.txt          # base stats the engine takes 
 ```
 
 WebAssembly: `cargo build --release --target wasm32-wasip1` and `GOOS=wasip1 GOARCH=wasm go build`, run with `node:wasi`.
+
+## License
+
+GNU AGPL v3 or later (`LICENSE`). The engine is ported from gcsim, which is under the AGPL v3 since 2026-09-19, so it keeps gcsim's license and copyright notice.
