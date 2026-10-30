@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 and 1 done, Phase 2 next · Last updated: 2026-10-30
+> Status: Phases 0 and 1 done, Phase 2 under way · Last updated: 2026-10-30
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
@@ -45,11 +45,21 @@ What had to be in place before dozens of characters, so that they are not rewrit
 
 ### Phase 2: the rest of the engine
 
+Progress so far, taken in the order that makes the most library teams supported (`README.md` has the results):
+
+- **10 of 4,570 teams supported** (2 at the start), every build of each passing the comparison runner.
+- **Electro, overload and electro-charged** (with Fischl), each reaction emitting its event as gcsim's `Reactable.React` does; reaction damage and `REACTION_LVL_BASE` from gcsim's combat package.
+- **HP changes** (with Furina): `Player.Heal` and `Player.Drain` with `OnHeal` and `OnPlayerHPDrain`, overheal, and incoming healing bonus mods. HP debt is still missing.
+- **Content**: Fischl and Furina; Noblesse Oblige, Golden Troupe, Cinder City, Marechaussee Hunter; the Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane; Zhongli's normal attacks.
+- **Probes** in the runner, so that content no supported team carries is compared too.
+- Viridescent Venerer, electro resonance and cryo resonance need a second anemo, electro or cryo character, and swirl or the cryo reactions, before they can be checked; Kazuha with swirl comes next.
+
 - **Reactions.** Overloaded, superconduct, electro-charged, swirl, frozen and shatter, burning, bloom, hyperbloom and burgeon, quicken, aggravate and spread, and the lunar reactions. Only vaporize and crystallize (without shards) exist; reaction events are already emitted, so sets like Instructor work for the new ones once they emit.
 - **Resonances.** Electro (961 teams), cryo (774), geo (418), dendro (328), anemo (263) are named errors now.
+- **Hexerei.** Two Hexerei characters (394 teams, Fischl with Mona, Sucrose, Razor and others) are an error until a second one is ported.
 - **HP changes, for Furina (1,324 teams).** Her fanfare counts every HP change of the party, so she needs drains (`Drain` and `OnPlayerHPDrain`, which the Salon Members cause), `OnHeal` with the healed and overhealed amounts, incoming healing bonus mods (her burst's), and Ousia and Pneuma (Arkhe). HP debt (Arlecchino) belongs with them. Today HP is a ratio changed by heals and Hu Tao's drain, with no events.
 - **Systems.** Nightsoul, shields beyond Zhongli's (strength, absorption), gadgets (dendro cores, crystallize shards and `pick_up_crystallize`, 511 teams), positions (`set_player_pos`, 45), stamina mods.
-- **Actions of the ported characters** the library uses: Zhongli's normal attack (280 teams), press skill (46) and burst (36), Yelan's aimed shots (134), Bennett's charge (19), plunges.
+- **Actions of the ported characters** the library uses: Zhongli's press skill (46) and burst (36), Yelan's aimed shots (134), Bennett's charge (19), plunges. Zhongli's normal attack is done.
 - **The runner's noisy cases.** Builds that spend most of the fight waiting for energy need up to about 320,000 iterations to reach a verdict and take most of the runner's time. As supported teams grow, run the variants on a schedule and only the library builds on every push.
 
 ### Phase 3: content (most of the work)

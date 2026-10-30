@@ -2,7 +2,7 @@
 
 An experiment: would a simulation engine written only for Gscouter, in Rust, be faster than gcsim and still score within 1% of it?
 
-It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what two library teams need: Hu Tao / Xingqiu / Zhongli / Yelan (`teams/hutao-xingqiu-zhongli-yelan`) and Hu Tao / Yelan / Bennett / Xingqiu (`teams/hutao-yelan-bennett-xingqiu`), scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12). Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to.
+It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what ten library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): seven characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina), 24 weapons and 9 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, overload and electro-charged, and heals and drains, are in.
 
 It reads gcsim's config language as gcsim does: the same lexer, grammar and evaluator (`let`, `fn`, `if`/`else`, `while`, `for`, `switch` with `fallthrough`, `break`/`continue`/`return`, action lists with params and repeats, `.char.skill.ready` and the other fields, `wait`, `delay`, `execute_action` and the other built-ins), and the same setup lines (`options`, `target`, `energy`, `char`, `add weapon`, `add set`, `add stats`, `active`). A config gcsim runs, the engine runs unchanged, as long as its characters, weapons, sets and actions are ones the engine implements; anything else is an error naming it, never a silent difference.
 
@@ -35,18 +35,36 @@ It reads gcsim's config language as gcsim does: the same lexer, grammar and eval
 | | HP +40% | 1,000 | −0.03% ± 0.11 | Bennett −0.04% ± 0.43 | 0.2 s |
 | | EM +150 | 1,000 | −0.03% ± 0.12 | Bennett −0.04% ± 0.43 | 0.2 s |
 
-Differences are gse against gcsim, ± the half-width of the 95% interval. All 20 pass. Waits by reason and hits and damage by ability are in the runner's report as well; waits agree within about 0.1 s per fight (e.g. Xingqiu waiting for energy 75.38 s / 75.29 s). The first team's rotation checks `.burst.ready` before each burst, so a build short of ER skips bursts instead of waiting for energy; the runner adds builds whose bursts are used without the checks so that the waits Gscouter's fillers depend on are compared too. Those fights are mostly waiting, which is why they need hundreds of thousands of iterations.
+Differences are gse against gcsim, ± the half-width of the 95% interval. All 20 pass.
 
-The runner also classifies every library team. Of 4,570, 2 are supported and 4,568 are not; what blocks the most teams:
+The eight teams Phase 2 has made supported so far, each with its library build and its variants (forced bursts only where the rotation checks `.burst.ready`), from their latest runs (Gscouter at `abf4ae3`):
+
+| Team | Builds passing | Library build | Largest team difference | Largest character difference |
+|---|---|---|---|---|
+| Hu Tao / Fischl / Yelan / Bennett | 12/12 | +0.11% ± 0.21 | −0.24% ± 0.28 (ER half) | Bennett −0.49% ± 0.40 (ER 0, forced) |
+| Hu Tao / Xingqiu / Yelan / Fischl | 9/9 | −0.04% ± 0.04 | +0.22% ± 0.60 (ER half) | Hu Tao +0.28% ± 0.60 (ER half) |
+| Hu Tao / Fischl / Xingqiu / Bennett | 11/11 | +0.05% ± 0.34 | +0.28% ± 0.46 (crit −) | Hu Tao +0.38% ± 0.48 (crit −) |
+| Bennett / Fischl / Furina / Xingqiu | 11/11 | +0.13% ± 0.18 | −0.40% ± 0.37 (ER 0) | Bennett −0.52% ± 0.42 (ER 0) |
+| Hu Tao / Furina / Yelan / Xingqiu | 11/11 | −0.02% ± 0.10 | −0.10% ± 0.29 (ER 0) | Hu Tao −0.28% ± 0.44 (ER 0) |
+| Hu Tao / Xingqiu / Bennett / Furina | 11/11 | −0.03% ± 0.12 | −0.32% ± 0.53 (ER half, forced) | Bennett +0.35% ± 0.52 (ER 0) |
+| Hu Tao / Yelan / Bennett / Furina | 9/9 | −0.08% ± 0.12 | −0.11% ± 0.13 (ER half) | Bennett −0.25% ± 0.28 (ER 0) |
+| Hu Tao / Zhongli / Yelan / Fischl | 9/9 | −0.10% ± 0.18 | −0.38% ± 0.39 (ER 0) | Hu Tao −0.43% ± 0.40 (ER 0) |
+
+A weapon, set or character that no supported team carries would go unchecked, so the runner also runs probes (`reference/probes`): a library team's build with some lines replaced, compared like a variant. A probe's team need not be supported, only the probe build, so a new character is checked on its own library team with the weapons the engine lacks swapped out (Fischl on Hu Tao / Fischl / Yelan / Bennett before The Stringless and Ballad of the Fjords were ported, Furina at C0, C2 and C6). Every probe passes; each weapon and set without a supported team to carry it has one. Waits by reason and hits and damage by ability are in the runner's report as well; waits agree within about 0.1 s per fight (e.g. Xingqiu waiting for energy 75.38 s / 75.29 s). The first team's rotation checks `.burst.ready` before each burst, so a build short of ER skips bursts instead of waiting for energy; the runner adds builds whose bursts are used without the checks so that the waits Gscouter's fillers depend on are compared too. Those fights are mostly waiting, which is why they need hundreds of thousands of iterations.
+
+The runner also classifies every library team. Of 4,570, 10 are supported and 4,560 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
 |---|---|
-| Characters | Furina 1,324, Fischl 1,001, Nahida 683, Kazuha 487, Xilonen 482, Xiangling 383, Raiden 377, Escoffier 325, Xianyun 314, Chevreuse 296 |
-| Weapons | Favonius Sword 1,845, Favonius Lance 1,376, Serpent Spine 942, The Widsith 700, The Stringless 581, Xiphos' Moonlight 526, Festering Desire 511, Wolf-Fang 511 |
-| Sets | Noblesse Oblige 2,087, Golden Troupe 1,852, Scroll of the Hero of Cinder City 1,493, Viridescent Venerer 1,290, Marechaussee Hunter 959, Deepwood Memories 946 |
+| Characters | Nahida 683, Kazuha 487, Xilonen 482, Xiangling 383, Raiden 377, Escoffier 325, Xianyun 314, Chevreuse 296, Rosaria 286, Mavuika 277 |
+| Weapons | Serpent Spine 942, The Widsith 700, Xiphos' Moonlight 526, Thrilling Tales of Dragon Slayers 497, Wandering Evenstar 470, Sacrificial Jade 401, Oathsworn Eye 352, Finale of the Deep 336 |
+| Sets | Viridescent Venerer 1,290, Deepwood Memories 946, Gilded Dreams 417, Ocean-Hued Clam 391, Obsidian Codex 385, Celestial Gift 332 |
 | Resonances | electro 961, cryo 774, geo 418, dendro 328, anemo 263 |
 | Built-ins | `pick_up_crystallize` 511, `set_player_pos` 45, `set_on_tick` 1 |
-| Actions of ported characters | Zhongli's attack 280, Yelan's aim 134, Zhongli's press skill 46, Zhongli's burst 36, Bennett's charge 19 |
+| Actions of ported characters | Yelan's aim 134, Zhongli's press skill 46, Zhongli's burst 36, Bennett's charge 19 |
+| Other | two Hexerei characters 394 (Fischl with Mona, Sucrose, Razor and the others) |
+
+A team is usually blocked by five to ten items at once, so porting the item that blocks the most teams rarely makes a team supported by itself: the ten items that blocked the most teams at the start of Phase 2 together made none supported. The report also lists the teams one or two items from support, which is how the eight teams above were reached.
 
 ### Earlier measurements
 
@@ -91,16 +109,16 @@ What it would take to score Gscouter's results, in phases: `docs/roadmap.md`.
 
 ## What it does not do
 
-- Only the abilities, weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra, Deathmatch, Favonius Warbow, The Alley Flash, Harbinger of Dawn) and sets (Shimenawa, Emblem, Tenacity, Instructor) these teams use, and pyro and hydro resonance. Every other character, weapon, set, action, resonance, built-in or target option is an error that names it (`unsupported: <what> <name>`), never a silent difference.
+- Only the abilities these teams use, these weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra, Deathmatch, The Alley Flash, Harbinger of Dawn, the five Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane) and sets (Shimenawa, Emblem, Tenacity, Instructor, Noblesse Oblige, Golden Troupe, Scroll of the Hero of Cinder City, Marechaussee Hunter), and pyro and hydro resonance. Every other character, weapon, set, action, resonance, built-in or target option is an error that names it (`unsupported: <what> <name>`), never a silent difference.
 - One target, at any position: no hitbox geometry. `target type=`, particle drops, `hurt`, random substats and `set_on_tick` are errors, as are the position built-ins and `pick_up_crystallize`.
-- Of the reactions, only vaporize and crystallize (without shards). No fillers (Gscouter's `steady` package).
+- Of the reactions, vaporize, overload, electro-charged and crystallize (without shards): the ones pyro, hydro, electro and geo cause among themselves. No implemented character applies cryo, dendro or anemo. No Nightsoul, no HP debt. No fillers (Gscouter's `steady` package).
 - Random numbers are its own (xoshiro256++), so single fights differ from gcsim's; only the averages compare.
 
 ## How it works
 
 `engine/src/gcsl.rs` is gcsim's lexer and parser (`pkg/gcs/ast`, `pkg/gcs/parser`), `engine/src/eval.rs` its evaluator (`pkg/gcs/eval`), run as gcsim's `RunSync` runs it: each action is handed to the fight, which runs until it needs the next one. `engine/src/profile.rs` sets characters up as gcsim's `AddChar` does.
 
-`engine/src/sim.rs` keeps gcsim's order of work within a frame (enemy queue and gauge decay, constructs, stamina, shields, animation, character queues, core queue, energy drops), its action state machine, hitlag (frozen characters and enemies, extended mods, queues and infusions), mods and their expiry rules, ICD tags and groups, per-character gauge slots, vaporize and crystallize, weapon infusion and fight-wide statuses. It names no character, weapon or set: they attach through `engine/src/content.rs`.
+`engine/src/sim.rs` keeps gcsim's order of work within a frame (enemy queue and gauge decay, constructs, stamina, shields, animation, character queues, core queue, energy drops), its action state machine, hitlag (frozen characters and enemies, extended mods, queues and infusions), mods and their expiry rules, ICD tags and groups, per-character gauge slots, the reactions of `Reactable.React` for pyro, hydro, electro and geo with their events and reaction damage, heals and drains with their events and incoming healing bonus, weapon infusion and fight-wide statuses. It names no character, weapon or set: they attach through `engine/src/content.rs`.
 
 - Each character is a module in `engine/src/chars`, each weapon in `engine/src/weapons`, each set in `engine/src/sets`, implementing `Character`, `WeaponImpl` or `SetImpl`: hooks with default no-ops for its actions, its tasks, the callbacks of its attacks, the amounts of its mods, its attack mods, the events it subscribes to (enemy damage, skill, swap, state change, reactions), its frames and its condition fields. One line in `chars!`, `weapons!` or `sets!` registers it; the macros generate the enum of kinds, the enum of their states and the `match` that dispatches to them, so calls are static and the hot path has no dynamic dispatch or allocation.
 - Mods have a key hashed at compile time that carries gcsim's name (which `.char.mods.<key>` reads), and either a fixed amount of one stat or an owner that computes it. Tasks are a character's, a weapon's or a set's, with an id and an argument. Events go to subscribers in gcsim's subscription order, so random numbers are drawn in the same order.
