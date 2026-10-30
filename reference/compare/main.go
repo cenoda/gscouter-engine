@@ -804,6 +804,36 @@ func markdown(rep *Report) string {
 		sort.Strings(ks)
 		w("%s.\n\n", strings.Join(ks, ", "))
 	}
+	// the most blocking of each kind: characters are the unit of porting
+	kinds := map[string][]Blocker{}
+	for _, bl := range c.Blockers {
+		k, _, _ := strings.Cut(bl.Name, " ")
+		kinds[k] = append(kinds[k], bl)
+	}
+	for _, k := range []string{"character", "weapon", "set", "action", "builtin"} {
+		bs := kinds[k]
+		if len(bs) == 0 {
+			continue
+		}
+		var top []string
+		for i, bl := range bs {
+			if i == 15 {
+				break
+			}
+			top = append(top, fmt.Sprintf("%s %d", strings.TrimPrefix(bl.Name, k+" "), bl.Teams))
+		}
+		w("- **%s** (%d unsupported): %s\n", k, len(bs), strings.Join(top, ", "))
+	}
+	for k := range kinds {
+		if !slices.Contains([]string{"character", "weapon", "set", "action", "builtin"}, k) {
+			var top []string
+			for _, bl := range kinds[k] {
+				top = append(top, fmt.Sprintf("%s %d", bl.Name, bl.Teams))
+			}
+			w("- %s\n", strings.Join(top, ", "))
+		}
+	}
+	w("\n")
 	if len(c.Blockers) > 0 {
 		w("| Unsupported | Teams it blocks | Teams it alone blocks |\n|---|---|---|\n")
 		for i, bl := range c.Blockers {
