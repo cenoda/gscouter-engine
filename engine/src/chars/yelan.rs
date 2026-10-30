@@ -33,7 +33,7 @@ const TASK_BURST_STATUS: u8 = 1;
 const TASK_TRIGGER: u8 = 2;
 const TASK_TICK: u8 = 3;
 
-const WATCH: Watcher = Watcher { status: BURST, icd: BURST_ICD, delay_key: 1, trigger_task: TASK_TRIGGER, tick_task: TASK_TICK, fire };
+const WATCH: Watcher = Watcher { status: BURST, icd: Some(BURST_ICD), tick_on_active: false, delay_key: 1, trigger_task: TASK_TRIGGER, tick_task: TASK_TICK, fire };
 
 impl Character for Char {
     const KEY: &'static str = "yelan";

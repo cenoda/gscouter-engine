@@ -136,6 +136,7 @@ pub type FrameTable = [i32; N_ACTIONS];
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Failure {
+    NoFailure = 0,
     SwapCd = 1,
     SkillCd,
     BurstCd,
@@ -172,6 +173,16 @@ pub enum AttackTag {
     ElementalArtHold,
     ElementalBurst,
     Weapon,
+    // gcsim's tags past AttackTagNoneStat: reaction damage
+    OverloadDamage,
+    ECDamage,
+}
+
+impl AttackTag {
+    /// gcsim's IsReaction: damage that ignores the attacker's DMG bonus.
+    pub fn is_reaction(self) -> bool {
+        matches!(self, AttackTag::OverloadDamage | AttackTag::ECDamage)
+    }
 }
 
 pub use crate::gcsimdata::icd::{self, IcdGroup, IcdTag};
@@ -191,7 +202,10 @@ impl IcdGroup {
 /// gcsim's info.ReactionType, for the reactions the engine causes.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Reaction {
+    Overload,
     Vaporize,
+    ElectroCharged,
+    CrystallizeElectro,
     CrystallizeHydro,
     CrystallizePyro,
 }
@@ -200,7 +214,10 @@ impl Reaction {
     /// The elements gcsim's Cinder City counts as involved in it.
     pub fn elements(self) -> &'static [Element] {
         match self {
+            Reaction::Overload => &[Element::Electro, Element::Pyro],
             Reaction::Vaporize => &[Element::Pyro, Element::Hydro],
+            Reaction::ElectroCharged => &[Element::Electro, Element::Hydro],
+            Reaction::CrystallizeElectro => &[Element::Geo, Element::Electro],
             Reaction::CrystallizeHydro => &[Element::Geo, Element::Hydro],
             Reaction::CrystallizePyro => &[Element::Geo, Element::Pyro],
         }

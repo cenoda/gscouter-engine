@@ -52,7 +52,10 @@ const gcsimModule = "github.com/genshinsim/gcsim"
 var exportRoots = []string{"internal/characters", "internal/weapons", "internal/artifacts"}
 
 // and these packages alone
-var exportPackages = []string{"pkg/core", "pkg/core/attacks"}
+var exportPackages = []string{"pkg/core", "pkg/core/attacks", "pkg/core/combat"}
+
+// corePackages are core packages written as a module of their own.
+var corePackages = map[string]string{"pkg/core/combat": "combat"}
 
 func main() {
 	engine := flag.String("engine", "../engine", "the engine's directory")
@@ -541,7 +544,8 @@ func writeGen(d *Dump, dir string) {
 				}
 			}
 		}
-		if kind == "" || len(vals) == 0 {
+		top := corePackages[path]
+		if (kind == "" && top == "") || len(vals) == 0 {
 			continue
 		}
 		var b strings.Builder
@@ -579,12 +583,19 @@ func writeGen(d *Dump, dir string) {
 			b.Reset()
 			b.WriteString(text[:body] + "use crate::types::FrameTable;\n\n" + text[body:])
 		}
+		if top != "" {
+			writeFile(filepath.Join(dir, top+".rs"), b.String())
+			continue
+		}
 		mod := moduleName(path)
 		mods[kind] = append(mods[kind], mod)
 		writeFile(filepath.Join(dir, kind, mod+".rs"), b.String())
 	}
 	var top strings.Builder
 	top.WriteString(header + "//! Data generated from gcsim's packages: one module per character,\n//! weapon and artifact package, and the ICD tables.\n\n#![allow(dead_code, clippy::all)]\n\npub mod icd;\n")
+	for _, m := range slices.Sorted(maps.Values(corePackages)) {
+		fmt.Fprintf(&top, "pub mod %s;\n", m)
+	}
 	for _, kind := range slices.Sorted(maps.Keys(mods)) {
 		fmt.Fprintf(&top, "pub mod %s;\n", kind)
 		var m strings.Builder

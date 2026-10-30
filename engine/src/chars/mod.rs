@@ -9,4 +9,5 @@ crate::chars! {
     Zhongli => zhongli,
     Yelan => yelan,
     Bennett => bennett,
+    Fischl => fischl,
 }

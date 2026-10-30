@@ -1,15 +1,19 @@
 //! gcsim's pattern for bursts that fire on the active character's normal
 //! attacks, as Xingqiu's and Yelan's do: on a change to the normal attack
 //! state, after the active character's start delay for the burst's key,
-//! and then every second while normal attacks go on.
+//! and then every second while normal attacks go on. Fischl's C6 is one
+//! too.
 
 use crate::sim::*;
 use crate::types::*;
 
 pub struct Watcher {
-    /// The burst's status, and its ICD status.
+    /// The burst's status, and its ICD status if it has one.
     pub status: ModKey,
-    pub icd: ModKey,
+    pub icd: Option<ModKey>,
+    /// The ticks run on the active character's queue (gcsim's
+    /// WithTickOnActive), not the caster's.
+    pub tick_on_active: bool,
     /// gcsim's AnimationDelayKey for the burst.
     pub delay_key: usize,
     /// The character's task ids for the trigger and the ticks.
@@ -36,12 +40,12 @@ impl Watcher {
     /// The trigger: fires and starts the ticks, whose source frame it
     /// returns, unless the burst is down or on its ICD.
     pub fn trigger(&self, s: &mut Sim, ci: usize) -> Option<i32> {
-        if !s.mod_active(ci, self.status) || s.mod_active(ci, self.icd) {
+        if !s.mod_active(ci, self.status) || self.icd.is_some_and(|k| s.mod_active(ci, k)) {
             return None;
         }
         (self.fire)(s, ci);
         let f = s.f;
-        s.queue_char_task(ci, Task::Char { c: ci as u8, id: self.tick_task, arg: f }, 60);
+        self.queue_tick(s, ci, f);
         Some(f)
     }
 
@@ -54,6 +58,11 @@ impl Watcher {
             return;
         }
         (self.fire)(s, ci);
-        s.queue_char_task(ci, Task::Char { c: ci as u8, id: self.tick_task, arg: src }, 60);
+        self.queue_tick(s, ci, src);
+    }
+
+    fn queue_tick(&self, s: &mut Sim, ci: usize, src: i32) {
+        let on = if self.tick_on_active { s.player.active as usize } else { ci };
+        s.queue_char_task(on, Task::Char { c: ci as u8, id: self.tick_task, arg: src }, 60);
     }
 }

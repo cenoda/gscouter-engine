@@ -93,6 +93,14 @@ pub trait Character {
     fn burst(_s: &mut Sim, _ci: usize, _p: &Params) -> ActInfo {
         unreachable!()
     }
+    fn aim(_s: &mut Sim, _ci: usize, _p: &Params) -> ActInfo {
+        unreachable!()
+    }
+    /// Its own ActionReady, when it has one: None to use the template's,
+    /// Some(None) when ready, Some(Some(why)) when not.
+    fn action_ready(_s: &Sim, _ci: usize, _a: Action, _p: &Params) -> Option<Option<Failure>> {
+        None
+    }
     /// A task it queued with `Task::Char`.
     fn task(_s: &mut Sim, _ci: usize, _id: u8, _arg: i32) {}
     /// The callbacks (its own bits) of an attack of its that hit.
@@ -220,6 +228,10 @@ macro_rules! chars {
             pub fn skill(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::skill(s, ci, p)),* } }
             #[inline]
             pub fn burst(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::burst(s, ci, p)),* } }
+            #[inline]
+            pub fn aim(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> ActInfo { match k { $(CharKind::$kind => $m::Char::aim(s, ci, p)),* } }
+            #[inline]
+            pub fn action_ready(k: CharKind, s: &Sim, ci: usize, a: Action, p: &Params) -> Option<Option<Failure>> { match k { $(CharKind::$kind => $m::Char::action_ready(s, ci, a, p)),* } }
             #[inline]
             pub fn task(k: CharKind, s: &mut Sim, ci: usize, id: u8, arg: i32) { match k { $(CharKind::$kind => $m::Char::task(s, ci, id, arg)),* } }
             #[inline]

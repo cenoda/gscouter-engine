@@ -151,6 +151,7 @@ pub struct AttackInfo {
     pub deployable: bool,
     pub amped: bool,
     pub amp_mult: f64,
+    pub ignore_def: f64,
 }
 
 impl AttackInfo {
@@ -171,6 +172,7 @@ impl AttackInfo {
             deployable: false,
             amped: false,
             amp_mult: 1.0,
+            ignore_def: 0.0,
         }
     }
 }
@@ -217,6 +219,9 @@ pub enum Task {
     Char { c: u8, id: u8, arg: i32 },
     Weapon { c: u8, id: u8, arg: i32 },
     Set { c: u8, si: u8, id: u8, arg: i32 },
+    /// Electro-charged's ticks, of the electro-charged started at src.
+    EcTick { src: i32 },
+    EcWane,
 }
 
 // ---------------------------------------------------------------- actions
@@ -380,16 +385,20 @@ pub struct IcdState {
 }
 
 pub const ZERO_DUR: f64 = 0.00000000001;
-/// Aura slots the engine models: gcsim's ReactionModKeyPyro and Hydro.
-pub const AURA_PYRO: usize = 0;
-pub const AURA_HYDRO: usize = 1;
+/// Aura slots the engine models, in gcsim's ReactionModKey order:
+/// electro, pyro, hydro. Cryo, dendro and their reactions do not exist in
+/// the engine yet, and nothing it implements applies them.
+pub const AURA_ELECTRO: usize = 0;
+pub const AURA_PYRO: usize = 1;
+pub const AURA_HYDRO: usize = 2;
+const N_AURAS: usize = 3;
 
 #[derive(Clone, Copy, Default)]
 pub struct Aura {
     /// Durability by aura and by the character that applied it.
-    pub dur: [[f64; 4]; 2],
-    pub decay: [f64; 2],
-    pub live: [bool; 2],
+    pub dur: [[f64; 4]; N_AURAS],
+    pub decay: [f64; N_AURAS],
+    pub live: [bool; N_AURAS],
 }
 
 impl Aura {
@@ -424,7 +433,7 @@ impl Aura {
         red / factor
     }
     fn tick(&mut self) {
-        for m in 0..2 {
+        for m in 0..N_AURAS {
             if !self.live[m] {
                 continue;
             }
@@ -475,6 +484,13 @@ pub struct Enemy {
     pub icd: Vec<IcdState>,
     pub aura: Aura,
     pub crystallize_gcd: i32,
+    pub overload_gcd: i32,
+    /// Electro-charged: the attack of its next ticks, the frame its ticks
+    /// started (-1 without electro-charged), and whether the wane hook on
+    /// enemy damage is subscribed.
+    pub ec_atk: AttackEvent,
+    pub ec_tick_src: i32,
+    pub ec_wane_sub: bool,
 }
 
 // ---------------------------------------------------------------- player
@@ -536,6 +552,8 @@ pub struct CharSetup {
     pub start_hp: f64,
     pub start_hp_ratio: f64,
     pub start_energy: f64,
+    /// The character's own params (char ... key=value).
+    pub params: Vec<(String, i64)>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -636,6 +654,10 @@ impl Sim {
                 icd: Vec::with_capacity(16),
                 aura: Aura::default(),
                 crystallize_gcd: -1,
+                overload_gcd: -1,
+                ec_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::ECDamage, icd::TAG_EC_DAMAGE, icd::GROUP_REACTION_B, Element::Electro, 0.0, 0.0), 0),
+                ec_tick_src: -1,
+                ec_wane_sub: false,
             },
             player: Player {
                 active: cfg.active as u8,
@@ -1142,6 +1164,8 @@ impl Sim {
             Task::Swap { to } => self.do_swap(to as usize),
             Task::Char { c, id, arg } => crate::chars::dispatch::task(self.chars[c as usize].kind, self, c as usize, id, arg),
             Task::Weapon { c, id, arg } => crate::weapons::dispatch::task(self.chars[c as usize].weapon, self, c as usize, id, arg),
+            Task::EcTick { src } => self.ec_tick(src),
+            Task::EcWane => self.ec_wane(),
             Task::Set { c, si, id, arg } => {
                 let kind = self.chars[c as usize].sets[si as usize].kind;
                 crate::sets::dispatch::task(kind, self, c as usize, si as usize, id, arg)
@@ -1295,10 +1319,7 @@ impl Sim {
         if ev.info.durability > 0.0 {
             ev.info.durability *= self.will_apply_ele(&ev.info);
             if ev.info.durability > 0.0 && ev.info.element != Element::Physical {
-                let (rs, n) = self.react(&mut ev);
-                for &r in &rs[..n] {
-                    self.emit(Event::Reaction(r, &ev));
-                }
+                self.react(&mut ev);
             }
         }
         let (dmg, crit) = self.calc(&mut ev, grp);
@@ -1317,71 +1338,210 @@ impl Sim {
         self.add_task(Task::DamageApplied { slot }, 0);
     }
 
-    /// gcsim's Reactable.React for the elements of this team.
-    /// Returns the reactions the attack caused, in order.
-    fn react(&mut self, ev: &mut AttackEvent) -> ([Reaction; 2], usize) {
-        let a = &mut self.enemy.aura;
-        let dur = ev.info.durability;
-        let mut rs = [Reaction::Vaporize; 2];
-        let mut n = 0;
+    /// gcsim's Reactable.React, for the elements the engine applies:
+    /// each reaction in gcsim's order, its event emitted as it happens.
+    fn react(&mut self, ev: &mut AttackEvent) {
         match ev.info.element {
+            Element::Electro => {
+                self.try_overload(ev);
+                self.try_add_ec(ev);
+            }
             Element::Pyro => {
-                if dur < ZERO_DUR || a.get(AURA_HYDRO) < ZERO_DUR {
-                    return (rs, 0);
-                }
-                let consumed = a.reduce(AURA_HYDRO, dur, 0.5);
-                ev.info.amp_mult = 1.5;
-                ev.info.durability = (dur - consumed).max(0.0);
-                ev.reacted = true;
-                ev.info.amped = true;
-                n = 1;
+                self.try_overload(ev);
+                self.try_vaporize(ev);
             }
             Element::Hydro => {
-                if dur < ZERO_DUR || a.get(AURA_PYRO) < ZERO_DUR {
-                    return (rs, 0);
-                }
-                let consumed = a.reduce(AURA_PYRO, dur, 2.0);
-                ev.info.amp_mult = 2.0;
-                ev.info.durability = (dur - consumed).max(0.0);
-                ev.reacted = true;
-                ev.info.amped = true;
-                n = 1;
+                self.try_vaporize(ev);
+                self.try_add_ec(ev);
             }
             Element::Geo => {
-                for m in [AURA_HYDRO, AURA_PYRO] {
-                    if self.enemy.aura.get(m) <= ZERO_DUR {
-                        continue;
+                for (m, r) in [(AURA_ELECTRO, Reaction::CrystallizeElectro), (AURA_HYDRO, Reaction::CrystallizeHydro), (AURA_PYRO, Reaction::CrystallizePyro)] {
+                    if self.enemy.aura.get(m) > ZERO_DUR {
+                        self.try_crystallize(ev, m, r);
                     }
-                    if ev.info.durability < ZERO_DUR {
-                        continue;
-                    }
-                    if self.enemy.crystallize_gcd != -1 && self.f < self.enemy.crystallize_gcd {
-                        continue;
-                    }
-                    self.enemy.crystallize_gcd = self.f + 60;
-                    let consumed = self.enemy.aura.reduce(m, ev.info.durability, 0.5);
-                    ev.info.durability = (ev.info.durability - consumed).max(0.0);
-                    ev.reacted = true;
-                    rs[n] = if m == AURA_HYDRO { Reaction::CrystallizeHydro } else { Reaction::CrystallizePyro };
-                    n += 1;
                 }
             }
             _ => {}
         }
-        (rs, n)
+    }
+
+    fn try_vaporize(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        let consumed = match ev.info.element {
+            Element::Pyro => {
+                if a.get(AURA_HYDRO) < ZERO_DUR {
+                    return;
+                }
+                ev.info.amp_mult = 1.5;
+                a.reduce(AURA_HYDRO, dur, 0.5)
+            }
+            Element::Hydro => {
+                if a.get(AURA_PYRO) < ZERO_DUR {
+                    return;
+                }
+                ev.info.amp_mult = 2.0;
+                a.reduce(AURA_PYRO, dur, 2.0)
+            }
+            _ => return,
+        };
+        ev.info.durability = (dur - consumed).max(0.0);
+        ev.reacted = true;
+        ev.info.amped = true;
+        self.emit(Event::Reaction(Reaction::Vaporize, ev));
+    }
+
+    fn try_overload(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        let consumed = match ev.info.element {
+            Element::Electro if a.get(AURA_PYRO) >= ZERO_DUR => a.reduce(AURA_PYRO, dur, 1.0),
+            Element::Pyro if a.get(AURA_ELECTRO) >= ZERO_DUR => a.reduce(AURA_ELECTRO, dur, 1.0),
+            _ => return,
+        };
+        ev.info.durability = (dur - consumed).max(0.0);
+        ev.reacted = true;
+        // the event comes before the attack is queued
+        self.emit(Event::Reaction(Reaction::Overload, ev));
+        if self.enemy.overload_gcd == -1 || self.f >= self.enemy.overload_gcd {
+            self.enemy.overload_gcd = self.f + 6;
+            let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::OverloadDamage, icd::TAG_OVERLOAD_DAMAGE, icd::GROUP_REACTION_B, Element::Pyro, 0.0, 0.0);
+            ai.abil = "overload";
+            ai.ignore_def = 1.0;
+            let mut atk = self.reaction_attack(ai);
+            atk.info.flat_dmg *= 2.75;
+            self.queue_attack_with_snap(atk, 0, 1);
+        }
+    }
+
+    /// gcsim's CalcReactionDmg: the attack with its flat damage and the
+    /// snapshot it takes (the level and EM only).
+    fn reaction_attack(&self, mut ai: AttackInfo) -> AttackEvent {
+        let ci = ai.actor as usize;
+        let em = self.stat(ci, st::EM);
+        let lvl = self.chars[ci].level;
+        ai.flat_dmg = (1.0 + (16.0 * em) / (2000.0 + em)) * crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
+        let mut atk = AttackEvent::new(ai, 0);
+        atk.stats[st::EM] = em;
+        atk.char_lvl = lvl;
+        atk
+    }
+
+    fn try_add_ec(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR {
+            return;
+        }
+        let src = ev.info.actor as usize;
+        // a hit that already reacted adds no aura
+        match ev.info.element {
+            Element::Hydro => {
+                if self.enemy.aura.get(AURA_ELECTRO) < ZERO_DUR {
+                    return;
+                }
+                if !ev.reacted {
+                    self.enemy.aura.attach_overlap(AURA_HYDRO, 0.8 * dur, 6.0 * dur + 420.0, src);
+                }
+            }
+            Element::Electro => {
+                if self.enemy.aura.get(AURA_HYDRO) < ZERO_DUR {
+                    return;
+                }
+                if !ev.reacted {
+                    self.enemy.aura.attach_overlap(AURA_ELECTRO, 0.8 * dur, 6.0 * dur + 420.0, src);
+                }
+            }
+            _ => return,
+        }
+        ev.reacted = true;
+        self.emit(Event::Reaction(Reaction::ElectroCharged, ev));
+        // electro-charged is refreshed: the next ticks are this attacker's
+        let mut ai = AttackInfo::new(src, AttackTag::ECDamage, icd::TAG_EC_DAMAGE, icd::GROUP_REACTION_B, Element::Electro, 0.0, 0.0);
+        ai.abil = "electrocharged";
+        ai.ignore_def = 1.0;
+        let mut atk = self.reaction_attack(ai);
+        atk.info.flat_dmg *= 2.0;
+        self.enemy.ec_atk = atk;
+        // a new electro-charged ticks at once, then every second
+        if self.enemy.ec_tick_src == -1 {
+            let f = self.f;
+            self.enemy.ec_tick_src = f;
+            self.queue_attack_with_snap(atk, 0, 10);
+            self.add_task(Task::EcTick { src: f }, 60 + 10);
+            self.enemy.ec_wane_sub = true;
+        }
+    }
+
+    fn ec_tick(&mut self, src: i32) {
+        if self.enemy.ec_tick_src != src || self.enemy.aura.get(AURA_ELECTRO) < ZERO_DUR || self.enemy.aura.get(AURA_HYDRO) < ZERO_DUR {
+            return;
+        }
+        let atk = self.enemy.ec_atk;
+        self.queue_attack_with_snap(atk, 0, 0);
+        self.add_task(Task::EcTick { src }, 60);
+    }
+
+    /// The wane hook: electro-charged damage that landed takes 10 off
+    /// both auras 0.1 s later.
+    fn ec_wane_hook(&mut self, ev: &AttackEvent) {
+        if !self.enemy.ec_wane_sub || ev.info.tag != AttackTag::ECDamage || ev.damage == 0.0 {
+            return;
+        }
+        if self.enemy.aura.get(AURA_ELECTRO) < ZERO_DUR || self.enemy.aura.get(AURA_HYDRO) < ZERO_DUR {
+            self.enemy.ec_wane_sub = false;
+            return;
+        }
+        self.add_task(Task::EcWane, 6);
+    }
+
+    fn ec_wane(&mut self) {
+        self.enemy.aura.reduce_mod(AURA_ELECTRO, 10.0);
+        self.enemy.aura.reduce_mod(AURA_HYDRO, 10.0);
+        self.check_ec();
+    }
+
+    fn check_ec(&mut self) {
+        if self.enemy.aura.get(AURA_ELECTRO) < ZERO_DUR || self.enemy.aura.get(AURA_HYDRO) < ZERO_DUR {
+            self.enemy.ec_tick_src = -1;
+            self.enemy.ec_wane_sub = false;
+        }
+    }
+
+    fn try_crystallize(&mut self, ev: &mut AttackEvent, m: usize, r: Reaction) {
+        if ev.info.durability < ZERO_DUR {
+            return;
+        }
+        if self.enemy.crystallize_gcd != -1 && self.f < self.enemy.crystallize_gcd {
+            return;
+        }
+        self.enemy.crystallize_gcd = self.f + 60;
+        let consumed = self.enemy.aura.reduce(m, ev.info.durability, 0.5);
+        ev.info.durability = (ev.info.durability - consumed).max(0.0);
+        ev.reacted = true;
+        self.emit(Event::Reaction(r, ev));
+        if m == AURA_ELECTRO && self.enemy.aura.get(AURA_HYDRO) > ZERO_DUR {
+            self.check_ec();
+        }
     }
 
     fn calc(&mut self, ev: &mut AttackEvent, grp: f64) -> (f64, bool) {
         let s = &mut ev.stats;
         let st_ele = ev.info.element.dmg_stat();
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
-        let dmg_bonus = ele_per + s[st::DMGP];
+        // reaction damage takes no DMG bonus
+        let dmg_bonus = if ev.info.tag.is_reaction() { 0.0 } else { ele_per + s[st::DMGP] };
         let a = total_atk(s);
         let base = ev.info.mult * a * (1.0 + 0.0) + ev.info.flat_dmg;
         let mut damage = base * (1.0 + dmg_bonus);
         s[st::CR] = s[st::CR].clamp(0.0, 1.0);
         let res = self.enemy_resist(ev.info.element);
-        let defmod = (ev.char_lvl + 100) as f64 / ((ev.char_lvl + 100) as f64 + (self.enemy.level + 100) as f64 * (1.0 + 0.0) * (1.0 - 0.0));
+        let defmod = (ev.char_lvl + 100) as f64 / ((ev.char_lvl + 100) as f64 + (self.enemy.level + 100) as f64 * (1.0 + 0.0) * (1.0 - ev.info.ignore_def.min(1.0)));
         damage *= defmod;
         let resmod = if res < 0.0 {
             1.0 - res / 2.0
@@ -1436,6 +1596,7 @@ impl Sim {
             match ev.info.element {
                 Element::Pyro => self.enemy.aura.attach_refresh(AURA_PYRO, 0.8 * d, 6.0 * d + 420.0, src),
                 Element::Hydro => self.enemy.aura.attach_overlap(AURA_HYDRO, 0.8 * d, 6.0 * d + 420.0, src),
+                Element::Electro => self.enemy.aura.attach_overlap(AURA_ELECTRO, 0.8 * d, 6.0 * d + 420.0, src),
                 _ => {}
             }
         }
@@ -1454,6 +1615,8 @@ impl Sim {
             }
         }
         self.emit(Event::EnemyDamage(&ev));
+        // electro-charged's hook subscribes when it starts, after the others
+        self.ec_wane_hook(&ev);
         if ev.callbacks != 0 {
             crate::chars::dispatch::attack_cb(self.chars[ci].kind, self, ci, ev.callbacks);
         }
@@ -1616,13 +1779,16 @@ impl Sim {
         }
     }
 
-    pub fn action_ready(&self, ci: usize, a: Action) -> bool {
-        self.action_failure(ci, a).is_none()
+    pub fn action_ready(&self, ci: usize, a: Action, p: &Params) -> bool {
+        self.action_failure(ci, a, p).is_none()
     }
 
     /// gcsim's ActionReady: why the action cannot be used, if it cannot.
-    pub fn action_failure(&self, ci: usize, a: Action) -> Option<Failure> {
+    pub fn action_failure(&self, ci: usize, a: Action, p: &Params) -> Option<Failure> {
         let c = &self.chars[ci];
+        if let Some(r) = crate::chars::dispatch::action_ready(c.kind, self, ci, a, p) {
+            return r;
+        }
         match a {
             Action::Burst => {
                 if !self.ignore_burst_energy && c.energy != c.energy_max {
@@ -1806,6 +1972,10 @@ impl Sim {
                 self.run_task(t);
             }
             self.enemy.aura.tick();
+            // electro-charged ends with either aura
+            if self.enemy.ec_tick_src > -1 && (self.enemy.aura.below(AURA_ELECTRO, ZERO_DUR) || self.enemy.aura.below(AURA_HYDRO, ZERO_DUR)) {
+                self.enemy.ec_tick_src = -1;
+            }
         }
         // Constructs.Tick
         let mut k = 0;
@@ -1859,7 +2029,7 @@ impl Sim {
 
     // ------------------------------------------------------------ actions
 
-    fn ready_check(&mut self, c: usize, a: Action) -> bool {
+    fn ready_check(&mut self, c: usize, a: Action, p: &Params) -> bool {
         if !self.can_use(a) {
             return false;
         }
@@ -1877,7 +2047,7 @@ impl Sim {
             }
             return true;
         }
-        if let Some(why) = self.action_failure(active, a) {
+        if let Some(why) = self.action_failure(active, a, p) {
             if counted {
                 self.waits[active][why as usize] += 1;
             }
@@ -1906,6 +2076,7 @@ impl Sim {
                 chars::dispatch::burst(kind, self, ci, p)
             }
             Action::Attack => chars::dispatch::attack(kind, self, ci, p),
+            Action::Aim => chars::dispatch::aim(kind, self, ci, p),
             Action::Swap => {
                 if self.player.swap_cd > 0 {
                     self.player.swap_cd = 0;
@@ -1993,7 +2164,7 @@ impl Sim {
             return false;
         }
         loop {
-            while !self.ready_check(c, a) {
+            while !self.ready_check(c, a, p) {
                 if self.step() {
                     return false;
                 }
@@ -2049,7 +2220,7 @@ impl Sim {
     // ------------------------------------------------------------ fields
 
     /// The duration left of a character's mod or status, by gcsim key.
-    fn mod_duration(&self, ci: usize, key: &str) -> i32 {
+    pub fn mod_duration(&self, ci: usize, key: &str) -> i32 {
         self.chars[ci]
             .mods
             .iter()
@@ -2104,7 +2275,8 @@ impl Sim {
                 let d = match fields[2].as_str() {
                     "pyro" => self.enemy.aura.get(AURA_PYRO),
                     "hydro" => self.enemy.aura.get(AURA_HYDRO),
-                    "electro" | "cryo" | "dendro" | "quicken" | "frozen" | "geo" | "burning" => 0.0,
+                    "electro" => self.enemy.aura.get(AURA_ELECTRO),
+                    "cryo" | "dendro" | "quicken" | "frozen" | "geo" | "burning" => 0.0,
                     e => return Err(format!("bad element condition: invalid element {e}")),
                 };
                 Ok(Num::Float(if d < ZERO_DUR { 0.0 } else { d }))
@@ -2159,7 +2331,7 @@ impl Sim {
                             _ => self.cooldown(ci, a) as i64,
                         })),
                         "charge" => Ok(int(c.cd[Char::cd_index(a)].available as i64)),
-                        "ready" => Ok(b(if a == Action::Swap { self.player.swap_cd == 0 || active } else { self.action_ready(ci, a) })),
+                        "ready" => Ok(b(if a == Action::Swap { self.player.swap_cd == 0 || active } else { self.action_ready(ci, a, &Params::default()) })),
                         t => Err(format!("bad character ability condition: invalid type {t}")),
                     };
                 }

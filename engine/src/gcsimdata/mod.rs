@@ -6,6 +6,7 @@
 #![allow(dead_code, clippy::all)]
 
 pub mod icd;
+pub mod combat;
 pub mod artifacts;
 pub mod chars;
 pub mod weapons;

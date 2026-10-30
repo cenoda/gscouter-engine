@@ -22,10 +22,11 @@
 //
 //	compare -gscouter ../Gscouter [-teams id,id] [-census] [-json out.json] [-md out.md]
 //
-// A weapon or set no supported team carries would go unchecked, so the
-// probes (probes/*.txt) put it on one: each names a supported team and the
-// lines that replace those of its library build, and is compared like a
-// variant of it.
+// A weapon, set or character no supported team carries would go
+// unchecked, so the probes (probes/*.txt) put it on one: each names a
+// library team and the lines that replace those of its build, and is
+// compared like a variant of it. A probe's team need not be supported, only
+// its probe build: weapons and sets the engine lacks can be replaced.
 package main
 
 import (
@@ -232,14 +233,22 @@ func main() {
 
 	if !*censusOnly {
 		for i, id := range ids {
-			if statuses[i].Status != "supported" {
+			supported := statuses[i].Status == "supported"
+			probes := probesFor(id)
+			if !supported && len(probes) == 0 {
 				continue
 			}
-			jobs := []struct {
+			var jobs []struct {
 				v   variant
 				cfg string
-			}{{variant{Name: "library", Desc: "library build"}, configs[i]}}
-			if !*noVariants {
+			}
+			if supported {
+				jobs = append(jobs, struct {
+					v   variant
+					cfg string
+				}{variant{Name: "library", Desc: "library build"}, configs[i]})
+			}
+			if supported && !*noVariants {
 				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
 				if err != nil {
 					fail(err)
@@ -267,7 +276,7 @@ func main() {
 					}{v, cfg})
 				}
 			}
-			for _, pr := range probesFor(id) {
+			for _, pr := range probes {
 				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
 				if err != nil {
 					fail(err)
@@ -294,7 +303,7 @@ func main() {
 					r.Verdict = "error"
 				}
 				// a feature only the run finds makes the team unsupported
-				if r.Verdict == "unsupported" {
+				if r.Verdict == "unsupported" && supported {
 					statuses[i].Status = "unsupported"
 					statuses[i].Unsupported = []string{r.Error}
 				}

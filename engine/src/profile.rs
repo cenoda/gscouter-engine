@@ -59,6 +59,10 @@ fn weapon_base(p: &CharProfile, d: &data::WeaponData) -> Stats {
     res
 }
 
+/// The characters gcsim makes Hexerei (IsHexerei), unless their param
+/// hexerei=0.
+const HEXEREI: &[&str] = &["durin", "varka", "sucrose", "mona", "razor", "fischl", "prune", "lohen", "nicole"];
+
 /// The engine's character for a gcsim key name, if it implements it.
 pub fn char_kind(name: &str) -> Option<CharKind> {
     CharKind::from_name(name)
@@ -98,6 +102,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("start_hp%", _) => start_hp_ratio = *v as f64,
             ("start_energy", _) => start_energy = *v as f64,
             ("breakthrough", Some(CharKind::Yelan)) => {}
+            ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             // the character itself is unsupported
             (_, None) => {}
             _ => errs.push(format!("unsupported: param {name} {k}")),
@@ -133,6 +138,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
         start_hp,
         start_hp_ratio,
         start_energy,
+        params: p.params.clone(),
     })
 }
 
@@ -166,6 +172,12 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
                 errs.push(format!("unsupported: resonance {name}"));
             }
         }
+    }
+    // gcsim's Hexerei bonuses need two Hexerei characters; the engine
+    // implements none of them
+    let hexerei = p.chars.iter().filter(|c| HEXEREI.contains(&char_name(c.key)) && !c.params.iter().any(|(k, v)| k == "hexerei" && *v == 0)).count();
+    if hexerei >= 2 {
+        errs.push("unsupported: hexerei".into());
     }
     let mut chars = Vec::new();
     for c in &p.chars {
