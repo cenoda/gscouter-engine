@@ -15,6 +15,7 @@ mod check;
 mod data;
 mod eval;
 mod gcsl;
+mod gcsimdata;
 mod hutao;
 mod profile;
 mod queue;

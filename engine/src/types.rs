@@ -93,6 +93,12 @@ pub enum Element {
 }
 
 impl Element {
+    /// From gcsim's attributes.Element.
+    pub fn from_gcsim(v: u8) -> Self {
+        use Element::*;
+        [NoElement, Pyro, Hydro, Dendro, Electro, Cryo, Anemo, Geo, Physical, Frozen, Quicken][v as usize]
+    }
+
     pub fn dmg_stat(self) -> usize {
         match self {
             Element::Pyro => st::PYROP,
@@ -189,73 +195,16 @@ pub enum AttackTag {
     Weapon,
 }
 
-/// gcsim's ICD tags that the engine's characters use.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum IcdTag {
-    None,
-    NormalAttack,
-    ExtraAttack,
-    ElementalArt,
-    ElementalArtHold,
-    ElementalBurst,
-    YelanBreakthrough,
-    YelanBurst,
-    ElementalBurstHydro,
-}
-
-/// gcsim's ICD groups that the engine's characters use, with their
-/// tables from `attacks/icd_groups.dm.go` (Yelan's burst group has the
-/// default group's sequences and a 2 s timer).
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum IcdGroup {
-    Default,
-    PoleExtraAttack,
-    XingqiuBurst,
-    YelanBurst,
-}
+pub use crate::gcsimdata::icd::{self, IcdGroup, IcdTag};
 
 impl IcdGroup {
     pub fn reset_timer(self) -> i32 {
-        match self {
-            IcdGroup::Default => 150,
-            IcdGroup::PoleExtraAttack => 30,
-            IcdGroup::XingqiuBurst => 60,
-            IcdGroup::YelanBurst => 120,
-        }
+        icd::GROUPS[self.0 as usize].0
     }
     pub fn ele_seq(self) -> &'static [f64] {
-        match self {
-            IcdGroup::Default => &DEFAULT_ELE,
-            IcdGroup::PoleExtraAttack => &POLE_ELE,
-            IcdGroup::XingqiuBurst => &XQ_BURST_ELE,
-            IcdGroup::YelanBurst => &DEFAULT_ELE,
-        }
+        icd::GROUPS[self.0 as usize].1
     }
     pub fn dmg_seq(self) -> &'static [f64] {
-        match self {
-            IcdGroup::Default => &DEFAULT_DMG,
-            IcdGroup::PoleExtraAttack => &POLE_DMG,
-            IcdGroup::XingqiuBurst => &XQ_BURST_DMG,
-            IcdGroup::YelanBurst => &DEFAULT_DMG,
-        }
+        icd::GROUPS[self.0 as usize].2
     }
 }
-
-static DEFAULT_ELE: [f64; 24] = [
-    1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
-    0.0, 0.0, 1.0, 0.0, 0.0,
-];
-static DEFAULT_DMG: [f64; 15] = [1.0; 15];
-static POLE_ELE: [f64; 24] = {
-    let mut a = [0.0; 24];
-    a[0] = 1.0;
-    a
-};
-static POLE_DMG: [f64; 15] = {
-    let mut a = [0.0; 15];
-    a[0] = 1.0;
-    a
-};
-// Unused: Xingqiu's swords are in the default group.
-static XQ_BURST_ELE: [f64; 1] = [1.0];
-static XQ_BURST_DMG: [f64; 1] = [1.0];

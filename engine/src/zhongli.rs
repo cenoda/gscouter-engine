@@ -1,15 +1,9 @@
 //! Zhongli's hold skill, stele and Jade Shield, from gcsim's
 //! internal/characters/zhongli. The rotation uses no other ability.
 
+use crate::gcsimdata::chars::zhongli as g;
 use crate::sim::*;
 use crate::types::*;
-
-const SKILL: [f64; 15] = [0.16, 0.172, 0.184, 0.2, 0.212, 0.224, 0.24, 0.256, 0.272, 0.288, 0.304, 0.32, 0.34, 0.36, 0.38];
-const SKILL_TICK: [f64; 15] = [0.32, 0.344, 0.368, 0.4, 0.424, 0.448, 0.48, 0.512, 0.544, 0.576, 0.608, 0.64, 0.68, 0.72, 0.76];
-const SKILL_HOLD: [f64; 15] = [0.8, 0.86, 0.92, 1.0, 1.06, 1.12, 1.2, 1.28, 1.36, 1.44, 1.52, 1.6, 1.7, 1.8, 1.9];
-
-const SKILL_HOLD_HITMARK: i32 = 48;
-static SKILL_HOLD_FRAMES: FrameTable = set(set(abil_slice(96), Action::Dash, 55), Action::Jump, 55);
 
 /// The Jade Shield shreds every element; these are the ones this team's
 /// attacks have.
@@ -26,23 +20,23 @@ impl Sim {
     pub fn zl_skill(&mut self, ci: usize, hold: i32) -> ActInfo {
         assert!(hold > 0, "only the hold skill is ported");
         let lvl = self.talent(ci, 1);
-        let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::ElementalArt, IcdGroup::Default, Element::Geo, 25.0, SKILL_HOLD[lvl]);
+        let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Geo, 25.0, g::SKILL_HOLD[lvl]);
         ai.abil = "Stone Stele (Hold)";
         ai.flat_dmg = self.zl_a4_skill(ci);
-        self.queue_attack(ai, 0, 0, SKILL_HOLD_HITMARK);
+        self.queue_attack(ai, 0, 0, g::SKILL_HOLD_HITMARK);
         let zl = &self.chars[ci].zl;
         if zl.stele_count < zl.max_stele {
-            self.add_task(Task::ZlNewStele { c: ci as u8 }, SKILL_HOLD_HITMARK);
+            self.add_task(Task::ZlNewStele { c: ci as u8 }, g::SKILL_HOLD_HITMARK);
         }
-        self.add_task(Task::ZlJadeShield { c: ci as u8 }, SKILL_HOLD_HITMARK);
+        self.add_task(Task::ZlJadeShield { c: ci as u8 }, g::SKILL_HOLD_HITMARK);
         self.set_cd_with_delay(ci, Action::Skill, 720, 47);
-        ActInfo::new(Frames::Table(&SKILL_HOLD_FRAMES), SKILL_HOLD_FRAMES[0], SKILL_HOLD_FRAMES[Action::Dash as usize], AnimState::Skill)
+        ActInfo::new(Frames::Table(&g::SKILL_HOLD_FRAMES), g::SKILL_HOLD_FRAMES[0], g::SKILL_HOLD_FRAMES[Action::Dash as usize], AnimState::Skill)
     }
 
     pub fn zl_new_stele(&mut self, ci: usize) {
         let lvl = self.talent(ci, 1);
         let flat = self.zl_a4_skill(ci);
-        let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::ElementalArt, IcdGroup::Default, Element::Geo, 50.0, SKILL[lvl]);
+        let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Geo, 50.0, g::SKILL[lvl]);
         ai.abil = "Stone Stele (Initial)";
         ai.flat_dmg = flat;
         self.queue_attack(ai, CB_ZL_PARTICLE, 0, 0);
@@ -58,7 +52,7 @@ impl Sim {
         zl.stele = Some((f, f + 1860));
         zl.stele_count = 1;
 
-        let mut tick = AttackInfo::new(ci, AttackTag::ElementalArt, IcdTag::ElementalArt, IcdGroup::Default, Element::Geo, 25.0, SKILL_TICK[lvl]);
+        let mut tick = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Geo, 25.0, g::SKILL_TICK[lvl]);
         tick.abil = "Stone Stele (Tick)";
         tick.flat_dmg = flat;
         let (stats, clvl) = self.make_snapshot(&mut tick);

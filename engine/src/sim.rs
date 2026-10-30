@@ -281,6 +281,29 @@ pub enum WeaponClass {
     Catalyst,
 }
 
+impl WeaponClass {
+    /// From gcsim's info.WeaponClass.
+    pub fn from_gcsim(v: u8) -> Self {
+        [WeaponClass::Sword, WeaponClass::Claymore, WeaponClass::Spear, WeaponClass::Bow, WeaponClass::Catalyst][v as usize]
+    }
+}
+
+/// gcsim's info.BodyType.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Body {
+    Boy,
+    Girl,
+    Male,
+    Lady,
+    Loli,
+}
+
+impl Body {
+    pub fn from_gcsim(v: u8) -> Self {
+        [Body::Boy, Body::Girl, Body::Male, Body::Lady, Body::Loli][v as usize]
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Weapon {
     Homa,
@@ -352,6 +375,11 @@ pub struct Char {
     pub talents: [i32; 3],
     pub element: Element,
     pub class: WeaponClass,
+    pub body: Body,
+    /// The constellations that raise normal attack, skill and burst by 3.
+    pub talent_cons: [i32; 3],
+    /// AnimationStartDelay by gcsim's AnimationDelayKey.
+    pub anim_delay: [i32; 3],
     pub weapon: Weapon,
     pub refine: i32,
     pub sets: [i32; N_SETS],
@@ -390,8 +418,8 @@ impl Char {
 #[derive(Clone, Copy, Default)]
 pub struct IcdState {
     pub char: u8,
-    pub tag: u8,
-    pub group: u8,
+    pub tag: u16,
+    pub group: u16,
     pub tag_on: bool,
     pub tag_count: usize,
     pub dmg_on: bool,
@@ -674,11 +702,20 @@ impl Sim {
     }
 
     fn make_char(cs: &CharSetup) -> Char {
-        let (element, class, energy_max, normal_hit_num, dash_len, dash_jump) = match cs.kind {
-            CharKind::Hutao => (Element::Pyro, WeaponClass::Spear, 60.0, 6, 20, 4),
-            CharKind::Xingqiu => (Element::Hydro, WeaponClass::Sword, 80.0, 5, 21, 2),
-            CharKind::Zhongli => (Element::Geo, WeaponClass::Spear, 40.0, 6, 19, 3),
-            CharKind::Yelan => (Element::Hydro, WeaponClass::Bow, 70.0, 4, 22, 3),
+        let d = crate::data::CHARS.iter().find(|d| d.key == crate::gcsl::char_name(cs.key)).expect("character data");
+        let (element, class, body) = (Element::from_gcsim(d.element), WeaponClass::from_gcsim(d.weapon_class), Body::from_gcsim(d.body));
+        let (energy_max, normal_hit_num) = (d.energy_max, d.normal_hit_num);
+        // the template character's DashLength and DashToJumpLength
+        let dash_len = match body {
+            Body::Boy | Body::Loli => 21,
+            Body::Male => 19,
+            Body::Lady => 22,
+            Body::Girl => 20,
+        };
+        let dash_jump = match body {
+            Body::Girl | Body::Loli => 4,
+            Body::Boy => 2,
+            _ => 3,
         };
         Char {
             kind: cs.kind,
@@ -692,6 +729,9 @@ impl Sim {
             talents: cs.talents,
             element,
             class,
+            body,
+            talent_cons: d.cons,
+            anim_delay: d.anim_delay,
             weapon: cs.weapon,
             refine: cs.refine,
             sets: cs.sets,
@@ -715,7 +755,7 @@ impl Sim {
                 stele_count: 0,
                 max_stele: if cs.cons >= 1 { 2 } else { 1 },
                 stele: None,
-                stele_snap: AttackEvent::new(AttackInfo::new(0, AttackTag::None, IcdTag::None, IcdGroup::Default, Element::Geo, 0.0, 0.0), 0),
+                stele_snap: AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Geo, 0.0, 0.0), 0),
                 shielded: false,
                 shield_expiry: -1,
             },
@@ -791,16 +831,8 @@ impl Sim {
 
     pub fn talent(&self, ci: usize, i: usize) -> usize {
         let c = &self.chars[ci];
-        // the constellations that raise skill and burst by 3
-        let (skill_con, burst_con) = match c.kind {
-            CharKind::Hutao | CharKind::Zhongli => (3, 5),
-            CharKind::Xingqiu | CharKind::Yelan => (5, 3),
-        };
-        let add = match i {
-            1 if c.cons >= skill_con => 3,
-            2 if c.cons >= burst_con => 3,
-            _ => 0,
-        };
+        let con = c.talent_cons[i];
+        let add = if con > 0 && c.cons >= con { 3 } else { 0 };
         (c.talents[i] - 1 + add) as usize
     }
 
@@ -1138,7 +1170,7 @@ impl Sim {
     }
 
     fn icd_state(&mut self, ci: u8, tag: IcdTag, grp: IcdGroup) -> usize {
-        let (t, g) = (tag as u8, grp as u8);
+        let (t, g) = (tag.0, grp.0);
         if let Some(i) = self.enemy.icd.iter().position(|s| s.char == ci && s.tag == t && s.group == g) {
             return i;
         }
@@ -1160,7 +1192,7 @@ impl Sim {
     }
 
     fn will_apply_ele(&mut self, info: &AttackInfo) -> f64 {
-        if info.icd_tag == IcdTag::None {
+        if info.icd_tag == icd::TAG_NONE {
             return 1.0;
         }
         let i = self.icd_state(info.actor, info.icd_tag, info.icd_group);
@@ -1780,13 +1812,9 @@ impl Sim {
     /// AnimationStartDelay of the active character for a watcher's key.
     fn start_delay(&self, w: Watcher) -> i32 {
         let c = &self.chars[self.player.active as usize];
-        match (w, c.kind) {
-            (Watcher::Xingqiu, CharKind::Hutao) => 10,
-            (Watcher::Xingqiu, CharKind::Xingqiu) => 7,
-            (Watcher::Xingqiu, CharKind::Zhongli) => 9,
-            (Watcher::Xingqiu, CharKind::Yelan) => 9,
-            (Watcher::Yelan, CharKind::Yelan) => 6,
-            _ => 0,
+        match w {
+            Watcher::Yelan => c.anim_delay[1],
+            Watcher::Xingqiu => c.anim_delay[2],
         }
     }
 
@@ -2059,12 +2087,14 @@ impl Sim {
     fn char_jump(&mut self, ci: usize) -> ActInfo {
         let c = &self.chars[ci];
         let after_dash = self.player.last.action == Action::Dash;
-        let f = match (c.kind, after_dash) {
-            (CharKind::Hutao | CharKind::Xingqiu, true) => 34,
+        // JumpLength
+        let f = match (c.body, after_dash) {
+            (Body::Girl | Body::Boy, true) => 34,
             (_, true) => 37,
-            (CharKind::Hutao | CharKind::Xingqiu, false) => 31,
-            (CharKind::Zhongli, false) => 28,
-            (CharKind::Yelan, false) => 32,
+            (Body::Boy | Body::Girl, false) => 31,
+            (Body::Male, false) => 28,
+            (Body::Lady, false) => 32,
+            (Body::Loli, false) => 29,
         };
         let low_plunge = if matches!(c.class, WeaponClass::Sword | WeaponClass::Spear) { 5 } else { 4 };
         ActInfo::new(Frames::Const(f), 60, low_plunge, AnimState::Jump)
