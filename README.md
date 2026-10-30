@@ -43,6 +43,8 @@ Evaluating gcsl costs about 7% over the hand-compiled rotation of the first vers
 
 The WebAssembly row is the one that matters for the site, which scores in the visitor's browser. Go's WebAssembly runs gcsim about 5× slower than native Go; Rust's runs about 1.4× slower than native Rust. The gcsim side is the reference harness built with `GOOS=wasip1`; Gscouter's site uses `GOOS=js`, which has the same compiler backend.
 
+What it would take to score Gscouter's results, in phases: `docs/roadmap.md`.
+
 ## What it does not do
 
 - Only the abilities, weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra) and sets (Shimenawa, Emblem, Tenacity) this team and its rotation use. No hitbox geometry: every attack is assumed to hit the one enemy, which holds for this config.
