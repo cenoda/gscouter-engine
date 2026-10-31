@@ -1,0 +1,3 @@
+# Fischl with Thundering Fury 4 beside Lynette's cryo and Bennett's pyro: superconduct and overload DMG +40%.
+team lynette-furina-fischl-bennett
+fischl add set="thunderingfury" count=4;

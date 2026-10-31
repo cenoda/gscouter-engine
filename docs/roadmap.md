@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 and 1 done, Phase 2 under way (230 teams) · Last updated: 2026-10-31
+> Status: Phases 0 and 1 done, Phase 2 under way (235 teams) · Last updated: 2026-10-31
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
@@ -47,7 +47,7 @@ What had to be in place before dozens of characters, so that they are not rewrit
 
 Progress so far, taken in the order that makes the most library teams supported (`README.md` has the results):
 
-- **230 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
+- **235 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
 - **The runner in CI, in parts**: `compare -only library,variants,probes -shard k/n`. Every push compares the library builds and probes in four parallel jobs; the variants run on a daily schedule, 8 of 40 parts a day, and a manual run can take all 40 at once (about half an hour on GitHub's runners).
 - **Electro, overload and electro-charged** (with Fischl), each reaction emitting its event as gcsim's `Reactable.React` does; reaction damage and `REACTION_LVL_BASE` from gcsim's combat package.
 - **HP changes** (with Furina): `Player.Heal` and `Player.Drain` with `OnHeal` and `OnPlayerHPDrain`, overheal, and incoming healing bonus mods. HP debt is still missing.
@@ -66,8 +66,9 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **gcsim's results cached** by config and chunk of seeds (`reference/harness/cache.go`), so a rerun after an engine change runs only the engine; CI restores, extends and saves the cache, and runs the library builds on pushes to work branches.
 - **The census's one-item teams** (fifty): Wriothesley, Yae Miko, Diona (with shields lengthened by type and Diona's stamina mod), Gilded Dreams, and the hit patterns of Raiden, Fischl and Xiangling. Klee (ten teams) came after: her one team that looked −1.78% at 1,000 iterations passes at 36,000 (+0.01% ± 0.34); its energy waits spiral, which makes its DPS heavy-tailed.
 - **Lynette, Shenhe and Thrilling Tales** (31 teams): Lynette's Bogglecat Box is a gadget that takes hits (`Sim::add_hittable_gadget`, `Character::gadget_hit`), so Furina, Rosaria, Escoffier and Xingqiu's skill, burst and orbital got gcsim's hit patterns; Shenhe's quills add flat damage from her ATK at each hit. Two general fixes came with them: patterns keep f64 coordinates (in f32, a hit at exactly the sum of the radii, which every dendro core is to Fischl's A4, landed half the time against gcsim's two thirds), and attack mods skip reaction damage as gcsim's ApplyAttackMods does (cryo resonance's crit rate made cryo swirls crit, and the crits fed Favonius).
+- **Thundering Fury** (five teams, the set the census listed at 275 teams blocked): its 4-piece reaction bonuses and skill cooldown cut, on every reaction the engine has; the five library builds and three probes (aggravate, superconduct, hyperbloom) pass, the largest team difference −0.19% ± 0.26.
 
-What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 230 supported):
+What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 235 supported):
 
 1. **Dendro's rest**: the variants of the nine dendro teams (CI); Nahida's C2 and C6 (19 teams); hit patterns for the other ported characters, as their teams meet dendro cores.
 2. **The other geo characters** (Noelle, Yun Jin, Navia, Albedo); Zhongli's burst is in (two teams).

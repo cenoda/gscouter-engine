@@ -1,0 +1,3 @@
+# Fischl with Thundering Fury 4 on a bloom team: Oz sets off dendro cores, hyperbloom DMG +40% and the cooldown cut from a gadget's reaction.
+team fischl-nahida-yoimiya-xingqiu
+fischl add set="thunderingfury" count=4;
