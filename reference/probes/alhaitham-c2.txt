@@ -1,0 +1,3 @@
+# Alhaitham C2: each mirror generated gives 50 EM for 8 s, four stacks.
+team alhaitham-xingqiu-kukishinobu-zhongli
+alhaitham char lvl=90/90 cons=2 talent=9,9,9;

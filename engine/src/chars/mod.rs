@@ -33,4 +33,5 @@ crate::chars! {
     Shenhe => shenhe,
     Lisa => lisa,
     Kuki => kuki,
+    Alhaitham => alhaitham,
 }

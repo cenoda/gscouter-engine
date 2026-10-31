@@ -1,0 +1,3 @@
+# Alhaitham C1: a projection hit cuts the skill's cooldown by 1.2 s.
+team alhaitham-xingqiu-kukishinobu-zhongli
+alhaitham char lvl=90/90 cons=1 talent=9,9,9;
