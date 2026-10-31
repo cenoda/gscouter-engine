@@ -71,7 +71,7 @@ What remains of Phase 2, in the order to take it (teams blocked, census of 2026-
 6. **Systems**: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); `set_player_pos` (45); stamina mods; the lunar reactions.
 7. **Close the phase**: measurements and status in `README.md` and here, and speed (Phase 2 so far costs about 6% more instructions on `team-looped.txt`).
 
-Weapons and sets that block many teams (The Widsith 700, Thrilling Tales 497, Sacrificial Jade 401, Gilded Dreams 417, Ocean-Hued Clam 391) are Phase 3 content. Catalysts can now be checked on Nahida (Wandering Evenstar is ported on her teams), The Widsith first.
+Weapons and sets that block many teams (Thrilling Tales 497, Sacrificial Jade 401, Gilded Dreams 417, Ocean-Hued Clam 391) are Phase 3 content. Catalysts can now be checked on Nahida: Wandering Evenstar is ported on her teams, and The Widsith (700 teams) passes its probe on one, though it alone unblocks none.
 
 ### Phase 3: content (most of the work)
 

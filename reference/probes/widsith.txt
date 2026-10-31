@@ -1,0 +1,3 @@
+# Nahida with The Widsith R1 (a random buff on each swap in), on a bloom team whose rotation checks her burst.
+team bennett-nahida-yoimiya-xingqiu
+nahida add weapon="thewidsith" refine=1 lvl=90/90;
