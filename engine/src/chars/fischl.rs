@@ -165,7 +165,7 @@ impl Character for Char {
             ai.mult += 2.0;
             r = 3.0;
         }
-        ai.pattern = Pattern::Circle { x: 0.0, y: (s.target_dist + 1.5) as f32, r };
+        ai.pattern = Pattern::Circle { x: 0.0, y: s.target_dist + 1.5, r };
         s.queue_attack(ai, 0, g::SKILL_OZ_SPAWN, g::SKILL_OZ_HITMARK);
         s.set_cd(ci, Action::Skill, 25 * 60 + g::SKILL_OZ_SPAWN);
         s.add_task(Task::Char { c: ci as u8, id: TASK_RECAST_CD, arg: 0 }, g::SKILL_OZ_SPAWN);

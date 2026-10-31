@@ -82,6 +82,7 @@ impl Character for Char {
         let lvl = s.talent(ci, 1);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_ESCOFFIER_SKILL, Element::Cryo, 25.0, g::SKILL_INITAL[lvl]);
         ai.abil = "Low-Temperature Cooking";
+        ai.pattern = s.circle_on_player(0.0, 0.0, 5.0);
         let a4 = a4_cb(s, ci);
         s.queue_attack(ai, CB_PARTICLE | a4, g::SKILL_INIT_HITMARK, g::SKILL_INIT_HITMARK);
         // the ticks are not affected by hitlag
@@ -128,6 +129,8 @@ impl Character for Char {
                 ai.hitlag_factor = 0.01;
                 ai.hitlag_halt = 0.06 * 60.0;
                 ai.def_halt = true;
+                let (off, hb) = (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n][i]);
+                ai.pattern = if n == 0 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
                 s.queue_attack(ai, 0, 0, 0);
             }
             TASK_SKILL_TICK => {
@@ -137,6 +140,7 @@ impl Character for Char {
                 let lvl = s.talent(ci, 1);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_ESCOFFIER_SKILL, Element::Cryo, 25.0, g::SKILL_DOT[lvl]);
                 ai.abil = "Frosty Parfait";
+                ai.pattern = s.circle_on_target(1.5);
                 let travel = s.st::<State>(ci).skill_travel;
                 let a4 = a4_cb(s, ci);
                 s.queue_attack(ai, a4, 0, travel);
@@ -149,6 +153,7 @@ impl Character for Char {
                 let lvl = s.talent(ci, 1);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Cryo, 0.0, g::ARKHE[lvl]);
                 ai.abil = "Surging Blade (escoffier)";
+                ai.pattern = s.circle_on_player(0.0, 0.0, 5.0);
                 let a4 = a4_cb(s, ci);
                 s.queue_attack(ai, a4, 0, 0);
             }
@@ -156,6 +161,7 @@ impl Character for Char {
                 let lvl = s.talent(ci, 2);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Cryo, 50.0, g::BURST[lvl]);
                 ai.abil = "Scoring Cuts";
+                ai.pattern = s.circle_on_player(0.0, 1.0, 7.0);
                 let a4 = a4_cb(s, ci);
                 s.queue_attack(ai, a4, 0, 0);
             }

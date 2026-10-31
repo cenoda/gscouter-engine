@@ -70,6 +70,7 @@ impl Character for Char {
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
         ai.deployable = true;
+        ai.pattern = s.circle_on_target(0.8);
         s.queue_attack(ai, c1(s, ci), g::CHARGE_HITMARK, g::CHARGE_HITMARK);
         ActInfo::new(Frames::Table(&g::CHARGE_FRAMES), g::CHARGE_FRAMES[0], g::CHARGE_HITMARK, AnimState::Charge)
     }
@@ -87,6 +88,7 @@ impl Character for Char {
         st.a1_done = false;
         st.c4_done = false;
         let cbs = a1 | c1(s, ci) | c4;
+        ai.pattern = s.box_on_player(0.0, -1.0, 2.0, 4.0);
         s.queue_attack(ai, cbs, g::SKILL_HITMARK, g::SKILL_HITMARK);
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_SKILL_HIT_2, arg: 0 }, g::SKILL_HITMARK + 14);
         s.set_cd_with_delay(ci, Action::Skill, 360, 23);
@@ -101,6 +103,7 @@ impl Character for Char {
         ai.hitlag_halt = 0.06 * 60.0;
         ai.hitlag_factor = 0.01;
         let cbs = c1(s, ci) | c6(s, ci);
+        ai.pattern = s.circle_on_player(0.0, 0.5, 3.5);
         s.queue_attack(ai, cbs, 15, 15);
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_LANCE, arg: 0 }, 56);
         // A4: a share of her CRIT Rate to the others
@@ -128,6 +131,8 @@ impl Character for Char {
                 ai.hitlag_factor = 0.01;
                 ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
                 ai.def_halt = g::ATTACK_DEF_HALT[n][i];
+                let (off, hb) = (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n][i]);
+                ai.pattern = if n == 2 || (n == 4 && i == 0) { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.fan_on_player(0.0, off, hb[0], g::ATTACK_FAN_ANGLES[n]) };
                 let cbs = c1(s, ci);
                 s.queue_attack(ai, cbs, 0, 0);
             }
@@ -140,6 +145,7 @@ impl Character for Char {
                 ai.def_halt = true;
                 let c4 = if s.chars[ci].cons >= 4 { CB_C4 } else { 0 };
                 let cbs = CB_PARTICLE | c1(s, ci) | c4;
+                ai.pattern = s.circle_on_player(0.0, 0.5, 2.8);
                 s.queue_attack(ai, cbs, 0, 0);
             }
             TASK_LANCE => {
@@ -148,12 +154,15 @@ impl Character for Char {
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Cryo, 25.0, g::BURST[1][lvl]);
                 ai.abil = "Rites of Termination (Initial 2)";
                 ai.hitlag_factor = 0.01;
+                // around the lance, 3 in front of the player
+                ai.pattern = s.circle_on_player(0.0, 3.0, 6.0);
                 s.queue_attack(ai, cbs, 0, 0);
                 let dur = if s.chars[ci].cons >= 2 { 510 + 240 } else { 510 };
                 s.add_core_status(BURST_STATUS, dur);
                 // the DoT snapshots as the lance lands
                 let mut dot = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Cryo, 25.0, g::BURST_DOT[lvl]);
                 dot.abil = "Rites of Termination (DoT)";
+                dot.pattern = s.circle_on_player(0.0, 3.0, 6.5);
                 for i in (120..dur).step_by(120) {
                     s.queue_attack(dot, cbs, 0, i);
                 }

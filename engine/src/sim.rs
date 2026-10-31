@@ -178,15 +178,15 @@ pub enum Pattern {
     /// One target, the enemy: never a gadget.
     Single,
     /// A full circle.
-    Circle { x: f32, y: f32, r: f32 },
+    Circle { x: f64, y: f64, r: f64 },
     /// A circle cut to a fan of `fan` degrees facing the enemy.
-    Fan { x: f32, y: f32, r: f32, fan: f32 },
+    Fan { x: f64, y: f64, r: f64, fan: f64 },
     /// gcsim's rectangle facing the enemy: w wide, from its spawn (x, y)
     /// to h ahead.
-    Box { x: f32, y: f32, w: f32, h: f32 },
+    Box { x: f64, y: f64, w: f64, h: f64 },
 }
 
-/// Pattern with its numbers widened back, for the tests.
+/// Pattern's shapes, for the tests.
 #[derive(Clone, Copy)]
 enum Wide {
     Unknown,
@@ -198,13 +198,12 @@ enum Wide {
 
 impl Pattern {
     fn wide(self) -> Wide {
-        let w = |v: f32| v as f64;
         match self {
             Pattern::Unknown => Wide::Unknown,
             Pattern::Single => Wide::Single,
-            Pattern::Circle { x, y, r } => Wide::Circle { x: w(x), y: w(y), r: w(r) },
-            Pattern::Fan { x, y, r, fan } => Wide::Fan { x: w(x), y: w(y), r: w(r), fan: w(fan) },
-            Pattern::Box { x, y, w: bw, h } => Wide::Box { x: w(x), y: w(y), w: w(bw), h: w(h) },
+            Pattern::Circle { x, y, r } => Wide::Circle { x, y, r },
+            Pattern::Fan { x, y, r, fan } => Wide::Fan { x, y, r, fan },
+            Pattern::Box { x, y, w, h } => Wide::Box { x, y, w, h },
         }
     }
     /// Whether it reaches a circle at (cx, cy) of radius r (gcsim's
@@ -950,6 +949,9 @@ pub struct Gadget {
     pub y: f64,
     pub r: f64,
     pub actor: u8,
+    /// Its owner's gadget_hit sees the attacks that reach it (gcsim's
+    /// HandleAttack of a gadget of its own).
+    pub takes_hits: bool,
 }
 
 /// The owner of dendro cores, which belong to no character.
@@ -2025,7 +2027,8 @@ impl Sim {
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }
-        if !ev.info.sim {
+        // gcsim's ApplyAttackMods skips reaction damage
+        if !ev.info.sim && !ev.info.tag.is_reaction() {
             self.apply_attack_mods(actor, &mut ev);
         }
         // poise, then shatter, on a frozen enemy
@@ -2185,7 +2188,7 @@ impl Sim {
             let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::OverloadDamage, icd::TAG_OVERLOAD_DAMAGE, icd::GROUP_REACTION_B, Element::Pyro, 0.0, 0.0);
             ai.abil = "overload";
             ai.ignore_def = 1.0;
-            ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: 3.0 };
+            ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist, r: 3.0 };
             let mut atk = self.reaction_attack(ai);
             atk.info.flat_dmg *= 2.75;
             self.queue_attack_with_snap(atk, 0, 1);
@@ -2311,7 +2314,7 @@ impl Sim {
         let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::SuperconductDamage, icd::TAG_SUPERCONDUCT_DAMAGE, icd::GROUP_REACTION_A, Element::Cryo, 0.0, 0.0);
         ai.abil = "superconduct";
         ai.ignore_def = 1.0;
-        ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: 3.0 };
+        ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist, r: 3.0 };
         let mut atk = self.reaction_attack(ai);
         atk.info.flat_dmg *= 1.5;
         self.queue_attack_with_snap(atk, 0, 1);
@@ -2432,7 +2435,7 @@ impl Sim {
         let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::BurningDamage, icd::TAG_BURNING_DAMAGE, icd::GROUP_BURNING, Element::Pyro, 25.0, 0.0);
         ai.abil = "burning";
         ai.ignore_def = 1.0;
-        ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: 1.0 };
+        ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist, r: 1.0 };
         let mut atk = self.reaction_attack(ai);
         atk.info.flat_dmg *= 0.25;
         self.enemy.burning_atk = atk;
@@ -2459,24 +2462,24 @@ impl Sim {
 
     /// gcsim's NewCircleHitOnTarget on the player, with its offset.
     pub fn circle_on_player(&self, ox: f64, oy: f64, r: f64) -> Pattern {
-        Pattern::Circle { x: ox as f32, y: oy as f32, r: r as f32 }
+        Pattern::Circle { x: ox, y: oy, r }
     }
     /// gcsim's NewCircleHitOnTargetFanAngle on the player.
     pub fn fan_on_player(&self, ox: f64, oy: f64, r: f64, fan: f64) -> Pattern {
-        Pattern::Fan { x: ox as f32, y: oy as f32, r: r as f32, fan: fan as f32 }
+        Pattern::Fan { x: ox, y: oy, r, fan }
     }
     /// gcsim's NewBoxHitOnTarget on the player.
     pub fn box_on_player(&self, ox: f64, oy: f64, w: f64, h: f64) -> Pattern {
-        Pattern::Box { x: ox as f32, y: oy as f32, w: w as f32, h: h as f32 }
+        Pattern::Box { x: ox, y: oy, w, h }
     }
     /// gcsim's NewCircleHitOnTarget on the enemy, without offset.
     pub fn circle_on_target(&self, r: f64) -> Pattern {
-        Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: r as f32 }
+        Pattern::Circle { x: 0.0, y: self.target_dist, r }
     }
     /// gcsim's NewBoxHit from the player centered on the enemy, with its
     /// offset along the way to it.
     pub fn box_on_target(&self, ox: f64, oy: f64, w: f64, h: f64) -> Pattern {
-        Pattern::Box { x: ox as f32, y: (self.target_dist + oy) as f32, w: w as f32, h: h as f32 }
+        Pattern::Box { x: ox, y: self.target_dist + oy, w, h }
     }
 
     /// Whether the player (at the origin, radius 0.3: gcsim's default) is
@@ -2614,7 +2617,7 @@ impl Sim {
             self.core_explode(g.actor, g.x, g.y);
         }
         let f = self.f;
-        self.gadgets.push(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor });
+        self.gadgets.push(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false });
     }
 
     /// A core expired or was killed: its bloom 1 frame later, a circle of
@@ -2657,6 +2660,20 @@ impl Sim {
     /// target its own copy of the attack, so the core sees it before ICD
     /// or reactions on the enemy.
     fn hit_gadgets(&mut self, ev: &AttackEvent) {
+        if self.gadgets.iter().any(|g| g.takes_hits) {
+            let mut k = 0;
+            while k < self.gadgets.len() {
+                let g = self.gadgets[k];
+                if g.takes_hits {
+                    let lands = ev.info.pattern.hits_circle(g.x, g.y, g.r);
+                    crate::chars::dispatch::gadget_hit(self.chars[g.owner as usize].kind, self, g.owner as usize, g.id, ev, lands);
+                }
+                // the gadget may have been removed
+                if k < self.gadgets.len() && self.gadgets[k].owner == g.owner && self.gadgets[k].id == g.id && self.gadgets[k].src == g.src {
+                    k += 1;
+                }
+            }
+        }
         // gcsim's Guoba swirls its pyro window when Sucrose's skill (or
         // Faruzan's, not ported) reaches it: not ported either
         if ev.info.tag == AttackTag::ElementalArt && self.chars[ev.info.actor as usize].kind == crate::chars::CharKind::Sucrose {
@@ -3116,7 +3133,21 @@ impl Sim {
     /// gcsim's Combat.AddGadget.
     /// The gadget is at (x, y) from the player, of radius r.
     pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
-        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: self.f, x, y, r, actor: 0 });
+        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: self.f, x, y, r, actor: 0, takes_hits: false });
+    }
+
+    /// add_gadget for a gadget whose owner handles the attacks reaching it
+    /// (its gadget_hit).
+    pub fn add_hittable_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
+        self.add_gadget(owner, id, duration, x, y, r);
+        self.gadgets.last_mut().unwrap().takes_hits = true;
+    }
+
+    /// Removes a character's gadget (gcsim's Gadget.Kill), when it is there.
+    pub fn kill_gadget(&mut self, owner: usize, id: u8) {
+        if let Some(k) = self.gadget_index(owner, id) {
+            self.gadgets.remove(k);
+        }
     }
 
     /// The index of a character's gadget, if it is there.
@@ -3203,10 +3234,11 @@ impl Sim {
             atk.info.flat_dmg *= 0.6;
             self.queue_attack_with_snap(atk, 0, 1);
             // the aoe, 4 frames later, ignores the enemy: it reaches only
-            // gadgets, where pyro and electro use up dendro cores
-            if matches!(ele, Element::Pyro | Element::Electro) {
+            // gadgets, where pyro and electro use up dendro cores (and
+            // every element reaches Lynette's Bogglecat Box)
+            if matches!(ele, Element::Pyro | Element::Electro) || self.gadgets.iter().any(|g| g.takes_hits) {
                 atk.info.durability = aoe_dur;
-                atk.info.pattern = Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: 5.0 };
+                atk.info.pattern = Pattern::Circle { x: 0.0, y: self.target_dist, r: 5.0 };
                 let slot = self.alloc(atk);
                 self.add_task(Task::GadgetAttack { slot }, 1 + 4);
             }

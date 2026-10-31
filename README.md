@@ -2,7 +2,7 @@
 
 An experiment: would a simulation engine written only for Gscouter, in Rust, be faster than gcsim and still score within 1% of it?
 
-It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 199 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty-five characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean, Sucrose, Wriothesley, Yae Miko, Diona, Klee), 27 weapons and 14 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
+It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 230 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty-seven characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean, Sucrose, Wriothesley, Yae Miko, Diona, Klee, Lynette, Shenhe), 28 weapons and 14 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
 
 It reads gcsim's config language as gcsim does: the same lexer, grammar and evaluator (`let`, `fn`, `if`/`else`, `while`, `for`, `switch` with `fallthrough`, `break`/`continue`/`return`, action lists with params and repeats, `.char.skill.ready` and the other fields, `wait`, `delay`, `execute_action` and the other built-ins), and the same setup lines (`options`, `target`, `energy`, `char`, `add weapon`, `add set`, `add stats`, `active`). A config gcsim runs, the engine runs unchanged, as long as its characters, weapons, sets and actions are ones the engine implements; anything else is an error naming it, never a silent difference.
 
@@ -144,16 +144,32 @@ Klee (C0, with gcsim's `action.Info.QueueAction`: a task that runs once an actio
 | Xingqiu / Bennett / Xiangling / Klee | 1,000 | +0.08% ± 0.24 | Bennett −0.21% ± 0.55 | 0.9 s |
 | Xingqiu / Yelan / Bennett / Klee | 1,000 | −0.01% ± 0.19 | Xingqiu −0.12% ± 0.21 | 0.1 s |
 
-The runner also classifies every library team. Of 4,570, 199 are supported and 4,371 are not; what blocks the most teams:
+Then Lynette (12 teams), Shenhe (12) and Thrilling Tales of Dragon Slayers (7), the census's largest one-item blockers. Lynette's Bogglecat Box is a gadget that takes hits (`Sim::add_hittable_gadget`, `Character::gadget_hit`): it converts to the first cryo, pyro, hydro or electro attack that reaches it, or to what its absorb check finds every 0.3 s, and fires Vivid Shots of that element; the attacks in her teams that can reach it got gcsim's hit patterns (Furina's, Rosaria's, Escoffier's, Xingqiu's skill, burst and orbital). Shenhe's Icy Quills add her current ATK times the skill's multiplier to each cryo hit of the kinds gcsim lists. Two general fixes came with them, found on these teams:
+
+- Patterns kept their coordinates in f32. A dendro core sits exactly the enemy's radius + 0.5 from its center, so a circle of radius 0.5 on the enemy (Fischl's A4) touches it at exactly the sum of the radii: in f32 it reached such cores half the time, gcsim two thirds. Lynette / Fischl / Xingqiu / Nahida went from Lynette +2.5% to +0.2%. Patterns are f64 now (+0.6% instructions).
+- Attack mods applied to reaction damage; gcsim's ApplyAttackMods skips it. Cryo resonance's crit rate made 12% of cryo swirls crit, and Lynette's crits fed her Favonius: Wriothesley / Shenhe / Lynette / Bennett went from +1.14% to +0.00%.
+
+Of the teams supported before, four changed with them (two with dendro cores, two with cryo resonance and swirls); they pass again. All library builds pass:
+
+| Teams | Builds | Largest team difference | Largest character difference |
+|---|---|---|---|
+| Lynette's 12 | 12 of 12 pass | −0.19% ± 0.35 (Gaming / Rosaria / Lynette / Bennett, 26,000 iterations) | +0.35% ± 0.38 (Bennett, with Lynette / Xiangling / Kazuha) |
+| Shenhe's 12 | 12 of 12 pass | −0.24% ± 0.58 (Wriothesley / Shenhe / Furina / Bennett) | −0.49% ± 0.45 (Kazuha, with Wriothesley / Diona / Shenhe) |
+| Thrilling Tales' 7 | 7 of 7 pass | −0.08% ± 0.19 (Gaming / Rosaria / Sucrose / Bennett) | −0.25% ± 0.49 (Bennett, with Hu Tao / Yelan / Sucrose) |
+| The 4 that changed | 4 of 4 pass | −0.12% ± 0.23 (Wriothesley / Furina / Candace / Escoffier) | −0.36% ± 0.46 (Bennett, with Nahida / Yoimiya / Xingqiu) |
+
+Lynette / Yelan / Fischl / Bennett waits 207 s a fight on energy and passes at 95,500 iterations (+0.05% ± 0.69).
+
+The runner also classifies every library team. Of 4,570, 230 are supported and 4,340 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
 |---|---|
-| Characters | Xilonen 482, Xianyun 314, Mavuika 277, Neuvillette 254, Durin 241, Citlali 221, Emilie 214, Ororon 213, Shenhe 207, Nicole 191 |
-| Weapons | Thrilling Tales of Dragon Slayers 497, Sacrificial Jade 401, Oathsworn Eye 352, Finale of the Deep 336, Chain Breaker 226, Hakushin Ring 216 |
+| Characters | Xilonen 482, Xianyun 314, Mavuika 277, Neuvillette 254, Durin 241, Citlali 221, Emilie 214, Ororon 213, Nicole 191, Arlecchino 184 |
+| Weapons | Sacrificial Jade 401, Oathsworn Eye 352, Finale of the Deep 336, Chain Breaker 226, Hakushin Ring 216, Prototype Amber 211 |
 | Sets | Ocean-Hued Clam 391, Obsidian Codex 385, Celestial Gift 332, Flower of Paradise Lost 290, Fragment of Harmonic Whimsy 283, Thundering Fury 275 |
 | Built-ins | `set_player_pos` 45, `set_on_tick` 1 |
-| Actions of ported characters | Yae Miko's charge 55, Bennett's charge 19, plunges without Xianyun 50 |
-| Constellations not ported | Nahida C2 and C6, 19; Chiori C6, 12; Jean C4, 7; Wriothesley C1 and C6, 7; Yae Miko C1 and C6, 6; Zhongli C2 and C6, 5 |
+| Actions of ported characters | Yae Miko's charge 55, Bennett's charge 19, plunges without Xianyun 53 |
+| Constellations not ported | Nahida C2 and C6, 19; Chiori C6, 12; Jean C4, 7; Wriothesley C1 and C6, 7; Klee C1, C2 and C6, 7; Yae Miko C1 and C6, 6; Zhongli C2 and C6, 5 |
 | Other | two Hexerei characters 394 (Fischl with Mona, Sucrose, Razor and the others) |
 
 A team is usually blocked by five to ten items at once, so porting the item that blocks the most teams rarely makes a team supported by itself: the ten items that blocked the most teams at the start of Phase 2 together made none supported. The report also lists the teams one or two items from support, which is how the teams above were reached.
@@ -193,7 +209,7 @@ Speed, on the same 4-CPU machine (Phase 0; see below for Phase 1):
 
 Evaluating gcsl costs about 7% over the hand-compiled rotation of the first version (1.10 s).
 
-Phase 2 so far costs about 6% more instructions on `team-looped.txt` (valgrind, 20 iterations: 479 million against 451 million at the start of the phase; dendro added 1.7%, from 471 million): attacks carry more fields (blunt, poise, from the fight itself, a hit pattern) and there are nine aura slots, which the aura's tick skips while they are empty. Wall time on this session's machine is too noisy to show it (500 iterations, one thread, ten runs alternated: median 2.15 s against 2.17 s). Phase 1 kept the speed. On this session's machine (slower than the one above), 500 iterations on one thread take 1.47 s (median of 7) against 1.46 s for Phase 0, +0.8%; 10,000 iterations on 4 threads take 7.6 s; the Bennett team takes 1.32 s for 500. The two reference configs still give the same scores to the last digit (72,266.73 and 24,607.03 at 1,000 iterations, checked by `engine/tests/scores.rs`), and the restructure gave byte-identical output on every config.
+Phase 2 so far costs about 4% more instructions on `team-looped.txt` (valgrind, 20 iterations: 468.3 million against 451 million at the start of the phase): attacks carry more fields (blunt, poise, from the fight itself, a hit pattern, now in f64, +0.6%) and there are nine aura slots, which the aura's tick skips while they are empty. It had reached 480.0 million before the animation tick stopped copying the action out and back each frame (−3%, with byte-identical output). Wall time on this session's machine is too noisy to show it (500 iterations, one thread, seven runs: median 1.31 s at the start of this round and after it). Phase 1 kept the speed. On this session's machine (slower than the one above), 500 iterations on one thread take 1.47 s (median of 7) against 1.46 s for Phase 0, +0.8%; 10,000 iterations on 4 threads take 7.6 s; the Bennett team takes 1.32 s for 500. The two reference configs still give the same scores to the last digit (72,266.73 and 24,607.03 at 1,000 iterations, checked by `engine/tests/scores.rs`), and the restructure gave byte-identical output on every config.
 
 The WebAssembly row is the one that matters for the site, which scores in the visitor's browser. Go's WebAssembly runs gcsim about 5× slower than native Go; Rust's runs about 1.4× slower than native Rust. The gcsim side is the reference harness built with `GOOS=wasip1`; Gscouter's site uses `GOOS=js`, which has the same compiler backend.
 

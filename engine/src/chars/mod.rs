@@ -29,4 +29,6 @@ crate::chars! {
     Yaemiko => yaemiko,
     Diona => diona,
     Klee => klee,
+    Lynette => lynette,
+    Shenhe => shenhe,
 }

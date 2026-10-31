@@ -259,6 +259,7 @@ impl Character for Char {
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Hydro, 25.0, 0.0);
         ai.abil = "Salon Solitaire: Ousia Bubble";
         ai.flat_dmg = g::SKILL_OUSIA_BUBBLE[lvl] * s.max_hp(ci);
+        ai.pattern = s.circle_on_player(0.0, 0.0, 5.0);
         s.queue_attack(ai, 0, g::OUSIA_BUBBLE_HITMARK, g::OUSIA_BUBBLE_HITMARK);
         s.add_status(ci, SKILL, g::SKILL_MAX_DURATION + g::OUSIA_BUBBLE_HITMARK, false);
         s.add_task(Task::Char { c: ci as u8, id: TASK_SUMMON_SALON, arg: 0 }, g::OUSIA_BUBBLE_HITMARK);
@@ -272,6 +273,7 @@ impl Character for Char {
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Hydro, 25.0, 0.0);
         ai.abil = "Let the People Rejoice";
         ai.flat_dmg = s.max_hp(ci) * g::BURST_DMG[lvl];
+        ai.pattern = s.circle_on_player(0.0, 0.0, 5.0);
         s.st_mut::<State>(ci).cur_fanfare = 0.0;
         s.delete_mod(ci, BURST);
         // before the hitmark, so that the hit has C1's fanfare
@@ -419,6 +421,9 @@ fn normal_hit(s: &mut Sim, ci: usize, n: usize) {
         ai.flat_dmg = c6_flat(s, ci, true);
         cbs |= CB_C6;
     }
+    let k = c6_active(s, ci) as usize;
+    let (oy, hb) = (g::ATTACK_OFFSETS[k][n], g::ATTACK_HITBOXES[k][n]);
+    ai.pattern = if matches!(n, 0 | 3) { s.box_on_player(0.0, oy, hb[0], hb[1]) } else { s.circle_on_player(0.0, oy, hb[0]) };
     s.queue_attack(ai, cbs, 0, 0);
 }
 
@@ -440,6 +445,7 @@ fn arkhe_strike(s: &mut Sim, ci: usize) {
     if c6_active(s, ci) {
         ai.flat_dmg = c6_flat(s, ci, false);
     }
+    ai.pattern = s.box_on_player(0.0, -0.3, 1.2, 4.5);
     s.queue_attack(ai, 0, 0, 0);
 }
 
@@ -449,6 +455,7 @@ fn charge_hit(s: &mut Sim, ci: usize) {
     // gcsim names it after the Arkhe when the charge started
     ai.abil = if s.st::<State>(ci).pneuma { "Charge Pneuma" } else { "Charge Ousia" };
     ai.hitlag_halt = 0.02 * 60.0;
+    ai.pattern = s.circle_on_player(0.0, 0.0, 2.6);
     let mut cbs = 0;
     if c6_active(s, ci) {
         ai.flat_dmg = c6_flat(s, ci, true);
@@ -491,6 +498,7 @@ fn salon_hit(s: &mut Sim, ci: usize, member: usize, src: i32) {
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, m.icd_tag, m.icd_group, Element::Hydro, 25.0, 0.0);
     ai.abil = m.abil;
     ai.flat_dmg = s.st::<State>(ci).salon_flat[member];
+    ai.pattern = s.circle_on_target([g::CHEVALMARIN_AO_E, g::USHER_AO_E, g::CRABALETTA_AO_E][member]);
     let mut cbs = CB_PARTICLE;
     if s.chars[ci].cons >= 4 {
         cbs |= CB_C4;

@@ -194,6 +194,11 @@ pub trait Character {
     /// A gadget of its ticked, `timer` ticks after it was added (it may
     /// have just expired and be gone).
     fn gadget_tick(_s: &mut Sim, _ci: usize, _id: u8, _timer: i32) {}
+    /// An attack reached one of its gadgets added with
+    /// `add_hittable_gadget`: as gcsim hands each target its own copy, the
+    /// attack as it was before the enemy took it. `lands` is whether its
+    /// pattern reaches the gadget, None when the attack has no pattern.
+    fn gadget_hit(_s: &mut Sim, _ci: usize, _id: u8, _ev: &AttackEvent, _lands: Option<bool>) {}
     /// Its dash's ActInfo, after the template's Dash ran (a character with
     /// its own dash frames).
     fn dash_info(_s: &mut Sim, _ci: usize, info: ActInfo) -> ActInfo {
@@ -358,6 +363,7 @@ macro_rules! chars {
             pub fn condition(k: CharKind, s: &Sim, ci: usize, f: &[String]) -> Option<Result<Num, String>> { match k { $(CharKind::$kind => $m::Char::condition(s, ci, f)),* } }
             pub fn construct_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::construct_expired(s, ci, key)),* } }
             pub fn gadget_tick(k: CharKind, s: &mut Sim, ci: usize, id: u8, timer: i32) { match k { $(CharKind::$kind => $m::Char::gadget_tick(s, ci, id, timer)),* } }
+            pub fn gadget_hit(k: CharKind, s: &mut Sim, ci: usize, id: u8, ev: &AttackEvent, lands: Option<bool>) { match k { $(CharKind::$kind => $m::Char::gadget_hit(s, ci, id, ev, lands)),* } }
             pub fn shield_damaged(k: CharKind, s: &mut Sim, ci: usize, key: ModKey, broken: bool) { match k { $(CharKind::$kind => $m::Char::shield_damaged(s, ci, key, broken)),* } }
             pub fn dash_info(k: CharKind, s: &mut Sim, ci: usize, info: ActInfo) -> ActInfo { match k { $(CharKind::$kind => $m::Char::dash_info(s, ci, info)),* } }
             pub fn shield_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_expired(s, ci, key)),* } }

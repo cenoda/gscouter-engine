@@ -89,6 +89,8 @@ impl Character for Char {
             ai.hitlag_halt = 0.02 * 60.0;
             ai.hitlag_factor = 0.01;
             ai.def_halt = true;
+            let (off, hb) = (g::SKILL_OFFSETS[i], g::SKILL_HITBOXES[i]);
+            ai.pattern = if i == 1 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
             s.queue_attack_at(ci, ai, CB_PARTICLE, g::SKILL_HITMARKS[i]);
         }
         apply_orbital(s, ci, 15 * 60, 43);
@@ -173,6 +175,7 @@ fn orbital_tick(s: &mut Sim, ci: usize) {
     }
     let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Hydro, 25.0, 0.0);
     ai.abil = "Xingqiu Orbital";
+    ai.pattern = s.circle_on_player(0.0, 0.0, 1.2);
     s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_ORBITAL, arg: 0 }, 135);
     s.queue_attack(ai, 0, -1, 1);
 }
@@ -181,6 +184,7 @@ fn sword_wave(s: &mut Sim, ci: usize) {
     let lvl = s.talent(ci, 2);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_DEFAULT, Element::Hydro, 25.0, g::BURST[lvl]);
     ai.abil = "Guhua Sword: Raincutter";
+    ai.pattern = s.circle_on_target(0.5);
     let ev = s.snapshot_event(ai, 0);
     let (num_swords, next_regen) = {
         let st = s.st::<State>(ci);
