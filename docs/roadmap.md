@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 and 1 done, Phase 2 under way (231 teams) · Last updated: 2026-10-31
+> Status: Phases 0 and 1 done, Phase 2 under way (256 teams) · Last updated: 2026-10-31
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
@@ -47,7 +47,7 @@ What had to be in place before dozens of characters, so that they are not rewrit
 
 Progress so far, taken in the order that makes the most library teams supported (`README.md` has the results):
 
-- **231 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
+- **256 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
 - **The runner in CI, in parts**: `compare -only library,variants,probes -shard k/n`. Every push compares the library builds and probes in four parallel jobs; the variants run on a daily schedule, 8 of 40 parts a day, and a manual run can take all 40 at once (about half an hour on GitHub's runners).
 - **Electro, overload and electro-charged** (with Fischl), each reaction emitting its event as gcsim's `Reactable.React` does; reaction damage and `REACTION_LVL_BASE` from gcsim's combat package.
 - **HP changes** (with Furina): `Player.Heal` and `Player.Drain` with `OnHeal` and `OnPlayerHPDrain`, overheal, and incoming healing bonus mods. HP debt is still missing.
@@ -70,16 +70,15 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **Yae Miko's charged attack** (two teams of the 55 it blocked; the rest have other blockers): gcsim's five boxes along the way to the target, of which the three that miss the enemy reach only gadgets (`Sim::queue_gadget_attack`). Both library builds pass (largest team difference −0.04%).
 - **Flower of Paradise Lost** (six teams, each blocked by it alone): its bloom, hyperbloom and burgeon bonus on the reaction bonus mods, with gcsim's stacks; its holders (Bennett, Xiangling, Raiden, Xingqiu) cover all three reactions, and every library build passes (largest team difference +0.06% ± 0.14, character Zhongli +0.28% ± 0.28).
 - **Thundering Fury** (five teams, the set the census listed at 275 teams blocked): its 4-piece reaction bonuses and skill cooldown cut, on every reaction the engine has; the five library builds and three probes (aggravate, superconduct, hyperbloom) pass, the largest team difference −0.19% ± 0.26.
-
 - **Lisa** (nine teams, all passing with their library builds; largest team difference −0.15% ± 0.17): the enemy's Conductive stacks, C4's discharges on enemy-camp gadgets, and enemy DEF mods for A4. `.tags` conditions read 0 for every tag before; the ones ported content sets and the engine does not keep are now errors.
 
-What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 231 supported):
+What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 256 supported):
 
 1. **Dendro's rest**: the variants of the nine dendro teams (CI); Nahida's C2 and C6 (19 teams); hit patterns for the other ported characters, as their teams meet dendro cores.
 2. **The other geo characters** (Noelle, Yun Jin, Navia, Albedo); Zhongli's burst is in (two teams).
-3. **More characters one item from teams**: Citlali (24 teams), Xilonen (21, with Nightsoul), Mona (9), Charlotte (9), Thoma (9), Alhaitham (8), Layla (8), Sayu (8), Xiao (7), Wanderer (6); Lynette, Shenhe and Lisa are in.
+3. **More characters one item from teams**: Citlali (24 teams), Xilonen (22, with Nightsoul), Kuki Shinobu (15), Alhaitham (13), Thoma (11), Beidou (11), Mona (9), Layla (9), Charlotte (9), Baizhu (8), Xiao (8), Wanderer (8); Lynette, Shenhe and Lisa are in.
 4. **Hexerei** (394): the bonuses when two Hexerei characters are in the team (Fischl with Mona, Sucrose, Razor and others).
-5. **Actions and constellations of ported characters**: Zhongli's C2, C4, C6 (5); plunges after Xianyun's burst (43, with Xianyun); Escoffier's constellations.
+5. **Actions and constellations of ported characters**: Zhongli's C2, C4, C6 (5); Bennett's and Yae Miko's charges are in; plunges (69 teams, most with Xianyun); Escoffier's constellations.
 6. **Systems**: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); `set_player_pos` (45); stamina mods; the lunar reactions.
 7. **Close the phase**: measurements and status in `README.md` and here, and speed (instructions on `team-looped.txt`, 20 iterations: 468.3M, against 480.0M before Klee and 451M at the start of the phase).
 
