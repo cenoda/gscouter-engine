@@ -113,6 +113,14 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             _ => errs.push(format!("unsupported: param {name} {k}")),
         }
     }
+    // Sacrificial Jade reads only stacks; any other weapon param is an error
+    if matches!(weapon, Some(WeaponKind::SacrificialJade)) {
+        for (k, _) in &p.weapon.params {
+            if k != "stacks" {
+                errs.push(format!("unsupported: param {wname} {k}"));
+            }
+        }
+    }
     let (Some(kind), Some(weapon), true) = (kind, weapon, errs.is_empty()) else {
         return Err(errs);
     };
