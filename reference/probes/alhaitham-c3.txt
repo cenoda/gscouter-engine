@@ -1,0 +1,3 @@
+# Alhaitham C3: the skill's talent is 12. The burst's flat damage uses it too.
+team alhaitham-xingqiu-kukishinobu-zhongli
+alhaitham char lvl=90/90 cons=3 talent=9,9,9;

@@ -1,0 +1,3 @@
+# Alhaitham C4: the burst gives the party EM and him Dendro DMG from the mirrors.
+team alhaitham-xingqiu-kukishinobu-zhongli
+alhaitham char lvl=90/90 cons=4 talent=9,9,9;
