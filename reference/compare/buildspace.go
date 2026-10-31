@@ -289,7 +289,8 @@ type AxisCount struct {
 	Inconclusive int    `json:"inconclusive"`
 	Error        int    `json:"error"`
 	Unsupported  int    `json:"unsupported"`
-	// Planned is what -dry-run would run.
+	// Planned is what was not run: -dry-run's builds, or those deferred
+	// by -deadline.
 	Planned int `json:"planned,omitempty"`
 }
 
@@ -329,7 +330,7 @@ func buildSpaceSummary(rs []Result) *BuildSpace {
 			c.Fail++
 		case "inconclusive":
 			c.Inconclusive++
-		case "dry-run":
+		case "dry-run", "deferred":
 			c.Planned++
 		case "unsupported":
 			c.Unsupported++
@@ -386,7 +387,7 @@ func buildSpaceMarkdown(w func(string, ...any), rep *Report) {
 		tot.Planned += a.Planned
 	}
 	if tot.Planned > 0 {
-		w("| Axis | Builds | Pass | Fail | Inconclusive | Error | Unsupported | Not run (-dry-run) |\n|---|---|---|---|---|---|---|---|\n")
+		w("| Axis | Builds | Pass | Fail | Inconclusive | Error | Unsupported | Not run (-dry-run, -deadline) |\n|---|---|---|---|---|---|---|---|\n")
 	} else {
 		w("| Axis | Builds | Pass | Fail | Inconclusive | Error | Unsupported |\n|---|---|---|---|---|---|---|\n")
 	}

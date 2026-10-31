@@ -97,6 +97,7 @@ var (
 	mdOut       = flag.String("md", "", "also write the report to this file")
 	probesDir   = flag.String("probes", "probes", "directory of probes: library builds with a weapon, set or character line changed")
 	cacheDir    = flag.String("cache", harness.DefaultCacheDir(), "directory of stored gcsim results, by config and chunk of seeds; empty for none")
+	deadline    = flag.Duration("deadline", 0, "after this long, start no more builds and grow none further; builds not started are reported as deferred (0: no limit)")
 	gcsimOnly   = flag.Bool("gcsim-only", false, "run only gcsim, into the cache, on the selected builds, whether the engine supports their teams or not")
 
 	gcsimCache *harness.Cache
@@ -214,6 +215,8 @@ type Report struct {
 	// Only is the kinds of build compared, Shard the part of the teams.
 	Only  []string `json:"only"`
 	Shard string   `json:"shard,omitempty"`
+	// Deadline is -deadline, when one was given.
+	Deadline string `json:"deadline,omitempty"`
 	// Warmed is what -gcsim-only ran, in place of Results and Census.
 	Warmed []Warmed `json:"warmed,omitempty"`
 	// BuildSpace counts the build-space builds by axis, and what stops
@@ -240,6 +243,15 @@ type job struct {
 	v   variant
 	cfg string
 	err error
+}
+
+// started is when compare started, for -deadline.
+var started = time.Now()
+
+// pastDeadline is whether -deadline has passed: a CI job must write its
+// report and save gcsim's chunks before the runner's time limit stops it.
+func pastDeadline() bool {
+	return *deadline > 0 && time.Since(started) > *deadline
 }
 
 func main() {
@@ -289,6 +301,9 @@ func main() {
 		fail(err)
 	}
 	rep := &Report{Date: time.Now().UTC().Format(time.RFC3339), Gscouter: gitHead(*gscouterDir), Bound: bound, TargetSE: *targetSE, Warmup: *warmup, Only: slices.Sorted(mapsKeys(kinds)), Shard: *shardFlag}
+	if *deadline > 0 {
+		rep.Deadline = deadline.String()
+	}
 	if kinds["variants"] {
 		rep.Variants = variants
 	}
@@ -490,6 +505,14 @@ func main() {
 					rep.Results = append(rep.Results, r)
 					continue
 				}
+				if pastDeadline() {
+					// not run, and reported so: the next run takes it, with
+					// gcsim's chunks so far in the cache
+					r := Result{Team: id, Variant: j.v.Name, Desc: j.v.Desc, Build: j.v.change, Verdict: "deferred", Error: fmt.Sprintf("not started before -deadline %s", *deadline)}
+					fmt.Fprintf(os.Stderr, "%s / %s: deferred\n", id, j.v.Name)
+					rep.Results = append(rep.Results, r)
+					continue
+				}
 				fmt.Fprintf(os.Stderr, "%s / %s ...\n", id, j.v.Name)
 				r := compare(gse, tmp, id, j.v, j.cfg)
 				fmt.Fprintf(os.Stderr, "%s / %s: %s at %d iterations\n", id, j.v.Name, r.Verdict, r.Iter)
@@ -513,7 +536,7 @@ func main() {
 	}
 	rep.BuildSpace = buildSpaceSummary(rep.Results)
 	for _, r := range rep.Results {
-		if r.Verdict != "pass" && r.Verdict != "unsupported" && r.Verdict != "dry-run" {
+		if r.Verdict != "pass" && r.Verdict != "unsupported" && r.Verdict != "dry-run" && r.Verdict != "deferred" {
 			rep.Pass = false
 		}
 	}
@@ -791,7 +814,8 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 	for err == nil {
 		res.Metrics = metrics(g, r)
 		res.Verdict = overall(res.Metrics)
-		if res.Verdict != "inconclusive" || n >= *maxIter {
+		// past -deadline an inconclusive build stays inconclusive
+		if res.Verdict != "inconclusive" || n >= *maxIter || pastDeadline() {
 			break
 		}
 		err = run(min(int(float64(n)*growth(res.Metrics)), *maxIter) - n)
@@ -1187,11 +1211,13 @@ func markdown(rep *Report) string {
 	var b strings.Builder
 	w := func(f string, a ...any) { fmt.Fprintf(&b, f, a...) }
 	if len(rep.Results) > 0 {
-		passed, notRun := 0, 0
+		passed, notRun, deferred := 0, 0, 0
 		for _, r := range rep.Results {
 			switch {
 			case r.Verdict == "pass":
 				passed++
+			case r.Verdict == "deferred":
+				deferred++
 			case (r.Verdict == "unsupported" || r.Verdict == "dry-run") && r.Build != nil:
 				notRun++
 			}
@@ -1200,7 +1226,10 @@ func markdown(rep *Report) string {
 		if rep.Shard != "" {
 			scope += ", part " + rep.Shard + " of the teams"
 		}
-		w("## Accuracy\n\nCompared: %s. %d of %d pass.", scope, passed, len(rep.Results)-notRun)
+		w("## Accuracy\n\nCompared: %s. %d of %d pass.", scope, passed, len(rep.Results)-notRun-deferred)
+		if deferred > 0 {
+			w(" **%d builds are deferred**: -deadline (%s) passed before they started, so they have no verdict; the next run takes them.", deferred, rep.Deadline)
+		}
 		if notRun > 0 {
 			w(" %d build-space builds are not run: the engine cannot run them, or -dry-run (under \"Build space\").", notRun)
 		}
@@ -1208,7 +1237,7 @@ func markdown(rep *Report) string {
 		w("Bound ±%.0f%% of gcsim; a verdict is pass when the 95%% interval of the difference lies inside it, fail when it lies outside, inconclusive otherwise. DPS over the window from %.0f s.\n\n", 100*bound, rep.Warmup)
 		w("| Team | Build | Iterations | Verdict | Who | gcsim | gse | Difference | ±95%% |\n|---|---|---|---|---|---|---|---|---|\n")
 		for _, r := range rep.Results {
-			if (r.Verdict == "unsupported" || r.Verdict == "dry-run") && r.Build != nil {
+			if (r.Verdict == "unsupported" || r.Verdict == "dry-run") && r.Build != nil || r.Verdict == "deferred" {
 				continue
 			}
 			if len(r.Metrics) == 0 {
