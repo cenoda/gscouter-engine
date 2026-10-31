@@ -16,4 +16,5 @@ crate::sets! {
     DeepwoodMemories => deepwoodmemories,
     ArchaicPetra => archaicpetra,
     GildedDreams => gildeddreams,
+    FlowerOfParadiseLost => flowerofparadiselost,
 }

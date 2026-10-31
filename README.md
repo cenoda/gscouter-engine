@@ -169,13 +169,24 @@ Yae Miko's charged attack, which the census listed as blocking 55 teams, made tw
 | Kazuha / Yae Miko / Fischl / Nahida | 1,000 | +0.01% ± 0.10 | Kazuha +0.19% ± 0.20 | 92.07 (92.08) |
 | Nahida / Yelan / Yae Miko / Zhongli (hyperbloom) | 1,000 | −0.04% ± 0.10 | Nahida +0.15% ± 0.37 | 26.00 (26.00) |
 
+Flower of Paradise Lost made six more teams supported, each one item from support: 80 EM, then bloom, hyperbloom and burgeon DMG +40% as a reaction bonus, and a stack of a quarter of that more for 10 s (hitlag extends it) at each bloom on the enemy, hyperbloom or burgeon the holder triggers, on field or off, up to four, once a second. gcsim's 10% for Lunar-Bloom is left out, as the engine has no lunar reactions. Its holders cover all three reactions: Bennett and Xiangling burgeon, Raiden hyperbloom, Xingqiu bloom. All their library builds pass (Gscouter at `14e187f`):
+
+| Team | Iterations | Team | Worst character | Energy waits (gcsim) |
+|---|---|---|---|---|
+| Bennett / Fischl / Nahida / Xingqiu (Bennett, burgeon) | 1,000 | +0.02% ± 0.07 | Nahida −0.06% ± 0.29 | 0.2 s |
+| Fischl / Raiden / Nahida / Candace (Raiden, hyperbloom) | 1,000 | −0.03% ± 0.08 | Candace −0.10% ± 0.19 | 0.3 s |
+| Nahida / Xingqiu / Kazuha / Diona (Xingqiu, bloom) | 4,000 | +0.06% ± 0.14 | Xingqiu +0.08% ± 0.23 | 61 s |
+| Nahida / Xingqiu / Raiden / Zhongli (Raiden) | 1,000 | −0.01% ± 0.05 | Zhongli +0.28% ± 0.28 | 0.3 s |
+| Nahida / Yelan / Xingqiu / Xiangling (Xiangling, burgeon) | 1,000 | −0.04% ± 0.05 | Xingqiu −0.08% ± 0.12 | 0.1 s |
+| Raiden / Fischl / Xingqiu / Nahida (Raiden) | 1,000 | −0.02% ± 0.13 | Fischl −0.11% ± 0.40 | 1.3 s |
+
 The runner also classifies every library team. Of 4,570, 231 are supported and 4,339 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
 |---|---|
 | Characters | Xilonen 482, Xianyun 314, Mavuika 277, Neuvillette 254, Durin 241, Citlali 221, Emilie 214, Ororon 213, Nicole 191, Arlecchino 184 |
 | Weapons | Sacrificial Jade 401, Oathsworn Eye 352, Finale of the Deep 336, Chain Breaker 226, Hakushin Ring 216, Prototype Amber 211 |
-| Sets | Ocean-Hued Clam 391, Obsidian Codex 385, Celestial Gift 332, Flower of Paradise Lost 290, Fragment of Harmonic Whimsy 283, Thundering Fury 275 |
+| Sets | Ocean-Hued Clam 391, Obsidian Codex 385, Celestial Gift 332, Fragment of Harmonic Whimsy 283, Thundering Fury 275, Long Night's Oath 257 |
 | Built-ins | `set_player_pos` 45, `set_on_tick` 1 |
 | Actions of ported characters | Yae Miko's charge 55, plunges without Xianyun 53, Xingqiu's charge 3 |
 | Constellations not ported | Nahida C2 and C6, 19; Chiori C6, 12; Jean C4, 7; Wriothesley C1 and C6, 7; Klee C1, C2 and C6, 7; Yae Miko C1 and C6, 6; Zhongli C2 and C6, 5 |
@@ -226,7 +237,7 @@ What it would take to score Gscouter's results, in phases: `docs/roadmap.md`.
 
 ## What it does not do
 
-- Only the abilities these teams use, these weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra, Deathmatch, The Alley Flash, Harbinger of Dawn, the five Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane, Xiphos' Moonlight, The Catch, Rust, Serpent Spine, Lion's Roar, The Viridescent Hunt, Wandering Evenstar, The Widsith) and sets (Shimenawa, Emblem, Tenacity, Instructor, Noblesse Oblige, Golden Troupe, Scroll of the Hero of Cinder City, Marechaussee Hunter, Viridescent Venerer, Crimson Witch of Flames, Song of Days Past, Deepwood Memories, Archaic Petra, Gilded Dreams), and every resonance. Every other character, weapon, set, action, constellation, resonance, built-in or target option is an error that names it (`unsupported: <what> <name>`), never a silent difference. Each character declares the highest constellation it implements (Zhongli C1, Escoffier, Nahida, Chiori, Jean, Wriothesley and Yae Miko C0, the others C6; Sucrose's Hexerei bonuses need a second Hexerei character, which is an error).
+- Only the abilities these teams use, these weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra, Deathmatch, The Alley Flash, Harbinger of Dawn, the five Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane, Xiphos' Moonlight, The Catch, Rust, Serpent Spine, Lion's Roar, The Viridescent Hunt, Wandering Evenstar, The Widsith) and sets (Shimenawa, Emblem, Tenacity, Instructor, Noblesse Oblige, Golden Troupe, Scroll of the Hero of Cinder City, Marechaussee Hunter, Viridescent Venerer, Crimson Witch of Flames, Song of Days Past, Deepwood Memories, Archaic Petra, Gilded Dreams, Flower of Paradise Lost), and every resonance. Every other character, weapon, set, action, constellation, resonance, built-in or target option is an error that names it (`unsupported: <what> <name>`), never a silent difference. Each character declares the highest constellation it implements (Zhongli C1, Escoffier, Nahida, Chiori, Jean, Wriothesley and Yae Miko C0, the others C6; Sucrose's Hexerei bonuses need a second Hexerei character, which is an error).
 - One target. The player stands at the origin facing it and never moves; hits are taken to land, except where gcsim's hitbox decides it for a target at Gscouter's distance (Diluc's burst, whose ticks fly away from the player: a box against the target's circle, `Sim::box_hits`). Gadgets are hit by gcsim's patterns (circles, fans and boxes) where an attack has one; a pyro or electro attack without one that could reach a dendro core is an error. The player is hit by the self damage of burning, bloom, burgeon and hyperbloom when their area reaches it (bloom's and burgeon's do at Gscouter's distance), which shields absorb and the rest drains from the active character; Diluc's C2 (being hit) is an error. `target type=`, particle drops, `hurt`, random substats and `set_on_tick` are errors, as are the position built-ins.
 - Of the reactions, all but the lunar ones: vaporize, melt, overload, electro-charged, superconduct, freeze and shatter, swirl, crystallize, burning, quicken, aggravate, spread, bloom, burgeon and hyperbloom. Of reactions on the player, only swirls (the only ones gcsim's characters here cause); no Nightsoul, no HP debt, no fillers (Gscouter's `steady` package).
 - Random numbers are its own (xoshiro256++), so single fights differ from gcsim's; only the averages compare.
