@@ -162,6 +162,13 @@ Lynette / Yelan / Fischl / Bennett waits 207 s a fight on energy and passes at 9
 
 Bennett's charged attack (gcsim's ChargeAttack: two physical hits on circles of radius 2.2 around the player, without hitlag; a sword's 20 stamina and a normal attack right before it, as gcsim's template asks) blocked 19 teams, but only one by itself: Bennett / Furina / Rosaria / Escoffier, whose library build passes at 1,000 iterations, team +0.12% ± 0.19, largest character difference Rosaria +0.33% ± 0.28, charged hits 59.3 / 59.2 a fight. The 141 Bennett teams supported before give byte-identical output.
 
+Yae Miko's charged attack, which the census listed as blocking 55 teams, made two supported: the other 53 have other blockers too. It is gcsim's ChargeAttack: five 2 by 2 boxes 9 frames apart, each 1.65 further toward the target, in the ICD group whose 0.5 s lets only the first hit deal damage and apply electro. At Gscouter's distance the first two boxes reach the enemy; the other three miss it and reach only the gadgets they cover (`Sim::queue_gadget_attack`), which can be dendro cores. Their library builds pass (Gscouter at `14e187f`):
+
+| Team | Iterations | Team | Worst character | Charged attacks per fight (gcsim) |
+|---|---|---|---|---|
+| Kazuha / Yae Miko / Fischl / Nahida | 1,000 | +0.01% ± 0.10 | Kazuha +0.19% ± 0.20 | 92.07 (92.08) |
+| Nahida / Yelan / Yae Miko / Zhongli (hyperbloom) | 1,000 | −0.04% ± 0.10 | Nahida +0.15% ± 0.37 | 26.00 (26.00) |
+
 The runner also classifies every library team. Of 4,570, 231 are supported and 4,339 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
