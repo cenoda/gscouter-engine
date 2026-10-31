@@ -15,4 +15,5 @@ crate::sets! {
     SongOfDaysPast => songofdayspast,
     DeepwoodMemories => deepwoodmemories,
     ArchaicPetra => archaicpetra,
+    GildedDreams => gildeddreams,
 }

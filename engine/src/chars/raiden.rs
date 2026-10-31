@@ -140,6 +140,7 @@ impl Character for Char {
                     ai.def_halt = true;
                 }
                 ai.hitlag_factor = 0.01;
+                ai.pattern = s.box_on_player(0.0, -0.1, 7.5, 8.0);
                 let slot = s.alloc(AttackEvent::new(ai, CB_RESTORE | CB_C6)) as i32;
                 s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_SWORD_CA, arg: slot }, g::SWORD_CA_HITMARKS[i]);
             }
@@ -152,6 +153,7 @@ impl Character for Char {
         ai.hitlag_halt = 0.02 * 60.0;
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
+        ai.pattern = s.box_on_player(0.0, -0.1, 2.8, 4.8);
         s.queue_attack(ai, 0, g::CHARGE_HITMARK, g::CHARGE_HITMARK);
         ActInfo::new(Frames::Table(&g::CHARGE_FRAMES), g::CHARGE_FRAMES[0], g::CHARGE_HITMARK, AnimState::Charge)
     }
@@ -160,6 +162,7 @@ impl Character for Char {
         let lvl = s.talent(ci, 1);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Electro, 25.0, g::SKILL[lvl]);
         ai.abil = "Eye of Stormy Judgement";
+        ai.pattern = s.circle_on_player(0.0, 0.0, 5.0);
         s.queue_attack(ai, 0, g::SKILL_HITMARK, g::SKILL_HITMARK);
         // the eye comes a second after the cooldown starts
         for i in 0..s.chars.len() {
@@ -199,6 +202,8 @@ impl Character for Char {
                 ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
                 ai.hitlag_factor = 0.01;
                 ai.def_halt = g::ATTACK_DEF_HALT[n][i];
+                let (o, hb) = (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n]);
+                ai.pattern = if n == 0 || n == 2 { s.box_on_player(o[0], o[1], hb[0], hb[1]) } else { s.fan_on_player(o[0], o[1], hb[0], g::ATTACK_FAN_ANGLES[n]) };
                 s.queue_attack(ai, 0, 0, 0);
             }
             TASK_SWORD | TASK_SWORD_CA => {
@@ -219,6 +224,7 @@ impl Character for Char {
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_DEFAULT, Element::Electro, 50.0, g::BURST_BASE[lvl]);
                 ai.abil = "Musou Shinsetsu";
                 ai.mult += g::RESOLVE_BASE_BONUS[lvl] * consumed;
+                ai.pattern = s.box_on_player(0.0, -0.1, 13.0, 8.0);
                 s.queue_attack(ai, 0, 0, 0);
             }
             TASK_C4 => {
@@ -295,6 +301,8 @@ fn sword_info(s: &Sim, ci: usize, n: usize, i: usize) -> AttackInfo {
     ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
     ai.hitlag_factor = 0.01;
     ai.def_halt = g::ATTACK_DEF_HALT[n][i];
+    let (o, hb) = (g::SWORD_OFFSETS[n][i], g::SWORD_HITBOXES[n][i]);
+    ai.pattern = s.box_on_player(o[0], o[1], hb[0], hb[1]);
     ai
 }
 
@@ -312,6 +320,7 @@ fn eye_on_damage(s: &mut Sim, ci: usize, ev: &AttackEvent) {
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Electro, 25.0, g::SKILL_TICK[lvl]);
     ai.abil = "Eye of Stormy Judgement (Strike)";
+    ai.pattern = s.circle_on_target(4.0);
     s.queue_attack(ai, CB_PARTICLE, 5, 5);
     s.st_mut::<State>(ci).eye_icd = s.f + 54;
 }

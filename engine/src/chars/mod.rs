@@ -25,4 +25,7 @@ crate::chars! {
     Chiori => chiori,
     Jean => jean,
     Sucrose => sucrose,
+    Wriothesley => wriothesley,
+    Yaemiko => yaemiko,
+    Diona => diona,
 }

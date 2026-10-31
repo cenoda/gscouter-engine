@@ -958,6 +958,7 @@ pub enum ShieldType {
     Crystallize,
     ZhongliJadeShield,
     CandaceSkill,
+    DionaSkill,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -1054,6 +1055,8 @@ pub struct Sim {
     /// The holder of gcsim's "utility-dash" stamina mod (dash stamina
     /// -20% while it lives), if any.
     pub utility_dash: Option<u8>,
+    /// Diona's A1: stamina -10% while her shield is up.
+    pub diona_a1: bool,
     /// Electro resonance, with the frame of its last particle (0 before
     /// the first).
     pub electro_res: Option<i32>,
@@ -1167,6 +1170,7 @@ impl Sim {
             enemy_alive: true,
             no_more_actions: false,
             utility_dash: None,
+            diona_a1: false,
             electro_res: None,
             dendro_res: false,
             anemo_res: false,
@@ -2649,6 +2653,15 @@ impl Sim {
     /// target its own copy of the attack, so the core sees it before ICD
     /// or reactions on the enemy.
     fn hit_gadgets(&mut self, ev: &AttackEvent) {
+        // gcsim's Guoba swirls its pyro window when Sucrose's skill (or
+        // Faruzan's, not ported) reaches it: not ported either
+        if ev.info.tag == AttackTag::ElementalArt && self.chars[ev.info.actor as usize].kind == crate::chars::CharKind::Sucrose {
+            let guoba = self.gadgets.iter().any(|g| g.owner != CORE && self.chars[g.owner as usize].kind == crate::chars::CharKind::Xiangling && g.aura.contains(Element::Pyro) && ev.info.pattern.hits_circle(g.x, g.y, g.r) != Some(false));
+            if guoba {
+                self.unsupported("sucrose skill swirling guoba");
+                return;
+            }
+        }
         if ev.info.durability < ZERO_DUR || !matches!(ev.info.element, Element::Electro | Element::Pyro) {
             return;
         }
@@ -3625,13 +3638,16 @@ impl Sim {
         };
         // StamPercentMod, in the order the mods were added: anemo
         // resonance's -15% on everything, then gcsim's "utility-dash"
-        // (Kazuha's and others') -20% on dashes
+        // (Kazuha's and others') -20% on dashes, then Diona's A1
         let mut pct = 0.0;
         if self.anemo_res {
             pct += -0.15;
         }
         if a == Action::Dash && self.utility_dash.is_some_and(|o| self.chars[o as usize].hp_ratio > 0.0) {
             pct += -0.2;
+        }
+        if self.diona_a1 && self.shields.iter().any(|x| x.typ == ShieldType::DionaSkill) {
+            pct += -0.1;
         }
         if pct == 0.0 {
             return base;

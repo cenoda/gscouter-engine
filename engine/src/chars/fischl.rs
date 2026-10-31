@@ -116,10 +116,12 @@ impl Character for Char {
         let hitmark = g::ATTACK_HITMARKS[n];
         let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 25.0, g::AUTO[n][lvl]);
         ai.abil = NORMAL_NAMES[n];
+        ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
         s.queue_attack(ai, 0, hitmark, hitmark + travel);
         if s.chars[ci].cons >= 1 && !s.mod_active(ci, OZ_ACTIVE) {
             let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 100.0, 0.22);
             ai.abil = "Gaze of the Deep (C1)";
+            ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
             s.queue_attack(ai, 0, hitmark, hitmark + travel);
         }
         let atkspd = s.stat(ci, st::ATKSPD);
@@ -143,6 +145,7 @@ impl Character for Char {
             ai.mult = g::AIM[lvl];
         }
         let hitmark = g::AIMED_HITMARKS[hold];
+        ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
         s.queue_attack(ai, 0, hitmark, hitmark + travel);
         let table = &g::AIMED_FRAMES[hold];
         ActInfo::new(Frames::Table(table), table[0], hitmark, AnimState::Aim)
@@ -156,9 +159,13 @@ impl Character for Char {
         let lvl = s.talent(ci, 1);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_FISCHL, Element::Electro, 25.0, g::BIRD_SUM[lvl]);
         ai.abil = "Oz (Summon)";
+        // a circle 1.5 beyond the enemy (it faces away from the player)
+        let mut r = 2.0;
         if s.chars[ci].cons >= 2 {
             ai.mult += 2.0;
+            r = 3.0;
         }
+        ai.pattern = Pattern::Circle { x: 0.0, y: (s.target_dist + 1.5) as f32, r };
         s.queue_attack(ai, 0, g::SKILL_OZ_SPAWN, g::SKILL_OZ_HITMARK);
         s.set_cd(ci, Action::Skill, 25 * 60 + g::SKILL_OZ_SPAWN);
         s.add_task(Task::Char { c: ci as u8, id: TASK_RECAST_CD, arg: 0 }, g::SKILL_OZ_SPAWN);
@@ -173,11 +180,13 @@ impl Character for Char {
         ai.abil = "Midnight Phantasmagoria";
         ai.blunt = true;
         ai.poise = 150.0;
+        ai.pattern = s.circle_on_player(0.0, 0.0, 0.5);
         s.queue_attack(ai, 0, g::BURST_HITMARK, g::BURST_HITMARK);
         if s.chars[ci].cons >= 4 {
             // C4's hit lands before the burst's
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_FISCHL, Element::Electro, 50.0, 2.22);
             ai.abil = "Her Pilgrimage of Bleak (C4)";
+            ai.pattern = s.circle_on_player(0.0, 0.0, 5.0);
             s.queue_attack(ai, 0, 8, 8);
         }
         s.consume_energy(ci, 6);
@@ -289,6 +298,8 @@ fn oz_spawn(s: &mut Sim, ci: usize, burst: bool, first_tick: i32) {
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_FISCHL, Element::Electro, 25.0, g::BIRD_ATK[lvl]);
     ai.abil = if burst { "Oz (Burst)" } else { "Oz (Skill)" };
+    // from Oz, 1.5 in front of the player, to the enemy: the same line
+    ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
     s.st_mut::<State>(ci).oz = s.snapshot_event(ai, CB_PARTICLE);
     s.add_task(Task::Char { c: ci as u8, id: TASK_OZ_TICK, arg: f }, first_tick);
 }
@@ -339,6 +350,7 @@ fn a4(s: &mut Sim, ci: usize, r: Reaction, ev: &AttackEvent) {
     s.add_status(active, A4_ICD, 30, true);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_FISCHL, Element::Electro, 25.0, 0.8);
     ai.abil = "Thundering Retribution (A4)";
+    ai.pattern = s.circle_on_target(0.5);
     let atk = with_oz_snapshot(s, ci, ai);
     s.queue_attack_with_snap(atk, 0, 4);
 }
@@ -346,6 +358,7 @@ fn a4(s: &mut Sim, ci: usize, r: Reaction, ev: &AttackEvent) {
 fn c6_wave(s: &mut Sim, ci: usize) {
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_FISCHL, Element::Electro, 25.0, 0.3);
     ai.abil = "Evernight Raven (C6)";
+    ai.pattern = s.box_on_target(0.0, -1.0, 0.1, 1.0);
     let atk = with_oz_snapshot(s, ci, ai);
     let travel = s.st::<State>(ci).oz_travel;
     s.queue_attack_with_snap(atk, 0, travel);

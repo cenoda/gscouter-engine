@@ -79,6 +79,7 @@ impl Character for Char {
         let lvl = s.talent(ci, 0);
         let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_EXTRA_ATTACK, icd::GROUP_POLE_EXTRA_ATTACK, Element::Physical, 25.0, g::NC[lvl]);
         ai.abil = "Charge";
+        ai.pattern = s.circle_on_target(0.8);
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
         ai.deployable = true;
@@ -114,6 +115,8 @@ impl Character for Char {
                 ai.hitlag_factor = 0.01;
                 ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
                 ai.def_halt = true;
+                let hb = g::ATTACK_HITBOXES[n][i];
+                ai.pattern = s.box_on_player(0.0, 0.0, hb[0], hb[1]);
                 let cb = if s.chars[ci].cons >= 2 && n == 4 { CB_C2 } else { 0 };
                 s.queue_attack(ai, cb, 0, 0);
             }
@@ -121,6 +124,10 @@ impl Character for Char {
                 let lvl = s.talent(ci, 1);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::GUOBA_TICK[lvl]);
                 ai.abil = "Guoba";
+                // a fan of 60 degrees from Guoba, 1.3 in front of the player,
+                // toward the enemy; A1 makes it 20% longer
+                let range = if s.chars[ci].ascension >= 1 { 5.0 * 1.2 } else { 5.0 };
+                ai.pattern = s.fan_on_player(0.0, 1.3, range, 60.0);
                 let ev = s.snapshot_event(ai, 0);
                 s.st_mut::<State>(ci).guoba = ev;
                 s.add_status(ci, GUOBA_STATUS, GUOBA_DURATION, false);
@@ -139,6 +146,7 @@ impl Character for Char {
             TASK_C2_EXPLODE => {
                 let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, 0.75);
                 ai.abil = "Oil Meets Fire (C2)";
+                ai.pattern = s.circle_on_target(2.0);
                 s.queue_attack(ai, 0, 0, 0);
             }
             TASK_BURST_HIT => {
@@ -149,6 +157,7 @@ impl Character for Char {
                 ai.hitlag_halt = 0.03 * 60.0;
                 ai.hitlag_factor = 0.01;
                 ai.def_halt = true;
+                ai.pattern = s.circle_on_player(0.0, 0.0, g::BURST_RADIUS[i]);
                 s.queue_attack(ai, 0, 0, 0);
             }
             TASK_SPIN_START => {
@@ -157,6 +166,7 @@ impl Character for Char {
                 let lvl = s.talent(ci, 2);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::PYRONADO_SPIN[lvl]);
                 ai.abil = "Pyronado";
+                ai.pattern = s.circle_on_player(0.0, 0.0, 2.5);
                 let ev = s.snapshot_event(ai, 0);
                 s.st_mut::<State>(ci).spin = ev;
                 for delay in (0..=max).step_by(73) {
