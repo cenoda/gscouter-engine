@@ -13,7 +13,9 @@
 // difference lies within ±1% of gcsim, fail when it lies outside, and are
 // inconclusive otherwise. Iterations start at -iter, grow until each
 // engine's standard error is at most -target-se of the mean, and grow
-// further, up to -max-iter, while any verdict is inconclusive.
+// further, up to -max-iter, while any verdict is inconclusive: each step
+// by the factor at which the inconclusive intervals would clear the bound,
+// from twice to four times.
 //
 // Teams the engine cannot run are counted as "unsupported: <what>", and the
 // census of what blocks how many teams measures the port's progress.
@@ -567,6 +569,27 @@ func needed(outs ...*harness.Output) int {
 	return n
 }
 
+// growth is the factor to grow the iterations by while a verdict is
+// inconclusive: from each inconclusive metric's distance to the bound, the
+// iterations at which its interval would just clear it, with a quarter more
+// for the noise in that estimate. It is at least 2, so that the looks at the
+// data stay as few as with a fixed factor, and at most 4, the factor used
+// before, so that no build runs longer than it did.
+func growth(ms []Metric) float64 {
+	g := 2.0
+	for _, m := range ms {
+		if m.Verdict != "inconclusive" {
+			continue
+		}
+		gap := math.Abs(math.Abs(m.Diff) - bound)
+		if gap == 0 {
+			return 4
+		}
+		g = max(g, 1.25*(z*m.DiffSE/gap)*(z*m.DiffSE/gap))
+	}
+	return min(g, 4)
+}
+
 func compare(gse, tmp, id string, v variant, cfg string) Result {
 	res := Result{Team: id, Variant: v.Name, Desc: v.Desc}
 	path := writeConfig(tmp, id+"-"+v.Name, cfg)
@@ -608,7 +631,7 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 		if res.Verdict != "inconclusive" || n >= *maxIter {
 			break
 		}
-		err = run(min(4*n, *maxIter) - n)
+		err = run(min(int(float64(n)*growth(res.Metrics)), *maxIter) - n)
 	}
 	res.Iter = n
 	if err != nil {
