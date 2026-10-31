@@ -1931,10 +1931,16 @@ impl Sim {
     }
 
     fn will_apply_ele(&mut self, info: &AttackInfo) -> f64 {
+        self.will_apply_ele_of(info, info.actor)
+    }
+
+    /// WillApplyEle of an attack's ICD tag and group, counted for character
+    /// `ci`.
+    fn will_apply_ele_of(&mut self, info: &AttackInfo, ci: u8) -> f64 {
         if info.icd_tag == icd::TAG_NONE {
             return 1.0;
         }
-        let i = self.icd_state(info.actor, info.icd_tag, info.icd_group);
+        let i = self.icd_state(ci, info.icd_tag, info.icd_group);
         if !self.enemy.icd[i].tag_on {
             self.enemy.icd[i].tag_on = true;
             self.add_task(Task::IcdResetTag { i: i as u16 }, info.icd_group.reset_timer() - 1);
@@ -2001,6 +2007,15 @@ impl Sim {
 
         if ev.info.durability > 0.0 {
             ev.info.durability *= self.will_apply_ele(&ev.info);
+            // burning's ICD is global: every other character's counter is
+            // checked (and counts) too, and any of them on ICD wipes the gauge
+            if ev.info.icd_tag == icd::TAG_BURNING_DAMAGE {
+                for i in 0..self.chars.len() as u8 {
+                    if i != ev.info.actor {
+                        ev.info.durability *= self.will_apply_ele_of(&ev.info, i);
+                    }
+                }
+            }
             if ev.info.durability > 0.0 && ev.info.element != Element::Physical {
                 self.react(&mut ev);
             }
