@@ -1,5 +1,5 @@
-//! Bennett, from gcsim's internal/characters/bennett: normal attacks,
-//! the skill pressed and held (levels 1 and 2, and the C4 variant) and the
+//! Bennett, from gcsim's internal/characters/bennett: normal and charged
+//! attacks, the skill pressed and held (levels 1 and 2, and the C4 variant) and the
 //! burst's field, which also infuses the player with pyro.
 
 use crate::content::Character;
@@ -48,7 +48,7 @@ impl Character for Char {
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Skill | Action::Burst => None,
+            Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
     }
@@ -89,6 +89,22 @@ impl Character for Char {
         let info = ActInfo::new(Frames::Attack { table, atkspd }, table[0], hitmark, AnimState::Normal);
         s.advance_normal(ci);
         info
+    }
+
+    /// gcsim's ChargeAttack: two physical hits, each a circle of radius 2.2
+    /// on the player, without hitlag. Stamina and the need for a normal
+    /// attack right before are the template's (sword).
+    fn charge(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        let lvl = s.talent(ci, 0);
+        for (i, mult) in g::CHARGE.iter().enumerate() {
+            let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, mult[lvl]);
+            ai.abil = ["Charge 0", "Charge 1"][i];
+            ai.pattern = s.circle_on_player(0.0, 0.0, 2.2);
+            let h = g::CHARGE_HITMARKS[i];
+            s.queue_attack(ai, 0, h, h);
+        }
+        let t = &g::CHARGE_FRAMES;
+        ActInfo::new(Frames::Table(t), t[0], *g::CHARGE_HITMARKS.last().unwrap(), AnimState::Charge)
     }
 
     fn skill(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
