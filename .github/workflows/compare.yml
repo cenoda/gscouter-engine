@@ -85,8 +85,10 @@ jobs:
         run: |
           parts=""
           bs=""
-          WARM=${WARM// /}
-          BS_INPUT=${BS_INPUT// /}
+          # strip all whitespace: a pasted list can carry a CRLF or newlines
+          WARM=$(printf %s "$WARM" | tr -d "[:space:]")
+          BS_INPUT=$(printf %s "$BS_INPUT" | tr -d "[:space:]")
+          INPUT=$(printf %s "$INPUT" | tr -d "[:space:]")
           # ranges ("0-3,7") to a list of parts below the count given
           expand() {
             local out="" r
