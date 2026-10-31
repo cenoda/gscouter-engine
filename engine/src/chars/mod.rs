@@ -22,4 +22,5 @@ crate::chars! {
     Gaming => gaming,
     Candace => candace,
     Nahida => nahida,
+    Chiori => chiori,
 }

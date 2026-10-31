@@ -44,8 +44,9 @@ pub enum EventKind {
     PlayerHit,
     Shielded,
     ShieldBreak,
+    ConstructSpawned,
 }
-pub const N_EVENTS: usize = 14;
+pub const N_EVENTS: usize = 15;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -82,6 +83,8 @@ pub enum Event<'a> {
     Shielded(&'a crate::sim::Shield),
     /// OnShieldBreak: a shield broke or expired.
     ShieldBreak(&'a crate::sim::Shield),
+    /// OnConstructSpawned.
+    ConstructSpawned,
 }
 
 impl Event<'_> {
@@ -98,6 +101,7 @@ impl Event<'_> {
             Event::PlayerHit { .. } => EventKind::PlayerHit,
             Event::Shielded(_) => EventKind::Shielded,
             Event::ShieldBreak(_) => EventKind::ShieldBreak,
+            Event::ConstructSpawned => EventKind::ConstructSpawned,
             Event::ParticleReceived => EventKind::ParticleReceived,
             Event::EnergyBurst { .. } => EventKind::EnergyBurst,
             Event::EnemyHit(_) => EventKind::EnemyHit,

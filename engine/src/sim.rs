@@ -3016,6 +3016,17 @@ impl Sim {
             let old = self.constructs.remove(0);
             crate::chars::dispatch::construct_expired(self.chars[old.owner as usize].kind, self, old.owner as usize, old.key);
         }
+        self.emit(Event::ConstructSpawned);
+    }
+
+    /// gcsim's Player.Exec of a swap from inside the fight (a character
+    /// forcing it): it bypasses the swap cooldown and replaces the action
+    /// under way. A swap to the active character does nothing.
+    pub fn force_swap(&mut self, to: usize) {
+        if to == self.player.active as usize {
+            return;
+        }
+        self.exec(to, Action::Swap, &Params::default());
     }
 
     /// gcsim's AuraContains for one element on the enemy: every aura slot
