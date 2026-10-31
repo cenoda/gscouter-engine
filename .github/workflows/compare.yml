@@ -15,6 +15,21 @@
 # job restores the latest cache and uploads the chunks it added; the last
 # job merges them and saves the result as the next cache. The key changes
 # with gcsim (go.sum) and the harness, which starts the cache afresh.
+#
+# A manual run with "warm" set to team ids runs gcsim alone on those teams'
+# builds (library, variants, probes; compare -gcsim-only), whether the
+# engine supports them or not, and adds the chunks to the cache, so that a
+# port's compare runs only the engine for the teams it unblocks. It runs
+# nothing else. Dispatch it on main: a cache saved on main is visible to
+# every branch, one saved on a branch only to that branch. (A branch that
+# has saved a cache of its own restores that one, not main's, so dispatch
+# it before the port's first push.)
+#
+# Caches of one branch must not be saved by two cache jobs at once: each
+# restores the latest and adds its own chunks, so the one saved second
+# would lack the first one's chunks, and the next restore takes only the
+# latest. The cache job runs one at a time per branch (concurrency below),
+# and restores the latest right before it saves.
 name: compare
 
 on:
@@ -28,6 +43,9 @@ on:
       parts:
         description: 'Variant parts to run ("0-39", "3,7,12"), or "library" for the library builds and probes'
         default: library
+      warm:
+        description: 'Team ids, comma-separated, whose gcsim runs to add to the cache (compare -gcsim-only); runs nothing else. Dispatch on main.'
+        default: ""
 
 env:
   GSCOUTER_COMMIT: 14e187fab1fb0695f527347f419aad977e27a92c
@@ -42,13 +60,29 @@ jobs:
     outputs:
       library: ${{ steps.plan.outputs.library }}
       parts: ${{ steps.plan.outputs.parts }}
+      warm: ${{ steps.plan.outputs.warm }}
+      warm_parts: ${{ steps.plan.outputs.warm_parts }}
     steps:
       - id: plan
         env:
           EVENT: ${{ github.event_name }}
           INPUT: ${{ inputs.parts }}
+          WARM: ${{ inputs.warm }}
         run: |
           parts=""
+          WARM=${WARM// /}
+          if [ "$EVENT" = workflow_dispatch ] && [ -n "$WARM" ]; then
+            [[ $WARM =~ ^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$ ]] || { echo "warm: want team ids separated by commas, got $WARM"; exit 1; }
+            # a job per team, up to 20 jobs
+            n=$(echo "$WARM" | tr , '\n' | wc -l)
+            n=$(( n < 20 ? n : 20 ))
+            echo "library=false" >> "$GITHUB_OUTPUT"
+            echo "parts=[]" >> "$GITHUB_OUTPUT"
+            echo "warm=$WARM" >> "$GITHUB_OUTPUT"
+            echo "warm_parts=[$(seq -s, 0 $(( n - 1 )))]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "warm_parts=[]" >> "$GITHUB_OUTPUT"
           if [ "$EVENT" = schedule ]; then
             day=$(( $(date -u +%s) / 86400 ))
             first=$(( (day % (PARTS / PER_DAY)) * PER_DAY ))
@@ -192,10 +226,76 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+  warm:
+    needs: plan
+    if: needs.plan.outputs.warm_parts != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.plan.outputs.warm_parts) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: cenoda/Gscouter
+          ref: ${{ env.GSCOUTER_COMMIT }}
+          path: gscouter
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go.mod
+          cache-dependency-path: |
+            reference/go.sum
+            gscouter/go.sum
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.GCSIM_CACHE }}
+          key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+          restore-keys: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+      - name: Mark the cache's start
+        run: mkdir -p "$GCSIM_CACHE" && touch "$RUNNER_TEMP/cache-start"
+      - name: Run gcsim into the cache
+        working-directory: reference
+        env:
+          WARM: ${{ needs.plan.outputs.warm }}
+          SHARDS: ${{ strategy.job-total }}
+        run: go run ./compare -gscouter ../gscouter -gcsim-only -teams "$WARM" -only library,variants,probes -shard ${{ matrix.part }}/$SHARDS -cache "$GCSIM_CACHE" -json ../warm.json -md ../warm.md
+      - name: Summary
+        if: always()
+        run: test -f warm.md && cat warm.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: warm-${{ matrix.part }}
+          path: |
+            warm.json
+            warm.md
+          if-no-files-found: ignore
+      - name: Collect the chunks this job added
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/gcsim-new"
+          cd "$GCSIM_CACHE" && find . -type f -name '*.json' -newer "$RUNNER_TEMP/cache-start" -exec cp --parents {} "$RUNNER_TEMP/gcsim-new" \;
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gcsim-new-warm-${{ matrix.part }}
+          path: ${{ runner.temp }}/gcsim-new
+          if-no-files-found: ignore
+          retention-days: 1
+
   cache:
-    needs: [library, variants]
+    needs: [library, variants, warm]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
+    # one at a time per branch, so that each restores what the last saved
+    # (see the top). GitHub keeps one waiting job per group: a third that
+    # comes while one runs and one waits cancels the waiting one, whose
+    # chunks a later run then computes again (a cost, never a wrong result).
+    concurrency:
+      group: gcsim-cache-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
         with:

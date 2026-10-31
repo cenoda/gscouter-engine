@@ -22,7 +22,7 @@
 //
 // Usage:
 //
-//	compare -gscouter ../Gscouter [-teams id,id] [-census] [-only library,variants,probes] [-shard k/n] [-json out.json] [-md out.md]
+//	compare -gscouter ../Gscouter [-teams id,id] [-census] [-gcsim-only] [-only library,variants,probes] [-shard k/n] [-json out.json] [-md out.md]
 //
 // The variants take about an hour per team, so CI compares library builds
 // and probes on every push (-only library,probes) and the variants on a
@@ -33,6 +33,13 @@
 // library team and the lines that replace those of its build, and is
 // compared like a variant of it. A probe's team need not be supported, only
 // its probe build: weapons and sets the engine lacks can be replaced.
+//
+// gcsim's results depend only on the config and the seeds, and the cache
+// keeps them, so -gcsim-only runs gcsim alone on the builds selected, for
+// teams the engine does not support yet too: seeds from 1 in whole chunks,
+// to -iter and then to the iterations at which gcsim's own standard errors
+// reach -target-se, up to -max-iter, as compare would. It warms the cache
+// while a port is written, so that the port's compare runs only the engine.
 package main
 
 import (
@@ -81,6 +88,7 @@ var (
 	mdOut       = flag.String("md", "", "also write the report to this file")
 	probesDir   = flag.String("probes", "probes", "directory of probes: library builds with a weapon, set or character line changed")
 	cacheDir    = flag.String("cache", harness.DefaultCacheDir(), "directory of stored gcsim results, by config and chunk of seeds; empty for none")
+	gcsimOnly   = flag.Bool("gcsim-only", false, "run only gcsim, into the cache, on the selected builds, whether the engine supports their teams or not")
 
 	gcsimCache *harness.Cache
 )
@@ -193,7 +201,28 @@ type Report struct {
 	// Only is the kinds of build compared, Shard the part of the teams.
 	Only  []string `json:"only"`
 	Shard string   `json:"shard,omitempty"`
-	Pass  bool     `json:"pass"`
+	// Warmed is what -gcsim-only ran, in place of Results and Census.
+	Warmed []Warmed `json:"warmed,omitempty"`
+	Pass   bool     `json:"pass"`
+}
+
+// Warmed is a build -gcsim-only ran gcsim on.
+type Warmed struct {
+	Team    string `json:"team"`
+	Variant string `json:"variant"`
+	Iter    int    `json:"iterations"`
+	// Chunks is the whole chunks of seeds run, Cached how many of them the
+	// cache already had.
+	Chunks       int     `json:"chunks"`
+	Cached       int     `json:"cached"`
+	GcsimSeconds float64 `json:"gcsim_seconds"`
+	Error        string  `json:"error,omitempty"`
+}
+
+type job struct {
+	v   variant
+	cfg string
+	err error
 }
 
 func main() {
@@ -204,6 +233,9 @@ func main() {
 	var err error
 	if gcsimCache, err = harness.OpenCache(*cacheDir); err != nil {
 		fail(err)
+	}
+	if *gcsimOnly && gcsimCache == nil {
+		fail(errors.New("-gcsim-only needs a cache (-cache)"))
 	}
 	tmp, err := os.MkdirTemp("", "compare")
 	if err != nil {
@@ -250,6 +282,10 @@ func main() {
 		cfg, err := dump(gscouter, id, "")
 		if err != nil {
 			st.Status, st.Error = "error", err.Error()
+		} else if *gcsimOnly {
+			// gcsim needs no support from the engine
+			st.Status = "dumped"
+			configs[i] = cfg
 		} else if miss, err := check(gse, tmp, id, cfg); err != nil {
 			st.Status, st.Error = "error", err.Error()
 		} else if len(miss) > 0 {
@@ -267,28 +303,36 @@ func main() {
 		part := 0
 		for i, id := range ids {
 			supported := statuses[i].Status == "supported"
+			// -gcsim-only takes every team, and reports one whose dump failed
+			selected := supported || *gcsimOnly
 			var probes []probe
 			if kinds["probes"] {
 				probes = probesFor(id)
 			}
-			if !(supported && (kinds["library"] || kinds["variants"])) && len(probes) == 0 {
+			if !(selected && (kinds["library"] || kinds["variants"])) && len(probes) == 0 {
 				continue
 			}
 			part++
 			if (part-1)%shards != shard {
 				continue
 			}
-			var jobs []struct {
-				v   variant
-				cfg string
+			if *gcsimOnly && statuses[i].Status == "error" {
+				rep.Warmed = append(rep.Warmed, Warmed{Team: id, Variant: "library", Error: statuses[i].Error})
+				continue
 			}
-			if supported && kinds["library"] {
-				jobs = append(jobs, struct {
-					v   variant
-					cfg string
-				}{variant{Name: "library", Desc: "library build"}, configs[i]})
+			// dumpErr fails, or under -gcsim-only reports the build
+			var jobs []job
+			dumpErr := func(v variant, err error) {
+				err = fmt.Errorf("%s %s: %w", id, v.Name, err)
+				if !*gcsimOnly {
+					fail(err)
+				}
+				jobs = append(jobs, job{v: v, err: err})
 			}
-			if supported && kinds["variants"] {
+			if selected && kinds["library"] {
+				jobs = append(jobs, job{v: variant{Name: "library", Desc: "library build"}, cfg: configs[i]})
+			}
+			if selected && kinds["variants"] {
 				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
 				if err != nil {
 					fail(err)
@@ -300,7 +344,8 @@ func main() {
 					}
 					cfg, err := dump(gscouter, id, path)
 					if err != nil {
-						fail(fmt.Errorf("%s %s: %w", id, v.Name, err))
+						dumpErr(v, err)
+						continue
 					}
 					if v.force {
 						forced := burstReady.ReplaceAllString(cfg, "1")
@@ -310,10 +355,7 @@ func main() {
 						}
 						cfg = forced
 					}
-					jobs = append(jobs, struct {
-						v   variant
-						cfg string
-					}{v, cfg})
+					jobs = append(jobs, job{v: v, cfg: cfg})
 				}
 			}
 			for _, pr := range probes {
@@ -327,16 +369,26 @@ func main() {
 				}
 				cfg, err := dump(gscouter, id, path)
 				if err != nil {
-					fail(fmt.Errorf("%s %s: %w", id, pr.v.Name, err))
+					dumpErr(pr.v, err)
+					continue
 				}
-				jobs = append(jobs, struct {
-					v   variant
-					cfg string
-				}{pr.v, cfg})
+				jobs = append(jobs, job{v: pr.v, cfg: cfg})
 			}
 			for _, j := range jobs {
 				if *dryRun {
 					fmt.Fprintf(os.Stderr, "%s / %s\n", id, j.v.Name)
+					continue
+				}
+				if *gcsimOnly {
+					w := Warmed{Team: id, Variant: j.v.Name}
+					if j.err != nil {
+						w.Error = j.err.Error()
+					} else {
+						fmt.Fprintf(os.Stderr, "%s / %s ...\n", id, j.v.Name)
+						w = warm(id, j.v, j.cfg)
+					}
+					fmt.Fprintf(os.Stderr, "%s / %s: %d iterations, %d of %d chunks cached, gcsim %.0f s %s\n", id, j.v.Name, w.Iter, w.Cached, w.Chunks, w.GcsimSeconds, w.Error)
+					rep.Warmed = append(rep.Warmed, w)
 					continue
 				}
 				fmt.Fprintf(os.Stderr, "%s / %s ...\n", id, j.v.Name)
@@ -355,15 +407,25 @@ func main() {
 			}
 		}
 	}
-	rep.Census = census(statuses)
 	rep.Pass = true
+	if !*gcsimOnly {
+		rep.Census = census(statuses)
+	}
 	for _, r := range rep.Results {
 		if r.Verdict != "pass" && r.Verdict != "unsupported" {
 			rep.Pass = false
 		}
 	}
+	for _, w := range rep.Warmed {
+		if w.Error != "" {
+			rep.Pass = false
+		}
+	}
 
 	md := markdown(rep)
+	if *gcsimOnly {
+		md = warmMarkdown(rep)
+	}
 	fmt.Print(md)
 	if *mdOut != "" {
 		if err := os.WriteFile(*mdOut, []byte(md), 0o644); err != nil {
@@ -656,6 +718,97 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 		res.Abils = append(res.Abils, Abil{Name: k, GcsimHits: g.Abils[k][0], GseHits: r.Abils[k][0], GcsimDmg: g.Abils[k][1], GseDmg: r.Abils[k][1]})
 	}
 	return res
+}
+
+// warm runs gcsim alone on a build as compare runs it: through the cache,
+// seeds from 1, whole chunks, to -iter and then to what gcsim's own
+// standard errors need, up to -max-iter. The engine's errors may need
+// more; compare runs those, and the inconclusive steps, itself.
+func warm(id string, v variant, cfg string) Warmed {
+	res := Warmed{Team: id, Variant: v.Name}
+	var g *harness.Output
+	n := 0
+	run := func(more int) error {
+		// as compare's run
+		more = (more + harness.Chunk - 1) / harness.Chunk * harness.Chunk
+		if n+more > *maxIter {
+			more = max(*maxIter-n, 0)
+		}
+		before, err := countChunks(*cacheDir)
+		if err != nil {
+			return err
+		}
+		start := time.Now()
+		gb, err := gcsimCache.RunCached(cfg, more, *warmup, int64(1+n), *workers, true)
+		if err != nil {
+			return fmt.Errorf("gcsim: %w", err)
+		}
+		res.GcsimSeconds += time.Since(start).Seconds()
+		after, err := countChunks(*cacheDir)
+		if err != nil {
+			return err
+		}
+		// n is whole chunks until -max-iter cuts a batch, which is the last
+		chunks := more / harness.Chunk
+		res.Chunks += chunks
+		res.Cached += chunks - (after - before)
+		g = harness.Merge(g, gb)
+		n += more
+		return nil
+	}
+	err := run(*iter0)
+	if err == nil {
+		if need := min(needed(g), *maxIter); need > n {
+			err = run(need - n)
+		}
+	}
+	res.Iter = n
+	if err != nil {
+		res.Error = err.Error()
+	}
+	return res
+}
+
+// countChunks is the number of chunks stored in the cache. The builds run
+// one at a time, so what a run adds is what it stored.
+func countChunks(dir string) (int, error) {
+	n := 0
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.Type().IsRegular() && strings.HasSuffix(d.Name(), ".json") {
+			n++
+		}
+		return nil
+	})
+	return n, err
+}
+
+func warmMarkdown(rep *Report) string {
+	var b strings.Builder
+	w := func(f string, a ...any) { fmt.Fprintf(&b, f, a...) }
+	chunks, cached, secs, errs := 0, 0, 0.0, 0
+	for _, r := range rep.Warmed {
+		chunks += r.Chunks
+		cached += r.Cached
+		secs += r.GcsimSeconds
+		if r.Error != "" {
+			errs++
+		}
+	}
+	scope := strings.Join(rep.Only, ", ")
+	if rep.Shard != "" {
+		scope += ", part " + rep.Shard + " of the teams"
+	}
+	w("## gcsim cache\n\ngcsim alone (-gcsim-only) on %s: %d builds, %d errors; %d chunks of %d seeds, %d of them already cached; gcsim %.0f s.\n\n", scope, len(rep.Warmed), errs, chunks, harness.Chunk, cached, secs)
+	if len(rep.Warmed) > 0 {
+		w("| Team | Build | Iterations | Chunks cached | gcsim s | Error |\n|---|---|---|---|---|---|\n")
+		for _, r := range rep.Warmed {
+			w("| %s | %s | %d | %d of %d | %.0f | %s |\n", r.Team, r.Variant, r.Iter, r.Cached, r.Chunks, r.GcsimSeconds, r.Error)
+		}
+	}
+	return b.String()
 }
 
 func mapsKeys(m map[string]bool) func(func(string) bool) {
