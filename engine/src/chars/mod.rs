@@ -28,4 +28,5 @@ crate::chars! {
     Wriothesley => wriothesley,
     Yaemiko => yaemiko,
     Diona => diona,
+    Klee => klee,
 }

@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 and 1 done, Phase 2 under way (189 teams) · Last updated: 2026-10-31
+> Status: Phases 0 and 1 done, Phase 2 under way (199 teams) · Last updated: 2026-10-31
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
@@ -47,7 +47,7 @@ What had to be in place before dozens of characters, so that they are not rewrit
 
 Progress so far, taken in the order that makes the most library teams supported (`README.md` has the results):
 
-- **189 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
+- **199 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
 - **The runner in CI, in parts**: `compare -only library,variants,probes -shard k/n`. Every push compares the library builds and probes in four parallel jobs; the variants run on a daily schedule, 8 of 40 parts a day, and a manual run can take all 40 at once (about half an hour on GitHub's runners).
 - **Electro, overload and electro-charged** (with Fischl), each reaction emitting its event as gcsim's `Reactable.React` does; reaction damage and `REACTION_LVL_BASE` from gcsim's combat package.
 - **HP changes** (with Furina): `Player.Heal` and `Player.Drain` with `OnHeal` and `OnPlayerHPDrain`, overheal, and incoming healing bonus mods. HP debt is still missing.
@@ -64,7 +64,7 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **Reactions on the player and anemo resonance** (with Jean; seven teams): gcsim's ReactWithSelf, whose swirl's aoe around the player hits the enemy; reaction events on the player, which the subscribers that need an enemy target skip; gcsim's cooldown reduction and stamina percentage mods for anemo resonance.
 - **Sucrose** (five teams): her own dash frames, absorb checks over gcsim's pattern (gadgets now have a position and radius), and waits counted as gcsim's stats count them, under the reason an action first failed for.
 - **gcsim's results cached** by config and chunk of seeds (`reference/harness/cache.go`), so a rerun after an engine change runs only the engine; CI restores, extends and saves the cache, and runs the library builds on pushes to work branches.
-- **The census's one-item teams** (fifty): Wriothesley, Yae Miko, Diona (with shields lengthened by type and Diona's stamina mod), Gilded Dreams, and the hit patterns of Raiden, Fischl and Xiangling. Klee is ported but held back: one of her nine teams is −1.78% (see `README.md`).
+- **The census's one-item teams** (fifty): Wriothesley, Yae Miko, Diona (with shields lengthened by type and Diona's stamina mod), Gilded Dreams, and the hit patterns of Raiden, Fischl and Xiangling. Klee (ten teams) came after: her one team that looked −1.78% at 1,000 iterations passes at 36,000 (+0.01% ± 0.34); its energy waits spiral, which makes its DPS heavy-tailed.
 
 What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 189 supported):
 

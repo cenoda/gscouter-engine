@@ -2,7 +2,7 @@
 
 An experiment: would a simulation engine written only for Gscouter, in Rust, be faster than gcsim and still score within 1% of it?
 
-It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 189 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty-four characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean, Sucrose, Wriothesley, Yae Miko, Diona), 27 weapons and 14 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
+It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 199 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty-five characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean, Sucrose, Wriothesley, Yae Miko, Diona, Klee), 27 weapons and 14 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
 
 It reads gcsim's config language as gcsim does: the same lexer, grammar and evaluator (`let`, `fn`, `if`/`else`, `while`, `for`, `switch` with `fallthrough`, `break`/`continue`/`return`, action lists with params and repeats, `.char.skill.ready` and the other fields, `wait`, `delay`, `execute_action` and the other built-ins), and the same setup lines (`options`, `target`, `energy`, `char`, `add weapon`, `add set`, `add stats`, `active`). A config gcsim runs, the engine runs unchanged, as long as its characters, weapons, sets and actions are ones the engine implements; anything else is an error naming it, never a silent difference.
 
@@ -129,9 +129,22 @@ Then, taking the census's list of teams one item from support: Wriothesley (16 t
 | Gilded Dreams' 12 | 12 of 12 pass | −0.10% ± 0.10 (Raiden / Yae Miko / Kazuha / Nahida) | −0.20% ± 0.33 (Zhongli, with Yoimiya / Yae Miko / Yelan) |
 | Diona's 9 | 9 of 9 pass | +0.15% ± 0.39 (Yoimiya / Yelan / Diona / Bennett) | +0.27% ± 0.60 (Bennett, same team) |
 
-Klee is ported too but not committed: one of her nine teams, Klee / Fischl / Xingqiu / Bennett, is −1.78% (every ability about 2% fewer hits), while the other eight agree within 0.2%. In that team Xingqiu's and Bennett's bursts wait for energy, and a wait lets Xingqiu's own particles overflow, so a small difference feeds itself; with their ER raised it agrees within 0.2%. Energy by source, spark and charged-attack counts and every action-to-action gap agree with gcsim; the cause is not found yet.
+Klee (C0, with gcsim's `action.Info.QueueAction`: a task that runs once an action has lasted some frames, and never if another action replaces it first) makes ten more teams, all of whose library builds pass. Klee / Fischl / Xingqiu / Bennett had looked −1.78% at 1,000 iterations; it was noise. Its bursts wait for energy, and a wait takes Klee's time on the field, which gives the energy the next burst waits for, so a short cycle can spiral into a wait of 40 s: the fight's DPS has a heavy tail (one 0.01 more ER on Xingqiu and Bennett moves it 2%), and gcsim's first 1,000 seeds happen to sit 0.7% above its mean. Over 8,000 seeds energy by source agrees within 0.1% in the first cycles, and the runner passes it at 36,000 iterations, +0.01% ± 0.34, with Xingqiu's energy waits 21.17 s against gcsim's 21.18 s:
 
-The runner also classifies every library team. Of 4,570, 189 are supported and 4,381 are not; what blocks the most teams:
+| Team | Iterations | Team | Worst character | Energy waits (gcsim) |
+|---|---|---|---|---|
+| Klee / Fischl / Furina / Bennett | 1,000 | −0.05% ± 0.16 | Bennett −0.25% ± 0.61 | 2.4 s |
+| Klee / Fischl / Xingqiu / Bennett | 36,000 | +0.01% ± 0.34 | Klee +0.01% ± 0.39 | 30.6 s |
+| Klee / Furina / Bennett / Xiangling | 1,000 | −0.19% ± 0.26 | Xiangling −0.43% ± 0.37 | 0.5 s |
+| Klee / Furina / Kazuha / Chevreuse | 1,000 | −0.14% ± 0.13 | Kazuha −0.31% ± 0.29 | 1.5 s |
+| Klee / Furina / Xingqiu / Bennett | 1,000 | +0.08% ± 0.15 | Xingqiu +0.34% ± 0.20 | 3.6 s |
+| Klee / Furina / Yelan / Bennett | 1,000 | +0.05% ± 0.09 | Klee +0.08% ± 0.15 | 1.0 s |
+| Klee / Xingqiu / Bennett / Kazuha | 4,000 | −0.02% ± 0.16 | Bennett +0.24% ± 0.30 | 0.7 s |
+| Raiden / Xingqiu / Klee / Xiangling | 1,000 | −0.04% ± 0.20 | Raiden −0.13% ± 0.28 | 0.6 s |
+| Xingqiu / Bennett / Xiangling / Klee | 1,000 | +0.08% ± 0.24 | Bennett −0.21% ± 0.55 | 0.9 s |
+| Xingqiu / Yelan / Bennett / Klee | 1,000 | −0.01% ± 0.19 | Xingqiu −0.12% ± 0.21 | 0.1 s |
+
+The runner also classifies every library team. Of 4,570, 199 are supported and 4,371 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
 |---|---|

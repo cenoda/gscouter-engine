@@ -417,13 +417,17 @@ pub struct ActInfo {
     pub norm_for: Option<Action>,
     pub on_removed: OnRemoved,
     pub swap: Option<(f64, u8)>,
+    /// gcsim's Info.QueueAction for the acting character: its task
+    /// `Task::Char` (id, arg) runs once the action has lasted delay
+    /// frames, and not at all if another action replaces it first.
+    pub queued: Option<(i32, u8, i32)>,
     /// Pauses on the acting character's hitlag; a swap does not.
     pub pausable: bool,
 }
 
 impl ActInfo {
     pub fn new(frames: Frames, anim_len: i32, can_queue_after: i32, state: AnimState) -> Self {
-        ActInfo { frames, anim_len, can_queue_after, state, char: 0, time: 0.0, norm_time: 0.0, norm_for: None, on_removed: OnRemoved::None, swap: None, pausable: true }
+        ActInfo { frames, anim_len, can_queue_after, state, char: 0, time: 0.0, norm_time: 0.0, norm_for: None, on_removed: OnRemoved::None, swap: None, queued: None, pausable: true }
     }
 }
 
@@ -3743,7 +3747,8 @@ impl Sim {
     }
 
     fn anim_tick(&mut self) {
-        let Some(mut a) = self.player.anim else { return };
+        // in place: the action is copied out only as it ends
+        let Some(a) = self.player.anim.as_mut() else { return };
         a.norm_time += 1.0;
         if !a.pausable || self.chars[a.char as usize].frozen == 0 {
             a.time += 1.0;
@@ -3751,18 +3756,23 @@ impl Sim {
         if let Some((delay, to)) = a.swap {
             if delay <= a.time {
                 a.swap = None;
-                self.player.anim = Some(a);
                 self.do_swap(to as usize);
             }
         }
-        if a.time > a.anim_len as f64 {
+        let Some(a) = self.player.anim.as_mut() else { return };
+        if let Some((delay, id, arg)) = a.queued {
+            if delay as f64 <= a.time {
+                a.queued = None;
+                let c = a.char;
+                self.run_task(Task::Char { c, id, arg });
+            }
+        }
+        if let Some(a) = self.player.anim.as_ref().filter(|a| a.time > a.anim_len as f64).copied() {
             self.on_removed(&a, AnimState::Idle);
             self.player.anim = None;
             self.player.state = AnimState::Idle;
             self.player.state_start = self.f;
-            return;
         }
-        self.player.anim = Some(a);
     }
 
     // ------------------------------------------------------------ bursts that watch normal attacks
