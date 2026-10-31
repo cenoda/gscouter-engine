@@ -1,0 +1,3 @@
+# Baizhu C3: the burst's talent level +3.
+team alhaitham-furina-fischl-baizhu
+baizhu char lvl=90/90 cons=3 talent=9,9,9;

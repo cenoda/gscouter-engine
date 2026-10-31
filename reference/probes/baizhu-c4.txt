@@ -1,0 +1,3 @@
+# Baizhu C4: the burst gives the party 80 EM for 15 s.
+team alhaitham-furina-fischl-baizhu
+baizhu char lvl=90/90 cons=4 talent=9,9,9;
