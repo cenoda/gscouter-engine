@@ -2,7 +2,7 @@
 
 An experiment: would a simulation engine written only for Gscouter, in Rust, be faster than gcsim and still score within 1% of it?
 
-It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 256 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty-eight characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean, Sucrose, Wriothesley, Yae Miko, Diona, Klee, Lynette, Shenhe, Lisa), 28 weapons and 16 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
+It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 278 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty-nine characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean, Sucrose, Wriothesley, Yae Miko, Diona, Klee, Lynette, Shenhe, Lisa, Kuki Shinobu), 30 weapons and 16 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
 
 It reads gcsim's config language as gcsim does: the same lexer, grammar and evaluator (`let`, `fn`, `if`/`else`, `while`, `for`, `switch` with `fallthrough`, `break`/`continue`/`return`, action lists with params and repeats, `.char.skill.ready` and the other fields, `wait`, `delay`, `execute_action` and the other built-ins), and the same setup lines (`options`, `target`, `energy`, `char`, `add weapon`, `add set`, `add stats`, `active`). A config gcsim runs, the engine runs unchanged, as long as its characters, weapons, sets and actions are ones the engine implements; anything else is an error naming it, never a silent difference.
 
@@ -213,16 +213,35 @@ Hits per ability agree (Hu Tao / Yelan / Xingqiu / Lisa per fight: Lightning Ros
 
 These five came from parallel branches off the same commit and were merged together. Merged, they make three more teams supported that each needed two of them: Lisa with Thundering Fury (Bennett / Chevreuse / Fischl / Lisa, +0.08% ± 0.71 at 8,000 iterations; Yoimiya / Chevreuse / Fischl / Lisa, −0.02% ± 0.28, Lisa −0.42% ± 0.45) and Lisa with Flower of Paradise Lost (Lisa / Xingqiu / Nahida / Zhongli, +0.02% ± 0.26). The merged engine was compared again on all 26 teams these five made supported, the five probes they added and the three teams those probes use: 34 of 34 builds pass, with the same results as on their branches.
 
-The runner also classifies every library team. Of 4,570, 256 are supported and 4,314 are not; what blocks the most teams:
+Then three more branches, taken from the census's queue: Kuki Shinobu, Sacrificial Jade and Hakushin Ring. Kuki's module has her normal and charged attacks, Sanctifying Ring (its HP cost, the ring and its heal), her burst, A1, A4 and every constellation; her HP drain, ring healing and C4 and C6 follow the heal and drain events the engine already had. She made fifteen teams supported. Hakushin Ring (an electro reaction the holder triggers on field gives party members of electro and of the reaction's other element that element's DMG bonus, with an ICD per element; lunar-charged and stellar-conduct are noted for when the engine emits them) made seven. Sacrificial Jade (HP% and EM after 5 s off field, ending after 10 s on field; `stacks=1` starts with the buff, any other param is an error) blocked 401 teams but made none supported by itself: each of them has other blockers. Merged, CI compared every supported team's library build and every probe: 319 of 319 pass (Gscouter at `14e187f`). Their builds:
+
+| Team | Build | Iterations | Team | Worst character |
+|---|---|---|---|---|
+| Kuki / Fischl / Xingqiu / Nahida | library (Kuki C6) | 1,000 | −0.01% ± 0.10 | Kuki −0.16% ± 0.44 |
+| | Kuki C1 (probe) | 1,000 | −0.14% ± 0.15 | Xingqiu −0.20% ± 0.25 |
+| | Kuki C4 (probe) | 1,000 | −0.01% ± 0.10 | Kuki −0.16% ± 0.44 |
+| | Kuki C5 (probe) | 1,000 | −0.01% ± 0.10 | Kuki −0.16% ± 0.44 |
+| Klee / Yelan / Kuki / Nahida (largest of Kuki's fifteen) | library | 1,000 | +0.28% ± 0.29 | Nahida +0.49% ± 0.42 |
+| Lisa / Xingqiu / Fischl / Jean (largest of the ring's seven) | library (R5) | 1,000 | −0.16% ± 0.22 | Fischl −0.24% ± 0.37 |
+| | Hakushin Ring R1 (probe, electro-charged) | 1,000 | −0.16% ± 0.22 | Fischl −0.24% ± 0.37 |
+| Lisa / Xingqiu / Nahida / Zhongli | Hakushin Ring R5 on Lisa (probe, hyperbloom) | 1,000 | −0.04% ± 0.22 | Nahida +0.20% ± 0.41 |
+| Lisa / Fischl / Rosaria / Nahida | Hakushin Ring R1 on Lisa (probe, superconduct) | 1,000 | −0.05% ± 0.08 | Fischl −0.15% ± 0.10 |
+| Bennett / Nahida / Yoimiya / Xingqiu | Sacrificial Jade R1 on Nahida (probe) | 1,000 | −0.08% ± 0.22 | Bennett −0.44% ± 0.47 |
+| | Sacrificial Jade R1, `stacks=1` (probe) | 1,000 | −0.07% ± 0.22 | Bennett −0.42% ± 0.47 |
+| Klee / Fischl / Xingqiu / Bennett | Sacrificial Jade R5 on Klee (probe) | 1,000 | −0.03% ± 0.25 | Bennett −0.42% ± 0.58 |
+
+On Kuki / Fischl / Xingqiu / Nahida the C5 probe gives gcsim the same DPS as her C6 library build, so her C6 changes nothing on that team.
+
+The runner also classifies every library team. Of 4,570, 278 are supported and 4,292 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
 |---|---|
 | Characters | Xilonen 482, Xianyun 314, Mavuika 277, Neuvillette 254, Durin 241, Citlali 221, Emilie 214, Ororon 213, Nicole 191, Arlecchino 184 |
-| Weapons | Sacrificial Jade 401, Oathsworn Eye 352, Finale of the Deep 336, Chain Breaker 226, Hakushin Ring 216, Prototype Amber 211 |
+| Weapons | Oathsworn Eye 352, Finale of the Deep 336, Chain Breaker 226, Prototype Amber 211, Cinnabar Spindle 141, Fading Twilight 107 |
 | Sets | Ocean-Hued Clam 391, Obsidian Codex 385, Celestial Gift 332, Fragment of Harmonic Whimsy 283, Long Night's Oath 257, Unfinished Reverie 250 |
 | Built-ins | `set_player_pos` 45, `set_on_tick` 1 |
 | Actions of ported characters | plunges without Xianyun 69, Xingqiu's charge 3, Diona's and Yoimiya's aim 2 each |
-| Constellations not ported | Nahida C2 and C6, 19; Chiori C6, 12; Jean C4, 7; Wriothesley C1 and C6, 7; Klee C1, C2 and C6, 7; Yae Miko C1 and C6, 6; Zhongli C2 and C6, 5 |
+| Constellations not ported | Nahida C2 and C6, 19; Chiori C6, 12; Jean C4, 7; Wriothesley C1 and C6, 7; Klee C1, C2 and C6, 7; Yae Miko C1, C2 and C6, 7; Zhongli C2 and C6, 5 |
 | Other | two Hexerei characters 394 (Fischl with Mona, Sucrose, Razor and the others) |
 
 A team is usually blocked by five to ten items at once, so porting the item that blocks the most teams rarely makes a team supported by itself: the ten items that blocked the most teams at the start of Phase 2 together made none supported. The report also lists the teams one or two items from support, which is how the teams above were reached.
@@ -270,7 +289,7 @@ What it would take to score Gscouter's results, in phases: `docs/roadmap.md`.
 
 ## What it does not do
 
-- Only the abilities these teams use, these weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra, Deathmatch, The Alley Flash, Harbinger of Dawn, the five Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane, Xiphos' Moonlight, The Catch, Rust, Serpent Spine, Lion's Roar, The Viridescent Hunt, Wandering Evenstar, The Widsith, Thrilling Tales of Dragon Slayers) and sets (Shimenawa, Emblem, Tenacity, Instructor, Noblesse Oblige, Golden Troupe, Scroll of the Hero of Cinder City, Marechaussee Hunter, Viridescent Venerer, Crimson Witch of Flames, Song of Days Past, Deepwood Memories, Archaic Petra, Gilded Dreams, Flower of Paradise Lost, Thundering Fury), and every resonance. Every other character, weapon, set, action, constellation, resonance, built-in or target option is an error that names it (`unsupported: <what> <name>`), never a silent difference. Each character declares the highest constellation it implements (Zhongli C1, Escoffier, Nahida, Chiori, Jean, Wriothesley and Yae Miko C0, the others C6; Sucrose's Hexerei bonuses need a second Hexerei character, which is an error).
+- Only the abilities these teams use, these weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra, Deathmatch, The Alley Flash, Harbinger of Dawn, the five Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane, Xiphos' Moonlight, The Catch, Rust, Serpent Spine, Lion's Roar, The Viridescent Hunt, Wandering Evenstar, The Widsith, Thrilling Tales of Dragon Slayers, Hakushin Ring, Sacrificial Jade) and sets (Shimenawa, Emblem, Tenacity, Instructor, Noblesse Oblige, Golden Troupe, Scroll of the Hero of Cinder City, Marechaussee Hunter, Viridescent Venerer, Crimson Witch of Flames, Song of Days Past, Deepwood Memories, Archaic Petra, Gilded Dreams, Flower of Paradise Lost, Thundering Fury), and every resonance. Every other character, weapon, set, action, constellation, resonance, built-in or target option is an error that names it (`unsupported: <what> <name>`), never a silent difference. Each character declares the highest constellation it implements (Zhongli C1, Escoffier, Nahida, Chiori, Jean, Wriothesley and Yae Miko C0, the others C6; Sucrose's Hexerei bonuses need a second Hexerei character, which is an error).
 - One target. The player stands at the origin facing it and never moves; hits are taken to land, except where gcsim's hitbox decides it for a target at Gscouter's distance (Diluc's burst, whose ticks fly away from the player: a box against the target's circle, `Sim::box_hits`). Gadgets are hit by gcsim's patterns (circles, fans and boxes) where an attack has one; a pyro or electro attack without one that could reach a dendro core is an error. The player is hit by the self damage of burning, bloom, burgeon and hyperbloom when their area reaches it (bloom's and burgeon's do at Gscouter's distance), which shields absorb and the rest drains from the active character; Diluc's C2 (being hit) is an error. `target type=`, particle drops, `hurt`, random substats and `set_on_tick` are errors, as are the position built-ins.
 - Of the reactions, all but the lunar ones: vaporize, melt, overload, electro-charged, superconduct, freeze and shatter, swirl, crystallize, burning, quicken, aggravate, spread, bloom, burgeon and hyperbloom. Of reactions on the player, only swirls (the only ones gcsim's characters here cause); no Nightsoul, no HP debt, no fillers (Gscouter's `steady` package).
 - Tags (gcsl's `.tags` and `.<char>.tags`) read 0, as gcsim's do when unset, except the enemy's Conductive stacks (Lisa's); the tags ported content sets that the engine does not keep are errors.
@@ -300,6 +319,8 @@ go run . -config ../configs/team-looped.txt -iter 10000 -warmup 150 -j 4 -abil  
 go run ./compare -gscouter ../../Gscouter -json compare.json -md compare.md      # the whole library
 go run ./compare -gscouter ../../Gscouter -teams hutao-yelan-bennett-xingqiu     # one team
 go run ./compare -gscouter ../../Gscouter -only variants -shard 3/40             # the variants of one part of the teams
+go run ./compare -gscouter ../../Gscouter -census                                # classify every team, run nothing
+go run ./compare -gscouter ../../Gscouter -gcsim-only -teams <id,id>             # gcsim alone, into the cache
 go run ./gendata                                                                 # regenerate engine/src/data.rs and engine/src/gcsimdata
 go run ./dump ../configs/team-looped.txt                                         # base stats as gcsim sets them up
 ```
