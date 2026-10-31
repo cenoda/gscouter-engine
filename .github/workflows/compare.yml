@@ -33,7 +33,8 @@ env:
   GSCOUTER_COMMIT: 14e187fab1fb0695f527347f419aad977e27a92c
   PARTS: 40
   PER_DAY: 8
-  GCSIM_CACHE: ${{ github.workspace }}/../gcsim-cache
+  # inside the workspace: actions/cache refuses paths with ".."
+  GCSIM_CACHE: ${{ github.workspace }}/gcsim-cache
 
 jobs:
   plan:
