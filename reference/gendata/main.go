@@ -52,10 +52,10 @@ const gcsimModule = "github.com/genshinsim/gcsim"
 var exportRoots = []string{"internal/characters", "internal/weapons", "internal/artifacts"}
 
 // and these packages alone
-var exportPackages = []string{"pkg/core", "pkg/core/attacks", "pkg/core/combat"}
+var exportPackages = []string{"pkg/core", "pkg/core/attacks", "pkg/core/combat", "internal/template/crystallize"}
 
 // corePackages are core packages written as a module of their own.
-var corePackages = map[string]string{"pkg/core/combat": "combat"}
+var corePackages = map[string]string{"pkg/core/combat": "combat", "internal/template/crystallize": "crystallize"}
 
 func main() {
 	engine := flag.String("engine", "../engine", "the engine's directory")

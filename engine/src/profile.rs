@@ -170,6 +170,8 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
                 count[d.element as usize] += 1;
             }
         }
+        // geo resonance is written (sim.rs) but no config the engine runs can
+        // have two geo characters to check it on, so it stays an error
         for (e, name) in [(6, "anemo"), (7, "geo")] {
             if count[e] >= 2 {
                 errs.push(format!("unsupported: resonance {name}"));

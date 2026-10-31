@@ -1,5 +1,5 @@
 //! Zhongli's normal attacks, skill (pressed and held), steles and Jade
-//! Shield, A4 and C1, from gcsim's internal/characters/zhongli.
+//! Shield, A1, A4 and C1, from gcsim's internal/characters/zhongli.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::zhongli as g;
@@ -14,11 +14,16 @@ pub struct State {
     max_stele: i32,
     /// The snapshot of the stele's resonance ticks.
     stele_snap: AttackEvent,
+    /// gcsim's Tags["shielded"] and Tags["a1"]: the Jade Shield is up, and
+    /// the hits it took (A1's stacks).
+    shielded: bool,
+    a1: i32,
 }
 
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
 const STELE: ModKey = ModKey::new("zhongli-stele");
 const JADE_SHIELD: ModKey = ModKey::new("zhongli-jade-shield");
+const A1: ModKey = ModKey::new("zhongli-a1");
 /// The Jade Shield shreds every element, in gcsim's order.
 const SHRED: [(ModKey, Element); 8] = [
     (ModKey::new("zhongli-pyro"), Element::Pyro),
@@ -49,7 +54,42 @@ impl Character for Char {
             stele_count: 0,
             max_stele: if cs.cons >= 1 { 2 } else { 1 },
             stele_snap: AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Geo, 0.0, 0.0), 0),
+            shielded: false,
+            a1: 0,
         }
+    }
+
+    fn init(s: &mut Sim, ci: usize) {
+        if s.chars[ci].ascension >= 1 {
+            s.shield_bonus_mods.push(ShieldBonusMod { key: A1, owner: Owner::Char(ci as u8), expiry: -1 });
+        }
+    }
+
+    /// A1: shield strength +5% for each hit the Jade Shield took, up to 5.
+    fn shield_bonus(s: &Sim, ci: usize, _: ModKey) -> (f64, bool) {
+        let st = s.st::<State>(ci);
+        if !st.shielded {
+            return (0.0, false);
+        }
+        (st.a1 as f64 * 0.05, true)
+    }
+
+    /// The Jade Shield took a hit (its C6 heal is not ported).
+    fn shield_damaged(s: &mut Sim, ci: usize, _: ModKey, broken: bool) {
+        let st = s.st_mut::<State>(ci);
+        if broken {
+            st.shielded = false;
+            st.a1 = 0;
+        }
+        if st.a1 < 5 {
+            st.a1 += 1;
+        }
+    }
+
+    fn shield_expired(s: &mut Sim, ci: usize, _: ModKey) {
+        let st = s.st_mut::<State>(ci);
+        st.shielded = false;
+        st.a1 = 0;
     }
 
     fn unsupported(a: Action, p: &Params) -> Option<String> {
@@ -61,7 +101,7 @@ impl Character for Char {
     }
 
     fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {
-        let shielded = || Some(Ok(Num::Int(s.shields.iter().any(|x| x.owner as usize == ci && x.key == JADE_SHIELD) as i64)));
+        let shielded = || Some(Ok(Num::Int(s.st::<State>(ci).shielded as i64)));
         match (fields[0].as_str(), fields.get(1).map(|f| f.as_str())) {
             ("shielded", _) | ("tags", Some("shielded")) => shielded(),
             _ => None,
@@ -200,15 +240,17 @@ fn particle_cb(s: &mut Sim, ci: usize) {
 
 fn jade_shield(s: &mut Sim, ci: usize) {
     let f = s.f;
-    s.shields.retain(|x| !(x.owner as usize == ci && x.key == JADE_SHIELD));
-    s.shields.push(Shield { owner: ci as u8, key: JADE_SHIELD, expiry: f + 1200 });
+    let lvl = s.talent(ci, 1);
+    let hp = g::SHIELD_BASE[lvl] + g::SHIELD_PER[lvl] * s.max_hp(ci);
+    s.add_shield(Shield { owner: ci as u8, key: JADE_SHIELD, typ: ShieldType::ZhongliJadeShield, target: -1, ele: Element::Geo, hp, expiry: f + 1200, em_bonus: 0.0 });
+    s.st_mut::<State>(ci).shielded = true;
     // gcsim queues a shred every 18 frames up to 1200 at once; a chain of
     // tasks runs on the same frames
     shred(s, ci, 0);
 }
 
 fn shred(s: &mut Sim, ci: usize, i: i32) {
-    if s.shields.iter().any(|x| x.owner as usize == ci && x.key == JADE_SHIELD) {
+    if s.st::<State>(ci).shielded {
         for (key, e) in SHRED {
             s.enemy_add_resist(key, e, -0.2, 60);
         }

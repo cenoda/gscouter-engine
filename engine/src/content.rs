@@ -42,8 +42,10 @@ pub enum EventKind {
     EnergyBurst,
     EnemyHit,
     PlayerHit,
+    Shielded,
+    ShieldBreak,
 }
-pub const N_EVENTS: usize = 12;
+pub const N_EVENTS: usize = 14;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -76,6 +78,10 @@ pub enum Event<'a> {
     EnemyHit(&'a AttackEvent),
     /// OnPlayerHit: the active character was hit.
     PlayerHit { on: usize },
+    /// OnShielded: a shield was added (or replaced one of its type).
+    Shielded(&'a crate::sim::Shield),
+    /// OnShieldBreak: a shield broke or expired.
+    ShieldBreak(&'a crate::sim::Shield),
 }
 
 impl Event<'_> {
@@ -90,6 +96,8 @@ impl Event<'_> {
             Event::Heal { .. } => EventKind::Heal,
             Event::Drain { .. } => EventKind::Drain,
             Event::PlayerHit { .. } => EventKind::PlayerHit,
+            Event::Shielded(_) => EventKind::Shielded,
+            Event::ShieldBreak(_) => EventKind::ShieldBreak,
             Event::ParticleReceived => EventKind::ParticleReceived,
             Event::EnergyBurst { .. } => EventKind::EnergyBurst,
             Event::EnemyHit(_) => EventKind::EnemyHit,
@@ -182,6 +190,16 @@ pub trait Character {
     /// A gadget of its ticked, `timer` ticks after it was added (it may
     /// have just expired and be gone).
     fn gadget_tick(_s: &mut Sim, _ci: usize, _id: u8, _timer: i32) {}
+    /// A shield of its took damage (gcsim's OnDamage of its own shield
+    /// type), and whether that broke it.
+    fn shield_damaged(_s: &mut Sim, _ci: usize, _key: ModKey, _broken: bool) {}
+    /// A shield of its expired (gcsim's OnExpire).
+    fn shield_expired(_s: &mut Sim, _ci: usize, _key: ModKey) {}
+    /// A shield bonus mod it owns: the bonus, and whether gcsim's
+    /// ShieldBonus then drops the mod (its `done`).
+    fn shield_bonus(_s: &Sim, _ci: usize, _key: ModKey) -> (f64, bool) {
+        (0.0, false)
+    }
 }
 
 /// gcsim's template NextQueueItemIsValid: swords and polearms charge
@@ -331,6 +349,9 @@ macro_rules! chars {
             pub fn condition(k: CharKind, s: &Sim, ci: usize, f: &[String]) -> Option<Result<Num, String>> { match k { $(CharKind::$kind => $m::Char::condition(s, ci, f)),* } }
             pub fn construct_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::construct_expired(s, ci, key)),* } }
             pub fn gadget_tick(k: CharKind, s: &mut Sim, ci: usize, id: u8, timer: i32) { match k { $(CharKind::$kind => $m::Char::gadget_tick(s, ci, id, timer)),* } }
+            pub fn shield_damaged(k: CharKind, s: &mut Sim, ci: usize, key: ModKey, broken: bool) { match k { $(CharKind::$kind => $m::Char::shield_damaged(s, ci, key, broken)),* } }
+            pub fn shield_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_expired(s, ci, key)),* } }
+            pub fn shield_bonus(k: CharKind, s: &Sim, ci: usize, key: ModKey) -> (f64, bool) { match k { $(CharKind::$kind => $m::Char::shield_bonus(s, ci, key)),* } }
         }
     };
 }

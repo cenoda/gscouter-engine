@@ -104,8 +104,8 @@ impl Character for Char {
         let particle = if level == 0 { CB_PARTICLE_2 } else { CB_PARTICLE_3 };
         s.queue_attack(ai, c2 | particle, hitmark, hitmark);
         let f = s.f;
-        s.shields.retain(|x| !(x.owner as usize == ci && x.key == SHIELD));
-        s.shields.push(Shield { owner: ci as u8, key: SHIELD, expiry: f + hitmark });
+        let hp = g::SKILL_SHIELD_PCT[lvl] * s.max_hp(ci) + g::SKILL_SHIELD_FLAT[lvl];
+        s.add_shield(Shield { owner: ci as u8, key: SHIELD, typ: ShieldType::CandaceSkill, target: ci as i8, ele: Element::Hydro, hp, expiry: f + hitmark, em_bonus: 0.0 });
         let cd = if s.chars[ci].cons >= 4 { g::SKILL_CD[0] } else { g::SKILL_CD[level] };
         s.set_cd_with_delay(ci, Action::Skill, cd, g::SKILL_CD_STARTS[level]);
         let t = &g::SKILL_FRAMES[level];

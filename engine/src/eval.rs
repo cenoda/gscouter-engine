@@ -29,6 +29,7 @@ enum Builtin {
     Cos,
     Asin,
     Acos,
+    PickUpCrystallize,
     Unsupported(&'static str),
 }
 
@@ -49,7 +50,7 @@ const BUILTINS: &[(&str, Builtin)] = &[
     ("set_particle_delay", Builtin::SetParticleDelay),
     ("kill_target", Builtin::Unsupported("kill_target")),
     ("is_target_dead", Builtin::Unsupported("is_target_dead")),
-    ("pick_up_crystallize", Builtin::Unsupported("pick_up_crystallize")),
+    ("pick_up_crystallize", Builtin::PickUpCrystallize),
     ("set_starting_verdant_dew", Builtin::Unsupported("set_starting_verdant_dew")),
     ("movement", Builtin::Movement),
     ("sin", Builtin::Sin),
@@ -433,6 +434,18 @@ impl<'s> Eval<'s> {
                     self.sim.add_delay(f as i32);
                 }
                 Ok(Value::Null)
+            }
+            Builtin::PickUpCrystallize => {
+                let vs = self.args(args, line, &["string"], env)?;
+                let Value::Str(name) = &vs[0] else { unreachable!() };
+                let ele = match &**name {
+                    "any" => None,
+                    n => match crate::gcsl::element_key(n) {
+                        Some(e) => Some(e),
+                        None => return err(format!("ln{line}: pick_up_crystallize argument element {n} is not a valid element")),
+                    },
+                };
+                Ok(Value::Num(Num::Int(self.sim.pick_up_crystallize(ele) as i64)))
             }
             Builtin::Type => {
                 if args.len() != 1 {

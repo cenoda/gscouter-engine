@@ -7,6 +7,7 @@
 
 pub mod icd;
 pub mod combat;
+pub mod crystallize;
 pub mod artifacts;
 pub mod chars;
 pub mod weapons;

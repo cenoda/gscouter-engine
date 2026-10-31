@@ -159,6 +159,7 @@ pub const PYRO_RESONANCE: ModKey = ModKey::new("pyro-res");
 pub const HYDRO_RESONANCE: ModKey = ModKey::new("hydro-res-hpp");
 pub const CRYO_RESONANCE: ModKey = ModKey::new("cryo-res");
 const LUNAR_BLOOM: ModKey = ModKey::new("lunarbloom-enabled");
+pub const GEO_RESONANCE: ModKey = ModKey::new("geo-res");
 pub const DENDRO_RESONANCE: ModKey = ModKey::new("dendro-res-50");
 const DENDRO_RESONANCE_30: ModKey = ModKey::new("dendro-res-30");
 const DENDRO_RESONANCE_20: ModKey = ModKey::new("dendro-res-20");
@@ -373,6 +374,13 @@ pub enum Task {
     PlayerIcdResetDmg { i: u16 },
     /// An attack that reaches only gadgets (swirl's aoe).
     GadgetAttack { slot: u16 },
+    /// A crystallize shard appears, of an element by a character.
+    SpawnShard { actor: u8, ele: Element },
+    /// The shield stats collector's ShieldBonus at the end of the frame
+    /// a player is hit.
+    ShieldTrack,
+    /// Geo resonance's check of the active character's shield.
+    GeoRes { src: i32 },
 }
 
 // ---------------------------------------------------------------- actions
@@ -935,11 +943,63 @@ pub struct Gadget {
 /// The owner of dendro cores, which belong to no character.
 pub const CORE: u8 = u8::MAX;
 
+/// gcsim's shield.Type, for the shields the engine makes: a new shield
+/// replaces the one of its type with the same target.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShieldType {
+    Crystallize,
+    ZhongliJadeShield,
+    CandaceSkill,
+}
+
+/// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
+/// its own element.
 #[derive(Clone, Copy, Debug)]
 pub struct Shield {
     pub owner: u8,
     pub key: ModKey,
+    pub typ: ShieldType,
+    /// The character it protects, or -1 for whoever is active.
+    pub target: i8,
+    pub ele: Element,
+    pub hp: f64,
     pub expiry: i32,
+    /// Crystallize's bonus from its maker's EM.
+    pub em_bonus: f64,
+}
+
+impl Shield {
+    /// gcsim's Tmpl.OnDamage: the damage left over and whether the shield
+    /// holds. (Its geo factor tests the damage's element, as gcsim's does.)
+    fn on_damage(&mut self, dmg: f64, ele: Element, bonus: f64) -> (f64, bool) {
+        let mut same = if ele == self.ele { 2.5 } else { 1.0 };
+        if ele == Element::Geo {
+            same = 1.5;
+        }
+        let block = self.hp * same * (1.0 + bonus + self.em_bonus);
+        self.hp = (self.hp - self.hp * (dmg / block)).max(0.0);
+        ((dmg - block).max(0.0), self.hp != 0.0)
+    }
+}
+
+/// A shield bonus mod (gcsim's AddShieldBonusMod): geo resonance's from
+/// the fight, or one a character owns.
+#[derive(Clone, Copy, Debug)]
+pub struct ShieldBonusMod {
+    pub key: ModKey,
+    pub owner: Owner,
+    pub expiry: i32,
+}
+
+/// A crystallize shard (gcsim's crystallize.Shard): picked up, it gives
+/// the shield it carries for 15.1 s.
+#[derive(Clone, Copy, Debug)]
+pub struct Shard {
+    pub src: i32,
+    /// The frame it is gone (15 s after it appeared).
+    pub expiry: i32,
+    pub earliest_pickup: i32,
+    pub shield: Shield,
 }
 
 pub struct Sim {
@@ -997,7 +1057,16 @@ pub struct Sim {
     pub constructs: Vec<Construct>,
     /// Gadgets, in the order they were added.
     pub gadgets: Vec<Gadget>,
+    /// Crystallize shards. gcsim keeps them among the gadgets; nothing
+    /// reaches them but pick_up_crystallize, so their order among the
+    /// others does not matter.
+    pub shards: Vec<Shard>,
     pub shields: Vec<Shield>,
+    pub shield_bonus_mods: Vec<ShieldBonusMod>,
+    /// Geo resonance: the frame its ticker started, -1 without it.
+    pub geo_res_src: i32,
+    /// The first frame a shield or a shard expires (i32::MAX for none).
+    next_expiry: i32,
     /// Weapon infusions by character (gcsim's infusion handler).
     pub infusion: [Option<Infusion>; 4],
     /// Statuses of the whole fight (gcsim's Status), with their expiry.
@@ -1087,7 +1156,11 @@ impl Sim {
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
             gadgets: Vec::with_capacity(4),
+            shards: Vec::with_capacity(4),
             shields: Vec::with_capacity(4),
+            shield_bonus_mods: Vec::new(),
+            geo_res_src: -1,
+            next_expiry: i32::MAX,
             infusion: [None; 4],
             statuses: Vec::new(),
             flags: Vec::new(),
@@ -1180,8 +1253,11 @@ impl Sim {
         // resonance; profile::config rejects the ones not implemented
         if n >= 4 {
             let count = |e: Element| self.chars.iter().filter(|c| c.element == e).count();
-            let (pyro, hydro, electro, cryo, dendro) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro), count(Element::Cryo), count(Element::Dendro));
+            let (pyro, hydro, electro, cryo, dendro, geo) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro), count(Element::Cryo), count(Element::Dendro), count(Element::Geo));
             for c in &mut self.chars {
+                if geo >= 2 {
+                    c.mods.push(Mod::owned(GEO_RESONANCE, ModKind::Attack, Owner::Core, st::NONE, false, false, -1));
+                }
                 if dendro >= 2 {
                     c.mods.push(Mod::stat(DENDRO_RESONANCE, st::EM, 50.0, false, false, -1));
                 }
@@ -1201,6 +1277,15 @@ impl Sim {
             self.dendro_res = dendro >= 2;
             if electro >= 2 || dendro >= 2 {
                 self.subscribe(EventKind::Reaction, Owner::Core);
+            }
+            // geo resonance: shield strength +15%, and DMG and geo shred
+            // while shielded; its ticker starts with the first swap or
+            // shield
+            if geo >= 2 {
+                self.shield_bonus_mods.push(ShieldBonusMod { key: GEO_RESONANCE, owner: Owner::Core, expiry: -1 });
+                self.geo_res_src = 0;
+                self.subscribe(EventKind::Shielded, Owner::Core);
+                self.subscribe(EventKind::ShieldBreak, Owner::Core);
             }
         }
         // Core.Init: energy from normal attacks, then the characters' inits
@@ -1291,6 +1376,9 @@ impl Sim {
     fn core_event(&mut self, e: &Event) {
         match *e {
             Event::EnemyDamage(ev) => {
+                if self.geo_res_src >= 0 && self.flag(GEO_RESONANCE) == 1.0 && self.player.active == ev.info.actor {
+                    self.enemy_add_resist(GEO_RESONANCE, Element::Geo, -0.2, 15 * 60);
+                }
                 // SetupMisc: superconduct shreds physical
                 if ev.info.tag == AttackTag::SuperconductDamage {
                     self.enemy_add_resist(SUPERCONDUCT_SHRED, Element::Physical, -0.4, 12 * 60);
@@ -1337,9 +1425,17 @@ impl Sim {
                 }
             }
             Event::Swap { .. } => {
+                if self.geo_res_src >= 0 {
+                    self.geo_res_src = self.f;
+                    self.geo_res_update(self.f);
+                }
                 for (i, c) in self.chars.iter().enumerate() {
                     self.na_chance[i] = if c.class == WeaponClass::Sword { 0.10 } else { 0.0 };
                 }
+            }
+            Event::Shielded(_) | Event::ShieldBreak(_) => {
+                self.geo_res_src = self.f;
+                self.geo_res_update(self.f);
             }
             _ => {}
         }
@@ -1696,6 +1792,11 @@ impl Sim {
                     self.hit_gadgets(&ev);
                 }
             }
+            Task::SpawnShard { actor, ele } => self.spawn_shard(actor as usize, ele),
+            Task::ShieldTrack => {
+                self.shield_bonus();
+            }
+            Task::GeoRes { src } => self.geo_res_update(src),
             Task::PlayerIcdResetDmg { i } => {
                 let s = &mut self.player_icd[i as usize];
                 s.dmg_count = 0;
@@ -1866,6 +1967,9 @@ impl Sim {
                     let a = &self.enemy.aura;
                     if m.key == CRYO_RESONANCE && (a.get(AURA_CRYO) > ZERO_DUR || a.get(AURA_FROZEN) > ZERO_DUR) {
                         ev.stats[st::CR] += 0.15;
+                    }
+                    if m.key == GEO_RESONANCE && self.flag(GEO_RESONANCE) == 1.0 && self.player.active as usize == ci {
+                        ev.stats[st::DMGP] += 0.15;
                     }
                 }
             }
@@ -2552,6 +2656,11 @@ impl Sim {
     fn player_hit(&mut self, mut ev: AttackEvent) {
         let active = self.player.active as usize;
         self.emit(Event::PlayerHit { on: active });
+        // the shield stats collector looks at the shields at the end of
+        // the frame (its ShieldBonus drops the mods that are done)
+        if !self.shield_bonus_mods.is_empty() {
+            self.add_task(Task::ShieldTrack, 0);
+        }
         let s = &mut ev.stats;
         let st_ele = ev.info.element.dmg_stat();
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
@@ -2571,12 +2680,181 @@ impl Sim {
         if !ev.info.sim {
             damage *= self.player_group_dmg_mult(&ev.info);
         }
-        if !self.shields.is_empty() {
-            self.unsupported("damage to a shielded player");
+        let left = self.shields_on_damage(active, active, damage, ev.info.element);
+        if left > 0.0 {
+            self.modify_hp(active, -left);
+            self.emit(Event::Drain { on: active, amount: left, external: true });
+        }
+    }
+
+    /// gcsim's Shields.Add: replaces the shield of its type and target.
+    pub fn add_shield(&mut self, sh: Shield) {
+        match self.shields.iter().rposition(|x| x.typ == sh.typ && x.target == sh.target) {
+            Some(i) => self.shields[i] = sh,
+            None => self.shields.push(sh),
+        }
+        self.update_next_expiry();
+        self.emit(Event::Shielded(&sh));
+        // the shield stats collector, last to subscribe
+        if !self.shield_bonus_mods.is_empty() {
+            self.shield_bonus();
+        }
+    }
+
+    fn update_next_expiry(&mut self) {
+        let shields = self.shields.iter().map(|s| s.expiry).filter(|&e| e >= 0).min().unwrap_or(i32::MAX);
+        let shards = self.shards.first().map_or(i32::MAX, |sh| sh.expiry);
+        self.next_expiry = shields.min(shards);
+    }
+
+    /// gcsim's CharacterIsShielded.
+    pub fn is_shielded(&self, ci: usize) -> bool {
+        let active = self.player.active as usize;
+        self.shields.iter().any(|s| (s.target == -1 && ci == active) || s.target as isize == ci as isize)
+    }
+
+    /// gcsim's ShieldBonus: the sum of the mods in effect; a mod whose
+    /// amount says it is done is dropped, as are expired ones.
+    pub fn shield_bonus(&mut self) -> f64 {
+        let f = self.f;
+        let mut amt = 0.0;
+        let mut k = 0;
+        while k < self.shield_bonus_mods.len() {
+            let m = self.shield_bonus_mods[k];
+            let keep = if m.expiry > f || m.expiry == -1 {
+                let (a, done) = match m.owner {
+                    Owner::Char(o) => crate::chars::dispatch::shield_bonus(self.chars[o as usize].kind, self, o as usize, m.key),
+                    _ => (0.15, true), // geo resonance
+                };
+                amt += a;
+                !done
+            } else {
+                false
+            };
+            if keep {
+                k += 1;
+            } else {
+                self.shield_bonus_mods.remove(k);
+            }
+        }
+        amt
+    }
+
+    /// gcsim's Shields.OnDamage: every shield on the character hit takes
+    /// the damage; the least left over goes through.
+    fn shields_on_damage(&mut self, ci: usize, active: usize, dmg: f64, ele: Element) -> f64 {
+        if self.shields.is_empty() {
+            return dmg;
+        }
+        let bonus = self.shield_bonus();
+        let mut taken_min = dmg;
+        let mut broken: Vec<Shield> = Vec::new();
+        let mut k = 0;
+        while k < self.shields.len() {
+            let t = self.shields[k].target;
+            if (t == -1 && ci != active) || (t != -1 && t as usize != ci) {
+                k += 1;
+                continue;
+            }
+            let (taken, ok) = self.shields[k].on_damage(dmg, ele, bonus);
+            taken_min = taken_min.min(taken);
+            let sh = self.shields[k];
+            if ok {
+                k += 1;
+            } else {
+                self.shields.remove(k);
+                broken.push(sh);
+            }
+            if sh.typ != ShieldType::Crystallize && sh.typ != ShieldType::CandaceSkill {
+                crate::chars::dispatch::shield_damaged(self.chars[sh.owner as usize].kind, self, sh.owner as usize, sh.key, !ok);
+            }
+        }
+        if !broken.is_empty() {
+            self.update_next_expiry();
+        }
+        for sh in &broken {
+            self.emit(Event::ShieldBreak(sh));
+        }
+        taken_min
+    }
+
+    /// Shields.Tick: shields expire on their frame.
+    fn tick_shields(&mut self) {
+        let f = self.f;
+        let mut k = 0;
+        let mut expired: Vec<Shield> = Vec::new();
+        while k < self.shields.len() {
+            if self.shields[k].expiry == f {
+                let sh = self.shields.remove(k);
+                if sh.typ == ShieldType::ZhongliJadeShield {
+                    crate::chars::dispatch::shield_expired(self.chars[sh.owner as usize].kind, self, sh.owner as usize, sh.key);
+                }
+                expired.push(sh);
+            } else {
+                k += 1;
+            }
+        }
+        self.update_next_expiry();
+        for sh in &expired {
+            self.emit(Event::ShieldBreak(sh));
+        }
+    }
+
+    /// addCrystallizeShard's task: a shard with a crystallize shield from
+    /// the character's level and EM now, at a random point beyond the
+    /// enemy (which nothing in the engine reads, so it is not drawn). A
+    /// fourth shard removes the oldest.
+    fn spawn_shard(&mut self, ci: usize, ele: Element) {
+        let em = self.stats(ci)[st::EM];
+        let lvl = (self.chars[ci].level - 1).clamp(0, 99) as usize;
+        let f = self.f;
+        let shield = Shield {
+            owner: ci as u8,
+            key: ModKey::new("crystallize"),
+            typ: ShieldType::Crystallize,
+            target: -1,
+            ele: if ele == Element::Frozen { Element::Cryo } else { ele },
+            hp: crate::gcsimdata::crystallize::SHIELD_BASE_HP[lvl],
+            expiry: -1,
+            em_bonus: (40.0 / 9.0) * (em / (1400.0 + em)),
+        };
+        if self.shards.len() == 3 {
+            let oldest = (0..3).min_by_key(|&i| self.shards[i].src).unwrap();
+            self.shards.remove(oldest);
+        }
+        self.shards.push(Shard { src: f, expiry: f + 15 * 60, earliest_pickup: f + 31, shield });
+        self.update_next_expiry();
+    }
+
+    /// pick_up_crystallize: the first shard of the element (any with
+    /// None) that can be picked up gives its shield for 15.1 s.
+    pub fn pick_up_crystallize(&mut self, ele: Option<Element>) -> bool {
+        let f = self.f;
+        for k in 0..self.shards.len() {
+            let sh = &self.shards[k];
+            if ele.is_some_and(|e| e != sh.shield.ele) || f < sh.earliest_pickup {
+                continue;
+            }
+            let mut shield = sh.shield;
+            shield.expiry = f + (15.1 * 60.0) as i32;
+            self.shards.remove(k);
+            // add_shield updates next_expiry
+            self.add_shield(shield);
+            return true;
+        }
+        false
+    }
+
+    /// updateGeoResonance: DMG +15% and geo shred for the active character
+    /// while shielded, checked on swaps, shields and every second.
+    fn geo_res_update(&mut self, src: i32) {
+        if self.geo_res_src != src {
             return;
         }
-        self.modify_hp(active, -damage);
-        self.emit(Event::Drain { on: active, amount: damage, external: true });
+        let active = self.player.active as usize;
+        let on = self.is_shielded(active);
+        self.set_flag(GEO_RESONANCE, if on { 1.0 } else { 0.0 });
+        self.queue_char_task(active, Task::GeoRes { src }, 60);
     }
 
     fn player_group_dmg_mult(&mut self, info: &AttackInfo) -> f64 {
@@ -2872,6 +3150,13 @@ impl Sim {
             return;
         }
         self.enemy.crystallize_gcd = self.f + 60;
+        let ele = match m {
+            AURA_ELECTRO => Element::Electro,
+            AURA_HYDRO => Element::Hydro,
+            AURA_PYRO => Element::Pyro,
+            _ => Element::Cryo,
+        };
+        self.add_task(Task::SpawnShard { actor: ev.info.actor, ele }, 23);
         let consumed = self.enemy.aura.reduce(m, ev.info.durability, 0.5);
         ev.info.durability = (ev.info.durability - consumed).max(0.0);
         ev.reacted = true;
@@ -3245,6 +3530,10 @@ impl Sim {
             c.normal_counter = 0;
         }
         self.emit(Event::Swap { prev, next: to });
+        // the shield stats collector, last to subscribe
+        if !self.shield_bonus_mods.is_empty() {
+            self.shield_bonus();
+        }
     }
 
     // ------------------------------------------------------------ frames
@@ -3370,6 +3659,13 @@ impl Sim {
         if !self.gadgets.is_empty() {
             self.tick_gadgets();
         }
+        // shards last the same 15 s, so they go in the order they came
+        if f >= self.next_expiry {
+            while self.shards.first().is_some_and(|sh| sh.expiry == f) {
+                self.shards.remove(0);
+            }
+            self.update_next_expiry();
+        }
         // Constructs.Tick
         let mut k = 0;
         while k < self.constructs.len() {
@@ -3387,7 +3683,9 @@ impl Sim {
         if self.player.swap_cd > 0 {
             self.player.swap_cd -= 1;
         }
-        self.shields.retain(|s| s.expiry != f);
+        if f >= self.next_expiry {
+            self.tick_shields();
+        }
         self.anim_tick();
         for i in 0..self.chars.len() {
             let c = &mut self.chars[i];
