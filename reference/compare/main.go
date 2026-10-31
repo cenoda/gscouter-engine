@@ -22,11 +22,19 @@
 //
 // Usage:
 //
-//	compare -gscouter ../Gscouter [-teams id,id] [-census] [-gcsim-only] [-only library,variants,probes] [-shard k/n] [-json out.json] [-md out.md]
+//	compare -gscouter ../Gscouter [-teams id,id] [-census] [-gcsim-only] [-only library,variants,buildspace,probes] [-shard k/n] [-json out.json] [-md out.md]
 //
 // The variants take about an hour per team, so CI compares library builds
 // and probes on every push (-only library,probes) and the variants on a
 // schedule, a few parts of the teams a day (-only variants -shard k/n).
+//
+// The build-space variants (-only buildspace; buildspace.go) change one
+// axis of one member of a supported team's library build: its
+// constellation, its refinement (1 and 5) or its weapon (others of the
+// class that the engine has), so that the builds players bring are
+// compared, not only the library's. They are many (about 40 per team) and
+// run on a schedule in parts, like the variants. A build the engine cannot
+// run is not run: it is reported as unsupported, with what it lacks.
 //
 // A weapon, set or character no supported team carries would go
 // unchecked, so the probes (probes/*.txt) put it on one: each names a
@@ -76,7 +84,8 @@ var (
 	teamsFlag   = flag.String("teams", "", "comma-separated team ids (default: the whole library)")
 	censusOnly  = flag.Bool("census", false, "only classify teams as supported or not; run nothing")
 	noVariants  = flag.Bool("no-variants", false, "compare library builds and probes only (same as -only library,probes)")
-	onlyFlag    = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, probes")
+	onlyFlag    = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, buildspace, probes")
+	bsWeapons   = flag.Int("buildspace-weapons", 2, "build space: other weapons of the class per member, chosen by a hash of team, member and weapon (0: every one the engine has)")
 	dryRun      = flag.Bool("dry-run", false, "list the builds that would be compared, and compare none")
 	shardFlag   = flag.String("shard", "", "k/n: compare only the k-th of n parts of the teams that have builds to compare (k from 0); the census still covers every team")
 	iter0       = flag.Int("iter", 1000, "iterations of the first batch")
@@ -101,6 +110,8 @@ type variant struct {
 	// force uses every burst without its readiness check, so that it
 	// waits for energy.
 	force bool
+	// change is the axis a build-space build changes.
+	change *BuildChange
 }
 
 // op scales a stat in every `add stats` line, then adds to the last one.
@@ -111,16 +122,16 @@ type op struct {
 }
 
 var variants = []variant{
-	{"er-0", "no ER from artifacts", []op{{"er", 0, 0}}, false},
-	{"er-0-forced", "no ER from artifacts, bursts used without their readiness checks so that they wait for energy", []op{{"er", 0, 0}}, true},
-	{"er-half", "half the ER from artifacts", []op{{"er", 0.5, 0}}, false},
-	{"er-half-forced", "half the ER from artifacts, bursts used without their readiness checks", []op{{"er", 0.5, 0}}, true},
-	{"er+", "ER +30%", []op{{"er", 1, 0.3}}, false},
-	{"crit-", "CR −20%, CD −40%", []op{{"cr", 1, -0.2}, {"cd", 1, -0.4}}, false},
-	{"crit+", "CR +20%, CD +40%", []op{{"cr", 1, 0.2}, {"cd", 1, 0.4}}, false},
-	{"atk+", "ATK +40%", []op{{"atk%", 1, 0.4}}, false},
-	{"hp+", "HP +40%", []op{{"hp%", 1, 0.4}}, false},
-	{"em+", "EM +150", []op{{"em", 1, 150}}, false},
+	{"er-0", "no ER from artifacts", []op{{"er", 0, 0}}, false, nil},
+	{"er-0-forced", "no ER from artifacts, bursts used without their readiness checks so that they wait for energy", []op{{"er", 0, 0}}, true, nil},
+	{"er-half", "half the ER from artifacts", []op{{"er", 0.5, 0}}, false, nil},
+	{"er-half-forced", "half the ER from artifacts, bursts used without their readiness checks", []op{{"er", 0.5, 0}}, true, nil},
+	{"er+", "ER +30%", []op{{"er", 1, 0.3}}, false, nil},
+	{"crit-", "CR −20%, CD −40%", []op{{"cr", 1, -0.2}, {"cd", 1, -0.4}}, false, nil},
+	{"crit+", "CR +20%, CD +40%", []op{{"cr", 1, 0.2}, {"cd", 1, 0.4}}, false, nil},
+	{"atk+", "ATK +40%", []op{{"atk%", 1, 0.4}}, false, nil},
+	{"hp+", "HP +40%", []op{{"hp%", 1, 0.4}}, false, nil},
+	{"em+", "EM +150", []op{{"em", 1, 150}}, false, nil},
 }
 
 type Metric struct {
@@ -150,15 +161,17 @@ type Abil struct {
 }
 
 type Result struct {
-	Team    string   `json:"team"`
-	Variant string   `json:"variant"`
-	Desc    string   `json:"desc"`
-	Iter    int      `json:"iterations"`
-	Verdict string   `json:"verdict"`
-	Error   string   `json:"error,omitempty"`
-	Metrics []Metric `json:"metrics,omitempty"`
-	Waits   []Wait   `json:"waits,omitempty"`
-	Abils   []Abil   `json:"abils,omitempty"`
+	Team    string `json:"team"`
+	Variant string `json:"variant"`
+	Desc    string `json:"desc"`
+	Iter    int    `json:"iterations"`
+	Verdict string `json:"verdict"`
+	Error   string `json:"error,omitempty"`
+	// Build is what a build-space build changes.
+	Build   *BuildChange `json:"build,omitempty"`
+	Metrics []Metric     `json:"metrics,omitempty"`
+	Waits   []Wait       `json:"waits,omitempty"`
+	Abils   []Abil       `json:"abils,omitempty"`
 	// EnergyWaits is gcsim's seconds per fight waiting for energy.
 	EnergyWaits  float64 `json:"energy_waits"`
 	GcsimSeconds float64 `json:"gcsim_seconds"`
@@ -203,7 +216,11 @@ type Report struct {
 	Shard string   `json:"shard,omitempty"`
 	// Warmed is what -gcsim-only ran, in place of Results and Census.
 	Warmed []Warmed `json:"warmed,omitempty"`
-	Pass   bool     `json:"pass"`
+	// BuildSpace counts the build-space builds by axis, and what stops
+	// those the engine cannot run.
+	BuildSpace        *BuildSpace `json:"buildspace,omitempty"`
+	BuildSpaceWeapons int         `json:"buildspace_weapons,omitempty"`
+	Pass              bool        `json:"pass"`
 }
 
 // Warmed is a build -gcsim-only ran gcsim on.
@@ -236,6 +253,9 @@ func main() {
 	}
 	if *gcsimOnly && gcsimCache == nil {
 		fail(errors.New("-gcsim-only needs a cache (-cache)"))
+	}
+	if *bsWeapons < 0 {
+		fail(errors.New("-buildspace-weapons: want 0 or more"))
 	}
 	tmp, err := os.MkdirTemp("", "compare")
 	if err != nil {
@@ -272,6 +292,14 @@ func main() {
 	if kinds["variants"] {
 		rep.Variants = variants
 	}
+	if kinds["buildspace"] {
+		if *gcsimOnly {
+			// its weapons are those the engine has, its teams the supported
+			fail(errors.New("-gcsim-only does not take buildspace: it needs the engine"))
+		}
+		rep.BuildSpaceWeapons = *bsWeapons
+	}
+	weapons := &weaponSupport{gse: gse, tmp: tmp, known: map[string]bool{}}
 
 	// census: dump and check every team
 	statuses := make([]TeamStatus, len(ids))
@@ -309,7 +337,7 @@ func main() {
 			if kinds["probes"] {
 				probes = probesFor(id)
 			}
-			if !(selected && (kinds["library"] || kinds["variants"])) && len(probes) == 0 {
+			if !(selected && (kinds["library"] || kinds["variants"] || kinds["buildspace"])) && len(probes) == 0 {
 				continue
 			}
 			part++
@@ -358,6 +386,50 @@ func main() {
 					jobs = append(jobs, job{v: v, cfg: cfg})
 				}
 			}
+			if supported && kinds["buildspace"] {
+				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
+				if err != nil {
+					fail(err)
+				}
+				ms, err := members(string(base))
+				if err != nil {
+					fail(fmt.Errorf("%s: %w", id, err))
+				}
+				// whether the engine has a weapon does not depend on whose
+				// line it replaces
+				builds, err := buildSpace(id, string(base), *bsWeapons, func(w string) (bool, error) {
+					return weapons.implemented(configs[i], strings.TrimSpace(ms[0].weapLine), ms[0].name, w)
+				})
+				if err != nil {
+					fail(err)
+				}
+				for _, bb := range builds {
+					path := filepath.Join(tmp, id+"-"+bb.v.Name+".txt")
+					if err := os.WriteFile(path, []byte(bb.build), 0o644); err != nil {
+						fail(err)
+					}
+					cfg, err := dump(gscouter, id, path)
+					if err != nil {
+						jobs = append(jobs, job{v: bb.v, err: fmt.Errorf("%s %s: %w", id, bb.v.Name, err)})
+						continue
+					}
+					// what the engine lacks is reported, not run
+					miss, err := check(gse, tmp, id+"-"+bb.v.Name, cfg)
+					if err != nil {
+						jobs = append(jobs, job{v: bb.v, err: fmt.Errorf("%s %s: %w", id, bb.v.Name, err)})
+						continue
+					}
+					if len(miss) > 0 {
+						var what []string
+						for _, u := range miss {
+							what = append(what, strings.TrimPrefix(u, "unsupported: "))
+						}
+						jobs = append(jobs, job{v: bb.v, err: fmt.Errorf("%w: %s", errUnsupported, strings.Join(what, "; "))})
+						continue
+					}
+					jobs = append(jobs, job{v: bb.v, cfg: cfg})
+				}
+			}
 			for _, pr := range probes {
 				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
 				if err != nil {
@@ -376,7 +448,23 @@ func main() {
 			}
 			for _, j := range jobs {
 				if *dryRun {
-					fmt.Fprintf(os.Stderr, "%s / %s\n", id, j.v.Name)
+					if j.err != nil {
+						fmt.Fprintf(os.Stderr, "%s / %s (%v)\n", id, j.v.Name, j.err)
+					} else {
+						fmt.Fprintf(os.Stderr, "%s / %s\n", id, j.v.Name)
+					}
+					// the build space's counts by axis, and what the engine
+					// lacks, cost no run
+					if j.v.change != nil {
+						r := Result{Team: id, Variant: j.v.Name, Desc: j.v.Desc, Build: j.v.change, Verdict: "dry-run"}
+						if j.err != nil {
+							r.Verdict, r.Error = "error", j.err.Error()
+							if errors.Is(j.err, errUnsupported) {
+								r.Verdict, r.Error = "unsupported", "unsupported: "+strings.TrimPrefix(j.err.Error(), "unsupported: ")
+							}
+						}
+						rep.Results = append(rep.Results, r)
+					}
 					continue
 				}
 				if *gcsimOnly {
@@ -391,6 +479,17 @@ func main() {
 					rep.Warmed = append(rep.Warmed, w)
 					continue
 				}
+				if j.err != nil {
+					// a build-space build that could not be assembled, or
+					// that the engine cannot run
+					r := Result{Team: id, Variant: j.v.Name, Desc: j.v.Desc, Build: j.v.change, Verdict: "error", Error: j.err.Error()}
+					if errors.Is(j.err, errUnsupported) {
+						r.Verdict, r.Error = "unsupported", "unsupported: "+strings.TrimPrefix(j.err.Error(), "unsupported: ")
+					}
+					fmt.Fprintf(os.Stderr, "%s / %s: %s\n", id, j.v.Name, r.Error)
+					rep.Results = append(rep.Results, r)
+					continue
+				}
 				fmt.Fprintf(os.Stderr, "%s / %s ...\n", id, j.v.Name)
 				r := compare(gse, tmp, id, j.v, j.cfg)
 				fmt.Fprintf(os.Stderr, "%s / %s: %s at %d iterations\n", id, j.v.Name, r.Verdict, r.Iter)
@@ -398,8 +497,9 @@ func main() {
 				if r.Verdict == "unsupported" && strings.HasPrefix(j.v.Name, "probe:") {
 					r.Verdict = "error"
 				}
-				// a feature only the run finds makes the team unsupported
-				if r.Verdict == "unsupported" && supported {
+				// a feature only the run finds makes the team unsupported,
+				// unless a build-space build alone carries it
+				if r.Verdict == "unsupported" && supported && j.v.change == nil {
 					statuses[i].Status = "unsupported"
 					statuses[i].Unsupported = []string{r.Error}
 				}
@@ -411,8 +511,9 @@ func main() {
 	if !*gcsimOnly {
 		rep.Census = census(statuses)
 	}
+	rep.BuildSpace = buildSpaceSummary(rep.Results)
 	for _, r := range rep.Results {
-		if r.Verdict != "pass" && r.Verdict != "unsupported" {
+		if r.Verdict != "pass" && r.Verdict != "unsupported" && r.Verdict != "dry-run" {
 			rep.Pass = false
 		}
 	}
@@ -449,11 +550,11 @@ func parseOnly(s string) (map[string]bool, error) {
 	for _, k := range strings.Split(s, ",") {
 		k = strings.TrimSpace(k)
 		switch k {
-		case "library", "variants", "probes":
+		case "library", "variants", "buildspace", "probes":
 			kinds[k] = true
 		case "":
 		default:
-			return nil, fmt.Errorf("-only: unknown kind %q (library, variants, probes)", k)
+			return nil, fmt.Errorf("-only: unknown kind %q (library, variants, buildspace, probes)", k)
 		}
 	}
 	if len(kinds) == 0 {
@@ -653,7 +754,7 @@ func growth(ms []Metric) float64 {
 }
 
 func compare(gse, tmp, id string, v variant, cfg string) Result {
-	res := Result{Team: id, Variant: v.Name, Desc: v.Desc}
+	res := Result{Team: id, Variant: v.Name, Desc: v.Desc, Build: v.change}
 	path := writeConfig(tmp, id+"-"+v.Name, cfg)
 	var g, r *harness.Output
 	n := 0
@@ -1086,20 +1187,30 @@ func markdown(rep *Report) string {
 	var b strings.Builder
 	w := func(f string, a ...any) { fmt.Fprintf(&b, f, a...) }
 	if len(rep.Results) > 0 {
-		passed := 0
+		passed, notRun := 0, 0
 		for _, r := range rep.Results {
-			if r.Verdict == "pass" {
+			switch {
+			case r.Verdict == "pass":
 				passed++
+			case (r.Verdict == "unsupported" || r.Verdict == "dry-run") && r.Build != nil:
+				notRun++
 			}
 		}
 		scope := strings.Join(rep.Only, ", ")
 		if rep.Shard != "" {
 			scope += ", part " + rep.Shard + " of the teams"
 		}
-		w("## Accuracy\n\nCompared: %s. %d of %d pass.\n\n", scope, passed, len(rep.Results))
+		w("## Accuracy\n\nCompared: %s. %d of %d pass.", scope, passed, len(rep.Results)-notRun)
+		if notRun > 0 {
+			w(" %d build-space builds are not run: the engine cannot run them, or -dry-run (under \"Build space\").", notRun)
+		}
+		w("\n\n")
 		w("Bound ±%.0f%% of gcsim; a verdict is pass when the 95%% interval of the difference lies inside it, fail when it lies outside, inconclusive otherwise. DPS over the window from %.0f s.\n\n", 100*bound, rep.Warmup)
 		w("| Team | Build | Iterations | Verdict | Who | gcsim | gse | Difference | ±95%% |\n|---|---|---|---|---|---|---|---|---|\n")
 		for _, r := range rep.Results {
+			if (r.Verdict == "unsupported" || r.Verdict == "dry-run") && r.Build != nil {
+				continue
+			}
 			if len(r.Metrics) == 0 {
 				w("| %s | %s | %d | **%s** | | | | %s | |\n", r.Team, r.Variant, r.Iter, r.Verdict, r.Error)
 				continue
@@ -1128,6 +1239,10 @@ func markdown(rep *Report) string {
 		}
 		teams := map[string]float64{}
 		for _, r := range rep.Results {
+			if r.Build != nil && len(r.Metrics) == 0 {
+				// a build-space build not run says nothing of energy
+				continue
+			}
 			teams[r.Team] = max(teams[r.Team], r.EnergyWaits)
 		}
 		for _, t := range slices.Sorted(func(yield func(string) bool) {
@@ -1166,6 +1281,7 @@ func markdown(rep *Report) string {
 			}
 		}
 	}
+	buildSpaceMarkdown(w, rep)
 	c := rep.Census
 	w("\n## Unsupported\n\n%d teams: %d supported, %d unsupported, %d errors.\n\n", c.Teams, c.Supported, c.Unsupported, c.Errors)
 	if len(c.ByKind) > 0 {
