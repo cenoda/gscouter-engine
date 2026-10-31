@@ -42,6 +42,10 @@ impl SetImpl for Set {
     /// 12% DMG bonus of each element involved to the party for 15 s.
     fn event(s: &mut Sim, ci: usize, _: usize, e: &Event) {
         let Event::Reaction(r, ev) = *e else { return };
+        // only reactions on an enemy (or, for burgeon and hyperbloom, a gadget)
+        if ev.on_player {
+            return;
+        }
         let elements = r.elements();
         if ev.info.actor as usize != ci || !elements.contains(&s.chars[ci].element) {
             return;

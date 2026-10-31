@@ -2,7 +2,7 @@
 
 An experiment: would a simulation engine written only for Gscouter, in Rust, be faster than gcsim and still score within 1% of it?
 
-It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 127 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): nineteen characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori), 27 weapons and 13 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, and pyro, hydro, electro, cryo, dendro and geo resonance are in.
+It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 134 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean), 27 weapons and 13 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
 
 It reads gcsim's config language as gcsim does: the same lexer, grammar and evaluator (`let`, `fn`, `if`/`else`, `while`, `for`, `switch` with `fallthrough`, `break`/`continue`/`return`, action lists with params and repeats, `.char.skill.ready` and the other fields, `wait`, `delay`, `execute_action` and the other built-ins), and the same setup lines (`options`, `target`, `energy`, `char`, `add weapon`, `add set`, `add stats`, `active`). A config gcsim runs, the engine runs unchanged, as long as its characters, weapons, sets and actions are ones the engine implements; anything else is an error naming it, never a silent difference.
 
@@ -98,14 +98,25 @@ Chiori (her Tamato and the second doll a construct brings, the recast's forced s
 
 Zhongli's burst made two more (Raiden / Fischl / Nahida / Zhongli, team −0.09% ± 0.10; Yoimiya / Bennett / Xiangling / Zhongli, −0.23% ± 0.23; both at 1,000 iterations).
 
-The runner also classifies every library team. Of 4,570, 127 are supported and 4,443 are not; what blocks the most teams:
+Jean brought reactions on the player (gcsim's ReactWithSelf: her field swirls the player's own aura, Bennett's pyro, and the swirl's aoe around the player hits the enemy; subscribers that need an enemy target skip a swirl on the player) and anemo resonance (cooldowns −5%, stamina −15%): seven more teams. Their library builds pass (Gscouter at `14e187f`):
+
+| Team | Iterations | Team | Worst character | Energy waits (gcsim) |
+|---|---|---|---|---|
+| Hu Tao / Yelan / Jean / Furina | 1,000 | +0.01% ± 0.06 | Furina +0.10% ± 0.16 | 0.2 s |
+| Jean / Furina / Yelan / Yoimiya | 1,000 | −0.01% ± 0.06 | Jean +0.11% ± 0.32 | 0.4 s |
+| Jean / Xingqiu / Kazuha / Bennett (anemo resonance) | 1,000 | −0.02% ± 0.12 | Bennett −0.20% ± 0.45 | 1.8 s |
+| Raiden / Furina / Bennett / Jean (self swirl) | 1,000 | +0.02% ± 0.15 | Furina −0.13% ± 0.23 | 2.2 s |
+| Raiden / Furina / Yelan / Jean | 1,000 | +0.00% ± 0.07 | Jean −0.10% ± 0.28 | 0.8 s |
+| Raiden / Yelan / Bennett / Jean (self swirl) | 4,532 | +0.11% ± 0.19 | Jean +0.24% ± 0.40 | 2.9 s |
+| Yelan / Raiden / Xingqiu / Jean | 1,000 | +0.02% ± 0.10 | Jean −0.23% ± 0.29 | 1.7 s |
+
+The runner also classifies every library team. Of 4,570, 134 are supported and 4,436 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
 |---|---|
 | Characters | Xilonen 482, Xianyun 314, Mavuika 277, Neuvillette 254, Durin 241, Yae Miko 239, Citlali 221, Emilie 214, Ororon 213, Sucrose 212 |
 | Weapons | Thrilling Tales of Dragon Slayers 497, Sacrificial Jade 401, Oathsworn Eye 352, Finale of the Deep 336, Chain Breaker 226, Hakushin Ring 216 |
 | Sets | Gilded Dreams 417, Ocean-Hued Clam 391, Obsidian Codex 385, Celestial Gift 332, Flower of Paradise Lost 290, Fragment of Harmonic Whimsy 283 |
-| Resonances | anemo 263, geo with characters not ported (Noelle, Yun Jin, Albedo, Navia and others) |
 | Built-ins | `set_player_pos` 45, `set_on_tick` 1 |
 | Actions of ported characters | Bennett's charge 19, plunges without Xianyun 43 |
 | Constellations not ported | Nahida C2 and C6, 19; Zhongli C2 and C6, 5 |
@@ -156,9 +167,9 @@ What it would take to score Gscouter's results, in phases: `docs/roadmap.md`.
 
 ## What it does not do
 
-- Only the abilities these teams use, these weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra, Deathmatch, The Alley Flash, Harbinger of Dawn, the five Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane, Xiphos' Moonlight, The Catch, Rust, Serpent Spine, Lion's Roar, The Viridescent Hunt, Wandering Evenstar, The Widsith) and sets (Shimenawa, Emblem, Tenacity, Instructor, Noblesse Oblige, Golden Troupe, Scroll of the Hero of Cinder City, Marechaussee Hunter, Viridescent Venerer, Crimson Witch of Flames, Song of Days Past, Deepwood Memories, Archaic Petra), and pyro, hydro, electro, cryo, dendro and geo resonance. Every other character, weapon, set, action, constellation, resonance, built-in or target option is an error that names it (`unsupported: <what> <name>`), never a silent difference. Each character declares the highest constellation it implements (Zhongli C1, Escoffier, Nahida and Chiori C0, the others C6).
+- Only the abilities these teams use, these weapons (Staff of Homa, Sacrificial Sword, Aqua Simulacra, Deathmatch, The Alley Flash, Harbinger of Dawn, the five Favonius weapons, The Stringless, Ballad of the Fjords, Wolf-Fang, The Alley Hunter, Sapwood Blade, Festering Desire, Slingshot, Dragon's Bane, Xiphos' Moonlight, The Catch, Rust, Serpent Spine, Lion's Roar, The Viridescent Hunt, Wandering Evenstar, The Widsith) and sets (Shimenawa, Emblem, Tenacity, Instructor, Noblesse Oblige, Golden Troupe, Scroll of the Hero of Cinder City, Marechaussee Hunter, Viridescent Venerer, Crimson Witch of Flames, Song of Days Past, Deepwood Memories, Archaic Petra), and every resonance. Every other character, weapon, set, action, constellation, resonance, built-in or target option is an error that names it (`unsupported: <what> <name>`), never a silent difference. Each character declares the highest constellation it implements (Zhongli C1, Escoffier, Nahida, Chiori and Jean C0, the others C6).
 - One target. The player stands at the origin facing it and never moves; hits are taken to land, except where gcsim's hitbox decides it for a target at Gscouter's distance (Diluc's burst, whose ticks fly away from the player: a box against the target's circle, `Sim::box_hits`). Gadgets are hit by gcsim's patterns (circles, fans and boxes) where an attack has one; a pyro or electro attack without one that could reach a dendro core is an error. The player is hit by the self damage of burning, bloom, burgeon and hyperbloom when their area reaches it (bloom's and burgeon's do at Gscouter's distance), which shields absorb and the rest drains from the active character; Diluc's C2 (being hit) is an error. `target type=`, particle drops, `hurt`, random substats and `set_on_tick` are errors, as are the position built-ins.
-- Of the reactions, all but the lunar ones: vaporize, melt, overload, electro-charged, superconduct, freeze and shatter, swirl, crystallize, burning, quicken, aggravate, spread, bloom, burgeon and hyperbloom. No reactions on the player (Jean's burst swirls the player's aura), no Nightsoul, no HP debt, no fillers (Gscouter's `steady` package).
+- Of the reactions, all but the lunar ones: vaporize, melt, overload, electro-charged, superconduct, freeze and shatter, swirl, crystallize, burning, quicken, aggravate, spread, bloom, burgeon and hyperbloom. Of reactions on the player, only swirls (the only ones gcsim's characters here cause); no Nightsoul, no HP debt, no fillers (Gscouter's `steady` package).
 - Random numbers are its own (xoshiro256++), so single fights differ from gcsim's; only the averages compare.
 
 ## How it works

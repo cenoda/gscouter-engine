@@ -251,7 +251,8 @@ impl Character for Char {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
-            Event::Reaction(r, ev) => a4(s, ci, r, ev),
+            // not on the player's own aura
+            Event::Reaction(r, ev) if !ev.on_player => a4(s, ci, r, ev),
             Event::StateChange(next) => {
                 if let Some(src) = WATCH.on_state(s, ci, next) {
                     s.st_mut::<State>(ci).watch_src = src;

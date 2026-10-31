@@ -292,6 +292,10 @@ impl Character for Char {
     /// element from his EM, for 8 s.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         let Event::Reaction(r, ev) = *e else { return };
+        // only swirls on an enemy
+        if ev.on_player {
+            return;
+        }
         let (i, stat) = match r {
             Reaction::SwirlPyro => (0, st::PYROP),
             Reaction::SwirlHydro => (1, st::HYDROP),

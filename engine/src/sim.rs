@@ -327,11 +327,14 @@ pub struct AttackEvent {
     pub reacted: bool,
     pub damage: f64,
     pub crit: bool,
+    /// The reaction it causes is on the player (ReactWithSelf), not the
+    /// enemy: subscribers that check for an enemy target skip it.
+    pub on_player: bool,
 }
 
 impl AttackEvent {
     pub fn new(info: AttackInfo, callbacks: u16) -> Self {
-        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false }
+        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false, on_player: false }
     }
 }
 
@@ -1051,6 +1054,10 @@ pub struct Sim {
     pub electro_res: Option<i32>,
     /// Dendro resonance.
     pub dendro_res: bool,
+    /// Anemo resonance: cooldowns -5%, stamina -15%.
+    pub anemo_res: bool,
+    /// Swirl's GCD on the player's own aura, by slot.
+    pub player_swirl_gcd: [i32; N_AURAS],
     /// Subscribers to each event, in the order gcsim subscribes them.
     pub subs: [Vec<Owner>; N_EVENTS],
     /// Constructs (gcsim's Constructs) and shields, by owner.
@@ -1153,6 +1160,8 @@ impl Sim {
             utility_dash: None,
             electro_res: None,
             dendro_res: false,
+            anemo_res: false,
+            player_swirl_gcd: [-1; N_AURAS],
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
             gadgets: Vec::with_capacity(4),
@@ -1253,7 +1262,8 @@ impl Sim {
         // resonance; profile::config rejects the ones not implemented
         if n >= 4 {
             let count = |e: Element| self.chars.iter().filter(|c| c.element == e).count();
-            let (pyro, hydro, electro, cryo, dendro, geo) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro), count(Element::Cryo), count(Element::Dendro), count(Element::Geo));
+            let (pyro, hydro, electro, cryo, dendro, geo, anemo) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro), count(Element::Cryo), count(Element::Dendro), count(Element::Geo), count(Element::Anemo));
+            self.anemo_res = anemo >= 2;
             for c in &mut self.chars {
                 if geo >= 2 {
                     c.mods.push(Mod::owned(GEO_RESONANCE, ModKind::Attack, Owner::Core, st::NONE, false, false, -1));
@@ -3168,6 +3178,66 @@ impl Sim {
         }
     }
 
+    /// gcsim's Player.ReactWithSelf: an attack on the player's own aura
+    /// (Jean's field swirls it). Only anemo reaches it here: the swirls of
+    /// the player's aura, whose aoe around the player hits the enemy and
+    /// gadgets; the swirl's own hit, a single target on the player, skips
+    /// the player and lands nowhere.
+    pub fn react_with_self(&mut self, info: AttackInfo) {
+        // AuraCount() == 0
+        if (0..N_AURAS).all(|m| self.player_aura.get(m) <= ZERO_DUR) {
+            return;
+        }
+        if info.element != Element::Anemo {
+            self.unsupported("a reaction on the player other than swirl");
+            return;
+        }
+        let mut ev = AttackEvent::new(info, 0);
+        ev.on_player = true;
+        for m in [AURA_ELECTRO, AURA_PYRO, AURA_HYDRO, AURA_CRYO, AURA_FROZEN] {
+            self.player_swirl(&mut ev, m);
+        }
+    }
+
+    /// TrySwirl* on the player's aura.
+    fn player_swirl(&mut self, ev: &mut AttackEvent, m: usize) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR || self.player_aura.get(m) < ZERO_DUR {
+            return;
+        }
+        if m == AURA_FROZEN {
+            self.unsupported("swirl of frozen on the player");
+            return;
+        }
+        let rd = self.player_aura.reduce(m, dur, 0.5);
+        let aoe_dur = if rd < dur { 1.25 * (0.5 * rd - 1.0) + 25.0 } else { 1.25 * (dur - 1.0) + 25.0 };
+        ev.info.durability -= rd;
+        ev.reacted = true;
+        let (r, tag, icd_tag, ele, abil) = match m {
+            AURA_ELECTRO => (Reaction::SwirlElectro, AttackTag::SwirlElectro, icd::TAG_SWIRL_ELECTRO, Element::Electro, "swirl-electro (aoe)"),
+            AURA_PYRO => (Reaction::SwirlPyro, AttackTag::SwirlPyro, icd::TAG_SWIRL_PYRO, Element::Pyro, "swirl-pyro (aoe)"),
+            AURA_HYDRO => (Reaction::SwirlHydro, AttackTag::SwirlHydro, icd::TAG_SWIRL_HYDRO, Element::Hydro, "swirl-hydro (aoe)"),
+            _ => (Reaction::SwirlCryo, AttackTag::SwirlCryo, icd::TAG_SWIRL_CRYO, Element::Cryo, "swirl-cryo (aoe)"),
+        };
+        self.emit(Event::Reaction(r, ev));
+        let gcd = &mut self.player_swirl_gcd[m];
+        if *gcd == -1 || self.f >= *gcd {
+            *gcd = self.f + 6;
+            let mut ai = AttackInfo::new(ev.info.actor as usize, tag, icd_tag, icd::GROUP_REACTION_A, ele, aoe_dur, 0.0);
+            ai.abil = abil;
+            ai.ignore_def = 1.0;
+            ai.pattern = self.circle_on_player(0.0, 0.0, 5.0);
+            let mut atk = self.reaction_attack(ai);
+            // hydro swirls only spread the element
+            atk.info.flat_dmg *= if ele == Element::Hydro { 0.0 } else { 0.6 };
+            self.queue_attack_with_snap(atk, 0, 1 + 4);
+        }
+        // electro off electro-charged swirls the hydro too
+        if m == AURA_ELECTRO && ev.info.durability > ZERO_DUR && self.player_aura.get(AURA_HYDRO) > ZERO_DUR {
+            self.player_swirl(ev, AURA_HYDRO);
+        }
+    }
+
     fn try_crystallize(&mut self, ev: &mut AttackEvent, m: usize, r: Reaction) {
         if ev.info.durability < ZERO_DUR {
             return;
@@ -3394,6 +3464,8 @@ impl Sim {
     }
 
     pub fn set_cd(&mut self, ci: usize, a: Action, dur: i32) {
+        // CDReduction: anemo resonance is the only cooldown mod
+        let dur = if self.anemo_res { (dur as f64 * (1.0 - 0.05)) as i32 } else { dur };
         let cd = &mut self.chars[ci].cd[Char::cd_index(a)];
         cd.queue[cd.len] = dur;
         cd.len += 1;
@@ -3512,25 +3584,33 @@ impl Sim {
 
     pub fn abil_stam_cost(&self, ci: usize, a: Action) -> f64 {
         let c = &self.chars[ci];
-        match a {
-            Action::Charge => {
-                if let Some(x) = crate::chars::dispatch::charge_stam(c.kind, self, ci) {
-                    return x;
-                }
-                match c.class {
+        let base = match a {
+            Action::Charge => match crate::chars::dispatch::charge_stam(c.kind, self, ci) {
+                Some(x) => x,
+                None => match c.class {
                     WeaponClass::Sword => 20.0,
                     WeaponClass::Spear => 25.0,
                     WeaponClass::Catalyst => 50.0,
                     _ => 0.0,
-                }
-            }
-            // gcsim's "utility-dash" stamina mod (Kazuha's and others')
-            Action::Dash => match self.utility_dash {
-                Some(o) if self.chars[o as usize].hp_ratio > 0.0 => (1.0 - 0.2) * 18.0,
-                _ => 18.0,
+                },
             },
+            Action::Dash => 18.0,
             _ => 0.0,
+        };
+        // StamPercentMod, in the order the mods were added: anemo
+        // resonance's -15% on everything, then gcsim's "utility-dash"
+        // (Kazuha's and others') -20% on dashes
+        let mut pct = 0.0;
+        if self.anemo_res {
+            pct += -0.15;
         }
+        if a == Action::Dash && self.utility_dash.is_some_and(|o| self.chars[o as usize].hp_ratio > 0.0) {
+            pct += -0.2;
+        }
+        if pct == 0.0 {
+            return base;
+        }
+        (1.0 + pct as f64).max(0.0) * base
     }
 
     fn use_stam(&mut self, amt: f64) {

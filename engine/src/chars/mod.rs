@@ -23,4 +23,5 @@ crate::chars! {
     Candace => candace,
     Nahida => nahida,
     Chiori => chiori,
+    Jean => jean,
 }

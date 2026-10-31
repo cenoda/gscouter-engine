@@ -170,11 +170,7 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
                 count[d.element as usize] += 1;
             }
         }
-        for (e, name) in [(6, "anemo")] {
-            if count[e] >= 2 {
-                errs.push(format!("unsupported: resonance {name}"));
-            }
-        }
+
     }
     // gcsim's Hexerei bonuses need two Hexerei characters; the engine
     // implements none of them

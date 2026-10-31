@@ -230,7 +230,7 @@ impl Character for Char {
             Event::EnemyDamage(ev) if matches!(ev.info.tag, AttackTag::Bloom | AttackTag::Hyperbloom | AttackTag::Burgeon) => tri_karma(s, ci),
             // any reaction on the enemy (hyperbloom and burgeon are on the
             // dendro core)
-            Event::Reaction(r, _) if !matches!(r, Reaction::Hyperbloom | Reaction::Burgeon) => tri_karma(s, ci),
+            Event::Reaction(r, ev) if !matches!(r, Reaction::Hyperbloom | Reaction::Burgeon) && !ev.on_player => tri_karma(s, ci),
             _ => {}
         }
     }
