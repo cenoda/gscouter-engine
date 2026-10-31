@@ -250,7 +250,7 @@ impl Character for Char {
 /// The Box appears: its first hit, its ticks for its whole duration, and
 /// the burst's status.
 fn spawn_box(s: &mut Sim, ci: usize, travel: i32) {
-    s.add_hittable_gadget(ci, BOX, g::BURST_DURATION, 0.0, BOX_Y, 1.0);
+    s.add_hittable_gadget(ci, BOX, g::BURST_DURATION, 0.0, BOX_Y, 1.0, true);
     s.add_status(ci, BURST, g::BURST_DURATION, false);
     let st = s.st_mut::<State>(ci);
     st.vivid_travel = travel;
