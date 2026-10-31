@@ -171,6 +171,13 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
             errs.push("unsupported: target particle drops".into());
         }
     }
+    // Neuvillette's burst places its waterfalls from the enemy's own
+    // direction, which gcsim leaves at (0, 1); the engine knows only the
+    // enemy's distance, along the player's facing, so that is the same
+    // only for an enemy straight up the y axis
+    if p.chars.iter().any(|c| char_name(c.key) == "neuvillette") && p.targets.iter().any(|t| t.pos.0 != 0.0 || t.pos.1 <= 0.0) {
+        errs.push("unsupported: neuvillette with the target off the y axis".into());
+    }
     if p.hurt {
         errs.push("unsupported: hurt".into());
     }

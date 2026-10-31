@@ -35,4 +35,5 @@ crate::chars! {
     Kuki => kuki,
     Alhaitham => alhaitham,
     Baizhu => baizhu,
+    Neuvillette => neuvillette,
 }

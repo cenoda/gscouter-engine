@@ -1,0 +1,3 @@
+# Neuvillette C6: droplets lengthen the judgment, and its hits fire two currents every 2 s.
+team neuvillette-furina-zhongli-kaedeharakazuha
+neuvillette char lvl=90/90 cons=6 talent=9,9,9;

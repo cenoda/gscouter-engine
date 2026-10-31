@@ -1,0 +1,3 @@
+# Neuvillette C4: a heal on field (his droplets') spawns a droplet, once every 4 s. Droplets are scarcest in this team: +0.9% over C3. No C5.
+team neuvillette-kaedeharakazuha-zhongli-xiangling
+neuvillette char lvl=90/90 cons=4 talent=9,9,9;
