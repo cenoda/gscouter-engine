@@ -6,6 +6,7 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
 
 - Do not modify Gscouter or the gcsim fork. Clone them, read them and run them; all work and pushes go to this repo.
 - The reference is Gscouter's fork of gcsim at the commit Gscouter pins. `reference/go.mod` fixes it (`cenoda/gcsim@eb21884`). Port from that source, not from memory of gcsim.
+- Scope: the engine scores a player's showcase build (any constellation, weapon and refinement, set, talent levels, stats) on a library team's rotation. Library builds are test data, not the scope; `docs/roadmap.md` §2 says what done means.
 - Accuracy bar: team and per-character DPS within 1% of gcsim, decided by `reference/compare`, never loosened. Report waits beside the DPS.
 - Anything the engine lacks is an error that names it (`gse --check`). The engine never silently does something different.
 - A change that should not move scores must keep them to the last digit. At 1,000 iterations:
@@ -20,10 +21,11 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
 
 - Commands are in `README.md`, under "Running": build, the engine, the gcsim harness, the comparison runner, `gendata` and `dump`.
 - Order of work for a new character, weapon or set:
-  1. Read its gcsim package.
-  2. Take its tables from `engine/src/gcsimdata` (generated; do not hand-edit). Write its logic in `engine/src/chars/` or the weapon or set modules, on the hooks in `engine/src/content.rs`.
-  3. Run `compare` on every library team that becomes supported.
-- What blocks the most library teams is the census in `compare`'s report. Use it to pick what to port next.
+  1. Read its gcsim package, all of it.
+  2. Take its tables from `engine/src/gcsimdata` (generated; do not hand-edit). Write its logic in `engine/src/chars/` or the weapon or set modules, on the hooks in `engine/src/content.rs`. Port all of it, not only what the library's builds and rotations use: a character C0 to C6 (`MAX_CONS = 6`) with every action and param gcsim's package has, a weapon refinements 1 to 5, a set two and four pieces. What is left out stays an error that names it.
+  3. Run `compare` on every library team that becomes supported, and verify what those builds do not carry: each constellation, refinements 1 and 5, two and four pieces, on a supported team (the runner's build-space variants once they exist, `reference/probes` until then).
+  4. It is done when all of that passes, not when its library teams do.
+- What blocks the most library teams is the census in `compare`'s report. Use it to pick what to port next, but measure progress also by the share of real players' builds the engine runs and has verified. Systems (Phase 2) go one at a time on the main line; content that needs no new system can go in parallel branches, merged and compared again together.
 - gcsim behaviour already matched on purpose; keep it matched:
   - Order of work within a frame.
   - Mod expiry: a mod counts in stat sums while its expiry is `> F`, and reads as active while `>= F`.
@@ -43,6 +45,7 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
   - gcsim has special cases away from the obvious code: burning's ICD is checked for every character, not only the attacker (pkg/enemy/attack.go). When per-ability damage differs with equal hits, trace one gcsim fight with its debug log (`simulation.NewCore(seed, true, cfg)`, then `c.Log.(*glog.Ctrl).Dump()`) beside the engine.
   - Polestar Fields and Stellar-Conduct come from content not ported (Qiqi, Sandrone, Odette, the cryo Traveler and others); Wriothesley's and Yae Miko's Radiance assume they never happen. Port Radiance with the first of them.
   - Most hits are taken to land, but some abilities move their hitbox away (Diluc's burst): compare hits per ability, and use `Sim::box_hits` where gcsim's geometry decides.
+  - A library build checks only the constellations, weapons and refinements it carries (Lisa's are 19 of 21 at C6). Code no comparison reaches is unverified, whatever its source; say so in the report and add the build that reaches it.
   - Before trusting a quick check, look at per-ability hits and damage (`gse` output and the harness's `-abil`), and at waits.
   - A team whose bursts wait for energy can spiral (a wait takes the field time that makes the next burst's energy), so its DPS is heavy-tailed and 1,000 iterations can be 2% off (Klee / Fischl / Xingqiu / Bennett looked −1.78% and passes at 36,000). Let `compare` decide before hunting a cause.
 - Workflow notes: `compare` grows iterations until every character's standard error is 0.3%, so a full run of 100 teams' library builds takes hours here; build experiments into another `--target-dir` while it runs. CI is faster: a manual run of `.github/workflows/compare.yml` (input `parts`: `library`, or `0-39` for every variant) runs in parallel jobs on any branch. gcsim's results are cached by config and seed chunk (`reference/harness/cache.go`), so a rerun after an engine change costs only the engine; raise its `version` when the harness changes what it measures. Quick checks: dump the looped config with Gscouter's `cmd/gscouter -team <dir> -build <file> -dump`, then run `gse` and `go run . -config` at 1,000 iterations.
