@@ -124,7 +124,8 @@ impl Character for Char {
                 let ev = s.snapshot_event(ai, 0);
                 s.st_mut::<State>(ci).guoba = ev;
                 s.add_status(ci, GUOBA_STATUS, GUOBA_DURATION, false);
-                s.add_gadget(ci, GADGET_GUOBA, GUOBA_DURATION);
+                // 1.3 in front of the player, radius 0.2
+                s.add_gadget(ci, GADGET_GUOBA, GUOBA_DURATION, 0.0, 1.3, 0.2);
                 if arg >= 0 && s.chars[ci].ascension >= 4 {
                     s.add_task(Task::Char { c: ci as u8, id: TASK_A4, arg: 0 }, GUOBA_DURATION + arg);
                 }

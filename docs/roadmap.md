@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 and 1 done, Phase 2 under way (134 teams) · Last updated: 2026-10-31
+> Status: Phases 0 and 1 done, Phase 2 under way (139 teams) · Last updated: 2026-10-31
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
@@ -47,7 +47,7 @@ What had to be in place before dozens of characters, so that they are not rewrit
 
 Progress so far, taken in the order that makes the most library teams supported (`README.md` has the results):
 
-- **134 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
+- **139 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
 - **The runner in CI, in parts**: `compare -only library,variants,probes -shard k/n`. Every push compares the library builds and probes in four parallel jobs; the variants run on a daily schedule, 8 of 40 parts a day, and a manual run can take all 40 at once (about half an hour on GitHub's runners).
 - **Electro, overload and electro-charged** (with Fischl), each reaction emitting its event as gcsim's `Reactable.React` does; reaction damage and `REACTION_LVL_BASE` from gcsim's combat package.
 - **HP changes** (with Furina): `Player.Heal` and `Player.Drain` with `OnHeal` and `OnPlayerHPDrain`, overheal, and incoming healing bonus mods. HP debt is still missing.
@@ -62,12 +62,13 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **Shields and crystallize** (with Archaic Petra; six teams): shields with HP, element and target, gcsim's absorption, overwrite, expiry and break events and its shield bonus mods (which gcsim drops once they report done; Gscouter's shield stats collector asks on every shield, swap and hit on the player); crystallize shards and `pick_up_crystallize`; Zhongli's A1. Geo resonance came with Chiori, the second geo character (six teams): her dolls, the recast's forced swap (gcsim's Player.Exec from a task), A1 and A4, and gcsim's OnConstructSpawned.
 
 - **Reactions on the player and anemo resonance** (with Jean; seven teams): gcsim's ReactWithSelf, whose swirl's aoe around the player hits the enemy; reaction events on the player, which the subscribers that need an enemy target skip; gcsim's cooldown reduction and stamina percentage mods for anemo resonance.
+- **Sucrose** (five teams): her own dash frames, absorb checks over gcsim's pattern (gadgets now have a position and radius), and waits counted as gcsim's stats count them, under the reason an action first failed for.
 
-What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 134 supported):
+What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 139 supported):
 
 1. **Dendro's rest**: the variants of the nine dendro teams (CI); Nahida's C2 and C6 (19 teams); hit patterns for the other ported characters, as their teams meet dendro cores.
 2. **The other geo characters** (Noelle, Yun Jin, Navia, Albedo); Zhongli's burst is in (two teams).
-3. **More anemo characters**: Lynette (10 teams; her Bogglecat Box absorbs elements from attacks that reach it, which needs hit patterns for every pyro, hydro, electro and cryo attack in her teams), Sucrose (5), Xiao (6), Wanderer (5).
+3. **More anemo characters**: Lynette (10 teams; her Bogglecat Box absorbs elements from attacks that reach it, which needs hit patterns for every pyro, hydro, electro and cryo attack in her teams), Xiao (6), Wanderer (5).
 4. **Hexerei** (394): the bonuses when two Hexerei characters are in the team (Fischl with Mona, Sucrose, Razor and others).
 5. **Actions and constellations of ported characters**: Zhongli's C2, C4, C6 (5); Bennett's charge (19); plunges after Xianyun's burst (43, with Xianyun); Escoffier's constellations.
 6. **Systems**: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); `set_player_pos` (45); stamina mods; the lunar reactions.

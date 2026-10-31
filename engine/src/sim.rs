@@ -522,6 +522,9 @@ pub struct Char {
     pub dash_jump: i32,
     /// The character module's own state.
     pub state: CharState,
+    /// gcsim's IsHexerei: a Hexerei character, unless its hexerei param
+    /// is 0.
+    pub hexerei: bool,
 }
 
 impl Char {
@@ -938,8 +941,10 @@ pub struct Gadget {
     /// A dendro core (owner CORE): the frame it appeared, where it is, and
     /// the character whose bloom made it.
     pub src: i32,
+    /// Where it is and its radius, from the player.
     pub x: f64,
     pub y: f64,
+    pub r: f64,
     pub actor: u8,
 }
 
@@ -1091,6 +1096,10 @@ pub struct Sim {
     pub window_char: [f64; 4],
     /// Frames in the window that actions waited, by character and reason.
     pub waits: [[u32; N_FAILURES]; 4],
+    /// gcsim's active failures: by character and action, the frame an
+    /// action first failed and why, until it is used. The whole wait counts
+    /// under that first reason.
+    wait_open: [[Option<(i32, Failure)>; N_ACTIONS]; 4],
     /// Hits and damage in the window by character and ability.
     pub abils: [Vec<(&'static str, u32, f64)>; 4],
 }
@@ -1180,6 +1189,7 @@ impl Sim {
             total: 0.0,
             window_char: [0.0; 4],
             waits: [[0; N_FAILURES]; 4],
+            wait_open: [[None; N_ACTIONS]; 4],
             abils: Default::default(),
         };
         s.setup();
@@ -1244,6 +1254,7 @@ impl Sim {
             dash_len,
             dash_jump,
             state: cs.kind.new_state(cs),
+            hexerei: crate::profile::HEXEREI.contains(&crate::gcsl::char_name(cs.key)) && !cs.params.iter().any(|(k, v)| k == "hexerei" && *v == 0),
         }
     }
 
@@ -2595,7 +2606,7 @@ impl Sim {
             self.core_explode(g.actor, g.x, g.y);
         }
         let f = self.f;
-        self.gadgets.push(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, actor });
+        self.gadgets.push(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor });
     }
 
     /// A core expired or was killed: its bloom 1 frame later, a circle of
@@ -3026,6 +3037,20 @@ impl Sim {
         Element::NoElement
     }
 
+    /// absorb_check where the area is p, which reaches only some of the
+    /// enemy, the gadgets and the player (gcsim's AttackWillLand).
+    pub fn absorb_check_in(&self, p: Pattern, prio: &[Element]) -> Element {
+        let hit = |x: f64, y: f64, r: f64| p.hits_circle(x, y, r).expect("absorb check with an unknown pattern");
+        let enemy = hit(0.0, self.target_dist, self.target_radius);
+        let player = hit(0.0, 0.0, 0.3);
+        for &e in prio {
+            if (enemy && self.enemy.aura.contains(e)) || self.gadgets.iter().any(|g| g.aura.contains(e) && hit(g.x, g.y, g.r)) || (player && self.player_aura.contains(e)) {
+                return e;
+            }
+        }
+        Element::NoElement
+    }
+
     /// gcsim's Constructs.New: with refresh, the last construct of the same
     /// owner and key is destroyed; past three, the oldest are. A destroyed
     /// construct calls its owner's construct_expired (OnDestruct).
@@ -3072,8 +3097,9 @@ impl Sim {
     }
 
     /// gcsim's Combat.AddGadget.
-    pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32) {
-        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: self.f, x: 0.0, y: 0.0, actor: 0 });
+    /// The gadget is at (x, y) from the player, of radius r.
+    pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
+        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: self.f, x, y, r, actor: 0 });
     }
 
     /// The index of a character's gadget, if it is there.
@@ -3831,26 +3857,47 @@ impl Sim {
             return false;
         }
         let active = self.player.active as usize;
-        let counted = self.f >= self.window_start;
         if a == Action::Swap {
             if active == c {
                 return true;
             }
             if self.player.swap_cd > 0 {
-                if counted {
-                    self.waits[active][Failure::SwapCd as usize] += 1;
-                }
+                self.wait_failed(active, a, Failure::SwapCd);
                 return false;
             }
             return true;
         }
         if let Some(why) = self.action_failure(active, a, p) {
-            if counted {
-                self.waits[active][why as usize] += 1;
-            }
+            self.wait_failed(active, a, why);
             return false;
         }
         true
+    }
+
+    fn wait_failed(&mut self, ci: usize, a: Action, why: Failure) {
+        let w = &mut self.wait_open[ci][a as usize];
+        if w.is_none() {
+            *w = Some((self.f, why));
+        }
+    }
+
+    /// Ends an action's wait, counting its frames in the window.
+    fn wait_done(&mut self, ci: usize, a: usize) {
+        if let Some((start, why)) = self.wait_open[ci][a].take() {
+            let n = self.f - start.max(self.window_start);
+            if n > 0 {
+                self.waits[ci][why as usize] += n as u32;
+            }
+        }
+    }
+
+    /// Counts the waits still open when the fight ends (gcsim's Flush).
+    pub fn close_waits(&mut self) {
+        for ci in 0..4 {
+            for a in 0..N_ACTIONS {
+                self.wait_done(ci, a);
+            }
+        }
     }
 
     fn exec(&mut self, c: usize, a: Action, p: &Params) {
@@ -3863,7 +3910,10 @@ impl Sim {
                 self.use_stam(req);
                 chars::dispatch::charge(kind, self, ci, p)
             }
-            Action::Dash => self.char_dash(ci),
+            Action::Dash => {
+                let info = self.char_dash(ci);
+                chars::dispatch::dash_info(kind, self, ci, info)
+            }
             Action::Skill => {
                 self.emit(Event::Skill);
                 chars::dispatch::skill(kind, self, ci, p)
@@ -3984,6 +4034,7 @@ impl Sim {
         if a == Action::Swap && self.player.active as usize == c {
             return true;
         }
+        self.wait_done(self.player.active as usize, a as usize);
         self.exec(c, a, p);
         while !self.can_queue_next() {
             if self.step() {

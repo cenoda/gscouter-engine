@@ -61,7 +61,7 @@ fn weapon_base(p: &CharProfile, d: &data::WeaponData) -> Stats {
 
 /// The characters gcsim makes Hexerei (IsHexerei), unless their param
 /// hexerei=0.
-const HEXEREI: &[&str] = &["durin", "varka", "sucrose", "mona", "razor", "fischl", "prune", "lohen", "nicole"];
+pub const HEXEREI: &[&str] = &["durin", "varka", "sucrose", "mona", "razor", "fischl", "prune", "lohen", "nicole"];
 
 /// The engine's character for a gcsim key name, if it implements it.
 pub fn char_kind(name: &str) -> Option<CharKind> {
@@ -105,6 +105,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("start_energy", _) => start_energy = *v as f64,
             ("breakthrough", Some(CharKind::Yelan)) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
+            ("hexerei", Some(CharKind::Sucrose)) => {}
             // the character itself is unsupported
             (_, None) => {}
             _ => errs.push(format!("unsupported: param {name} {k}")),

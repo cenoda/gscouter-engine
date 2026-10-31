@@ -194,6 +194,11 @@ pub trait Character {
     /// A gadget of its ticked, `timer` ticks after it was added (it may
     /// have just expired and be gone).
     fn gadget_tick(_s: &mut Sim, _ci: usize, _id: u8, _timer: i32) {}
+    /// Its dash's ActInfo, after the template's Dash ran (a character with
+    /// its own dash frames).
+    fn dash_info(_s: &mut Sim, _ci: usize, info: ActInfo) -> ActInfo {
+        info
+    }
     /// A shield of its took damage (gcsim's OnDamage of its own shield
     /// type), and whether that broke it.
     fn shield_damaged(_s: &mut Sim, _ci: usize, _key: ModKey, _broken: bool) {}
@@ -354,6 +359,7 @@ macro_rules! chars {
             pub fn construct_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::construct_expired(s, ci, key)),* } }
             pub fn gadget_tick(k: CharKind, s: &mut Sim, ci: usize, id: u8, timer: i32) { match k { $(CharKind::$kind => $m::Char::gadget_tick(s, ci, id, timer)),* } }
             pub fn shield_damaged(k: CharKind, s: &mut Sim, ci: usize, key: ModKey, broken: bool) { match k { $(CharKind::$kind => $m::Char::shield_damaged(s, ci, key, broken)),* } }
+            pub fn dash_info(k: CharKind, s: &mut Sim, ci: usize, info: ActInfo) -> ActInfo { match k { $(CharKind::$kind => $m::Char::dash_info(s, ci, info)),* } }
             pub fn shield_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_expired(s, ci, key)),* } }
             pub fn shield_bonus(k: CharKind, s: &Sim, ci: usize, key: ModKey) -> (f64, bool) { match k { $(CharKind::$kind => $m::Char::shield_bonus(s, ci, key)),* } }
         }

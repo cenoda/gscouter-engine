@@ -102,6 +102,7 @@ fn main() {
                 r.chars[c] = sim.window_char[c] / window;
             }
             r.team = r.chars.iter().sum();
+            sim.close_waits();
             r.waits = sim.waits;
             r.frames = sim.f;
             for c in 0..n_chars {

@@ -30,13 +30,14 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
   - Hitlag extends mods and queues.
   - Gauges are kept per source character.
   - In damage mode, a kill returns before the element attaches.
+  - A wait counts whole under the reason its action first failed for, as gcsim's stats do.
   - gcsl evaluates both sides of `&&` and `||`, ignores `return` inside loops, and lexes `-` as an identifier character.
 - Pitfalls found so far; check for them in new code:
   - A param, field or constellation the engine does not handle must be an error, not a default. Found silently wrong: constellations above what a character implements (now `MAX_CONS`), Yelan's `breakthrough`, `.char.infusion.<key>` (was always false).
   - Lists of reactions, swirls, attack tags or elements must cover every one the engine has (VV's swirl bonus missed cryo swirl; Raiden's Eye did not ignore burning damage). Grep for the existing variants, and gcsim's ported packages for the new ones, when adding one.
   - Content written before a system existed assumes it never happens: Sapwood Blade did nothing until dendro reactions, The Alley Flash ignored hits on the player. When adding a system, grep the modules' comments for "never", "none of which", "no fight", "does nothing".
   - Gadgets see an attack as it was before the enemy took it (gcsim hands each target its own copy, before ICD and reactions), and only through a hit pattern (`Pattern`). An attack without one that could reach a dendro core is an error; give patterns from gcsim's `combat.New...Hit` calls.
-  - Absorb checks read the enemy, then gadgets, then the player.
+  - Absorb checks read the enemy, then gadgets, then the player, and only what gcsim's check pattern reaches (`Sim::absorb_check_in`; Sucrose's burst does not reach the player or Guoba).
   - gcsim has special cases away from the obvious code: burning's ICD is checked for every character, not only the attacker (pkg/enemy/attack.go). When per-ability damage differs with equal hits, trace one gcsim fight with its debug log (`simulation.NewCore(seed, true, cfg)`, then `c.Log.(*glog.Ctrl).Dump()`) beside the engine.
   - Most hits are taken to land, but some abilities move their hitbox away (Diluc's burst): compare hits per ability, and use `Sim::box_hits` where gcsim's geometry decides.
   - Before trusting a quick check, look at per-ability hits and damage (`gse` output and the harness's `-abil`), and at waits.
