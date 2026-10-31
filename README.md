@@ -2,7 +2,7 @@
 
 An experiment: would a simulation engine written only for Gscouter, in Rust, be faster than gcsim and still score within 1% of it?
 
-It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 230 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty-seven characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean, Sucrose, Wriothesley, Yae Miko, Diona, Klee, Lynette, Shenhe), 28 weapons and 14 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
+It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 232 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): twenty-seven characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori, Jean, Sucrose, Wriothesley, Yae Miko, Diona, Klee, Lynette, Shenhe), 28 weapons and 14 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, reactions on the player (Jean's self swirl), and every resonance are in.
 
 It reads gcsim's config language as gcsim does: the same lexer, grammar and evaluator (`let`, `fn`, `if`/`else`, `while`, `for`, `switch` with `fallthrough`, `break`/`continue`/`return`, action lists with params and repeats, `.char.skill.ready` and the other fields, `wait`, `delay`, `execute_action` and the other built-ins), and the same setup lines (`options`, `target`, `energy`, `char`, `add weapon`, `add set`, `add stats`, `active`). A config gcsim runs, the engine runs unchanged, as long as its characters, weapons, sets and actions are ones the engine implements; anything else is an error naming it, never a silent difference.
 
@@ -160,7 +160,14 @@ Of the teams supported before, four changed with them (two with dendro cores, tw
 
 Lynette / Yelan / Fischl / Bennett waits 207 s a fight on energy and passes at 95,500 iterations (+0.05% ± 0.69).
 
-The runner also classifies every library team. Of 4,570, 230 are supported and 4,340 are not; what blocks the most teams:
+Yae Miko's charged attack, which the census listed as blocking 55 teams, made two supported: the other 53 have other blockers too. It is gcsim's ChargeAttack: five 2 by 2 boxes 9 frames apart, each 1.65 further toward the target, in the ICD group whose 0.5 s lets only the first hit deal damage and apply electro. At Gscouter's distance the first two boxes reach the enemy; the other three miss it and reach only the gadgets they cover (`Sim::queue_gadget_attack`), which can be dendro cores. Their library builds pass (Gscouter at `14e187f`):
+
+| Team | Iterations | Team | Worst character | Charged attacks per fight (gcsim) |
+|---|---|---|---|---|
+| Kazuha / Yae Miko / Fischl / Nahida | 1,000 | +0.01% ± 0.10 | Kazuha +0.19% ± 0.20 | 92.07 (92.08) |
+| Nahida / Yelan / Yae Miko / Zhongli (hyperbloom) | 1,000 | −0.04% ± 0.10 | Nahida +0.15% ± 0.37 | 26.00 (26.00) |
+
+The runner also classifies every library team. Of 4,570, 232 are supported and 4,338 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
 |---|---|
@@ -168,7 +175,7 @@ The runner also classifies every library team. Of 4,570, 230 are supported and 4
 | Weapons | Sacrificial Jade 401, Oathsworn Eye 352, Finale of the Deep 336, Chain Breaker 226, Hakushin Ring 216, Prototype Amber 211 |
 | Sets | Ocean-Hued Clam 391, Obsidian Codex 385, Celestial Gift 332, Flower of Paradise Lost 290, Fragment of Harmonic Whimsy 283, Thundering Fury 275 |
 | Built-ins | `set_player_pos` 45, `set_on_tick` 1 |
-| Actions of ported characters | Yae Miko's charge 55, Bennett's charge 19, plunges without Xianyun 53 |
+| Actions of ported characters | Bennett's charge 19, plunges without Xianyun 53 |
 | Constellations not ported | Nahida C2 and C6, 19; Chiori C6, 12; Jean C4, 7; Wriothesley C1 and C6, 7; Klee C1, C2 and C6, 7; Yae Miko C1 and C6, 6; Zhongli C2 and C6, 5 |
 | Other | two Hexerei characters 394 (Fischl with Mona, Sucrose, Razor and the others) |
 

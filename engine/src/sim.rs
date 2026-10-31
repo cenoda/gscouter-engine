@@ -1866,6 +1866,15 @@ impl Sim {
         self.queue_dmg(slot, dmg);
     }
 
+    /// gcsim's QueueAttack (snapshot now) for an attack whose pattern
+    /// misses the enemy: `dmg` frames later it reaches only the gadgets it
+    /// covers.
+    pub fn queue_gadget_attack(&mut self, info: AttackInfo, dmg: i32) {
+        let ev = self.snapshot_event(info, 0);
+        let slot = self.alloc(ev);
+        self.add_task(Task::GadgetAttack { slot }, dmg);
+    }
+
     /// Queues QueueAttack on a character's queue, as attacks queued at a
     /// hitmark with QueueCharTask are.
     pub fn queue_attack_at(&mut self, ci: usize, info: AttackInfo, callbacks: u16, delay: i32) {

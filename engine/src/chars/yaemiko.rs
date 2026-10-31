@@ -1,8 +1,8 @@
 //! Yae Miko, from gcsim's internal/characters/yaemiko, at C0: normal
 //! attacks, the skill's Sesshou Sakura (three charges, up to three
 //! totems), the burst's thunderbolts, A1, A4 and the revelation (longer
-//! totems, superconduct's enhanced strike, A1's extra strike). No charged
-//! attacks, plunges or constellations. Radiance needs a Polestar Field and
+//! totems, superconduct's enhanced strike, A1's extra strike) and charged
+//! attacks. No plunges or constellations. Radiance needs a Polestar Field and
 //! Stellar-Conduct, which nothing the engine has makes, so it never
 //! applies; port it with the first content that makes them.
 
@@ -87,8 +87,10 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            // gcsim's ChargeAttack reads no params
+            Action::Charge => p.0.first().map(|(k, _)| format!("charge param {k}")),
             Action::Attack | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
@@ -115,6 +117,32 @@ impl Character for Char {
         let info = ActInfo::new(Frames::Attack { table, atkspd }, table[0], h, AnimState::Normal);
         s.advance_normal(ci);
         info
+    }
+
+    fn charge(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        let lvl = s.talent(ci, 0);
+        let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_EXTRA_ATTACK, icd::GROUP_YAE_CHARGED, Element::Electro, 25.0, g::CHARGE[lvl]);
+        ai.abil = "Charge Attack";
+        // the windup is skipped out of a normal attack
+        let windup = if s.current_state() == AnimState::Normal { 14 } else { 0 };
+        // five 2 by 2 boxes, each 1.65 further toward the target, one every
+        // 9 frames; the group's ICD lets one deal damage every 0.5 s. A box
+        // that misses the enemy still reaches the gadgets it covers.
+        for i in 0..5 {
+            ai.pattern = s.box_on_player(0.0, 1.65 * (i + 1) as f64, 2.0, 2.0);
+            let d = g::CHARGE_HITMARK + i * 9 - windup;
+            if ai.pattern.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true) {
+                s.queue_attack(ai, 0, 0, d);
+            } else {
+                s.queue_gadget_attack(ai, d);
+            }
+        }
+        let t = &g::CHARGE_FRAMES;
+        ActInfo::new(Frames::Char { id: 0, arg: windup as i16 }, t[0] - windup, t[Action::Dash as usize] - windup, AnimState::Charge)
+    }
+
+    fn frames(_: u8, windup: i16, next: Action) -> i32 {
+        g::CHARGE_FRAMES[next as usize] - windup as i32
     }
 
     fn skill(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
