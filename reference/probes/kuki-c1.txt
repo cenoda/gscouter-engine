@@ -1,0 +1,3 @@
+# Kuki C1: the burst's radius is 6. No C2, C4 or C6.
+team kukishinobu-fischl-xingqiu-nahida
+kuki char lvl=90/90 cons=1 talent=9,9,9;

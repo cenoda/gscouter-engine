@@ -1,0 +1,3 @@
+# Kuki C4: Thundergrass Mark on the on-fielder's normals, and C2's longer ring. No C6.
+team kukishinobu-fischl-xingqiu-nahida
+kuki char lvl=90/90 cons=4 talent=9,9,9;

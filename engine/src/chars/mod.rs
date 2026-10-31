@@ -32,4 +32,5 @@ crate::chars! {
     Lynette => lynette,
     Shenhe => shenhe,
     Lisa => lisa,
+    Kuki => kuki,
 }
