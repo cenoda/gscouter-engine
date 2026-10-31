@@ -70,6 +70,8 @@ pub enum ModKind {
     Attack,
     Status,
     Resist,
+    /// gcsim's DefMod on the enemy: its amount in `value`.
+    Def,
     /// gcsim's HealBonusMod: incoming healing bonus, its amount in
     /// st::HEAL.
     HealBonus,
@@ -952,6 +954,10 @@ pub struct Gadget {
     /// Its owner's gadget_hit sees the attacks that reach it (gcsim's
     /// HandleAttack of a gadget of its own).
     pub takes_hits: bool,
+    /// Of the enemy camp (gcsim's GadgetTyp between StartGadgetTypEnemy
+    /// and EndGadgetTypEnemy: dendro cores, the Bogglecat Box), which
+    /// abilities that pick gadgets as targets choose from.
+    pub enemy_camp: bool,
 }
 
 /// The owner of dendro cores, which belong to no character.
@@ -1692,6 +1698,13 @@ impl Sim {
     pub fn enemy_add_status(&mut self, key: ModKey, dur: i32, hitlag: bool) {
         let expiry = if dur < 0 { -1 } else { self.f + dur };
         mod_add(&mut self.enemy.mods, Mod::new(key, ModKind::Status, st::NONE, false, hitlag, expiry));
+    }
+
+    /// gcsim's AddDefMod, hitlag affected (NewBaseWithHitlag).
+    pub fn enemy_add_def(&mut self, key: ModKey, value: f64, dur: i32) {
+        let mut m = Mod::new(key, ModKind::Def, st::NONE, false, true, self.f + dur);
+        m.value = value;
+        mod_add(&mut self.enemy.mods, m);
     }
 
     pub fn enemy_add_resist(&mut self, key: ModKey, ele: Element, value: f64, dur: i32) {
@@ -2626,7 +2639,7 @@ impl Sim {
             self.core_explode(g.actor, g.x, g.y);
         }
         let f = self.f;
-        self.gadgets.push(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false });
+        self.gadgets.push(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true });
     }
 
     /// A core expired or was killed: its bloom 1 frame later, a circle of
@@ -3142,14 +3155,16 @@ impl Sim {
     /// gcsim's Combat.AddGadget.
     /// The gadget is at (x, y) from the player, of radius r.
     pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
-        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: self.f, x, y, r, actor: 0, takes_hits: false });
+        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: self.f, x, y, r, actor: 0, takes_hits: false, enemy_camp: false });
     }
 
     /// add_gadget for a gadget whose owner handles the attacks reaching it
-    /// (its gadget_hit).
-    pub fn add_hittable_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
+    /// (its gadget_hit), and whether it is of the enemy camp.
+    pub fn add_hittable_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64, enemy_camp: bool) {
         self.add_gadget(owner, id, duration, x, y, r);
-        self.gadgets.last_mut().unwrap().takes_hits = true;
+        let g = self.gadgets.last_mut().unwrap();
+        g.takes_hits = true;
+        g.enemy_camp = enemy_camp;
     }
 
     /// Removes a character's gadget (gcsim's Gadget.Kill), when it is there.
@@ -3358,8 +3373,9 @@ impl Sim {
         let base = ev.info.mult * a * (1.0 + 0.0) + ev.info.flat_dmg;
         let mut damage = base * (1.0 + dmg_bonus);
         s[st::CR] = s[st::CR].clamp(0.0, 1.0);
-        let res = self.enemy_resist(ev.info.element);
-        let defmod = (ev.char_lvl + 100) as f64 / ((ev.char_lvl + 100) as f64 + (self.enemy.level + 100) as f64 * (1.0 + 0.0) * (1.0 - ev.info.ignore_def.min(1.0)));
+        let (res, defadj) = self.enemy_resist_def(ev.info.element);
+        let defadj = defadj.min(0.9);
+        let defmod = (ev.char_lvl + 100) as f64 / ((ev.char_lvl + 100) as f64 + (self.enemy.level + 100) as f64 * (1.0 + defadj) * (1.0 - ev.info.ignore_def.min(1.0)));
         damage *= defmod;
         let resmod = if res < 0.0 {
             1.0 - res / 2.0
@@ -3384,14 +3400,21 @@ impl Sim {
         (damage, crit)
     }
 
-    fn enemy_resist(&self, e: Element) -> f64 {
+    /// The enemy's resistance to an element and its DEF adjustment (gcsim's
+    /// resist and defAdj), from the mods that count now.
+    fn enemy_resist_def(&self, e: Element) -> (f64, f64) {
         let mut r = self.enemy.resist[e as usize];
+        let mut d = 0.0;
         for m in &self.enemy.mods {
-            if m.kind == ModKind::Resist && m.expiry() > self.f && m.ele == e {
-                r += m.value;
+            if m.expiry() > self.f {
+                if m.kind == ModKind::Resist && m.ele == e {
+                    r += m.value;
+                } else if m.kind == ModKind::Def {
+                    d += m.value;
+                }
             }
         }
-        r
+        (r, d)
     }
 
     fn damage_applied(&mut self, slot: u16) {
@@ -4205,14 +4228,20 @@ impl Sim {
                 let active = |kind: ModKind| self.enemy.mods.iter().any(|m| m.kind == kind && m.key.name == fields[3] && m.active(f));
                 match fields[1].as_str() {
                     "res" => Ok(b(active(ModKind::Resist))),
-                    "def" => Ok(b(false)),
+                    "def" => Ok(b(active(ModKind::Def))),
                     t => Err(format!("bad debuff condition: invalid type {t}")),
                 }
             }
             "tags" => {
                 need(3, "tags")?;
                 self.target(&fields[1])?;
-                Ok(int(0))
+                // the enemy's tags (gcsim's GetTag, 0 when unset): those of
+                // ported characters the engine keeps, or an error
+                match fields[2].as_str() {
+                    crate::gcsimdata::chars::lisa::CONDUCTIVE_TAG => Ok(int(crate::chars::lisa::conductive(self))),
+                    t @ (crate::gcsimdata::chars::yelan::SKILL_MARKED_TAG | crate::gcsimdata::chars::lynette::SKILL_TAG | crate::gcsimdata::chars::hutao::BB_DEBUFF) => Err(format!("unsupported: enemy tag {t}")),
+                    _ => Ok(int(0)),
+                }
             }
             "construct" => {
                 need(3, "construct")?;
@@ -4278,9 +4307,14 @@ impl Sim {
                         let f = self.f as f64;
                         Ok(b(self.infusion[ci].is_some_and(|i| i.key.name == fields[2] && !(i.expiry < f && i.expiry > -1.0))))
                     }
+                    // the character's tags (0 when unset); those ported
+                    // characters set are not kept
                     "tags" => {
                         need(3, &what)?;
-                        Ok(int(0))
+                        match fields[2].as_str() {
+                            t @ (crate::gcsimdata::chars::yaemiko::YAE_TOTEM_COUNT | crate::gcsimdata::chars::shenhe::QUILL_KEY) => Err(format!("unsupported: character tag {t}")),
+                            _ => Ok(int(0)),
+                        }
                     }
                     "stats" => {
                         need(3, &what)?;

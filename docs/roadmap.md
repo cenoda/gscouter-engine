@@ -71,11 +71,13 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **Flower of Paradise Lost** (six teams, each blocked by it alone): its bloom, hyperbloom and burgeon bonus on the reaction bonus mods, with gcsim's stacks; its holders (Bennett, Xiangling, Raiden, Xingqiu) cover all three reactions, and every library build passes (largest team difference +0.06% ± 0.14, character Zhongli +0.28% ± 0.28).
 - **Thundering Fury** (five teams, the set the census listed at 275 teams blocked): its 4-piece reaction bonuses and skill cooldown cut, on every reaction the engine has; the five library builds and three probes (aggravate, superconduct, hyperbloom) pass, the largest team difference −0.19% ± 0.26.
 
+- **Lisa** (nine teams, all passing with their library builds; largest team difference −0.15% ± 0.17): the enemy's Conductive stacks, C4's discharges on enemy-camp gadgets, and enemy DEF mods for A4. `.tags` conditions read 0 for every tag before; the ones ported content sets and the engine does not keep are now errors.
+
 What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 231 supported):
 
 1. **Dendro's rest**: the variants of the nine dendro teams (CI); Nahida's C2 and C6 (19 teams); hit patterns for the other ported characters, as their teams meet dendro cores.
 2. **The other geo characters** (Noelle, Yun Jin, Navia, Albedo); Zhongli's burst is in (two teams).
-3. **More characters one item from teams**: Xilonen (21 teams, with Nightsoul), Xiao (7), Wanderer (6), Lisa (6), Thoma (6, ported, its last team still in the runner); Lynette and Shenhe are in.
+3. **More characters one item from teams**: Citlali (24 teams), Xilonen (21, with Nightsoul), Mona (9), Charlotte (9), Thoma (9), Alhaitham (8), Layla (8), Sayu (8), Xiao (7), Wanderer (6); Lynette, Shenhe and Lisa are in.
 4. **Hexerei** (394): the bonuses when two Hexerei characters are in the team (Fischl with Mona, Sucrose, Razor and others).
 5. **Actions and constellations of ported characters**: Zhongli's C2, C4, C6 (5); plunges after Xianyun's burst (43, with Xianyun); Escoffier's constellations.
 6. **Systems**: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); `set_player_pos` (45); stamina mods; the lunar reactions.

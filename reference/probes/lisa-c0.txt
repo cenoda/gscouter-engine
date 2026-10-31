@@ -1,0 +1,3 @@
+# Lisa C0: one discharge a tick, no C1 energy, no C6 stacks on swap.
+team hutao-yelan-xingqiu-lisa
+lisa char lvl=90/90 cons=0 talent=9,9,9;
