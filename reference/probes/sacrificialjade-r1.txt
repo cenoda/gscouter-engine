@@ -1,0 +1,5 @@
+# Nahida with Sacrificial Jade R1 and no stacks. She opens on field, so the
+# buff is not on yet; it turns on after 5 s off field, and her short visits
+# cancel the 10 s clear.
+team bennett-nahida-yoimiya-xingqiu
+nahida add weapon="sacrificialjade" refine=1 lvl=90/90;

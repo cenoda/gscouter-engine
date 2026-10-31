@@ -1,0 +1,5 @@
+# Nahida with Sacrificial Jade R1 and stacks=1. She opens on field, so her
+# first skill already has the buff; the later off-field wait and cancelled
+# clear are the same as without the param.
+team bennett-nahida-yoimiya-xingqiu
+nahida add weapon="sacrificialjade" refine=1 lvl=90/90 +params=[stacks=1];

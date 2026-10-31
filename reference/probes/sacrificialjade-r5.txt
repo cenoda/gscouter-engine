@@ -1,0 +1,5 @@
+# Klee with Sacrificial Jade R5 and no stacks. She stays on field for the
+# long stretch of each loop, so the buff gained off field clears after 10 s
+# on field.
+team klee-fischl-xingqiu-bennett
+klee add weapon="sacrificialjade" refine=5 lvl=90/90;
