@@ -33,4 +33,5 @@ crate::weapons! {
     WanderingEvenstar => wanderingevenstar,
     TheWidsith => thewidsith,
     ThrillingTales => thrillingtales,
+    HakushinRing => hakushin,
 }

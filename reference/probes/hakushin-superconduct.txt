@@ -1,0 +1,5 @@
+# Lisa with Hakushin Ring R1 beside Rosaria's cryo: superconduct, which no library team that carries the ring triggers. Pale Flame and Thundersoother are swapped for sets the engine has.
+team lisa-fischl-rosaria-nahida
+lisa add weapon="hakushinring" refine=1 lvl=90/90;
+lisa add set="noblesseoblige" count=4;
+fischl add set="goldentroupe" count=4;

@@ -1,0 +1,3 @@
+# Lisa with Hakushin Ring R5 on a bloom team: her electro hits Nahida's dendro cores. No library team that carries the ring has both hydro and dendro, so none of them hyperbloom.
+team lisa-xingqiu-nahida-zhongli
+lisa add weapon="hakushinring" refine=5 lvl=90/90;

@@ -1,0 +1,3 @@
+# Lisa with Hakushin Ring R1 (library builds are R5): electro-charged while she is on field.
+team lisa-xingqiu-fischl-jean
+lisa add weapon="hakushinring" refine=1 lvl=90/90;
