@@ -1,5 +1,5 @@
 //! Zhongli's normal attacks, skill (pressed and held), steles and Jade
-//! Shield, A1, A4 and C1, from gcsim's internal/characters/zhongli.
+//! Shield, the burst, A1, A4 and C1, from gcsim's internal/characters/zhongli.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::zhongli as g;
@@ -92,12 +92,29 @@ impl Character for Char {
         st.a1 = 0;
     }
 
-    fn unsupported(a: Action, p: &Params) -> Option<String> {
+    fn unsupported(a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::Attack => None,
-            Action::Skill => None,
+            Action::Attack | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Planet Befall, with A4's 33% of max HP when it is cast.
+    fn burst(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        let lvl = s.talent(ci, 2);
+        let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Geo, 100.0, g::BURST[lvl]);
+        ai.abil = "Planet Befall";
+        ai.blunt = true;
+        ai.poise = 500.0;
+        if s.chars[ci].ascension >= 4 {
+            ai.flat_dmg = 0.33 * s.max_hp(ci);
+        }
+        ai.pattern = s.circle_on_player(0.0, 5.0, 7.5);
+        s.queue_attack(ai, 0, 101, 101);
+        s.set_cd(ci, Action::Burst, 720);
+        s.consume_energy(ci, 7);
+        let t = &g::BURST_FRAMES;
+        ActInfo::new(Frames::Table(t), t[0], t[Action::Dash as usize], AnimState::Burst)
     }
 
     fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {

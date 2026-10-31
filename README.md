@@ -2,7 +2,7 @@
 
 An experiment: would a simulation engine written only for Gscouter, in Rust, be faster than gcsim and still score within 1% of it?
 
-It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 125 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): nineteen characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori), 27 weapons and 13 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, and pyro, hydro, electro, cryo, dendro and geo resonance are in.
+It ports, from gcsim's source (Gscouter's fork, `cenoda/gcsim@eb21884`), what 127 library teams need, scored under Gscouter's looped conditions (450 s, window from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12): nineteen characters (Hu Tao, Xingqiu, Zhongli, Yelan, Bennett, Fischl, Furina, Kazuha, Raiden, Xiangling, Yoimiya, Chevreuse, Rosaria, Escoffier, Diluc, Gaming, Candace, Nahida, Chiori), 27 weapons and 13 sets. Phase 1 of the roadmap (`docs/roadmap.md`) is done: a comparison runner, data generated from gcsim, and a structure that characters, weapons and sets attach to. Phase 2 is under way: electro, cryo and dendro with their reactions (overload, electro-charged, swirl, melt, freeze and shatter, superconduct; burning, quicken, aggravate, spread, bloom with its dendro cores, burgeon, hyperbloom), heals and drains, hits on the player, shields with HP and crystallize shards (`pick_up_crystallize`), the player's aura, gadgets and the attack patterns that hit them, and pyro, hydro, electro, cryo, dendro and geo resonance are in.
 
 It reads gcsim's config language as gcsim does: the same lexer, grammar and evaluator (`let`, `fn`, `if`/`else`, `while`, `for`, `switch` with `fallthrough`, `break`/`continue`/`return`, action lists with params and repeats, `.char.skill.ready` and the other fields, `wait`, `delay`, `execute_action` and the other built-ins), and the same setup lines (`options`, `target`, `energy`, `char`, `add weapon`, `add set`, `add stats`, `active`). A config gcsim runs, the engine runs unchanged, as long as its characters, weapons, sets and actions are ones the engine implements; anything else is an error naming it, never a silent difference.
 
@@ -96,7 +96,9 @@ Chiori (her Tamato and the second doll a construct brings, the recast's forced s
 | Yoimiya / Yelan / Zhongli / Chiori | 1,000 | +0.02% ± 0.14 | Chiori +0.08% ± 0.19 | 2.6 s |
 | Zhongli / Chiori / Bennett / Fischl | 1,000 | −0.27% ± 0.24 | Zhongli −0.42% ± 0.36 | 0.8 s |
 
-The runner also classifies every library team. Of 4,570, 125 are supported and 4,445 are not; what blocks the most teams:
+Zhongli's burst made two more (Raiden / Fischl / Nahida / Zhongli, team −0.09% ± 0.10; Yoimiya / Bennett / Xiangling / Zhongli, −0.23% ± 0.23; both at 1,000 iterations).
+
+The runner also classifies every library team. Of 4,570, 127 are supported and 4,443 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
 |---|---|
@@ -105,7 +107,7 @@ The runner also classifies every library team. Of 4,570, 125 are supported and 4
 | Sets | Gilded Dreams 417, Ocean-Hued Clam 391, Obsidian Codex 385, Celestial Gift 332, Flower of Paradise Lost 290, Fragment of Harmonic Whimsy 283 |
 | Resonances | anemo 263, geo with characters not ported (Noelle, Yun Jin, Albedo, Navia and others) |
 | Built-ins | `set_player_pos` 45, `set_on_tick` 1 |
-| Actions of ported characters | Zhongli's burst 36, Bennett's charge 19, plunges without Xianyun 43 |
+| Actions of ported characters | Bennett's charge 19, plunges without Xianyun 43 |
 | Constellations not ported | Nahida C2 and C6, 19; Zhongli C2 and C6, 5 |
 | Other | two Hexerei characters 394 (Fischl with Mona, Sucrose, Razor and the others) |
 
