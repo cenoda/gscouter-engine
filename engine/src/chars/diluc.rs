@@ -1,11 +1,11 @@
 //! Diluc, from gcsim's internal/characters/diluc: normal attacks, the
 //! three-part skill, the burst and its infusion, A4 and every
-//! constellation. C2 needs Diluc to be hit, which no fight here does.
+//! constellation but C2, which needs Diluc to be hit: an error when he is.
 //! Plunges need Xianyun.
 
 use std::cell::Cell;
 
-use crate::content::Character;
+use crate::content::{Character, Event};
 use crate::gcsimdata::chars::diluc as g;
 use crate::sim::*;
 use crate::types::*;
@@ -49,6 +49,17 @@ impl Character for Char {
         if s.chars[ci].cons >= 1 && s.damage_mode {
             s.st_mut::<State>(ci).enemy_max_hp = s.enemy_hp;
             s.chars[ci].mods.push(Mod::owned(C1, ModKind::Attack, Owner::Char(ci as u8), st::NONE, false, false, -1));
+        }
+        if s.chars[ci].cons >= 2 {
+            s.subscribe(EventKind::PlayerHit, Owner::Char(ci as u8));
+        }
+    }
+
+    fn event(s: &mut Sim, ci: usize, e: &Event) {
+        if let Event::PlayerHit { on } = *e {
+            if on == ci {
+                s.unsupported("constellation diluc C2 (Diluc hit)");
+            }
         }
     }
 

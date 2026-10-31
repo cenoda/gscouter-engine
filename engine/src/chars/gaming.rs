@@ -85,6 +85,12 @@ impl Character for Char {
         ai.hitlag_factor = 0.01;
         ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n] * 60.0;
         ai.def_halt = true;
+        let off = g::ATTACK_OFFSETS[n];
+        ai.pattern = if n == 2 {
+            s.box_on_player(0.0, off, g::ATTACK_HITBOXES[n][0], g::ATTACK_HITBOXES[n][1])
+        } else {
+            s.fan_on_player(0.0, off, g::ATTACK_HITBOXES[n][0], g::ATTACK_FAN_ANGLES[n])
+        };
         let h = g::ATTACK_HITMARKS[n];
         s.queue_attack(ai, 0, h, h);
         let atkspd = s.stat(ci, st::ATKSPD);
@@ -115,6 +121,7 @@ impl Character for Char {
         let lvl = s.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::BURST[lvl]);
         ai.abil = "Suanni's Gilded Dance";
+        ai.pattern = s.circle_on_player(0.0, 0.0, 5.0);
         s.queue_attack(ai, 0, g::BURST_HITMARK, g::BURST_HITMARK);
         s.set_cd(ci, Action::Burst, g::BURST_CD);
         s.consume_energy(ci, g::BURST_ENERGY_FRAME);
@@ -233,6 +240,7 @@ fn special_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
     ai.blunt = true;
     ai.poise = 150.0;
     ai.ignore_infusion = true;
+    ai.pattern = s.circle_on_player(0.0, 0.0, if s.chars[ci].cons >= 6 { 6.0 } else { 4.0 });
     let a1 = if s.chars[ci].ascension >= 1 { CB_A1 } else { 0 };
     let c4 = if s.chars[ci].cons >= 4 { CB_C4 } else { 0 };
     let h = g::SPECIAL_PLUNGE_HITMARK;

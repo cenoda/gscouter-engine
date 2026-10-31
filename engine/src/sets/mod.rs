@@ -13,4 +13,5 @@ crate::sets! {
     ViridescentVenerer => viridescentvenerer,
     CrimsonWitch => crimsonwitchofflames,
     SongOfDaysPast => songofdayspast,
+    DeepwoodMemories => deepwoodmemories,
 }

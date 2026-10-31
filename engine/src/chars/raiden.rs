@@ -304,9 +304,9 @@ fn eye_on_damage(s: &mut Sim, ci: usize, ev: &AttackEvent) {
     if s.st::<State>(ci).eye_icd > s.f || !s.mod_active(ev.info.actor as usize, EYE) {
         return;
     }
-    // electro-charged and hydro swirl come from the enemy, and the eye
+    // electro-charged, burning and hydro swirl come from the enemy, and the eye
     // does not trigger itself
-    if matches!(ev.info.tag, AttackTag::ECDamage | AttackTag::SwirlHydro) || (ev.info.actor as usize == ci && ev.info.abil == "Eye of Stormy Judgement (Strike)") || ev.damage == 0.0 {
+    if matches!(ev.info.tag, AttackTag::ECDamage | AttackTag::BurningDamage | AttackTag::SwirlHydro) || (ev.info.actor as usize == ci && ev.info.abil == "Eye of Stormy Judgement (Strike)") || ev.damage == 0.0 {
         return;
     }
     let lvl = s.talent(ci, 1);

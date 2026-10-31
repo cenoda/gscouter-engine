@@ -47,7 +47,7 @@ const TASK_C2: u8 = 6;
 const TASK_C6: u8 = 7;
 
 /// The elements Chihayaburu and the burst absorb, in gcsim's order.
-const ABSORB: [(usize, Element); 4] = [(AURA_PYRO, Element::Pyro), (AURA_HYDRO, Element::Hydro), (AURA_ELECTRO, Element::Electro), (AURA_CRYO, Element::Cryo)];
+const ABSORB: [Element; 4] = [Element::Pyro, Element::Hydro, Element::Electro, Element::Cryo];
 
 fn absorb_check(s: &Sim) -> Element {
     s.absorb_check(&ABSORB)

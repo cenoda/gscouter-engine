@@ -177,10 +177,16 @@ pub fn run(sim: &mut Sim, program: &Block) -> Result<(), String> {
         let mut e = Eval { sim: &mut *sim };
         e.block(program, &global)
     };
+    if let Some(e) = sim.error.take() {
+        return Err(e);
+    }
     match res {
         Ok(_) | Err(Stop::Terminated) => {
             sim.finish();
-            Ok(())
+            match sim.error.take() {
+                Some(e) => Err(e),
+                None => Ok(()),
+            }
         }
         Err(Stop::Err(m)) => Err(m),
     }

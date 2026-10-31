@@ -41,8 +41,9 @@ pub enum EventKind {
     ParticleReceived,
     EnergyBurst,
     EnemyHit,
+    PlayerHit,
 }
-pub const N_EVENTS: usize = 11;
+pub const N_EVENTS: usize = 12;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -73,6 +74,8 @@ pub enum Event<'a> {
     /// OnEnemyHit, before attack mods: a subscriber adds flat damage to
     /// the hit through `Sim::hit_flat`.
     EnemyHit(&'a AttackEvent),
+    /// OnPlayerHit: the active character was hit.
+    PlayerHit { on: usize },
 }
 
 impl Event<'_> {
@@ -86,6 +89,7 @@ impl Event<'_> {
             Event::Reaction(..) => EventKind::Reaction,
             Event::Heal { .. } => EventKind::Heal,
             Event::Drain { .. } => EventKind::Drain,
+            Event::PlayerHit { .. } => EventKind::PlayerHit,
             Event::ParticleReceived => EventKind::ParticleReceived,
             Event::EnergyBurst { .. } => EventKind::EnergyBurst,
             Event::EnemyHit(_) => EventKind::EnemyHit,

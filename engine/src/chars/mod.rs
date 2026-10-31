@@ -21,4 +21,5 @@ crate::chars! {
     Diluc => diluc,
     Gaming => gaming,
     Candace => candace,
+    Nahida => nahida,
 }

@@ -65,6 +65,8 @@ impl Character for Char {
             ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAMES[n] * 60.0;
             ai.hitlag_factor = 0.01;
             ai.def_halt = true;
+            let (off, hb) = (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n][i]);
+            ai.pattern = if n == 3 || (n == 4 && i == 0) { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
             s.queue_attack_at(ci, ai, 0, g::ATTACK_HITMARKS[n][i]);
         }
         let atkspd = s.stat(ci, st::ATKSPD);

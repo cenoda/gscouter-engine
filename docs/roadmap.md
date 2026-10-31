@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 and 1 done, Phase 2 under way (104 teams) · Last updated: 2026-10-30
+> Status: Phases 0 and 1 done, Phase 2 under way (113 teams) · Last updated: 2026-10-31
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
@@ -47,7 +47,8 @@ What had to be in place before dozens of characters, so that they are not rewrit
 
 Progress so far, taken in the order that makes the most library teams supported (`README.md` has the results):
 
-- **104 of 4,570 teams supported** (2 at the start). The first sixteen pass the comparison runner with all their variants; the others with their library builds and probes (106 of 106 in the latest full run, the largest team difference −0.30%), variants for a few so far.
+- **113 of 4,570 teams supported** (2 at the start). The 104 supported before dendro pass the comparison runner with their library builds and probes (CI, Gscouter at `14e187f`), their variants are being run; the nine dendro teams pass with their library builds (the largest team difference −0.33%).
+- **The runner in CI, in parts**: `compare -only library,variants,probes -shard k/n`. Every push compares the library builds and probes in four parallel jobs; the variants run on a daily schedule, 8 of 40 parts a day, and a manual run can take all 40 at once (about half an hour on GitHub's runners).
 - **Electro, overload and electro-charged** (with Fischl), each reaction emitting its event as gcsim's `Reactable.React` does; reaction damage and `REACTION_LVL_BASE` from gcsim's combat package.
 - **HP changes** (with Furina): `Player.Heal` and `Player.Drain` with `OnHeal` and `OnPlayerHPDrain`, overheal, and incoming healing bonus mods. HP debt is still missing.
 - **Swirl, the player's aura and electro resonance** (with Kazuha and Raiden): swirl's hit on its own enemy, reaction bonus mods, Bennett's self infusion read by absorb checks; OnEnergyBurst and OnParticleReceived.
@@ -56,18 +57,18 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **Cryo** (with Rosaria and Escoffier): the cryo and frozen auras, frozen's decay, melt, freeze, superconduct and its physical shred, poise and shatter (attacks carry whether they are blunt and their poise damage), cryo swirl and crystallize, cryo resonance.
 - **More content, by the census's list of teams one or two items from support**: Xiangling (Guoba is a gadget, with the pyro window absorb checks read), Yoimiya, Chevreuse, Diluc, Gaming, Candace; The Catch, Rust, Serpent Spine, Lion's Roar, The Viridescent Hunt; Crimson Witch of Flames, Song of Days Past (OnEnemyHit, gcsim's Flags.Custom); Yelan's constellations and aimed shots, Zhongli's press skill and C1, Hu Tao's C6.
 - **Constellations**: one a character does not implement is now an error (it was silently ignored); Zhongli's C2, C4 and C6 and Escoffier's are not ported.
-- **Geometry, where it decides hits**: Diluc's burst ticks fly away from the player, and gcsim hits four of eight at Gscouter's target distance. The engine tests such boxes against the target's circle; every other hit still lands.
+- **Geometry, where it decides hits**: Diluc's burst ticks fly away from the player, and gcsim hits four of eight at Gscouter's target distance. The engine tests such boxes against the target's circle; every other hit on the enemy still lands.
+- **Dendro** (with Nahida, Wandering Evenstar, Deepwood Memories): the dendro, quicken, burning-fuel and burning aura slots with gcsim's decay rules; burning and its ticks, quicken, aggravate, spread, bloom (and quicken's bloom), dendro cores as gadgets with burgeon and hyperbloom; dendro resonance. Cores are hit through attack patterns (gcsim's circles, fans and boxes, checked against gcsim's shape code), given so far for Bennett, Yoimiya, Gaming, Hu Tao, Xingqiu's normal attacks, Nahida and the reactions; any other pyro or electro attack that could reach a core is an error. The player takes the reactions' self damage, which drains HP from outside the party. Porting it found content written as if these could not happen: Sapwood Blade did nothing, The Alley Flash was never locked out, and Raiden's Eye did not ignore burning damage.
 
-What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-30, 104 supported):
+What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 113 supported):
 
-1. **The runner, first.** Variants take about an hour per team, so only the first sixteen teams and three Xiangling teams have them; the other 85 have their library builds and probes only. Make CI run the library builds and probes on every push, and the variants on a schedule in parts; then run the missing variants. Checking is already the bottleneck.
-2. **Dendro** (with Nahida, 683 teams; Deepwood Memories 946; dendro resonance 328): the dendro, quicken, burning-fuel and burning auras; burning, bloom with dendro cores (gadgets exist now), hyperbloom, burgeon, quicken, aggravate, spread; the reaction tags already listed for Crimson Witch (`BurningDamage`, `Burgeon`) and every subscriber that lists reactions (Fischl's A4, Cinder City, Instructor, electro resonance) need the new ones.
-3. **Shields, crystallize shards and geo resonance** (`pick_up_crystallize` 511, geo resonance 418): shields with HP, element and strength, absorption; crystallize shards as gadgets that give a shield when picked up; geo resonance's shield strength and DMG while shielded.
-4. **Reactions on the player and anemo resonance** (263): gcsim's `ReactWithSelf` (Jean's burst swirls the player's aura, e.g. Bennett's pyro), then a second anemo character: Jean, Sucrose or Lynette.
-5. **Hexerei** (394): the bonuses when two Hexerei characters are in the team (Fischl with Mona, Sucrose, Razor and others).
-6. **Actions and constellations of ported characters**: Zhongli's burst (36) and C2, C4, C6 (5); Bennett's charge (19); plunges after Xianyun's burst (43, with Xianyun); Escoffier's constellations.
-7. **Systems**: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); `set_player_pos` (45); stamina mods; the lunar reactions.
-8. **Close the phase**: measurements and status in `README.md` and here, and speed (Phase 2 so far costs about 4.5% more instructions on `team-looped.txt`).
+1. **Dendro's rest**: the variants of the nine dendro teams (CI); Nahida's C2 and C6 (19 teams); hit patterns for the other ported characters, as their teams meet dendro cores.
+2. **Shields, crystallize shards and geo resonance** (`pick_up_crystallize` 511, geo resonance 418): shields with HP, element and strength, absorption; crystallize shards as gadgets that give a shield when picked up; geo resonance's shield strength and DMG while shielded.
+3. **Reactions on the player and anemo resonance** (263): gcsim's `ReactWithSelf` (Jean's burst swirls the player's aura, e.g. Bennett's pyro), then a second anemo character: Jean, Sucrose or Lynette.
+4. **Hexerei** (394): the bonuses when two Hexerei characters are in the team (Fischl with Mona, Sucrose, Razor and others).
+5. **Actions and constellations of ported characters**: Zhongli's burst (36) and C2, C4, C6 (5); Bennett's charge (19); plunges after Xianyun's burst (43, with Xianyun); Escoffier's constellations.
+6. **Systems**: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); `set_player_pos` (45); stamina mods; the lunar reactions.
+7. **Close the phase**: measurements and status in `README.md` and here, and speed (Phase 2 so far costs about 6% more instructions on `team-looped.txt`).
 
 Weapons and sets that block many teams (The Widsith 700, Thrilling Tales 497, Wandering Evenstar 470, Sacrificial Jade 401, Gilded Dreams 417, Ocean-Hued Clam 391) are Phase 3 content; the catalysts need a catalyst character to be checked on first (Klee, Yae Miko). The Widsith is written but not registered for that reason.
 

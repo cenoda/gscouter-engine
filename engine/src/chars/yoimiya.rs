@@ -77,6 +77,7 @@ impl Character for Char {
         for (i, mult) in g::ATTACK[n].iter().enumerate() {
             let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd_tag, icd::GROUP_DEFAULT, Element::Physical, 25.0, mult[lvl]);
             ai.abil = NORMAL_NAMES[n];
+            ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
             total_mv += mult[lvl];
             let h = g::ATTACK_HITMARKS[n][i];
             s.queue_attack(ai, cbs, h, h + travel);
@@ -84,6 +85,7 @@ impl Character for Char {
         if s.chars[ci].cons >= 6 && skill && s.rng.float64() < 0.5 {
             let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Pyro, 25.0, total_mv * 0.6);
             ai.abil = ["Kindling (C6) - N0", "Kindling (C6) - N1", "Kindling (C6) - N2", "Kindling (C6) - N3", "Kindling (C6) - N4"][n];
+            ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
             s.queue_attack(ai, cb_a1 | cb_c2, 0, g::ATTACK_HITMARKS[n][0] + travel + 5);
         }
         let atkspd = s.stat(ci, st::ATKSPD);
@@ -108,6 +110,7 @@ impl Character for Char {
         ai.abil = "Aurous Blaze (Initial)";
         ai.blunt = true;
         ai.poise = 220.0;
+        ai.pattern = s.circle_on_player(0.0, 0.0, 6.0);
         if s.chars[ci].ascension >= 4 {
             s.add_task(Task::Char { c: ci as u8, id: TASK_A4, arg: 0 }, g::BURST_HITMARK);
         }
@@ -183,6 +186,7 @@ impl Character for Char {
                 ai.abil = "Aurous Blaze (Explode)";
                 ai.blunt = true;
                 ai.poise = 60.0;
+                ai.pattern = s.circle_on_target(3.0);
                 let cb_c2 = if s.chars[ci].cons >= 2 { CB_C2 } else { 0 };
                 s.queue_attack(ai, cb_c2, 0, 1);
                 s.enemy_add_status(AB_ICD, 120, true);

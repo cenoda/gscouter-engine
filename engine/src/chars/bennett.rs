@@ -76,6 +76,12 @@ impl Character for Char {
         ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAMES[n] * 60.0;
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
+        let off = g::ATTACK_OFFSETS[n];
+        ai.pattern = if n == 3 {
+            s.box_on_player(0.0, off, g::ATTACK_HITBOXES[n][0], g::ATTACK_HITBOXES[n][1])
+        } else {
+            s.fan_on_player(0.0, off, g::ATTACK_HITBOXES[n][0], g::ATTACK_FAN_ANGLES[n])
+        };
         let hitmark = g::ATTACK_HITMARKS[n];
         s.queue_attack(ai, 0, hitmark, hitmark);
         let atkspd = s.stat(ci, st::ATKSPD);
@@ -103,6 +109,7 @@ impl Character for Char {
         let lvl = s.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 50.0, g::BURST[lvl]);
         ai.abil = "Fantastic Voyage";
+        ai.pattern = s.circle_on_player(0.0, 0.5, 6.0);
         s.queue_attack(ai, 0, 37, 37);
         // the field ticks from 0 s to 12 s; the player is always in it
         s.st_mut::<State>(ci).heal_bonus = s.stats(ci)[st::HEAL];
@@ -124,6 +131,8 @@ impl Character for Char {
                 let mut ai = hold_info(ci, level);
                 ai.mult = g::SKILL_HOLD[level - 1][i][lvl];
                 ai.hitlag_halt = 0.09 * 60.0;
+                let (off, hb) = (g::SKILL_HOLD_OFFSETS[i], g::SKILL_HOLD_HITBOXES[i]);
+                ai.pattern = if i == 1 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
                 s.queue_attack(ai, CB_HOLD_PARTICLE, 0, 0);
             }
             _ => unreachable!(),
@@ -166,6 +175,7 @@ fn skill_press(s: &mut Sim, ci: usize) -> ActInfo {
     ai.hitlag_halt = 0.09 * 60.0;
     ai.hitlag_factor = 0.01;
     ai.def_halt = true;
+    ai.pattern = s.fan_on_player(0.0, 0.8, 2.5, 270.0);
     s.queue_attack(ai, CB_PRESS_PARTICLE, g::SKILL_PRESS_HITMARK, g::SKILL_PRESS_HITMARK);
     let cd = a4_cd(s, ci, a1(s, ci, 5 * 60));
     s.set_cd_with_delay(ci, Action::Skill, cd, 14);
@@ -189,6 +199,7 @@ fn skill_hold(s: &mut Sim, ci: usize, level: usize, c4: bool) -> ActInfo {
     if level == 2 {
         let mut ai = hold_info(ci, level);
         ai.mult = g::EXPLOSION[lvl];
+        ai.pattern = s.circle_on_player(0.0, 1.0, 3.5);
         s.queue_attack(ai, CB_HOLD_PARTICLE, 166, 166);
     }
     // the C4 variant adds an attack of 135% of the second hit
@@ -197,6 +208,7 @@ fn skill_hold(s: &mut Sim, ci: usize, level: usize, c4: bool) -> ActInfo {
         ai.mult = g::SKILL_HOLD[0][1][lvl] * 1.35;
         ai.abil = "Passion Overload (C4)";
         ai.hitlag_halt = 0.12 * 60.0;
+        ai.pattern = s.box_on_player(0.0, -1.0, 3.0, 4.0);
         s.queue_attack(ai, CB_HOLD_PARTICLE, 94, 94);
     }
     let (idx, cd, delay) = match level {

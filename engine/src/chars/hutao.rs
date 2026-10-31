@@ -122,6 +122,8 @@ impl Character for Char {
             ai.hitlag_factor = 0.01;
             ai.hitlag_halt = (if pp { g::PP_ATTACK_HITLAG_HALT_FRAME[n][i] } else { g::ATTACK_HITLAG_HALT_FRAME[n][i] }) * 60.0;
             ai.def_halt = if pp { g::PP_ATTACK_DEF_HALT[n][i] } else { g::ATTACK_DEF_HALT[n][i] };
+            let (off, hb, fan) = if pp { (g::PP_ATTACK_OFFSETS[n][i], g::PP_ATTACK_HITBOXES[n][i], g::PP_ATTACK_FAN_ANGLES[n]) } else { (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n][i], g::ATTACK_FAN_ANGLES[n]) };
+            ai.pattern = if n == 1 || (n == 4 && i == 1) { s.box_on_player(0.0, off[1], hb[0], hb[1]) } else { s.fan_on_player(off[0], off[1], hb[0], fan) };
             let cb = if pp { CB_PARTICLE } else { 0 };
             s.queue_attack_at(ci, ai, cb, hitmarks[i]);
         }
@@ -142,6 +144,7 @@ impl Character for Char {
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
         ai.deployable = true;
+        ai.pattern = s.circle_on_target(0.8);
         if !s.mod_active(ci, PARAMITA) {
             s.queue_attack(ai, 0, 0, g::CHARGE_HITMARK);
             return ActInfo::new(Frames::Table(&g::CHARGE_FRAMES), g::CHARGE_FRAMES[0], g::CHARGE_HITMARK, AnimState::Charge);
@@ -199,6 +202,7 @@ impl Character for Char {
         st.heal_src = heal_src;
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 50.0, mult);
         ai.abil = if low { "Spirit Soother (Low HP)" } else { "Spirit Soother" };
+        ai.pattern = s.circle_on_player(0.0, 0.0, 6.0);
         let cb = CB_HEAL | if s.chars[ci].cons >= 2 { CB_BB } else { 0 };
         s.queue_attack(ai, cb, 0, g::BURST_HITMARK);
         s.consume_energy(ci, 68);
@@ -295,6 +299,7 @@ fn bb_tick(s: &mut Sim, ci: usize, src: i32) {
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::BB[lvl]);
     ai.abil = "Blood Blossom";
+    ai.pattern = Pattern::Single;
     if s.chars[ci].cons >= 2 {
         ai.flat_dmg += s.max_hp(ci) * 0.1;
     }

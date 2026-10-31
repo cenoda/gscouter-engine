@@ -30,4 +30,5 @@ crate::weapons! {
     SerpentSpine => serpentspine,
     LionsRoar => lionsroar,
     TheViridescentHunt => theviridescenthunt,
+    WanderingEvenstar => wanderingevenstar,
 }

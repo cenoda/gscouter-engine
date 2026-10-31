@@ -158,9 +158,100 @@ pub fn mod_add(mods: &mut Vec<Mod>, m: Mod) {
 pub const PYRO_RESONANCE: ModKey = ModKey::new("pyro-res");
 pub const HYDRO_RESONANCE: ModKey = ModKey::new("hydro-res-hpp");
 pub const CRYO_RESONANCE: ModKey = ModKey::new("cryo-res");
+const LUNAR_BLOOM: ModKey = ModKey::new("lunarbloom-enabled");
+pub const DENDRO_RESONANCE: ModKey = ModKey::new("dendro-res-50");
+const DENDRO_RESONANCE_30: ModKey = ModKey::new("dendro-res-30");
+const DENDRO_RESONANCE_20: ModKey = ModKey::new("dendro-res-20");
 const SUPERCONDUCT_SHRED: ModKey = ModKey::new("superconduct-phys-shred");
 
 // ---------------------------------------------------------------- attacks
+
+/// Where an attack hits (gcsim's AttackPattern), for the gadgets it may
+/// hit besides the enemy, in the player's frame: the player at the origin,
+/// facing the enemy along +y.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Pattern {
+    /// Not given. The enemy is taken to be hit; a dendro core that could
+    /// react to it is an error.
+    Unknown,
+    /// One target, the enemy: never a gadget.
+    Single,
+    /// A full circle.
+    Circle { x: f32, y: f32, r: f32 },
+    /// A circle cut to a fan of `fan` degrees facing the enemy.
+    Fan { x: f32, y: f32, r: f32, fan: f32 },
+    /// gcsim's rectangle facing the enemy: w wide, from its spawn (x, y)
+    /// to h ahead.
+    Box { x: f32, y: f32, w: f32, h: f32 },
+}
+
+/// Pattern with its numbers widened back, for the tests.
+#[derive(Clone, Copy)]
+enum Wide {
+    Unknown,
+    Single,
+    Circle { x: f64, y: f64, r: f64 },
+    Fan { x: f64, y: f64, r: f64, fan: f64 },
+    Box { x: f64, y: f64, w: f64, h: f64 },
+}
+
+impl Pattern {
+    fn wide(self) -> Wide {
+        let w = |v: f32| v as f64;
+        match self {
+            Pattern::Unknown => Wide::Unknown,
+            Pattern::Single => Wide::Single,
+            Pattern::Circle { x, y, r } => Wide::Circle { x: w(x), y: w(y), r: w(r) },
+            Pattern::Fan { x, y, r, fan } => Wide::Fan { x: w(x), y: w(y), r: w(r), fan: w(fan) },
+            Pattern::Box { x, y, w: bw, h } => Wide::Box { x: w(x), y: w(y), w: w(bw), h: w(h) },
+        }
+    }
+    /// Whether it reaches a circle at (cx, cy) of radius r (gcsim's
+    /// IntersectCircle and IntersectRectangle); None when unknown.
+    pub fn hits_circle(self, cx: f64, cy: f64, r: f64) -> Option<bool> {
+        match self.wide() {
+            Wide::Unknown => None,
+            Wide::Single => Some(false),
+            Wide::Circle { x, y, r: pr } => Some((cx - x) * (cx - x) + (cy - y) * (cy - y) <= (pr + r) * (pr + r)),
+            Wide::Fan { x, y, r: pr, fan } if fan <= 0.0 || fan >= 360.0 => Some((cx - x) * (cx - x) + (cy - y) * (cy - y) <= (pr + r) * (pr + r)),
+            Wide::Fan { x, y, r: pr, fan } => {
+                if (cx - x) * (cx - x) + (cy - y) * (cy - y) > (pr + r) * (pr + r) {
+                    return Some(false);
+                }
+                // the target's circle against the fan's two edges
+                let (opx, opy) = (x - cx, y - cy);
+                let op_dist = opx.hypot(opy);
+                for a in [-fan / 2.0, fan / 2.0] {
+                    let a = a.to_radians();
+                    let (qx, qy) = (x + pr * a.sin(), y + pr * a.cos());
+                    let (qpx, qpy) = (x - qx, y - qy);
+                    let (oqx, oqy) = (qx - cx, qy - cy);
+                    let mut min_dist = op_dist.min(oqx.hypot(oqy));
+                    if opx * qpx + opy * qpy > 0.0 && oqx * -qpx + oqy * -qpy > 0.0 {
+                        min_dist = (opx * oqy - opy * oqx).abs() / pr;
+                    }
+                    if min_dist <= r {
+                        return Some(true);
+                    }
+                }
+                // or its center within the fan's angle
+                let dy = if cx == x && cy == y { 1.0 } else { (cy - y) / (cx - x).hypot(cy - y) };
+                Some(dy.clamp(-1.0, 1.0).acos().to_degrees() <= fan / 2.0)
+            }
+            Wide::Box { x, y, w, h } => {
+                let (hw, hh) = (w / 2.0, h / 2.0);
+                let (lx, ly) = ((cx - x).abs(), (cy - (y + hh)).abs());
+                if lx > r + hw || ly > r + hh {
+                    return Some(false);
+                }
+                if lx <= hw || ly <= hh {
+                    return Some(true);
+                }
+                Some((lx - hw) * (lx - hw) + (ly - hh) * (ly - hh) <= r * r)
+            }
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct AttackInfo {
@@ -187,6 +278,10 @@ pub struct AttackInfo {
     pub poise: f64,
     /// gcsim's SourceIsSim: no attack mods and no ICD, and not recorded.
     pub sim: bool,
+    /// gcsim's Catalyzed and CatalyzedType: aggravate or spread added
+    /// flat damage to it.
+    pub catalyzed: Option<Reaction>,
+    pub pattern: Pattern,
 }
 
 impl AttackInfo {
@@ -212,6 +307,8 @@ impl AttackInfo {
             blunt: false,
             poise: 0.0,
             sim: false,
+            catalyzed: None,
+            pattern: Pattern::Unknown,
         }
     }
 }
@@ -263,6 +360,19 @@ pub enum Task {
     /// Electro-charged's ticks, of the electro-charged started at src.
     EcTick { src: i32 },
     EcWane,
+    /// Burning's ticks, of the burning started at src, the counter-th.
+    BurningTick { src: i32, counter: i32 },
+    /// Quicken's bloom with hydro left, at the end of the frame (the
+    /// attack in the slot).
+    QuickenBloom { slot: u16 },
+    /// A bloom's dendro core appears, from the attack in the slot.
+    SpawnCore { slot: u16 },
+    /// A dendro core's attack: bloom, burgeon or hyperbloom, by actor, and
+    /// whether its self damage reaches the player.
+    CoreAttack { kind: AttackTag, actor: u8, on_player: bool },
+    PlayerIcdResetDmg { i: u16 },
+    /// An attack that reaches only gadgets (swirl's aoe).
+    GadgetAttack { slot: u16 },
 }
 
 // ---------------------------------------------------------------- actions
@@ -432,15 +542,18 @@ pub struct IcdState {
 }
 
 pub const ZERO_DUR: f64 = 0.00000000001;
-/// Aura slots the engine models: electro, pyro, hydro, cryo and frozen.
-/// Dendro and its reactions do not exist in the engine yet, and nothing it
-/// implements applies dendro.
+/// Aura slots (gcsim's ReactionModKeys): electro, pyro, hydro, cryo,
+/// frozen, dendro, quicken, burning fuel and burning.
 pub const AURA_ELECTRO: usize = 0;
 pub const AURA_PYRO: usize = 1;
 pub const AURA_HYDRO: usize = 2;
 pub const AURA_CRYO: usize = 3;
 pub const AURA_FROZEN: usize = 4;
-const N_AURAS: usize = 5;
+pub const AURA_DENDRO: usize = 5;
+pub const AURA_QUICKEN: usize = 6;
+pub const AURA_BURNING_FUEL: usize = 7;
+pub const AURA_BURNING: usize = 8;
+const N_AURAS: usize = 9;
 /// Frozen's decay ramps up by this each frame frozen lasts, and down by
 /// twice it to the cap after (gcsim's frzDelta and frzDecayCap).
 const FRZ_DELTA: f64 = 2.5 / (60.0 * 60.0);
@@ -451,7 +564,12 @@ pub struct Aura {
     /// Durability by aura and by the character that applied it.
     pub dur: [[f64; 4]; N_AURAS],
     pub decay: [f64; N_AURAS],
-    pub live: [bool; N_AURAS],
+    /// Bit m set while slot m may hold durability (gcsim's live): tick
+    /// skips the slots that have nothing to decay.
+    pub live: u16,
+    /// The frame burning's ticks started, -1 without burning (gcsim's
+    /// burningTickSrc).
+    pub burning_src: i32,
 }
 
 impl Aura {
@@ -459,6 +577,7 @@ impl Aura {
     pub fn new() -> Aura {
         let mut a = Aura::default();
         a.decay[AURA_FROZEN] = FRZ_DECAY_CAP;
+        a.burning_src = -1;
         a
     }
     #[inline]
@@ -479,44 +598,134 @@ impl Aura {
         for d in &mut self.dur[m] {
             *d -= amt.min(*d);
         }
-        self.live[m] = true;
+        self.live |= 1 << m;
     }
-    /// gcsim's reduce: takes up to dur*factor off the aura and returns the
-    /// attack durability that consumed.
+    /// gcsim's removeMod.
+    fn remove(&mut self, m: usize) {
+        self.dur[m] = [0.0; 4];
+        self.decay[m] = 0.0;
+    }
+    /// gcsim's reduce of the element of slot m: takes up to dur*factor off
+    /// every slot of that element (burning is pyro, burning fuel dendro)
+    /// and returns the attack durability the largest consumed.
     fn reduce(&mut self, m: usize, dur: f64, factor: f64) -> f64 {
+        let (a, b) = match m {
+            AURA_PYRO => (AURA_PYRO, Some(AURA_BURNING)),
+            AURA_DENDRO => (AURA_BURNING_FUEL, Some(AURA_DENDRO)),
+            _ => (m, None),
+        };
+        let mut reduced = self.reduce_one(a, dur * factor);
+        if let Some(b) = b {
+            reduced = reduced.max(self.reduce_one(b, dur * factor));
+        }
+        reduced / factor
+    }
+    fn reduce_one(&mut self, m: usize, max: f64) -> f64 {
         if self.below(m, ZERO_DUR) {
             return 0.0;
         }
-        let red = (dur * factor).min(self.get(m));
+        let red = max.min(self.get(m));
         self.reduce_mod(m, red);
-        red / factor
+        red
+    }
+    /// gcsim's AuraContains for one element: every slot of the element,
+    /// and frozen for cryo.
+    pub fn contains(&self, e: Element) -> bool {
+        let has = |m: usize| self.get(m) > ZERO_DUR;
+        match e {
+            Element::Electro => has(AURA_ELECTRO),
+            Element::Pyro => has(AURA_PYRO) || has(AURA_BURNING),
+            Element::Hydro => has(AURA_HYDRO),
+            Element::Cryo => has(AURA_CRYO) || has(AURA_FROZEN),
+            Element::Frozen => has(AURA_FROZEN),
+            Element::Dendro => has(AURA_BURNING_FUEL) || has(AURA_DENDRO),
+            Element::Quicken => has(AURA_QUICKEN),
+            _ => false,
+        }
+    }
+    /// The part of Tick for burning fuel (which decays at its own rate),
+    /// burning, dendro and quicken, in gcsim's order.
+    #[inline(never)]
+    fn tick_dendro(&mut self) {
+        self.decay_own(AURA_BURNING_FUEL);
+        // burning ends with its fuel, and takes dendro and quicken with it
+        if self.burning_src > -1 && self.below(AURA_BURNING_FUEL, ZERO_DUR) {
+            self.burning_src = -1;
+            self.remove(AURA_BURNING);
+            self.remove(AURA_DENDRO);
+            self.remove(AURA_QUICKEN);
+        }
+        // dendro and quicken decay at burning fuel's rate while it lasts
+        for m in [AURA_DENDRO, AURA_QUICKEN] {
+            if self.live & 1 << m == 0 {
+                continue;
+            }
+            if self.below(m, ZERO_DUR) {
+                self.live &= !(1 << m);
+                continue;
+            }
+            let mut rate = self.decay[m];
+            if self.live & 1 << AURA_BURNING_FUEL != 0 && self.above(AURA_BURNING_FUEL, ZERO_DUR) {
+                rate = self.decay[AURA_BURNING_FUEL];
+                if m == AURA_DENDRO {
+                    rate = rate.max(self.decay[m] * 2.0);
+                }
+            }
+            self.reduce_mod(m, rate);
+            if self.at_most(m, ZERO_DUR) {
+                self.decay[m] = 0.0;
+            }
+        }
+    }
+    #[inline(always)]
+    fn decay_own(&mut self, m: usize) {
+        if self.live & 1 << m == 0 {
+            return;
+        }
+        if self.decay[m] != 0.0 && self.above(m, ZERO_DUR) {
+            self.reduce_mod(m, self.decay[m]);
+            if self.at_most(m, ZERO_DUR) {
+                self.decay[m] = 0.0;
+            }
+        } else if self.below(m, ZERO_DUR) {
+            self.live &= !(1 << m);
+        }
+    }
+    /// Nothing for Tick to do: no aura, and frozen's decay rate at its cap.
+    #[inline(always)]
+    fn idle(&self) -> bool {
+        self.live == 0 && self.burning_src < 0 && self.decay[AURA_FROZEN] <= FRZ_DECAY_CAP
     }
     /// gcsim's Reactable.Tick; true when frozen ran out this tick (its
     /// checkFreeze, which the caller runs).
     fn tick(&mut self) -> bool {
-        for m in 0..AURA_FROZEN {
-            if !self.live[m] {
-                continue;
+        // nothing on it: only frozen's decay rate winds down
+        if self.live == 0 && self.burning_src < 0 {
+            let f = AURA_FROZEN;
+            if self.decay[f] > FRZ_DECAY_CAP {
+                self.decay[f] = (self.decay[f] - FRZ_DELTA * 2.0).max(FRZ_DECAY_CAP);
             }
-            if self.decay[m] != 0.0 && self.above(m, ZERO_DUR) {
-                self.reduce_mod(m, self.decay[m]);
-                if self.at_most(m, ZERO_DUR) {
-                    self.decay[m] = 0.0;
-                }
-            } else if self.below(m, ZERO_DUR) {
-                self.live[m] = false;
-            }
+            return false;
+        }
+        // the slots that decay at their own rate
+        self.decay_own(AURA_ELECTRO);
+        self.decay_own(AURA_PYRO);
+        self.decay_own(AURA_HYDRO);
+        self.decay_own(AURA_CRYO);
+        // burning fuel, burning, dendro and quicken
+        if self.live & (1 << AURA_BURNING_FUEL | 1 << AURA_DENDRO | 1 << AURA_QUICKEN) != 0 || self.burning_src > -1 {
+            self.tick_dendro();
         }
         // frozen: d(t) = -1.25 (t/60)^2 - k (t/60) + d(0), with no freeze
         // resistance
         let f = AURA_FROZEN;
-        if self.live[f] && self.above(f, ZERO_DUR) {
+        if self.live & 1 << f != 0 && self.above(f, ZERO_DUR) {
             self.decay[f] += FRZ_DELTA;
             self.reduce_mod(f, self.decay[f]);
             return self.at_most(f, ZERO_DUR);
         } else if self.decay[f] > FRZ_DECAY_CAP {
             if self.below(f, ZERO_DUR) {
-                self.live[f] = false;
+                self.live &= !(1 << f);
             }
             self.decay[f] -= FRZ_DELTA * 2.0;
             if self.decay[f] < FRZ_DECAY_CAP {
@@ -533,7 +742,7 @@ impl Aura {
                     let add = (amt - self.dur[m][src]).max(0.0);
                     if add > 0.0 {
                         self.dur[m][src] += add;
-                        self.live[m] = true;
+                        self.live |= 1 << m;
                     }
                 }
             }
@@ -541,7 +750,7 @@ impl Aura {
             for src in 0..4 {
                 if srcs & 1 << src != 0 {
                     self.dur[m][src] = amt;
-                    self.live[m] = true;
+                    self.live |= 1 << m;
                 }
             }
             if length > ZERO_DUR {
@@ -554,11 +763,11 @@ impl Aura {
             let add = (amt - self.dur[m][src]).max(0.0);
             if add > 0.0 {
                 self.dur[m][src] += add;
-                self.live[m] = true;
+                self.live |= 1 << m;
             }
         } else {
             self.dur[m][src] = amt;
-            self.live[m] = true;
+            self.live |= 1 << m;
             if length > ZERO_DUR {
                 self.decay[m] = amt / length;
             }
@@ -569,11 +778,24 @@ impl Aura {
             return;
         }
         self.dur[m][src] = amt;
-        self.live[m] = true;
+        self.live |= 1 << m;
         if amt < self.get(m) {
             return;
         }
         self.decay[m] = amt / length;
+    }
+    /// gcsim's attachBurningFuel: burning fuel always overwrites.
+    fn attach_burning_fuel(&mut self, dur: f64, mult: f64, src: usize) {
+        self.remove(AURA_BURNING_FUEL);
+        self.dur[AURA_BURNING_FUEL][src] = mult * dur;
+        self.live |= 1 << AURA_BURNING_FUEL;
+        self.decay[AURA_BURNING_FUEL] = (mult * dur / (6.0 * dur + 420.0)).max(10.0 / 60.0);
+    }
+    /// gcsim's attachBurning: 50 of burning that does not decay.
+    fn attach_burning(&mut self, src: usize) {
+        self.remove(AURA_BURNING);
+        self.dur[AURA_BURNING][src] = 50.0;
+        self.live |= 1 << AURA_BURNING;
     }
 }
 
@@ -597,6 +819,8 @@ pub struct Enemy {
     pub ec_atk: AttackEvent,
     pub ec_tick_src: i32,
     pub ec_wane_sub: bool,
+    /// Burning: the attack of its ticks, recalculated whenever it is fed.
+    pub burning_atk: AttackEvent,
 }
 
 // ---------------------------------------------------------------- player
@@ -700,7 +924,16 @@ pub struct Gadget {
     /// Ticks left, -1 for no end.
     pub duration: i32,
     pub aura: Aura,
+    /// A dendro core (owner CORE): the frame it appeared, where it is, and
+    /// the character whose bloom made it.
+    pub src: i32,
+    pub x: f64,
+    pub y: f64,
+    pub actor: u8,
 }
+
+/// The owner of dendro cores, which belong to no character.
+pub const CORE: u8 = u8::MAX;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Shield {
@@ -718,6 +951,8 @@ pub struct Sim {
     /// The player's own aura (gcsim's avatar.Player is a Reactable), which
     /// self infusions apply and absorb checks read.
     pub player_aura: Aura,
+    /// The player's own ICD for damage (gcsim's Target ICD of the player).
+    pub player_icd: Vec<IcdState>,
     pub player: Player,
     pub slots: Vec<AttackEvent>,
     pub free: Vec<u16>,
@@ -738,6 +973,8 @@ pub struct Sim {
     starts: Vec<(f64, f64)>,
     /// The fight is over.
     pub done: bool,
+    /// What the fight found it does not implement, which ends it.
+    pub error: Option<String>,
     /// Damage mode: the enemy has HP, and the fight ends when it dies or
     /// the program has no more actions.
     pub damage_mode: bool,
@@ -752,6 +989,8 @@ pub struct Sim {
     /// Electro resonance, with the frame of its last particle (0 before
     /// the first).
     pub electro_res: Option<i32>,
+    /// Dendro resonance.
+    pub dendro_res: bool,
     /// Subscribers to each event, in the order gcsim subscribes them.
     pub subs: [Vec<Owner>; N_EVENTS],
     /// Constructs (gcsim's Constructs) and shields, by owner.
@@ -789,6 +1028,7 @@ impl Sim {
             core: Queue::new(),
             chars,
             player_aura: Aura::new(),
+            player_icd: Vec::new(),
             enemy: Enemy {
                 level: cfg.enemy_level,
                 resist: cfg.resist,
@@ -805,6 +1045,7 @@ impl Sim {
                 ec_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::ECDamage, icd::TAG_EC_DAMAGE, icd::GROUP_REACTION_B, Element::Electro, 0.0, 0.0), 0),
                 ec_tick_src: -1,
                 ec_wane_sub: false,
+                burning_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::BurningDamage, icd::TAG_BURNING_DAMAGE, icd::GROUP_BURNING, Element::Pyro, 25.0, 0.0), 0),
             },
             player: Player {
                 active: cfg.active as u8,
@@ -833,6 +1074,7 @@ impl Sim {
             swap_icd: 60,
             starts: cfg.chars.iter().map(|c| (c.start_hp, c.start_hp_ratio)).collect(),
             done: false,
+            error: None,
             damage_mode: cfg.enemy_hp > 0.0,
             enemy_hp: cfg.enemy_hp,
             target_dist: cfg.target_dist,
@@ -841,6 +1083,7 @@ impl Sim {
             no_more_actions: false,
             utility_dash: None,
             electro_res: None,
+            dendro_res: false,
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
             gadgets: Vec::with_capacity(4),
@@ -864,7 +1107,7 @@ impl Sim {
             }
         }
         // initialize advances one frame before the first action
-        s.done = s.next_frame();
+        s.done = s.next_frame() || s.error.is_some();
         s
     }
 
@@ -937,8 +1180,11 @@ impl Sim {
         // resonance; profile::config rejects the ones not implemented
         if n >= 4 {
             let count = |e: Element| self.chars.iter().filter(|c| c.element == e).count();
-            let (pyro, hydro, electro, cryo) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro), count(Element::Cryo));
+            let (pyro, hydro, electro, cryo, dendro) = (count(Element::Pyro), count(Element::Hydro), count(Element::Electro), count(Element::Cryo), count(Element::Dendro));
             for c in &mut self.chars {
+                if dendro >= 2 {
+                    c.mods.push(Mod::stat(DENDRO_RESONANCE, st::EM, 50.0, false, false, -1));
+                }
                 if cryo >= 2 {
                     c.mods.push(Mod::owned(CRYO_RESONANCE, ModKind::Attack, Owner::Core, st::NONE, false, false, -1));
                 }
@@ -951,6 +1197,9 @@ impl Sim {
             }
             if electro >= 2 {
                 self.electro_res = Some(0);
+            }
+            self.dendro_res = dendro >= 2;
+            if electro >= 2 || dendro >= 2 {
                 self.subscribe(EventKind::Reaction, Owner::Core);
             }
         }
@@ -1064,15 +1313,28 @@ impl Sim {
                     }
                 }
             }
-            // electro resonance: an electro reaction gives a particle, once
-            // every 5 s
-            Event::Reaction(r, _) if matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::ElectroCharged) => {
-                let Some(last) = self.electro_res else { return };
-                if self.f - last < 300 && last != 0 {
-                    return;
+            Event::Reaction(r, _) => {
+                // electro resonance: an electro reaction gives a particle,
+                // once every 5 s (hyperbloom's comes from the dendro core)
+                if let Some(last) = self.electro_res {
+                    if matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::ElectroCharged | Reaction::Quicken | Reaction::Aggravate | Reaction::Hyperbloom) && (self.f - last >= 300 || last == 0) {
+                        self.distribute_particle(1.0, Element::Electro);
+                        self.electro_res = Some(self.f);
+                    }
                 }
-                self.distribute_particle(1.0, Element::Electro);
-                self.electro_res = Some(self.f);
+                // dendro resonance: EM to the party for 6 s
+                if self.dendro_res {
+                    let em = match r {
+                        Reaction::Burning | Reaction::Bloom | Reaction::Quicken => Some((DENDRO_RESONANCE_30, 30.0)),
+                        Reaction::Aggravate | Reaction::Spread | Reaction::Hyperbloom | Reaction::Burgeon => Some((DENDRO_RESONANCE_20, 20.0)),
+                        _ => None,
+                    };
+                    if let Some((key, v)) = em {
+                        for i in 0..self.chars.len() {
+                            self.add_stat_mod(i, key, st::EM, v, 6 * 60, true);
+                        }
+                    }
+                }
             }
             Event::Swap { .. } => {
                 for (i, c) in self.chars.iter().enumerate() {
@@ -1423,6 +1685,22 @@ impl Sim {
             Task::Weapon { c, id, arg } => crate::weapons::dispatch::task(self.chars[c as usize].weapon, self, c as usize, id, arg),
             Task::EcTick { src } => self.ec_tick(src),
             Task::EcWane => self.ec_wane(),
+            Task::BurningTick { src, counter } => self.burning_tick(src, counter),
+            Task::QuickenBloom { slot } => self.quicken_bloom(slot),
+            Task::SpawnCore { slot } => self.spawn_core(slot),
+            Task::CoreAttack { kind, actor, on_player } => self.core_attack(kind, actor as usize, on_player),
+            Task::GadgetAttack { slot } => {
+                let ev = self.slots[slot as usize];
+                self.free.push(slot);
+                if !self.gadgets.is_empty() {
+                    self.hit_gadgets(&ev);
+                }
+            }
+            Task::PlayerIcdResetDmg { i } => {
+                let s = &mut self.player_icd[i as usize];
+                s.dmg_count = 0;
+                s.dmg_on = false;
+            }
             Task::Set { c, si, id, arg } => {
                 let kind = self.chars[c as usize].sets[si as usize].kind;
                 crate::sets::dispatch::task(kind, self, c as usize, si as usize, id, arg)
@@ -1511,7 +1789,12 @@ impl Sim {
             self.free.push(slot);
             return;
         }
+        // gadgets see the attack as it was before the enemy took it
+        let orig = if self.gadgets.is_empty() { None } else { Some(self.slots[slot as usize]) };
         self.handle_attack(slot);
+        if let Some(orig) = orig {
+            self.hit_gadgets(&orig);
+        }
         let info = self.slots[slot as usize].info;
         if self.hitlag && !info.deployable {
             let mut dur = info.hitlag_halt;
@@ -1639,15 +1922,18 @@ impl Sim {
     fn react(&mut self, ev: &mut AttackEvent) {
         match ev.info.element {
             Element::Electro => {
+                self.try_catalyze(ev, Reaction::Aggravate);
                 self.try_overload(ev);
                 self.try_add_ec(ev);
                 self.try_frozen_superconduct(ev);
                 self.try_superconduct(ev);
+                self.try_quicken(ev);
             }
             Element::Pyro => {
                 self.try_overload(ev);
                 self.try_vaporize(ev);
                 self.try_melt(ev);
+                self.try_burning(ev);
             }
             Element::Cryo => {
                 self.try_superconduct(ev);
@@ -1657,6 +1943,7 @@ impl Sim {
             Element::Hydro => {
                 self.try_vaporize(ev);
                 self.try_freeze(ev);
+                self.try_bloom(ev);
                 self.try_add_ec(ev);
             }
             Element::Anemo => {
@@ -1674,10 +1961,21 @@ impl Sim {
                     (AURA_PYRO, Reaction::CrystallizePyro),
                     (AURA_FROZEN, Reaction::CrystallizeCryo),
                 ] {
-                    if self.enemy.aura.get(m) > ZERO_DUR {
+                    // pyro crystallizes off burning too, then checks it
+                    let burning = m == AURA_PYRO && self.enemy.aura.get(AURA_BURNING) > ZERO_DUR;
+                    if self.enemy.aura.get(m) > ZERO_DUR || burning {
                         self.try_crystallize(ev, m, r);
+                        if m == AURA_PYRO {
+                            self.burning_check();
+                        }
                     }
                 }
+            }
+            Element::Dendro => {
+                self.try_catalyze(ev, Reaction::Spread);
+                self.try_quicken(ev);
+                self.try_burning(ev);
+                self.try_bloom(ev);
             }
             _ => {}
         }
@@ -1699,11 +1997,13 @@ impl Sim {
                 a.reduce(AURA_HYDRO, dur, 0.5)
             }
             Element::Hydro => {
-                if a.get(AURA_PYRO) < ZERO_DUR {
+                if a.get(AURA_PYRO) < ZERO_DUR && a.get(AURA_BURNING) < ZERO_DUR {
                     return;
                 }
                 ev.info.amp_mult = 2.0;
-                a.reduce(AURA_PYRO, dur, 2.0)
+                let c = a.reduce(AURA_PYRO, dur, 2.0);
+                self.burning_check();
+                c
             }
             _ => return,
         };
@@ -1720,7 +2020,11 @@ impl Sim {
         }
         let a = &mut self.enemy.aura;
         let consumed = match ev.info.element {
-            Element::Electro if a.get(AURA_PYRO) >= ZERO_DUR => a.reduce(AURA_PYRO, dur, 1.0),
+            Element::Electro if a.get(AURA_PYRO) >= ZERO_DUR || a.get(AURA_BURNING) >= ZERO_DUR => {
+                let c = a.reduce(AURA_PYRO, dur, 1.0);
+                self.burning_check();
+                c
+            }
             Element::Pyro if a.get(AURA_ELECTRO) >= ZERO_DUR => a.reduce(AURA_ELECTRO, dur, 1.0),
             _ => return,
         };
@@ -1733,6 +2037,7 @@ impl Sim {
             let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::OverloadDamage, icd::TAG_OVERLOAD_DAMAGE, icd::GROUP_REACTION_B, Element::Pyro, 0.0, 0.0);
             ai.abil = "overload";
             ai.ignore_def = 1.0;
+            ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: 3.0 };
             let mut atk = self.reaction_attack(ai);
             atk.info.flat_dmg *= 2.75;
             self.queue_attack_with_snap(atk, 0, 1);
@@ -1756,12 +2061,13 @@ impl Sim {
                 c.max(f)
             }
             Element::Cryo => {
-                if a.get(AURA_PYRO) < ZERO_DUR {
+                if a.get(AURA_PYRO) < ZERO_DUR && a.get(AURA_BURNING) < ZERO_DUR {
                     return;
                 }
                 // gcsim keeps the cryo's durability
                 a.reduce(AURA_PYRO, dur, 0.5);
                 ev.info.amp_mult = 1.5;
+                self.burning_check();
                 0.0
             }
             _ => return,
@@ -1857,6 +2163,7 @@ impl Sim {
         let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::SuperconductDamage, icd::TAG_SUPERCONDUCT_DAMAGE, icd::GROUP_REACTION_A, Element::Cryo, 0.0, 0.0);
         ai.abil = "superconduct";
         ai.ignore_def = 1.0;
+        ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: 3.0 };
         let mut atk = self.reaction_attack(ai);
         atk.info.flat_dmg *= 1.5;
         self.queue_attack_with_snap(atk, 0, 1);
@@ -1916,6 +2223,391 @@ impl Sim {
         atk
     }
 
+    /// gcsim's burningCheck: burning gone, its fuel goes too.
+    fn burning_check(&mut self) {
+        let a = &mut self.enemy.aura;
+        if a.get(AURA_BURNING) < ZERO_DUR && a.get(AURA_BURNING_FUEL) > ZERO_DUR {
+            a.burning_src = -1;
+            a.remove(AURA_BURNING_FUEL);
+        }
+    }
+
+    /// gcsim's TryBurning: pyro on dendro or quicken, or dendro on pyro or
+    /// burning. It neither consumes the attack's element nor counts as a
+    /// reaction, so the element attaches after.
+    fn try_burning(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        let need = if ev.info.element == Element::Pyro { 1 << AURA_DENDRO | 1 << AURA_QUICKEN } else { 1 << AURA_PYRO | 1 << AURA_BURNING };
+        if dur < ZERO_DUR || self.enemy.aura.live & need == 0 {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        let mut dendro = a.get(AURA_DENDRO);
+        match ev.info.element {
+            Element::Pyro => {
+                if a.get(AURA_DENDRO) < ZERO_DUR && a.get(AURA_QUICKEN) < ZERO_DUR {
+                    return;
+                }
+            }
+            Element::Dendro => {
+                if a.get(AURA_PYRO) < ZERO_DUR && a.get(AURA_BURNING) < ZERO_DUR {
+                    return;
+                }
+                dendro = dendro.max(0.8 * dur);
+            }
+            _ => return,
+        }
+        let src = ev.info.actor as usize;
+        if a.get(AURA_BURNING_FUEL) < ZERO_DUR {
+            let fuel = dendro.max(a.get(AURA_QUICKEN));
+            a.attach_burning_fuel(fuel, 1.0, src);
+            a.attach_burning(src);
+            self.emit(Event::Reaction(Reaction::Burning, ev));
+            self.calc_burning(ev);
+            if self.enemy.aura.burning_src == -1 {
+                let f = self.f;
+                self.enemy.aura.burning_src = f;
+                self.queue_enemy_task(Task::BurningTick { src: f, counter: 1 }, 15);
+            }
+            return;
+        }
+        // fed: the fuel is overwritten and the damage recalculated
+        if ev.info.element == Element::Dendro {
+            a.attach_burning_fuel(dur, 0.8, src);
+        }
+        self.calc_burning(ev);
+    }
+
+    /// gcsim's calcBurningDmg: the attack of burning's ticks, from the
+    /// attacker that started or fed it.
+    fn calc_burning(&mut self, ev: &AttackEvent) {
+        let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::BurningDamage, icd::TAG_BURNING_DAMAGE, icd::GROUP_BURNING, Element::Pyro, 25.0, 0.0);
+        ai.abil = "burning";
+        ai.ignore_def = 1.0;
+        ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: 1.0 };
+        let mut atk = self.reaction_attack(ai);
+        atk.info.flat_dmg *= 0.25;
+        self.enemy.burning_atk = atk;
+    }
+
+    /// gcsim's nextBurningTick: every 0.25 s while burning and its fuel
+    /// last, skipping the ninth. Its self damage, a circle of radius 1 on
+    /// the enemy, is checked against the player.
+    fn burning_tick(&mut self, src: i32, counter: i32) {
+        let a = &self.enemy.aura;
+        if a.burning_src != src || a.get(AURA_BURNING_FUEL) < ZERO_DUR || a.get(AURA_BURNING) < ZERO_DUR {
+            return;
+        }
+        if counter != 9 {
+            let mut atk = self.enemy.burning_atk;
+            self.queue_attack_with_snap(atk, 0, 0);
+            if self.player_in_circle(self.target_dist, 1.0) {
+                atk.info.abil = "burning (self damage)";
+                self.player_hit(atk);
+            }
+        }
+        self.queue_enemy_task(Task::BurningTick { src, counter: counter + 1 }, 15);
+    }
+
+    /// gcsim's NewCircleHitOnTarget on the player, with its offset.
+    pub fn circle_on_player(&self, ox: f64, oy: f64, r: f64) -> Pattern {
+        Pattern::Circle { x: ox as f32, y: oy as f32, r: r as f32 }
+    }
+    /// gcsim's NewCircleHitOnTargetFanAngle on the player.
+    pub fn fan_on_player(&self, ox: f64, oy: f64, r: f64, fan: f64) -> Pattern {
+        Pattern::Fan { x: ox as f32, y: oy as f32, r: r as f32, fan: fan as f32 }
+    }
+    /// gcsim's NewBoxHitOnTarget on the player.
+    pub fn box_on_player(&self, ox: f64, oy: f64, w: f64, h: f64) -> Pattern {
+        Pattern::Box { x: ox as f32, y: oy as f32, w: w as f32, h: h as f32 }
+    }
+    /// gcsim's NewCircleHitOnTarget on the enemy, without offset.
+    pub fn circle_on_target(&self, r: f64) -> Pattern {
+        Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: r as f32 }
+    }
+    /// gcsim's NewBoxHit from the player centered on the enemy, with its
+    /// offset along the way to it.
+    pub fn box_on_target(&self, ox: f64, oy: f64, w: f64, h: f64) -> Pattern {
+        Pattern::Box { x: ox as f32, y: (self.target_dist + oy) as f32, w: w as f32, h: h as f32 }
+    }
+
+    /// Whether the player (at the origin, radius 0.3: gcsim's default) is
+    /// within a circle of radius r centered y ahead of it, toward the enemy.
+    pub fn player_in_circle(&self, y: f64, r: f64) -> bool {
+        y.abs() <= r + 0.3
+    }
+
+    /// gcsim's TryAggravate and TrySpread: on quicken, flat damage from the
+    /// attacker's EM now; the attack goes on to react and attach.
+    fn try_catalyze(&mut self, ev: &mut AttackEvent, r: Reaction) {
+        if ev.info.durability < ZERO_DUR || self.enemy.aura.live & 1 << AURA_QUICKEN == 0 || self.enemy.aura.get(AURA_QUICKEN) < ZERO_DUR {
+            return;
+        }
+        self.emit(Event::Reaction(r, ev));
+        let ci = ev.info.actor as usize;
+        let em = self.stat(ci, st::EM);
+        ev.info.catalyzed = Some(r);
+        let lvl = self.chars[ci].level;
+        let base = (1.0 + (5.0 * em) / (1200.0 + em) + self.react_bonus(ci, &ev.info)) * crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
+        ev.info.flat_dmg += if r == Reaction::Aggravate { 1.15 } else { 1.25 } * base;
+    }
+
+    /// gcsim's TryQuicken: dendro on electro or electro on dendro.
+    fn try_quicken(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        let need = if ev.info.element == Element::Dendro { 1 << AURA_ELECTRO } else { 1 << AURA_DENDRO };
+        if dur < ZERO_DUR || self.enemy.aura.live & need == 0 {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        let consumed = match ev.info.element {
+            Element::Dendro if a.get(AURA_ELECTRO) >= ZERO_DUR => a.reduce(AURA_ELECTRO, dur, 1.0),
+            // electro on dendro takes burning fuel too
+            Element::Electro if a.get(AURA_DENDRO) >= ZERO_DUR => a.reduce(AURA_DENDRO, dur, 1.0),
+            _ => return,
+        };
+        ev.info.durability = (dur - consumed).max(0.0);
+        ev.reacted = true;
+        self.emit(Event::Reaction(Reaction::Quicken, ev));
+        let a = &mut self.enemy.aura;
+        a.attach_refresh(AURA_QUICKEN, consumed, 12.0 * consumed + 360.0, ev.info.actor as usize);
+        if a.get(AURA_HYDRO) >= ZERO_DUR {
+            let slot = self.alloc(*ev);
+            self.add_task(Task::QuickenBloom { slot }, 0);
+        }
+    }
+
+    /// gcsim's tryQuickenBloom: quicken blooms with the hydro left.
+    fn quicken_bloom(&mut self, slot: u16) {
+        let a = &mut self.enemy.aura;
+        if a.get(AURA_QUICKEN) < ZERO_DUR || a.get(AURA_HYDRO) < ZERO_DUR {
+            self.free.push(slot);
+            return;
+        }
+        let avail = a.get(AURA_QUICKEN);
+        let consumed = a.reduce(AURA_HYDRO, avail, 2.0);
+        a.reduce_mod(AURA_QUICKEN, consumed);
+        self.check_lunar_bloom();
+        let ev = self.slots[slot as usize];
+        self.add_task(Task::SpawnCore { slot }, 30);
+        self.emit(Event::Reaction(Reaction::Bloom, &ev));
+    }
+
+    /// Lunar-Bloom (gcsim's Flags.Custom "lunarbloom-enabled") would replace
+    /// bloom; nothing the engine implements enables it.
+    fn check_lunar_bloom(&mut self) {
+        if self.flag(LUNAR_BLOOM) != 0.0 {
+            self.unsupported("lunar-bloom");
+        }
+    }
+
+    /// gcsim's TryBloom: hydro on dendro, quicken or burning fuel, or
+    /// dendro on hydro. The core appears 0.5 s later.
+    fn try_bloom(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        let need = if ev.info.element == Element::Hydro { 1 << AURA_DENDRO | 1 << AURA_QUICKEN | 1 << AURA_BURNING_FUEL } else { 1 << AURA_HYDRO };
+        if dur < ZERO_DUR || self.enemy.aura.live & need == 0 {
+            return;
+        }
+        let a = &mut self.enemy.aura;
+        let consumed = match ev.info.element {
+            Element::Hydro => {
+                if !(a.get(AURA_DENDRO) > ZERO_DUR || a.get(AURA_QUICKEN) > ZERO_DUR || a.get(AURA_BURNING_FUEL) > ZERO_DUR) {
+                    return;
+                }
+                let c = a.reduce(AURA_DENDRO, dur, 0.5);
+                c.max(a.reduce(AURA_QUICKEN, dur, 0.5))
+            }
+            Element::Dendro => {
+                if a.get(AURA_HYDRO) < ZERO_DUR {
+                    return;
+                }
+                a.reduce(AURA_HYDRO, dur, 2.0)
+            }
+            _ => return,
+        };
+        ev.info.durability = (dur - consumed).max(0.0);
+        ev.reacted = true;
+        self.check_lunar_bloom();
+        let slot = self.alloc(*ev);
+        self.add_task(Task::SpawnCore { slot }, 30);
+        self.emit(Event::Reaction(Reaction::Bloom, ev));
+    }
+
+    /// dendrocore.New: a core at a random point 0.5 beyond the enemy's
+    /// edge, for 5 s. A sixth core makes the oldest explode.
+    fn spawn_core(&mut self, slot: u16) {
+        let actor = self.slots[slot as usize].info.actor;
+        self.free.push(slot);
+        // CalcRandomPointFromCenter, between r and r away
+        let r = self.target_radius + 0.5;
+        let (px, py) = loop {
+            let x = -1.0 + self.rng.float64() * 2.0;
+            let y = -1.0 + self.rng.float64() * 2.0;
+            if x * x + y * y <= 1.0 {
+                let rr = (r * r + self.rng.float64() * (r * r - r * r)).sqrt();
+                let (x, y) = if x == 0.0 && y == 0.0 { (0.0, 1.0) } else { (x, y) };
+                let factor = rr / (x * x + y * y).sqrt();
+                break (x * factor, self.target_dist + y * factor);
+            }
+        };
+        let mut oldest: Option<usize> = None;
+        let mut count = 0;
+        for (i, g) in self.gadgets.iter().enumerate() {
+            if g.owner == CORE {
+                count += 1;
+                if oldest.is_none_or(|o| g.src < self.gadgets[o].src) {
+                    oldest = Some(i);
+                }
+            }
+        }
+        if count == 5 {
+            let g = self.gadgets.remove(oldest.unwrap());
+            self.core_explode(g.actor, g.x, g.y);
+        }
+        let f = self.f;
+        self.gadgets.push(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, actor });
+    }
+
+    /// A core expired or was killed: its bloom 1 frame later, a circle of
+    /// radius 5 on it.
+    fn core_explode(&mut self, actor: u8, x: f64, y: f64) {
+        let on_player = x * x + y * y <= (5.0 + 0.3) * (5.0 + 0.3);
+        self.add_task(Task::CoreAttack { kind: AttackTag::Bloom, actor, on_player }, 1);
+    }
+
+    /// The attack of a core: bloom (2), burgeon (3) or hyperbloom (3) times
+    /// the attacker's reaction damage, and 2% of it to the player when its
+    /// area reaches the player.
+    fn core_attack(&mut self, kind: AttackTag, actor: usize, on_player: bool) {
+        let (icd_tag, abil, mult) = match kind {
+            AttackTag::Bloom => (icd::TAG_BLOOM_DAMAGE, "bloom", 2.0),
+            AttackTag::Burgeon => (icd::TAG_BURGEON_DAMAGE, "burgeon", 3.0),
+            _ => (icd::TAG_HYPERBLOOM_DAMAGE, "hyperbloom", 3.0),
+        };
+        let mut ai = AttackInfo::new(actor, kind, icd_tag, icd::GROUP_REACTION_A, Element::Dendro, 0.0, 0.0);
+        ai.abil = abil;
+        ai.ignore_def = 1.0;
+        ai.pattern = Pattern::Single;
+        let mut atk = self.reaction_attack(ai);
+        atk.info.flat_dmg *= mult;
+        self.queue_attack_with_snap(atk, 0, 0);
+        if on_player {
+            atk.info.abil = match kind {
+                AttackTag::Bloom => "bloom (self damage)",
+                AttackTag::Burgeon => "burgeon (self damage)",
+                _ => "hyperbloom (self damage)",
+            };
+            atk.info.flat_dmg *= 0.02;
+            self.player_hit(atk);
+        }
+    }
+
+    /// The gadgets an attack reaches besides the enemy: a dendro core hit
+    /// by electro (hyperbloom, 1 s later, on the enemy) or pyro (burgeon,
+    /// a circle of radius 5 on the core) is used up. gcsim hands each
+    /// target its own copy of the attack, so the core sees it before ICD
+    /// or reactions on the enemy.
+    fn hit_gadgets(&mut self, ev: &AttackEvent) {
+        if ev.info.durability < ZERO_DUR || !matches!(ev.info.element, Element::Electro | Element::Pyro) {
+            return;
+        }
+        let mut k = 0;
+        while k < self.gadgets.len() {
+            let g = self.gadgets[k];
+            if g.owner != CORE {
+                k += 1;
+                continue;
+            }
+            match ev.info.pattern.hits_circle(g.x, g.y, 2.0) {
+                None => {
+                    let who = crate::gcsl::char_name(self.chars[ev.info.actor as usize].key);
+                    self.unsupported(&format!("hit pattern {who} {}", ev.info.abil));
+                    return;
+                }
+                Some(false) => {
+                    k += 1;
+                    continue;
+                }
+                Some(true) => {}
+            }
+            self.gadgets.remove(k);
+            let actor = ev.info.actor;
+            if ev.info.element == Element::Electro {
+                // a circle of radius 1 on the enemy, which the player is not in
+                let on_player = self.player_in_circle(self.target_dist, 1.0);
+                self.add_task(Task::CoreAttack { kind: AttackTag::Hyperbloom, actor, on_player }, 60);
+                self.emit(Event::Reaction(Reaction::Hyperbloom, ev));
+            } else {
+                let on_player = g.x * g.x + g.y * g.y <= (5.0 + 0.3) * (5.0 + 0.3);
+                self.add_task(Task::CoreAttack { kind: AttackTag::Burgeon, actor, on_player }, 1);
+                self.emit(Event::Reaction(Reaction::Burgeon, ev));
+            }
+        }
+    }
+
+    /// gcsim's Player.HandleAttack: OnPlayerHit, the damage as the player
+    /// takes it, then a drain of the active character. No reactions on
+    /// the player, and it does not count as damage.
+    fn player_hit(&mut self, mut ev: AttackEvent) {
+        let active = self.player.active as usize;
+        self.emit(Event::PlayerHit { on: active });
+        let s = &mut ev.stats;
+        let st_ele = ev.info.element.dmg_stat();
+        let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
+        let base = ev.info.mult * total_atk(s) + ev.info.flat_dmg;
+        let mut damage = base * (1.0 + ele_per + s[st::DMGP]);
+        s[st::CR] = s[st::CR].clamp(0.0, 1.0);
+        let def = total_def(&self.stats(active)) * (1.0 - ev.info.ignore_def.min(1.0));
+        damage *= 1.0 - def / (def + (5 * ev.char_lvl) as f64 + 500.0);
+        let (cr, cd, em) = (ev.stats[st::CR], ev.stats[st::CD], ev.stats[st::EM]);
+        if self.rng.float64() <= cr {
+            damage *= 1.0 + cd;
+        }
+        if ev.info.amped {
+            let react_bonus = self.react_bonus(ev.info.actor as usize, &ev.info);
+            damage *= ev.info.amp_mult * (1.0 + (2.78 * em) / (1400.0 + em) + react_bonus);
+        }
+        if !ev.info.sim {
+            damage *= self.player_group_dmg_mult(&ev.info);
+        }
+        if !self.shields.is_empty() {
+            self.unsupported("damage to a shielded player");
+            return;
+        }
+        self.modify_hp(active, -damage);
+        self.emit(Event::Drain { on: active, amount: damage, external: true });
+    }
+
+    fn player_group_dmg_mult(&mut self, info: &AttackInfo) -> f64 {
+        let (t, g) = (info.icd_tag.0, info.icd_group.0);
+        let i = match self.player_icd.iter().position(|s| s.char == info.actor && s.tag == t && s.group == g) {
+            Some(i) => i,
+            None => {
+                self.player_icd.push(IcdState { char: info.actor, tag: t, group: g, ..Default::default() });
+                self.player_icd.len() - 1
+            }
+        };
+        if !self.player_icd[i].dmg_on {
+            self.player_icd[i].dmg_on = true;
+            self.add_task(Task::PlayerIcdResetDmg { i: i as u16 }, info.icd_group.reset_timer() - 1);
+        }
+        let s = &mut self.player_icd[i];
+        let val = s.dmg_count;
+        s.dmg_count += 1;
+        let seq = info.icd_group.dmg_seq();
+        if val < seq.len() { seq[val] } else { seq[seq.len() - 1] }
+    }
+
+    /// Something the fight found it does not implement: the run stops and
+    /// returns it as an error.
+    pub fn unsupported(&mut self, what: &str) {
+        if self.error.is_none() {
+            self.error = Some(format!("unsupported: {what}"));
+        }
+        self.done = true;
+    }
+
     fn try_add_ec(&mut self, ev: &mut AttackEvent) {
         let dur = ev.info.durability;
         if dur < ZERO_DUR {
@@ -1952,6 +2644,7 @@ impl Sim {
         let mut ai = AttackInfo::new(src, AttackTag::ECDamage, icd::TAG_EC_DAMAGE, icd::GROUP_REACTION_B, Element::Electro, 0.0, 0.0);
         ai.abil = "electrocharged";
         ai.ignore_def = 1.0;
+        ai.pattern = Pattern::Single;
         let mut atk = self.reaction_attack(ai);
         atk.info.flat_dmg *= 2.0;
         self.enemy.ec_atk = atk;
@@ -2009,23 +2702,21 @@ impl Sim {
         if active > ZERO_DUR {
             if active < dur {
                 a.dur[m][src] = dur;
-                a.live[m] = true;
+                a.live |= 1 << m;
             }
             return;
         }
         a.dur[m][src] = dur;
-        a.live[m] = true;
+        a.live |= 1 << m;
         a.decay[m] = dur / f as f64;
     }
 
     /// gcsim's Combat.AbsorbCheck for one enemy always in range: the first
     /// element of prio on the enemy, else on a gadget, else on the player.
     /// Every gadget is taken to be in range.
-    pub fn absorb_check(&self, prio: &[(usize, Element)]) -> Element {
-        // AuraContains(cryo) is true on frozen too
-        let has = |a: &Aura, m: usize| a.get(m) > ZERO_DUR || (m == AURA_CRYO && a.get(AURA_FROZEN) > ZERO_DUR);
-        for &(m, e) in prio {
-            if has(&self.enemy.aura, m) || self.gadgets.iter().any(|g| has(&g.aura, m)) || has(&self.player_aura, m) {
+    pub fn absorb_check(&self, prio: &[Element]) -> Element {
+        for &e in prio {
+            if self.enemy.aura.contains(e) || self.gadgets.iter().any(|g| g.aura.contains(e)) || self.player_aura.contains(e) {
                 return e;
             }
         }
@@ -2052,16 +2743,7 @@ impl Sim {
     /// gcsim's AuraContains for one element on the enemy: every aura slot
     /// of that element, and frozen for cryo.
     pub fn enemy_aura_contains(&self, e: Element) -> bool {
-        let a = &self.enemy.aura;
-        let has = |m: usize| a.get(m) > ZERO_DUR;
-        match e {
-            Element::Electro => has(AURA_ELECTRO),
-            Element::Pyro => has(AURA_PYRO),
-            Element::Hydro => has(AURA_HYDRO),
-            Element::Cryo => has(AURA_CRYO) || has(AURA_FROZEN),
-            Element::Frozen => has(AURA_FROZEN),
-            _ => false,
-        }
+        self.enemy.aura.contains(e)
     }
 
     /// Whether a box hit lands on the enemy: a box `w` wide and `h` long,
@@ -2077,7 +2759,7 @@ impl Sim {
 
     /// gcsim's Combat.AddGadget.
     pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32) {
-        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new() });
+        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: self.f, x: 0.0, y: 0.0, actor: 0 });
     }
 
     /// The index of a character's gadget, if it is there.
@@ -2091,7 +2773,7 @@ impl Sim {
         if let Some(k) = self.gadget_index(owner, id) {
             let a = &mut self.gadgets[k].aura;
             a.dur[m][0] = dur;
-            a.live[m] = true;
+            a.live |= 1 << m;
         }
     }
 
@@ -2102,7 +2784,9 @@ impl Sim {
         let mut k = 0;
         for _ in 0..n {
             let g = &mut self.gadgets[k];
-            g.aura.tick();
+            if !g.aura.idle() {
+                g.aura.tick();
+            }
             let mut expired = false;
             if g.duration > 0 {
                 g.duration -= 1;
@@ -2110,12 +2794,20 @@ impl Sim {
             }
             g.timer += 1;
             let (owner, id, timer) = (g.owner as usize, g.id, g.timer);
+            let core = g.owner == CORE;
+            let (actor, gx, gy) = (g.actor, g.x, g.y);
             if expired {
                 self.gadgets.remove(k);
             } else {
                 k += 1;
             }
-            crate::chars::dispatch::gadget_tick(self.chars[owner].kind, self, owner, id, timer);
+            if core {
+                if expired {
+                    self.core_explode(actor, gx, gy);
+                }
+            } else {
+                crate::chars::dispatch::gadget_tick(self.chars[owner].kind, self, owner, id, timer);
+            }
         }
     }
 
@@ -2128,8 +2820,13 @@ impl Sim {
             return;
         }
         let rd = self.enemy.aura.reduce(m, dur, 0.5);
+        // calcSwirlAtkDurability: the aoe's gauge
+        let aoe_dur = if rd < dur { 1.25 * (0.5 * rd - 1.0) + 25.0 } else { 1.25 * (dur - 1.0) + 25.0 };
         ev.info.durability -= rd;
         ev.reacted = true;
+        if m == AURA_PYRO {
+            self.burning_check();
+        }
         let (r, tag, icd_tag, ele, abil) = match m {
             AURA_ELECTRO => (Reaction::SwirlElectro, AttackTag::SwirlElectro, icd::TAG_SWIRL_ELECTRO, Element::Electro, "swirl-electro"),
             AURA_PYRO => (Reaction::SwirlPyro, AttackTag::SwirlPyro, icd::TAG_SWIRL_PYRO, Element::Pyro, "swirl-pyro"),
@@ -2144,9 +2841,18 @@ impl Sim {
             let mut ai = AttackInfo::new(ev.info.actor as usize, tag, icd_tag, icd::GROUP_REACTION_A, ele, 0.0, 0.0);
             ai.abil = abil;
             ai.ignore_def = 1.0;
+            ai.pattern = Pattern::Single;
             let mut atk = self.reaction_attack(ai);
             atk.info.flat_dmg *= 0.6;
             self.queue_attack_with_snap(atk, 0, 1);
+            // the aoe, 4 frames later, ignores the enemy: it reaches only
+            // gadgets, where pyro and electro use up dendro cores
+            if matches!(ele, Element::Pyro | Element::Electro) {
+                atk.info.durability = aoe_dur;
+                atk.info.pattern = Pattern::Circle { x: 0.0, y: self.target_dist as f32, r: 5.0 };
+                let slot = self.alloc(atk);
+                self.add_task(Task::GadgetAttack { slot }, 1 + 4);
+            }
         }
         // swirling electro off electro-charged swirls the hydro too
         if m == AURA_ELECTRO && ev.info.durability > ZERO_DUR && self.enemy.aura.get(AURA_HYDRO) > ZERO_DUR {
@@ -2246,6 +2952,7 @@ impl Sim {
                 Element::Hydro => self.enemy.aura.attach_overlap(AURA_HYDRO, 0.8 * d, 6.0 * d + 420.0, src),
                 Element::Electro => self.enemy.aura.attach_overlap(AURA_ELECTRO, 0.8 * d, 6.0 * d + 420.0, src),
                 Element::Cryo => self.enemy.aura.attach_overlap(AURA_CRYO, 0.8 * d, 6.0 * d + 420.0, src),
+                Element::Dendro => self.enemy.aura.attach_overlap(AURA_DENDRO, 0.8 * d, 6.0 * d + 420.0, src),
                 _ => {}
             }
         }
@@ -2639,7 +3346,9 @@ impl Sim {
         self.f += 1;
         let f = self.f;
         // Combat.Tick: the player's aura, then the enemy
-        self.player_aura.tick();
+        if !self.player_aura.idle() {
+            self.player_aura.tick();
+        }
         if self.enemy.frozen > 0 {
             self.enemy.frozen -= 1;
             while let Some(t) = self.enemy.queue.pop_due(f) {
@@ -2833,7 +3542,7 @@ impl Sim {
     // ------------------------------------------------------------ the program's side
 
     fn step(&mut self) -> bool {
-        self.done = self.next_frame();
+        self.done = self.next_frame() || self.error.is_some();
         self.done
     }
 
@@ -3096,3 +3805,7 @@ impl Params {
     }
 }
 
+
+#[cfg(test)]
+#[path = "pattern_tests.rs"]
+mod pattern_tests;
