@@ -971,6 +971,7 @@ pub enum ShieldType {
     ZhongliJadeShield,
     CandaceSkill,
     DionaSkill,
+    BaizhuBurst,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -2878,7 +2879,7 @@ impl Sim {
         while k < self.shields.len() {
             if self.shields[k].expiry == f {
                 let sh = self.shields.remove(k);
-                if sh.typ == ShieldType::ZhongliJadeShield {
+                if matches!(sh.typ, ShieldType::ZhongliJadeShield | ShieldType::BaizhuBurst) {
                     crate::chars::dispatch::shield_expired(self.chars[sh.owner as usize].kind, self, sh.owner as usize, sh.key);
                 }
                 expired.push(sh);

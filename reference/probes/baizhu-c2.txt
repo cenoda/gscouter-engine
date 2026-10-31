@@ -1,0 +1,3 @@
+# Baizhu C2: the active character's hits send a Gossamer Sprite: Splice, once every 5 s.
+team alhaitham-furina-fischl-baizhu
+baizhu char lvl=90/90 cons=2 talent=9,9,9;

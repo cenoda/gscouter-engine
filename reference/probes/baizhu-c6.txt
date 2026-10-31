@@ -1,0 +1,3 @@
+# Baizhu C6: Spiritveins add 8% of max HP; sprite hits make a Seamless Shield.
+team alhaitham-furina-fischl-baizhu
+baizhu char lvl=90/90 cons=6 talent=9,9,9;
