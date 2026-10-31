@@ -9,11 +9,17 @@
 # parts, and each day runs PER_DAY of them, so every team's variants run
 # every PARTS / PER_DAY days. A manual run can name the parts to run, e.g.
 # "0-39" for all of them, or "library" for the push run.
+#
+# gcsim's results are cached by config and chunk of seeds (reference/
+# harness/cache.go), so a run computes only what no earlier run did. Each
+# job restores the latest cache and uploads the chunks it added; the last
+# job merges them and saves the result as the next cache. The key changes
+# with gcsim (go.sum) and the harness, which starts the cache afresh.
 name: compare
 
 on:
   push:
-    branches: [main]
+    branches: [main, "claude/**"]
   pull_request:
   schedule:
     - cron: "17 3 * * *"
@@ -27,6 +33,7 @@ env:
   GSCOUTER_COMMIT: 14e187fab1fb0695f527347f419aad977e27a92c
   PARTS: 40
   PER_DAY: 8
+  GCSIM_CACHE: ${{ github.workspace }}/../gcsim-cache
 
 jobs:
   plan:
@@ -84,6 +91,13 @@ jobs:
           cache-dependency-path: |
             reference/go.sum
             gscouter/go.sum
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.GCSIM_CACHE }}
+          key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+          restore-keys: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+      - name: Mark the cache's start
+        run: mkdir -p "$GCSIM_CACHE" && touch "$RUNNER_TEMP/cache-start"
       - uses: dtolnay/rust-toolchain@stable
       - name: Build the engine
         working-directory: engine
@@ -94,7 +108,7 @@ jobs:
         run: cargo test --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes -shard ${{ matrix.part }}/4 -json ../compare.json -md ../compare.md
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes -shard ${{ matrix.part }}/4 -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && cat compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -105,6 +119,18 @@ jobs:
           path: |
             compare.json
             compare.md
+      - name: Collect the chunks this job added
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/gcsim-new"
+          cd "$GCSIM_CACHE" && find . -type f -name '*.json' -newer "$RUNNER_TEMP/cache-start" -exec cp --parents {} "$RUNNER_TEMP/gcsim-new" \;
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gcsim-new-library-${{ matrix.part }}
+          path: ${{ runner.temp }}/gcsim-new
+          if-no-files-found: ignore
+          retention-days: 1
 
   variants:
     needs: plan
@@ -128,13 +154,20 @@ jobs:
           cache-dependency-path: |
             reference/go.sum
             gscouter/go.sum
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.GCSIM_CACHE }}
+          key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+          restore-keys: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+      - name: Mark the cache's start
+        run: mkdir -p "$GCSIM_CACHE" && touch "$RUNNER_TEMP/cache-start"
       - uses: dtolnay/rust-toolchain@stable
       - name: Build the engine
         working-directory: engine
         run: cargo build --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only variants -shard ${{ matrix.part }}/${{ env.PARTS }} -json ../compare.json -md ../compare.md
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only variants -shard ${{ matrix.part }}/${{ env.PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -145,3 +178,48 @@ jobs:
           path: |
             compare.json
             compare.md
+      - name: Collect the chunks this job added
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/gcsim-new"
+          cd "$GCSIM_CACHE" && find . -type f -name '*.json' -newer "$RUNNER_TEMP/cache-start" -exec cp --parents {} "$RUNNER_TEMP/gcsim-new" \;
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gcsim-new-variants-${{ matrix.part }}
+          path: ${{ runner.temp }}/gcsim-new
+          if-no-files-found: ignore
+          retention-days: 1
+
+  cache:
+    needs: [library, variants]
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: reference
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: gcsim-new-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/gcsim-new
+      - id: new
+        run: echo "chunks=$(find "$RUNNER_TEMP/gcsim-new" -type f 2>/dev/null | wc -l)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache/restore@v4
+        if: steps.new.outputs.chunks != '0'
+        with:
+          path: ${{ env.GCSIM_CACHE }}
+          key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+          restore-keys: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+      - name: Add the new chunks
+        if: steps.new.outputs.chunks != '0'
+        run: |
+          mkdir -p "$GCSIM_CACHE" && cp -r "$RUNNER_TEMP/gcsim-new/." "$GCSIM_CACHE/"
+          echo "${{ steps.new.outputs.chunks }} new chunks, $(find "$GCSIM_CACHE" -type f | wc -l) in all, $(du -sh "$GCSIM_CACHE" | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/cache/save@v4
+        if: steps.new.outputs.chunks != '0'
+        with:
+          path: ${{ env.GCSIM_CACHE }}
+          key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-${{ github.run_id }}-${{ github.run_attempt }}

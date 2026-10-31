@@ -78,6 +78,9 @@ var (
 	jsonOut     = flag.String("json", "", "write the results as JSON to this file")
 	mdOut       = flag.String("md", "", "also write the report to this file")
 	probesDir   = flag.String("probes", "probes", "directory of probes: library builds with a weapon, set or character line changed")
+	cacheDir    = flag.String("cache", harness.DefaultCacheDir(), "directory of stored gcsim results, by config and chunk of seeds; empty for none")
+
+	gcsimCache *harness.Cache
 )
 
 // A variant moves stats of every character's build.
@@ -195,6 +198,10 @@ func main() {
 	flag.Parse()
 	if *gscouterDir == "" {
 		fail(errors.New("-gscouter is required"))
+	}
+	var err error
+	if gcsimCache, err = harness.OpenCache(*cacheDir); err != nil {
+		fail(err)
 	}
 	tmp, err := os.MkdirTemp("", "compare")
 	if err != nil {
@@ -517,43 +524,6 @@ func runGse(gse, path string, n int, seed int64) (*harness.Output, error) {
 	return &res, nil
 }
 
-// merge combines two batches of iterations into one, as if run together.
-func merge(a, b *harness.Output) *harness.Output {
-	if a == nil {
-		return b
-	}
-	na, nb := float64(a.Iterations), float64(b.Iterations)
-	n := na + nb
-	st := func(x, y harness.Stat) harness.Stat {
-		m := (na*x.Mean + nb*y.Mean) / n
-		// sums of squares about each batch's mean, from its standard error
-		ss := x.StdErr*x.StdErr*na*(na-1) + y.StdErr*y.StdErr*nb*(nb-1) + na*(x.Mean-m)*(x.Mean-m) + nb*(y.Mean-m)*(y.Mean-m)
-		return harness.Stat{Mean: m, StdErr: math.Sqrt(ss / (n - 1) / n)}
-	}
-	out := &harness.Output{Iterations: a.Iterations + b.Iterations, Warmup: a.Warmup, Seconds: a.Seconds + b.Seconds, Workers: a.Workers,
-		Team: st(a.Team, b.Team), Chars: map[string]harness.Stat{}, Frames: (na*a.Frames + nb*b.Frames) / n,
-		Waits: map[string]map[string]float64{}, Abils: map[string][2]float64{}}
-	for k := range a.Chars {
-		out.Chars[k] = st(a.Chars[k], b.Chars[k])
-	}
-	for _, w := range []*harness.Output{a, b} {
-		f := float64(w.Iterations) / n
-		for c, rs := range w.Waits {
-			if out.Waits[c] == nil {
-				out.Waits[c] = map[string]float64{}
-			}
-			for r, v := range rs {
-				out.Waits[c][r] += v * f
-			}
-		}
-		for k, v := range w.Abils {
-			x := out.Abils[k]
-			out.Abils[k] = [2]float64{x[0] + v[0]*f, x[1] + v[1]*f}
-		}
-	}
-	return out
-}
-
 func metric(name string, g, r harness.Stat) Metric {
 	m := Metric{Name: name, Gcsim: g.Mean, GcsimSE: g.StdErr, Gse: r.Mean, GseSE: r.StdErr}
 	switch {
@@ -603,8 +573,15 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 	var g, r *harness.Output
 	n := 0
 	run := func(more int) error {
+		if gcsimCache != nil {
+			// whole chunks, which the cache can keep
+			more = (more + harness.Chunk - 1) / harness.Chunk * harness.Chunk
+			if n+more > *maxIter {
+				more = max(*maxIter-n, 0)
+			}
+		}
 		start := time.Now()
-		gb, err := harness.Run(cfg, more, *warmup, int64(1+n), *workers, true)
+		gb, err := gcsimCache.RunCached(cfg, more, *warmup, int64(1+n), *workers, true)
 		if err != nil {
 			return fmt.Errorf("gcsim: %w", err)
 		}
@@ -615,7 +592,7 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 			return err
 		}
 		res.GseSeconds += time.Since(start).Seconds()
-		g, r = merge(g, gb), merge(r, rb)
+		g, r = harness.Merge(g, gb), harness.Merge(r, rb)
 		n += more
 		return nil
 	}
