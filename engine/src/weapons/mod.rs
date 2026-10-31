@@ -35,4 +35,5 @@ crate::weapons! {
     ThrillingTales => thrillingtales,
     HakushinRing => hakushin,
     SacrificialJade => sacrificialjade,
+    PrototypeAmber => prototypeamber,
 }

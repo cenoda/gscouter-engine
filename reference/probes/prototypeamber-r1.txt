@@ -1,0 +1,3 @@
+# Sucrose with Prototype Amber R1 (library builds are R5): 4 energy and 4% HP heals after her burst; she waits on energy at R5.
+team furina-sucrose-hutao-yelan
+sucrose add weapon="prototypeamber" refine=1 lvl=90/90;

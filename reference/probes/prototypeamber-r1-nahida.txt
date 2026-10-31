@@ -1,0 +1,3 @@
+# Nahida with Prototype Amber R1 (library builds are R5).
+team raidenshogun-furina-nahida-zhongli
+nahida add weapon="prototypeamber" refine=1 lvl=90/90;
