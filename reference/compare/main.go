@@ -82,6 +82,7 @@ var (
 	gscouterDir = flag.String("gscouter", "", "Gscouter checkout (its teams/ and cmd/gscouter)")
 	gsePath     = flag.String("gse", "../engine/target/release/gse", "the engine's executable")
 	teamsFlag   = flag.String("teams", "", "comma-separated team ids (default: the whole library)")
+	buildsFlag  = flag.String("builds", "", "comma-separated team/build pairs as the report names them (team/library, team/er-0, team/cons:xingqiu=C0, team/probe:kuki-c6): compare only those, of any kind; implies -only library,variants,buildspace,probes and -teams")
 	censusOnly  = flag.Bool("census", false, "only classify teams as supported or not; run nothing")
 	noVariants  = flag.Bool("no-variants", false, "compare library builds and probes only (same as -only library,probes)")
 	onlyFlag    = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, buildspace, probes")
@@ -245,6 +246,24 @@ type job struct {
 	err error
 }
 
+// wanted is -builds: team, then build names. Empty for every build.
+var wanted = map[string]map[string]bool{}
+
+// found records the -builds that were met, to name those that were not.
+var found = map[string]bool{}
+
+// want is whether -builds selects build name of team id.
+func want(id, name string) bool {
+	if len(wanted) == 0 {
+		return true
+	}
+	if wanted[id][name] {
+		found[id+"/"+name] = true
+		return true
+	}
+	return false
+}
+
 // started is when compare started, for -deadline.
 var started = time.Now()
 
@@ -292,6 +311,27 @@ func main() {
 	kinds, err := parseOnly(*onlyFlag)
 	if err != nil {
 		fail(err)
+	}
+	if *buildsFlag != "" {
+		if *teamsFlag != "" || *gcsimOnly || *censusOnly {
+			fail(fmt.Errorf("-builds takes no -teams, -gcsim-only or -census"))
+		}
+		ids = nil
+		for _, tb := range strings.Split(*buildsFlag, ",") {
+			team, b, ok := strings.Cut(tb, "/")
+			if !ok || team == "" || b == "" {
+				fail(fmt.Errorf("-builds: want team/build, got %q", tb))
+			}
+			if wanted[team] == nil {
+				wanted[team] = map[string]bool{}
+				ids = append(ids, team)
+			}
+			wanted[team][b] = true
+		}
+		kinds, err = parseOnly("library,variants,buildspace,probes")
+		if err != nil {
+			fail(err)
+		}
 	}
 	if *noVariants {
 		delete(kinds, "variants")
@@ -372,7 +412,7 @@ func main() {
 				}
 				jobs = append(jobs, job{v: v, err: err})
 			}
-			if selected && kinds["library"] {
+			if selected && kinds["library"] && want(id, "library") {
 				jobs = append(jobs, job{v: variant{Name: "library", Desc: "library build"}, cfg: configs[i]})
 			}
 			if selected && kinds["variants"] {
@@ -381,6 +421,9 @@ func main() {
 					fail(err)
 				}
 				for _, v := range variants {
+					if !want(id, v.Name) {
+						continue
+					}
 					path := filepath.Join(tmp, id+"-"+v.Name+".txt")
 					if err := os.WriteFile(path, []byte(v.apply(string(base))), 0o644); err != nil {
 						fail(err)
@@ -419,6 +462,9 @@ func main() {
 					fail(err)
 				}
 				for _, bb := range builds {
+					if !want(id, bb.v.Name) {
+						continue
+					}
 					path := filepath.Join(tmp, id+"-"+bb.v.Name+".txt")
 					if err := os.WriteFile(path, []byte(bb.build), 0o644); err != nil {
 						fail(err)
@@ -446,6 +492,9 @@ func main() {
 				}
 			}
 			for _, pr := range probes {
+				if !want(id, pr.v.Name) {
+					continue
+				}
 				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
 				if err != nil {
 					fail(err)
@@ -528,6 +577,21 @@ func main() {
 				}
 				rep.Results = append(rep.Results, r)
 			}
+		}
+	}
+	// a build -builds names that no team had is an error, never skipped
+	if len(wanted) > 0 && !*censusOnly {
+		var missing []string
+		for team, bs := range wanted {
+			for b := range bs {
+				if !found[team+"/"+b] {
+					missing = append(missing, team+"/"+b)
+				}
+			}
+		}
+		if len(missing) > 0 {
+			sort.Strings(missing)
+			fail(fmt.Errorf("-builds: no such build (or its team is not supported): %s", strings.Join(missing, ", ")))
 		}
 	}
 	rep.Pass = true

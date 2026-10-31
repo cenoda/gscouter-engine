@@ -39,6 +39,12 @@
 # has saved a cache of its own restores that one, not main's, so dispatch
 # it before the port's first push.)
 #
+# A manual run with "rerun" set to team/build pairs (as the report names
+# them) compares those builds again, one job each, up to "rerun_max_iter"
+# iterations (2,048,000 by default; compare -builds): builds whose DPS is
+# heavy-tailed under energy waits can stay inconclusive at 512,000. It runs
+# nothing else, and its gcsim chunks go to the cache as other jobs' do.
+#
 # A run on a branch saves its chunks in that branch's cache, which main
 # cannot read. A manual run on main with "import_run" set to that run's id
 # adds the run's chunk artifacts (kept a day) to main's cache, and runs
@@ -68,6 +74,12 @@ on:
       warm:
         description: 'Team ids, comma-separated, whose gcsim runs to add to the cache (compare -gcsim-only); runs nothing else. Dispatch on main.'
         default: ""
+      rerun:
+        description: 'Builds to compare again, one job each, as team/build pairs the report names (team/cons:xingqiu=C0), comma-separated; runs nothing else. For builds inconclusive at 512,000 iterations.'
+        default: ""
+      rerun_max_iter:
+        description: 'Most iterations for rerun builds'
+        default: "2048000"
       import_run:
         description: 'A run id of this workflow, on any branch, whose gcsim chunks (artifacts gcsim-new-*, kept a day) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
@@ -90,6 +102,7 @@ jobs:
       bs_parts: ${{ steps.plan.outputs.bs_parts }}
       warm: ${{ steps.plan.outputs.warm }}
       warm_parts: ${{ steps.plan.outputs.warm_parts }}
+      rerun: ${{ steps.plan.outputs.rerun }}
     steps:
       - id: plan
         env:
@@ -98,6 +111,8 @@ jobs:
           BS_INPUT: ${{ inputs.buildspace }}
           WARM: ${{ inputs.warm }}
           IMPORT: ${{ inputs.import_run }}
+          RERUN: ${{ inputs.rerun }}
+          RERUN_MAX: ${{ inputs.rerun_max_iter }}
         run: |
           parts=""
           bs=""
@@ -119,6 +134,21 @@ jobs:
             echo "$out"
           }
           IMPORT=$(printf %s "$IMPORT" | tr -d "[:space:]")
+          RERUN=$(printf %s "$RERUN" | tr -d "[:space:]")
+          if [ "$EVENT" = workflow_dispatch ] && [ -n "$RERUN" ]; then
+            [[ $RERUN =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.:=+-]+(,[A-Za-z0-9_.-]+/[A-Za-z0-9_.:=+-]+)*$ ]] || { echo "rerun: want team/build pairs separated by commas, got $RERUN"; exit 1; }
+            [[ $RERUN_MAX =~ ^[0-9]+$ ]] || { echo "rerun_max_iter: want a number, got $RERUN_MAX"; exit 1; }
+            n=$(echo "$RERUN" | tr , '\n' | wc -l)
+            [ "$n" -le 256 ] || { echo "rerun: at most 256 builds, got $n"; exit 1; }
+            # a job per build, which reads its pair from the input by index
+            echo "library=false" >> "$GITHUB_OUTPUT"
+            echo "parts=[]" >> "$GITHUB_OUTPUT"
+            echo "bs_parts=[]" >> "$GITHUB_OUTPUT"
+            echo "warm_parts=[]" >> "$GITHUB_OUTPUT"
+            echo "rerun=[$(seq -s, 0 $(( n - 1 )))]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "rerun=[]" >> "$GITHUB_OUTPUT"
           if [ "$EVENT" = workflow_dispatch ] && [ -n "$IMPORT" ]; then
             [[ $IMPORT =~ ^[0-9]+$ ]] || { echo "import_run: want a run id, got $IMPORT"; exit 1; }
             # only the cache job runs, and takes that run's chunks
@@ -344,6 +374,71 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+  rerun:
+    needs: plan
+    if: needs.plan.outputs.rerun != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.plan.outputs.rerun) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: cenoda/Gscouter
+          ref: ${{ env.GSCOUTER_COMMIT }}
+          path: gscouter
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go.mod
+          cache-dependency-path: |
+            reference/go.sum
+            gscouter/go.sum
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.GCSIM_CACHE }}
+          key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+          restore-keys: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+      - name: Mark the cache's start
+        run: mkdir -p "$GCSIM_CACHE" && touch "$RUNNER_TEMP/cache-start"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the engine
+        working-directory: engine
+        run: cargo build --release
+      - name: Compare with gcsim
+        working-directory: reference
+        env:
+          RERUN: ${{ inputs.rerun }}
+          RERUN_MAX: ${{ inputs.rerun_max_iter }}
+        run: |
+          b=$(printf %s "$RERUN" | tr -d "[:space:]" | cut -d, -f$(( ${{ matrix.part }} + 1 )))
+          echo "build: $b"
+          go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -builds "$b" -max-iter "$RERUN_MAX" -deadline 300m -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+      - name: Summary
+        if: always()
+        run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compare-rerun-${{ matrix.part }}
+          path: |
+            compare.json
+            compare.md
+      - name: Collect the chunks this job added
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/gcsim-new"
+          cd "$GCSIM_CACHE" && find . -type f -name '*.json' -newer "$RUNNER_TEMP/cache-start" -exec cp --parents {} "$RUNNER_TEMP/gcsim-new" \;
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gcsim-new-rerun-${{ matrix.part }}
+          path: ${{ runner.temp }}/gcsim-new
+          if-no-files-found: ignore
+          retention-days: 1
+
   warm:
     needs: plan
     if: needs.plan.outputs.warm_parts != '[]'
@@ -404,7 +499,7 @@ jobs:
           retention-days: 1
 
   cache:
-    needs: [library, variants, buildspace, warm]
+    needs: [library, variants, buildspace, warm, rerun]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     # one at a time per branch, so that each restores what the last saved
