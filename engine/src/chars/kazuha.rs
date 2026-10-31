@@ -169,6 +169,7 @@ impl Character for Char {
             ai.blunt = true;
             ai.poise = 20.0;
             ai.ignore_infusion = true;
+            ai.pattern = s.circle_on_player(0.0, 0.5, 4.5);
             s.queue_attack(ai, 0, hitmark - 1, hitmark - 1);
             s.st_mut::<State>(ci).a1_absorb = Element::NoElement;
         }
@@ -232,6 +233,8 @@ impl Character for Char {
                 absorb.abil = "Kazuha Slash (Absorb DoT)";
                 absorb.mult = g::BURST_ELE_DOT[lvl];
                 absorb.element = Element::NoElement;
+                // can be pyro or electro, which reach dendro cores
+                absorb.pattern = s.circle_on_player(0.0, 1.0, 9.0);
                 let (tick, tick_absorb) = (s.snapshot_event(dot, 0), s.snapshot_event(absorb, 0));
                 let st = s.st_mut::<State>(ci);
                 st.q_tick = tick;
