@@ -1,0 +1,337 @@
+diff --git a/engine/src/chars/klee.rs b/engine/src/chars/klee.rs
+new file mode 100644
+index 0000000..2e72833
+--- /dev/null
++++ b/engine/src/chars/klee.rs
+@@ -0,0 +1,284 @@
++//! Klee, from gcsim's internal/characters/klee, at C0: normal attacks (9
++//! frames later after a dash, skill or burst; a cancel into one of those
++//! fires the throw early), charged attacks with A1's Explosive Spark, the
++//! skill's bounces and mines (dropped when cancelled before they are
++//! thrown), the burst's waves, A1 and A4. No plunges or constellations.
++
++use crate::content::Character;
++use crate::gcsimdata::chars::klee as g;
++use crate::sim::*;
++use crate::types::*;
++
++pub struct Char;
++
++#[derive(Default)]
++pub struct State {
++    /// The normal attack not thrown yet: its attack, and its travel.
++    pending: Option<(AttackInfo, i32)>,
++    /// The skill's snapshots, taken as it is used, until it throws.
++    bounces: [Option<AttackEvent>; 3],
++    mine: Option<AttackEvent>,
++    mines: i32,
++    mine_delay: i32,
++    /// The skill's particles come from its first hit. Two skills (its two
++    /// charges) can be in the air at once: each has its own flag, by
++    /// parity.
++    particle_done: [bool; 2],
++    parity: usize,
++    burst: Option<AttackEvent>,
++}
++
++const A1_ICD: ModKey = ModKey::new(g::A1_ICD_KEY);
++const SPARK: ModKey = ModKey::new(g::A1_SPARK_KEY);
++const A4_ICD: ModKey = ModKey::new(g::A4_ICD_KEY);
++const BURST: ModKey = ModKey::new("kleeq");
++
++const CB_A1: u16 = 1 << 0;
++const CB_A4: u16 = 1 << 1;
++// the skill's particles, by parity
++const CB_PARTICLE: [u16; 2] = [1 << 2, 1 << 3];
++
++const TASK_THROW: u8 = 0;
++const TASK_SKILL: u8 = 1;
++// arg: travel
++const TASK_CHARGE: u8 = 2;
++const TASK_BURST_SNAPSHOT: u8 = 3;
++const TASK_WAVE: u8 = 4;
++
++const ON_REMOVED_ATTACK: u8 = 0;
++
++const FRAMES_CHARGE: u8 = 0;
++
++fn min_frame(t: &FrameTable) -> i32 {
++    *t.iter().min().unwrap()
++}
++
++fn a1(s: &Sim, ci: usize) -> u16 {
++    if s.chars[ci].ascension >= 1 { CB_A1 } else { 0 }
++}
++
++/// The normal attack's throw, at its hitmark or when cancelled.
++fn throw(s: &mut Sim, ci: usize) {
++    let Some((mut ai, travel)) = s.st_mut::<State>(ci).pending.take() else { return };
++    // gcsim reads the radius at the combo's counter now
++    ai.pattern = s.circle_on_target(g::ATTACK_RADIUS[s.chars[ci].normal_counter as usize]);
++    let cbs = a1(s, ci);
++    s.queue_attack(ai, cbs, 0, travel);
++}
++
++impl Character for Char {
++    const KEY: &'static str = "klee";
++    // C1 to C6 are not ported
++    const MAX_CONS: i32 = 0;
++    type State = State;
++
++    fn new_state(_: &CharSetup) -> State {
++        State::default()
++    }
++
++    fn init(s: &mut Sim, ci: usize) {
++        let cd = &mut s.chars[ci].cd[crate::sim::Char::cd_index(Action::Skill)];
++        cd.available = 2;
++        cd.max_extra = 1;
++        s.subscribe(EventKind::Swap, Owner::Char(ci as u8));
++    }
++
++    fn unsupported(a: Action, p: &Params) -> Option<String> {
++        match a {
++            Action::Skill if p.get("bounce").is_some_and(|b| b > 3) => Some("skill bounce above 3".into()),
++            Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
++            _ => Some(crate::gcsl::action_name(a).into()),
++        }
++    }
++
++    fn charge_stam(s: &Sim, ci: usize) -> Option<f64> {
++        Some(if s.mod_active(ci, SPARK) { 0.0 } else { 50.0 })
++    }
++
++    fn attack(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
++        let travel = p.get("travel").map_or(10, |t| t as i32);
++        let n = s.chars[ci].normal_counter as usize;
++        let lvl = s.talent(ci, 0);
++        let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_KLEE_FIRE_DAMAGE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::ATTACK[n][lvl]);
++        ai.abil = NORMAL_NAMES[n];
++        ai.blunt = true;
++        ai.poise = g::ATTACK_POISE_DMG[n];
++        s.st_mut::<State>(ci).pending = Some((ai, travel));
++        let lag = matches!(s.current_state(), AnimState::Dash | AnimState::Skill | AnimState::Burst);
++        let (table, h) = if lag { (&g::ATTACK_FRAMES_WITH_LAG[n], g::ATTACK_HITMARKS_WITH_LAG[n]) } else { (&g::ATTACK_FRAMES[n], g::ATTACK_HITMARKS[n]) };
++        let atkspd = s.stat(ci, st::ATKSPD);
++        let mut info = ActInfo::new(Frames::Attack { table, atkspd }, table[0], min_frame(table), AnimState::Normal);
++        info.on_removed = OnRemoved::Char(ON_REMOVED_ATTACK);
++        info.queued = Some((h, TASK_THROW, 0));
++        s.advance_normal(ci);
++        info
++    }
++
++    fn on_removed(s: &mut Sim, ci: usize, _: u8, next: AnimState) {
++        if matches!(next, AnimState::Skill | AnimState::Burst | AnimState::Dash | AnimState::Jump) {
++            throw(s, ci);
++        }
++    }
++
++    fn charge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
++        let travel = p.get("travel").map_or(10, |t| t as i32);
++        let windup = match s.current_state() {
++            AnimState::Normal if matches!(s.chars[ci].normal_counter, 1 | 2) => 14,
++            AnimState::Skill => 14,
++            _ => 0,
++        };
++        s.add_task(Task::Char { c: ci as u8, id: TASK_CHARGE, arg: travel }, g::CHARGE_SNAPSHOT - windup);
++        let t = &g::CHARGE_FRAMES;
++        ActInfo::new(Frames::Char { id: FRAMES_CHARGE, arg: windup as i16 }, t[0] - windup, t[Action::Jump as usize] - windup, AnimState::Charge)
++    }
++
++    fn frames(_: u8, windup: i16, next: Action) -> i32 {
++        g::CHARGE_FRAMES[next as usize] - windup as i32
++    }
++
++    fn skill(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
++        let bounce = p.get("bounce").unwrap_or(1) as usize;
++        let mines = p.get("mine").unwrap_or(2) as i32;
++        let mine_delay = p.get("mine_delay").map_or(240, |d| d as i32);
++        let release = p.get("release").unwrap_or(1);
++        let lvl = s.talent(ci, 1);
++        // snapshots as the skill is used
++        let mut bounces = [None; 3];
++        for (i, b) in bounces.iter_mut().enumerate().take(bounce) {
++            let dur = if i == 2 { 50.0 } else { 25.0 };
++            let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_KLEE_FIRE_DAMAGE, icd::GROUP_DEFAULT, Element::Pyro, dur, g::JUMPY[lvl]);
++            ai.abil = "Jumpy Dumpty (Bounce)";
++            ai.blunt = true;
++            ai.poise = 40.0;
++            ai.pattern = s.circle_on_target(4.0);
++            *b = Some(s.snapshot_event(ai, 0));
++        }
++        let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_KLEE_FIRE_DAMAGE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::MINE[lvl]);
++        ai.abil = "Jumpy Dumpty (Mine)";
++        ai.def_halt = true;
++        ai.deployable = true;
++        ai.pattern = s.circle_on_target(2.0);
++        let mine = (mines > 0).then(|| s.snapshot_event(ai, 0));
++        let st = s.st_mut::<State>(ci);
++        st.bounces = bounces;
++        st.mine = mine;
++        st.mines = mines;
++        st.mine_delay = mine_delay;
++        let t = if release == 0 { &g::SKILL_CANCELED_FRAMES } else { &g::SKILL_FRAMES };
++        let mut info = ActInfo::new(Frames::Table(t), t[0], min_frame(t), AnimState::Skill);
++        // thrown 33 frames in, with the cooldown: a cancel before drops both
++        info.queued = Some((33, TASK_SKILL, 0));
++        info
++    }
++
++    fn burst(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
++        s.add_core_status(BURST, 600 + g::BURST_START);
++        s.add_task(Task::Char { c: ci as u8, id: TASK_BURST_SNAPSHOT, arg: 0 }, 100);
++        for &h in g::WAVE_HITMARKS {
++            s.add_task(Task::Char { c: ci as u8, id: TASK_WAVE, arg: 0 }, h);
++        }
++        s.set_cd_with_delay(ci, Action::Burst, 15 * 60, 9);
++        s.consume_energy(ci, 12);
++        let t = &g::BURST_FRAMES;
++        ActInfo::new(Frames::Table(t), t[0], t[Action::Swap as usize], AnimState::Burst)
++    }
++
++    fn task(s: &mut Sim, ci: usize, id: u8, arg: i32) {
++        match id {
++            TASK_THROW => throw(s, ci),
++            TASK_SKILL => {
++                let a1 = a1(s, ci);
++                let st = s.st_mut::<State>(ci);
++                st.parity ^= 1;
++                let p = st.parity;
++                st.particle_done[p] = false;
++                let (bounces, mine, mines, mine_delay) = (st.bounces, st.mine, st.mines, st.mine_delay);
++                for (i, b) in bounces.iter().enumerate() {
++                    if let Some(ev) = *b {
++                        s.queue_attack_with_snap(ev, a1 | CB_PARTICLE[p], g::BOUNCE_HITMARKS[i] - 33);
++                    }
++                }
++                if let Some(ev) = mine {
++                    for _ in 0..mines {
++                        s.queue_attack_with_snap(ev, 0, mine_delay - 33);
++                    }
++                }
++                s.set_cd(ci, Action::Skill, 1200);
++            }
++            TASK_CHARGE => {
++                let lvl = s.talent(ci, 0);
++                let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::CHARGE[lvl]);
++                ai.abil = "Charge";
++                ai.blunt = true;
++                ai.poise = 180.0;
++                ai.pattern = s.circle_on_target(3.0);
++                let cbs = if s.chars[ci].ascension >= 4 { CB_A4 } else { 0 };
++                let mut ev = s.snapshot_event(ai, cbs);
++                // A1: the spark's +50% DMG, used up
++                if s.mod_active(ci, SPARK) {
++                    ev.stats[st::DMGP] += 0.5;
++                    s.delete_mod(ci, SPARK);
++                }
++                s.queue_attack_with_snap(ev, cbs, g::CHARGE_HITMARK - g::CHARGE_SNAPSHOT + arg);
++            }
++            TASK_BURST_SNAPSHOT => {
++                let lvl = s.talent(ci, 2);
++                let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::BURST[lvl]);
++                ai.abil = "Sparks'n'Splash";
++                ai.def_halt = true;
++                ai.deployable = true;
++                ai.pattern = s.circle_on_target(1.5);
++                let ev = s.snapshot_event(ai, 0);
++                s.st_mut::<State>(ci).burst = Some(ev);
++            }
++            // a wave: one, then one and 30% of another, then one and 50% of
++            // another
++            TASK_WAVE => {
++                if s.core_status(BURST.name) <= 0 {
++                    return;
++                }
++                let Some(ev) = s.st::<State>(ci).burst else { return };
++                s.queue_attack_with_snap(ev, 0, 0);
++                s.queue_attack_with_snap(ev, 0, 12);
++                if s.rng.float64() < 0.3 {
++                    s.queue_attack_with_snap(ev, 0, 12);
++                }
++                s.queue_attack_with_snap(ev, 0, 24);
++                if s.rng.float64() < 0.5 {
++                    s.queue_attack_with_snap(ev, 0, 24);
++                }
++            }
++            _ => unreachable!(),
++        }
++    }
++
++    fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, ev: &AttackEvent) {
++        // A1: half the time, a spark for the next charged attack
++        if cbs & CB_A1 != 0 && !s.mod_active(ci, A1_ICD) && s.rng.float64() >= 0.5 {
++            s.add_status(ci, A1_ICD, 5 * 60, true);
++            if !s.mod_active(ci, SPARK) {
++                s.add_status(ci, SPARK, 30 * 60, true);
++            }
++        }
++        for p in 0..2 {
++            if cbs & CB_PARTICLE[p] != 0 && !s.st::<State>(ci).particle_done[p] {
++                s.st_mut::<State>(ci).particle_done[p] = true;
++                s.queue_particle(4.0, Element::Pyro, s.particle_delay[ci]);
++            }
++        }
++        // A4: a critical charged attack gives the party 2 energy
++        if cbs & CB_A4 != 0 && ev.crit && !s.mod_active(ci, A4_ICD) {
++            s.add_status(ci, A4_ICD, 36, true);
++            for i in 0..s.chars.len() {
++                s.add_energy(i, 2.0);
++            }
++        }
++    }
++
++    /// Leaving the field ends the burst.
++    fn event(s: &mut Sim, _: usize, _: &crate::content::Event) {
++        if s.core_status(BURST.name) > 0 {
++            s.delete_core_status(BURST);
++        }
++    }
++}
+diff --git a/engine/src/chars/mod.rs b/engine/src/chars/mod.rs
+index 6cad963..b3286af 100644
+--- a/engine/src/chars/mod.rs
++++ b/engine/src/chars/mod.rs
+@@ -28,4 +28,5 @@ crate::chars! {
+     Wriothesley => wriothesley,
+     Yaemiko => yaemiko,
+     Diona => diona,
++    Klee => klee,
+ }
+diff --git a/engine/src/sim.rs b/engine/src/sim.rs
+index 60aa03e..0d92ffa 100644
+--- a/engine/src/sim.rs
++++ b/engine/src/sim.rs
+@@ -417,13 +417,17 @@ pub struct ActInfo {
+     pub norm_for: Option<Action>,
+     pub on_removed: OnRemoved,
+     pub swap: Option<(f64, u8)>,
++    /// gcsim's Info.QueueAction for the acting character: its task
++    /// `Task::Char` (id, arg) runs once the action has lasted delay
++    /// frames, and not at all if another action replaces it first.
++    pub queued: Option<(i32, u8, i32)>,
+     /// Pauses on the acting character's hitlag; a swap does not.
+     pub pausable: bool,
+ }
+ 
+ impl ActInfo {
+     pub fn new(frames: Frames, anim_len: i32, can_queue_after: i32, state: AnimState) -> Self {
+-        ActInfo { frames, anim_len, can_queue_after, state, char: 0, time: 0.0, norm_time: 0.0, norm_for: None, on_removed: OnRemoved::None, swap: None, pausable: true }
++        ActInfo { frames, anim_len, can_queue_after, state, char: 0, time: 0.0, norm_time: 0.0, norm_for: None, on_removed: OnRemoved::None, swap: None, queued: None, pausable: true }
+     }
+ }
+ 
+@@ -3755,6 +3759,13 @@ impl Sim {
+                 self.do_swap(to as usize);
+             }
+         }
++        if let Some((delay, id, arg)) = a.queued {
++            if delay as f64 <= a.time {
++                a.queued = None;
++                self.player.anim = Some(a);
++                self.run_task(Task::Char { c: a.char, id, arg });
++            }
++        }
+         if a.time > a.anim_len as f64 {
+             self.on_removed(&a, AnimState::Idle);
+             self.player.anim = None;
