@@ -1,0 +1,10 @@
+# Kuki C6: a drain that leaves her at 25% HP or less gives EM +150 for 15s,
+# once a minute. The library build's ring tick heals enough that the next
+# skill drain still ends above 25%, so C6 never starts. No artifact EM and
+# a large HP pool make that tick a small share of her max HP: she settles
+# on the 20% floor, and later skills drain her back onto it. Three procs
+# fall inside the scored window. hp%=2.0 is above a real artifact build;
+# it is what keeps the tick under about 11% of max HP (max HP 44,595 here).
+team kukishinobu-fischl-xingqiu-nahida
+kuki char lvl=90/90 cons=6 talent=9,9,9;
+kuki add stats hp=4780 hp%=2.0 atk=311;
