@@ -1,0 +1,3 @@
+# Raiden with Thundering Fury 4 on an aggravate team: quicken and aggravate shorten her skill's cooldown on field; aggravate's bonus +20%.
+team raidenshogun-fischl-kaedeharakazuha-nahida
+raidenshogun add set="thunderingfury" count=4;

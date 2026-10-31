@@ -180,6 +180,19 @@ Flower of Paradise Lost made six more teams supported, each one item from suppor
 | Nahida / Yelan / Xingqiu / Xiangling (Xiangling, burgeon) | 1,000 | −0.04% ± 0.05 | Xingqiu −0.08% ± 0.12 | 0.1 s |
 | Raiden / Fischl / Xingqiu / Nahida (Raiden) | 1,000 | −0.02% ± 0.13 | Fischl −0.11% ± 0.40 | 1.3 s |
 
+Thundering Fury (electro +15%; with four pieces overloaded, electro-charged, superconduct and hyperbloom DMG +40%, aggravate's bonus +20%, and the holder's skill cooldown −1 s, once every 0.8 s, when it triggers one of them or quicken on an enemy while on field, or hyperbloom from a dendro core) made five more teams supported, four of them with the set on a pyro character beside Fischl. Their library builds pass, as do three probes that put it where those teams do not reach (Raiden on an aggravate team, Fischl beside Lynette's cryo, Fischl on a hyperbloom team):
+
+| Team | Iterations | Team | Worst character | Energy waits (gcsim) |
+|---|---|---|---|---|
+| Bennett / Chevreuse / Fischl / Raiden | 12,000 | −0.08% ± 0.33 | Bennett −0.11% ± 0.35 | 6.8 s |
+| Bennett / Chevreuse / Fischl / Yae Miko | 1,000 | +0.04% ± 0.23 | Chevreuse +0.08% ± 0.32 | 0.6 s |
+| Hu Tao / Xingqiu / Fischl / Zhongli | 1,000 | −0.19% ± 0.26 | Hu Tao −0.23% ± 0.29 | 5.5 s |
+| Yelan / Fischl / Yae Miko / Xingqiu | 1,000 | −0.11% ± 0.14 | Xingqiu −0.23% ± 0.41 | 9.1 s |
+| Yoimiya / Yae Miko / Fischl / Xingqiu | 1,000 | −0.01% ± 0.06 | Xingqiu −0.06% ± 0.12 | 0.1 s |
+| Probe: Raiden with it, Raiden / Fischl / Kazuha / Nahida | 4,000 | +0.00% ± 0.09 | Nahida −0.09% ± 0.15 | 4.5 s |
+| Probe: Fischl with it, Lynette / Furina / Fischl / Bennett | 2,000 | +0.17% ± 0.59 | Bennett +0.24% ± 0.58 | 8.9 s |
+| Probe: Fischl with it, Fischl / Nahida / Yoimiya / Xingqiu | 1,000 | +0.05% ± 0.23 | Yoimiya +0.22% ± 0.59 | 1.0 s |
+
 The runner also classifies every library team. Of 4,570, 231 are supported and 4,339 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |

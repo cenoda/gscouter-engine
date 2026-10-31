@@ -17,4 +17,5 @@ crate::sets! {
     ArchaicPetra => archaicpetra,
     GildedDreams => gildeddreams,
     FlowerOfParadiseLost => flowerofparadiselost,
+    ThunderingFury => thunderingfury,
 }

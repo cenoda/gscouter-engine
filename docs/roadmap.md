@@ -69,6 +69,7 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **Bennett's charged attack**: it blocked 19 teams, one of them alone (Bennett / Furina / Rosaria / Escoffier, which passes: team +0.12% ± 0.19); the 141 Bennett teams supported before are byte-identical.
 - **Yae Miko's charged attack** (two teams of the 55 it blocked; the rest have other blockers): gcsim's five boxes along the way to the target, of which the three that miss the enemy reach only gadgets (`Sim::queue_gadget_attack`). Both library builds pass (largest team difference −0.04%).
 - **Flower of Paradise Lost** (six teams, each blocked by it alone): its bloom, hyperbloom and burgeon bonus on the reaction bonus mods, with gcsim's stacks; its holders (Bennett, Xiangling, Raiden, Xingqiu) cover all three reactions, and every library build passes (largest team difference +0.06% ± 0.14, character Zhongli +0.28% ± 0.28).
+- **Thundering Fury** (five teams, the set the census listed at 275 teams blocked): its 4-piece reaction bonuses and skill cooldown cut, on every reaction the engine has; the five library builds and three probes (aggravate, superconduct, hyperbloom) pass, the largest team difference −0.19% ± 0.26.
 
 What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 231 supported):
 
