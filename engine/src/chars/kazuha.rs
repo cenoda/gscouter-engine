@@ -110,6 +110,7 @@ impl Character for Char {
         for (i, mult) in g::CHARGE.iter().enumerate() {
             let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, mult[lvl]);
             ai.abil = ["Charge 0", "Charge 1"][i];
+            ai.pattern = s.circle_on_player(0.0, 1.0, 2.2);
             s.queue_attack(ai, 0, g::CHARGE_HITMARKS[i], g::CHARGE_HITMARKS[i]);
         }
         ActInfo::new(Frames::Table(&g::CHARGE_FRAMES), g::CHARGE_FRAMES[0], *g::CHARGE_HITMARKS.last().unwrap(), AnimState::Charge)
@@ -205,6 +206,7 @@ impl Character for Char {
                 ai.hitlag_factor = g::ATTACK_HITLAG_FACTOR[n][i];
                 ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
                 ai.def_halt = g::ATTACK_DEF_HALT[n][i];
+                ai.pattern = s.circle_on_player(0.0, g::ATTACK_OFFSETS[n][i], g::ATTACK_RADIUS[n]);
                 s.queue_attack(ai, 0, 0, 0);
             }
             TASK_A1_CHECK | TASK_Q_CHECK => {
