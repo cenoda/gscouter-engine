@@ -211,6 +211,8 @@ Lisa made nine more teams supported (the roadmap had counted six blocked by her 
 
 Hits per ability agree (Hu Tao / Yelan / Xingqiu / Lisa per fight: Lightning Rose ticks 239.95 / 239.96, held skill 6 / 6; Lisa's energy waits 142.41 s / 142.40 s). No library team with her uses the pressed skill or meets dendro cores, so the pressed skill and C4's discharges on gadgets are not compared yet.
 
+These five came from parallel branches off the same commit and were merged together. Merged, they make three more teams supported that each needed two of them: Lisa with Thundering Fury (Bennett / Chevreuse / Fischl / Lisa, +0.08% ± 0.71 at 8,000 iterations; Yoimiya / Chevreuse / Fischl / Lisa, −0.02% ± 0.28, Lisa −0.42% ± 0.45) and Lisa with Flower of Paradise Lost (Lisa / Xingqiu / Nahida / Zhongli, +0.02% ± 0.26). The merged engine was compared again on all 26 teams these five made supported, the five probes they added and the three teams those probes use: 34 of 34 builds pass, with the same results as on their branches.
+
 The runner also classifies every library team. Of 4,570, 256 are supported and 4,314 are not; what blocks the most teams:
 
 | Kind | Most teams blocked |
