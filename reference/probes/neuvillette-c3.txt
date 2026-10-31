@@ -1,0 +1,3 @@
+# Neuvillette C3: the normal attack talent (and so the judgment) is 12.
+team neuvillette-furina-zhongli-kaedeharakazuha
+neuvillette char lvl=90/90 cons=3 talent=9,9,9;

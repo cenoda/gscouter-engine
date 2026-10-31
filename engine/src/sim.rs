@@ -3704,9 +3704,17 @@ impl Sim {
             Action::Dash => 18.0,
             _ => 0.0,
         };
-        // StamPercentMod, in the order the mods were added: anemo
-        // resonance's -15% on everything, then gcsim's "utility-dash"
-        // (Kazuha's and others') -20% on dashes, then Diona's A1
+        let pct = self.stam_percent_mod(a);
+        if pct == 0.0 {
+            return base;
+        }
+        (1.0 + pct as f64).max(0.0) * base
+    }
+
+    /// gcsim's StamPercentMod, in the order the mods were added: anemo
+    /// resonance's -15% on everything, then gcsim's "utility-dash"
+    /// (Kazuha's and others') -20% on dashes, then Diona's A1.
+    pub fn stam_percent_mod(&self, a: Action) -> f64 {
         let mut pct = 0.0;
         if self.anemo_res {
             pct += -0.15;
@@ -3717,13 +3725,11 @@ impl Sim {
         if self.diona_a1 && self.shields.iter().any(|x| x.typ == ShieldType::DionaSkill) {
             pct += -0.1;
         }
-        if pct == 0.0 {
-            return base;
-        }
-        (1.0 + pct as f64).max(0.0) * base
+        pct
     }
 
-    fn use_stam(&mut self, amt: f64) {
+    /// gcsim's UseStam.
+    pub fn use_stam(&mut self, amt: f64) {
         self.player.stam = (self.player.stam - amt).max(0.0);
         self.player.last_stam_use = self.f;
     }
@@ -4241,6 +4247,27 @@ impl Sim {
                     crate::gcsimdata::chars::lisa::CONDUCTIVE_TAG => Ok(int(crate::chars::lisa::conductive(self))),
                     t @ (crate::gcsimdata::chars::yelan::SKILL_MARKED_TAG | crate::gcsimdata::chars::lynette::SKILL_TAG | crate::gcsimdata::chars::hutao::BB_DEBUFF) => Err(format!("unsupported: enemy tag {t}")),
                     _ => Ok(int(0)),
+                }
+            }
+            "gadgets" => {
+                need(3, "gadgets")?;
+                let f = self.f;
+                match (fields[1].as_str(), fields[2].as_str()) {
+                    ("dendrocore", "count") => Ok(int(self.gadgets.iter().filter(|g| g.owner == CORE).count() as i64)),
+                    ("sourcewaterdroplet", "count") => Ok(int(self.gadgets.iter().filter(|g| g.owner != CORE && crate::chars::neuvillette::is_droplet(self, g)).count() as i64)),
+                    ("crystallizeshard", e) => {
+                        let ele = match e {
+                            "all" => None,
+                            "pyro" => Some(Element::Pyro),
+                            "hydro" => Some(Element::Hydro),
+                            "electro" => Some(Element::Electro),
+                            "cryo" => Some(Element::Cryo),
+                            _ => return Err(format!("bad gadgets (crystallizeshard) condition: invalid criteria {e}")),
+                        };
+                        Ok(int(self.shards.iter().filter(|sh| f >= sh.earliest_pickup && ele.is_none_or(|e| sh.shield.ele == e)).count() as i64))
+                    }
+                    ("dendrocore" | "sourcewaterdroplet", v) => Err(format!("bad gadgets ({}) condition: invalid criteria {v}", fields[1])),
+                    (t, _) => Err(format!("bad gadgets condition: invalid criteria {t}")),
                 }
             }
             "construct" => {
