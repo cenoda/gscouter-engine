@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 and 1 done, Phase 2 under way (256 teams) · Last updated: 2026-10-31
+> Status: Phases 0 and 1 done, Phase 2 under way (256 teams; next: verification over the player's build) · Last updated: 2026-10-31
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
@@ -26,7 +26,22 @@ Measured on Gscouter's library (4,573 teams, October 2026) and on gcsim at `ceno
   - `internal/score/chasca.go` reads a character's state.
 - **Rotations use features the engine lacks.** Among library configs (rotation or source), `pick_up_crystallize` appears in 511 teams, `set_player_pos` in 45, `rand` and `randnorm` in several hundred, and `hurt` in 64.
 
-## 2. Phases
+## 2. What the engine scores, and what done means
+
+The engine scores a player's showcase build on a library team's rotation: the rotation is the library's, the build is the player's (any constellation, any weapon and refinement, any set, any talent levels and stats). Library builds are the test data, not the scope. Until now they were both the order of porting and the definition of done ("a character is done when every library team with it passes"), which would end in an engine checked only on the builds the library happens to carry. Measured on 2026-10-31 (256 teams supported):
+
+- Eight ported characters stop below C6 (`MAX_CONS`): Nahida, Chiori, Jean, Wriothesley, Yae Miko, Klee and Escoffier at C0, Zhongli at C1. A player's build above that is an error, so it would fall back to gcsim.
+- The other twenty implement C0 to C6 from gcsim's source, but `compare` checks a constellation only when a library build or a probe carries it. Lisa's library builds are 19 of 21 at C6; her C0 and C3 are checked only by two probes, and C4's discharges on dendro cores not at all. There are 32 probes.
+- Weapons, refinements and talent levels are checked only as the library builds carry them; the variants move stats (ER, crit, ATK, HP, EM) and nothing else.
+
+So done is now:
+
+- **A character**: C0 to C6 (`MAX_CONS = 6`), every action and param gcsim's package has, each constellation compared on at least one supported team.
+- **A weapon**: refinements 1 to 5, compared at 1 and 5. **A set**: two and four pieces.
+- **Verification over the build space**: `compare` generates, for each supported team, builds that change one axis of one member (constellation 0 to 6, refinement 1 or 5, a weapon of the same class that the engine has), and passes them like the variants. Probes remain for what this does not reach.
+- **The measure of progress**: the share of real players' builds (Gscouter's requests or a sample of Enka showcases, on the teams they ask for) that the engine runs and has verified, beside the library census.
+
+## 3. Phases
 
 ### Phase 0: prototype (done)
 
@@ -73,23 +88,22 @@ Progress so far, taken in the order that makes the most library teams supported 
 - **Lisa** (nine teams, all passing with their library builds; largest team difference −0.15% ± 0.17): the enemy's Conductive stacks, C4's discharges on enemy-camp gadgets, and enemy DEF mods for A4. `.tags` conditions read 0 for every tag before; the ones ported content sets and the engine does not keep are now errors.
 - **The five merged** (Lisa, Bennett's and Yae Miko's charges, Flower of Paradise Lost, Thundering Fury): 26 teams, three of them needing two of these; the merged engine passes all 34 library and probe builds again.
 
-What remains of Phase 2, in the order to take it (teams blocked, census of 2026-10-31, 256 supported):
+What remains of Phase 2 is systems and verification, taken one after another on the main line (census of 2026-10-31, 256 supported). Content (characters, weapons and sets that need no new system) moves to Phase 3, where it can run in parallel.
 
-1. **Dendro's rest**: the variants of the nine dendro teams (CI); Nahida's C2 and C6 (19 teams); hit patterns for the other ported characters, as their teams meet dendro cores.
-2. **The other geo characters** (Noelle, Yun Jin, Navia, Albedo); Zhongli's burst is in (two teams).
-3. **More characters one item from teams**: Citlali (24 teams), Xilonen (22, with Nightsoul), Kuki Shinobu (15), Alhaitham (13), Thoma (11), Beidou (11), Mona (9), Layla (9), Charlotte (9), Baizhu (8), Xiao (8), Wanderer (8); Lynette, Shenhe and Lisa are in.
-4. **Hexerei** (394): the bonuses when two Hexerei characters are in the team (Fischl with Mona, Sucrose, Razor and others).
-5. **Actions and constellations of ported characters**: Zhongli's C2, C4, C6 (5); Bennett's and Yae Miko's charges are in; plunges (69 teams, most with Xianyun); Escoffier's constellations.
-6. **Systems**: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); `set_player_pos` (45); stamina mods; the lunar reactions.
-7. **Close the phase**: measurements and status in `README.md` and here, and speed (instructions on `team-looped.txt`, 20 iterations: 468.3M, against 480.0M before Klee and 451M at the start of the phase).
+1. **Verification over the player's build** (§2): `compare` builds that change a member's constellation, refinement or weapon, run on every supported team; fix what they find.
+2. **The ported characters to C6**: Nahida (her C2 and C6 also block 19 teams), Chiori, Jean, Wriothesley, Yae Miko, Klee, Escoffier, Zhongli; then every ported character's actions and params that its library teams do not use. Each constellation compared through step 1.
+3. **Systems**, each in its own round: Nightsoul with Cinder City's Nightsoul bonus (Xilonen 482 teams, Mavuika 277); HP debt (Arlecchino 184, Finale of the Deep 336); Hexerei (394: the bonuses when two Hexerei characters are in the team); plunges after Xianyun's burst (69 teams with plunges, most with Xianyun); `set_player_pos` (45); stamina mods; the lunar reactions; Polestar Fields and Stellar-Conduct (Radiance, Shenhe's C2).
+4. **Thoma**: ported and held out until thoma-chevreuse-fischl-bennett passes; commit him with his teams.
+5. **Close the phase**: measurements and status in `README.md` and here, and speed (instructions on `team-looped.txt`, 20 iterations: 472.5M, against 480.0M before Klee and 451M at the start of the phase).
 
 Weapons and sets that block many teams (Sacrificial Jade 401, Ocean-Hued Clam 391, Obsidian Codex 385) are Phase 3 content; Thrilling Tales (497) is in, as it alone blocked ten. Catalysts can now be checked on Nahida: Wandering Evenstar is ported on her teams, and The Widsith (700 teams) passes its probe on one, though it alone unblocks none.
 
 ### Phase 3: content (most of the work)
 
-- **Weapons (261) and sets (55).** Small one by one, but all are needed. Port the ones Enka showcases carry most first.
+- **Weapons (261) and sets (55).** Small one by one, but all are needed: a player's build can carry any of them, library or not (about 100 weapons and 20 sets appear in no library team). Port the ones real builds carry most first.
 - **Characters**, in the order of the table in §1: 40 cover a quarter of the library, 100 cover 86%.
-- A character is done when every library team with it passes the comparison runner.
+- Taken as a queue in parallel branches, a few at a time, merged and compared again together (on 2026-10-31 five branches made 26 teams supported, three of them needing two of the branches, and the merged engine passed all 34 builds). By the library census, 312 items block the 4,314 teams not supported; taken in the order that completes the most teams, 75 of them give 50% and 150 give 86%. The first: Xilonen, Citlali, Finale of the Deep, Sacrificial Jade, Neuvillette, Kuki Shinobu, Alhaitham, Hakushin Ring, Baizhu, Ocean-Hued Clam. Items that need a Phase 2 system wait for it.
+- Done is §2's: every constellation, refinement and set count, verified over the build space, not only the library's builds.
 
 ### Phase 4: into Gscouter
 
@@ -106,18 +120,18 @@ Weapons and sets that block many teams (Sacrificial Jade 401, Ocean-Hued Clam 39
 - **New characters.** They go into both Gscouter's gcsim fork and the engine. That double cost is new.
 - **Source validation** (`cmd/validate`) stays on gcsim. It runs each entry under its source's conditions (several targets, other enemies, `hurt`), which scoring does not need.
 
-## 3. Decisions for the owner
+## 4. Decisions for the owner
 
 1. **Scores that move.** Gscouter promises verified scores unchanged to the last bit across fork updates. The engine matches gcsim statistically, not bit for bit, so a team that moves to the engine changes its score by up to about 1%. Allow it, with an entry in `/updates`?
 2. **Fillers can flip.** A filler is the best of several runs. When two candidates are within 1%, the two engines can pick different ones: the score barely moves, but the rotation the result shows does.
 3. **Two engines to keep.** Over time this is the largest cost.
 
-## 4. What it gains
+## 5. What it gains
 
 - **Faster result pages.** A result page takes 10–24 s today, most of it simulation (Gscouter `docs/speed.md`). Most of that would go, leaving download and worker start.
 - **More simulation in the same time.** Hundreds of iterations instead of 50, or a wider filler search.
 - **Faster library validation.** It takes about 40 minutes today. At the same ratio it would take minutes. This is estimated, not measured.
 
-## 5. Recommended order
+## 6. Recommended order
 
-Phases 1 and 2, then in Phase 3 the top 20–40 characters and the common weapons and sets. Then add Phase 4's mixed engines and measure the gain on real pages before porting the rest.
+Phase 2's verification over the player's build and its systems first, on the main line; Phase 3's content as a parallel queue once a system it needs is in. Start Phase 4's mixed engines when about half of real players' builds run and are verified (by the measure in §2, around 75 items by the library census), and measure the gain on real pages before porting the rest.
