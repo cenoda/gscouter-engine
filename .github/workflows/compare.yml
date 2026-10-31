@@ -39,6 +39,11 @@
 # has saved a cache of its own restores that one, not main's, so dispatch
 # it before the port's first push.)
 #
+# A run on a branch saves its chunks in that branch's cache, which main
+# cannot read. A manual run on main with "import_run" set to that run's id
+# adds the run's chunk artifacts (kept a day) to main's cache, and runs
+# nothing else.
+#
 # Caches of one branch must not be saved by two cache jobs at once: each
 # restores the latest and adds its own chunks, so the one saved second
 # would lack the first one's chunks, and the next restore takes only the
@@ -62,6 +67,9 @@ on:
         default: ""
       warm:
         description: 'Team ids, comma-separated, whose gcsim runs to add to the cache (compare -gcsim-only); runs nothing else. Dispatch on main.'
+        default: ""
+      import_run:
+        description: 'A run id of this workflow, on any branch, whose gcsim chunks (artifacts gcsim-new-*, kept a day) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
 
 env:
@@ -89,6 +97,7 @@ jobs:
           INPUT: ${{ inputs.parts }}
           BS_INPUT: ${{ inputs.buildspace }}
           WARM: ${{ inputs.warm }}
+          IMPORT: ${{ inputs.import_run }}
         run: |
           parts=""
           bs=""
@@ -109,6 +118,16 @@ jobs:
             done
             echo "$out"
           }
+          IMPORT=$(printf %s "$IMPORT" | tr -d "[:space:]")
+          if [ "$EVENT" = workflow_dispatch ] && [ -n "$IMPORT" ]; then
+            [[ $IMPORT =~ ^[0-9]+$ ]] || { echo "import_run: want a run id, got $IMPORT"; exit 1; }
+            # only the cache job runs, and takes that run's chunks
+            echo "library=false" >> "$GITHUB_OUTPUT"
+            echo "parts=[]" >> "$GITHUB_OUTPUT"
+            echo "bs_parts=[]" >> "$GITHUB_OUTPUT"
+            echo "warm_parts=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "$EVENT" = workflow_dispatch ] && [ -n "$WARM" ]; then
             [[ $WARM =~ ^[A-Za-z0-9_.-]+(,[A-Za-z0-9_.-]+)*$ ]] || { echo "warm: want team ids separated by commas, got $WARM"; exit 1; }
             # a job per team, up to 20 jobs
@@ -405,6 +424,16 @@ jobs:
           pattern: gcsim-new-*
           merge-multiple: true
           path: ${{ runner.temp }}/gcsim-new
+      # another run's chunks (input import_run): a run on a branch saves its
+      # cache for that branch only, which main and other branches cannot read
+      - uses: actions/download-artifact@v4
+        if: inputs.import_run != ''
+        with:
+          pattern: gcsim-new-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/gcsim-new
+          run-id: ${{ inputs.import_run }}
+          github-token: ${{ github.token }}
       - id: new
         run: echo "chunks=$(find "$RUNNER_TEMP/gcsim-new" -type f 2>/dev/null | wc -l)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
