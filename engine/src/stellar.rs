@@ -16,19 +16,24 @@
 //! by the characters that have it) and the stacks as a tag, which scales
 //! that character's direct Stellar-Conduct DMG.
 //!
-//! gcsim subscribes the recording hook when the first field appears and
-//! unsubscribes it only on a Kill, which nothing does: the field expires,
-//! and the hook goes on recording stacks for the next field. One hook only
-//! ever exists, as it is keyed by the field's position, the player's.
+//! Each field stays where the player was when it appeared (gcsim's
+//! gadget.New at Player().Pos()); its area is a circle of radius 15 on it
+//! (NewCircleHitOnTarget(field, nil, 15)), and the enemy and the player are
+//! in it when their centers are (IsWithinArea, a point in the shape). A
+//! Stellar-Conduct renews the first field the player stands in, else makes
+//! a new one, so a player who moved can have several.
 //!
-//! The player stands at the origin and never moves, so the player is in
-//! every field and there is only ever one. (With a player position, the
-//! field keeps the position the player had when it appeared: gcsim's
-//! gadget.New at Player().Pos(), its area NewCircleHitOnTarget(field, nil,
-//! 15); the player's and the enemy's IsWithinArea are points in it.) The field is not among
-//! `Sim::gadgets`: nothing reaches it but these hooks (its HandleAttack
-//! does nothing, it has no aura and is not of the enemy camp); it ticks
-//! after them. It takes no gadget key, which only orders the others.
+//! gcsim subscribes a field's recording hook when it appears, keyed by its
+//! position, and unsubscribes it only on a Kill, which nothing does: the
+//! field expires, and its hook goes on recording stacks for the next
+//! field. A field at a position that already has a hook replaces it in
+//! place. The hooks share the record and the per-character ICD, so an
+//! element counts once when the enemy is in any hook's area.
+//!
+//! The fields are not among `Sim::gadgets`: nothing reaches them but these
+//! hooks (their HandleAttack does nothing, they have no aura and are not of
+//! the enemy camp); they tick after the gadgets, in the order they came.
+//! They take no gadget key, which only orders the others.
 //!
 //! Stellar Swirl (gcsim's StellarSwirlEnableKey, which every character
 //! that enables Stellar-Conduct enables too) is not ported: a cryo or
@@ -67,24 +72,33 @@ pub fn enables_stellar(k: CharKind) -> bool {
     matches!(k, CharKind::Sandrone)
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub struct Field {
     /// Ticks since it appeared.
     timer: i32,
     /// Ticks left.
     duration: i32,
+    /// Where it is.
+    x: f64,
+    y: f64,
+}
+
+/// A field's area: the circle of radius 15 on its position.
+fn area(x: f64, y: f64) -> Pattern {
+    Pattern::Circle { x, y, r: FIELD_R }
 }
 
 /// The fight's Stellar state.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Stellar {
     /// Superconduct becomes Stellar-Conduct (StellarConductEnableKey).
     pub conduct: bool,
     /// Cryo swirls become Stellar Swirl (StellarSwirlEnableKey).
     pub swirl: bool,
-    pub field: Option<Field>,
-    /// The recording hook exists.
-    hooked: bool,
+    /// The fields, in the order they came.
+    pub fields: Vec<Field>,
+    /// The positions of the recording hooks, in the order subscribed.
+    hooks: Vec<(f64, f64)>,
     /// gcsim's polestar-field-recorded flag.
     record: i32,
     /// gcsim's polestar-field-stacks flag.
@@ -94,20 +108,19 @@ pub struct Stellar {
 }
 
 impl Sim {
-    /// Whether the enemy's center is in the field's circle (gcsim's
-    /// IsWithinArea, a point in the shape).
-    fn enemy_in_field(&self) -> bool {
-        self.enemy_alive && self.target_dist * self.target_dist <= FIELD_R * FIELD_R
-    }
-
-    /// gcsim's OnElementApplied hook of the field, at the start of the
+    /// gcsim's OnElementApplied hooks of the fields, at the start of the
     /// enemy's React.
     #[inline]
     pub(crate) fn polestar_element_applied(&mut self, ev: &AttackEvent) {
-        if !self.stellar.hooked || !self.enemy_in_field() {
+        if self.stellar.hooks.is_empty() {
             return;
         }
         if !matches!(ev.info.element, Element::Electro | Element::Cryo) || ev.info.durability <= ZERO_DUR {
+            return;
+        }
+        // the first hook whose area holds the enemy counts it; its ICD stops
+        // the others
+        if !self.stellar.hooks.iter().any(|&(x, y)| self.enemy_within(area(x, y))) {
             return;
         }
         let ci = ev.info.actor as usize;
@@ -118,29 +131,33 @@ impl Sim {
         self.stellar.record = (self.stellar.record + 1).min(MAX_STACKS);
     }
 
-    /// gcsim's queueStellarConduct: the event, then a new field or the
-    /// current one's duration again.
+    /// gcsim's queueStellarConduct: the event, then the duration of the
+    /// first field the player is in again, or a new field at the player.
     pub(crate) fn queue_stellar_conduct(&mut self, ev: &AttackEvent) {
         self.emit(Event::Reaction(Reaction::StellarConduct, ev));
-        match &mut self.stellar.field {
-            Some(f) => f.duration = FIELD_DUR,
-            None => {
-                self.stellar.hooked = true;
-                self.polestar_refresh();
-                self.stellar.field = Some(Field { timer: 0, duration: FIELD_DUR });
-            }
+        if let Some(k) = self.stellar.fields.iter().position(|f| self.player_within(area(f.x, f.y))) {
+            self.stellar.fields[k].duration = FIELD_DUR;
+            return;
         }
+        let (x, y) = self.player_pos;
+        if !self.stellar.hooks.contains(&(x, y)) {
+            self.stellar.hooks.push((x, y));
+        }
+        self.polestar_refresh(x, y);
+        self.stellar.fields.push(Field { timer: 0, duration: FIELD_DUR, x, y });
     }
 
-    /// gcsim's refreshBuffs.
-    fn polestar_refresh(&mut self) {
+    /// gcsim's refreshBuffs of the field at (x, y).
+    fn polestar_refresh(&mut self, x: f64, y: f64) {
         let stacks = self.stellar.record;
         self.stellar.stacks = stacks;
         self.stellar.record = 0;
-        if self.enemy_in_field() {
+        if self.enemy_alive && self.enemy_within(area(x, y)) {
             self.enemy_add_resist(SHRED, Element::Physical, -0.4, BUFF_DUR);
         }
-        // the player is always in the field
+        if !self.player_within(area(x, y)) {
+            return;
+        }
         let buff = BUFF[stacks as usize];
         for i in 0..self.chars.len() {
             self.add_stat_mod(i, FIELD_CRYO, st::CRYOP, buff, BUFF_DUR, true);
@@ -150,18 +167,24 @@ impl Sim {
         }
     }
 
-    /// The field's Gadget.Tick: its think every 4 s, then its expiry.
+    /// Each field's Gadget.Tick: its think every 4 s, then its expiry.
     pub(crate) fn tick_polestar(&mut self) {
-        let Some(f) = &mut self.stellar.field else { return };
-        f.timer += 1;
-        let think = f.timer % THINK_INTERVAL == 0;
-        f.duration -= 1;
-        let expired = f.duration == 0;
-        if think {
-            self.polestar_refresh();
-        }
-        if expired {
-            self.stellar.field = None;
+        let mut k = 0;
+        while k < self.stellar.fields.len() {
+            let f = &mut self.stellar.fields[k];
+            f.timer += 1;
+            let think = f.timer % THINK_INTERVAL == 0;
+            f.duration -= 1;
+            let expired = f.duration == 0;
+            let (x, y) = (f.x, f.y);
+            if think {
+                self.polestar_refresh(x, y);
+            }
+            if expired {
+                self.stellar.fields.remove(k);
+            } else {
+                k += 1;
+            }
         }
     }
 

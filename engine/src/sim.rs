@@ -4356,7 +4356,7 @@ impl Sim {
             self.tick_gadgets();
         }
         // the Polestar Field, after them
-        if self.stellar.field.is_some() {
+        if !self.stellar.fields.is_empty() {
             self.tick_polestar();
         }
         // shards last the same 15 s, so they go in the order they came
