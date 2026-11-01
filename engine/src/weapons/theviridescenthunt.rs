@@ -36,6 +36,8 @@ impl WeaponImpl for Weapon {
         let r = s.chars[ci].refine;
         let mut ai = AttackInfo::new(ci, AttackTag::Weapon, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 100.0, 0.3 + r as f64 * 0.1);
         ai.abil = "Viridescent";
+        // a circle of radius 3 on the target hit, the enemy
+        ai.pattern = s.circle_on_target(3.0);
         for i in (0..=240).step_by(30) {
             s.queue_attack(ai, 0, 0, i + 1);
         }

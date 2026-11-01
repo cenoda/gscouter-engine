@@ -30,6 +30,7 @@ enum Builtin {
     Asin,
     Acos,
     PickUpCrystallize,
+    SetPlayerPos,
     Unsupported(&'static str),
 }
 
@@ -44,7 +45,7 @@ const BUILTINS: &[(&str, Builtin)] = &[
     ("type", Builtin::Type),
     ("execute_action", Builtin::ExecuteAction),
     ("set_target_pos", Builtin::Unsupported("set_target_pos")),
-    ("set_player_pos", Builtin::Unsupported("set_player_pos")),
+    ("set_player_pos", Builtin::SetPlayerPos),
     ("set_default_target", Builtin::Unsupported("set_default_target")),
     ("set_swap_icd", Builtin::SetSwapIcd),
     ("set_particle_delay", Builtin::SetParticleDelay),
@@ -504,6 +505,18 @@ impl<'s> Eval<'s> {
                 };
                 self.sim.particle_delay[ci] = d.i() as i32;
                 Ok(Value::Null)
+            }
+            Builtin::SetPlayerPos => {
+                let vs = self.args(args, line, &["number", "number"], env)?;
+                let (Value::Num(x), Value::Num(y)) = (&vs[0], &vs[1]) else { unreachable!() };
+                let (x, y) = (x.f(), y.f());
+                if (x, y) != (0.0, 0.0) {
+                    if let Some(name) = self.sim.not_ported_for_player_moves() {
+                        return err(format!("unsupported: set_player_pos with {name}"));
+                    }
+                }
+                self.sim.set_player_pos(x, y);
+                Ok(Value::Num(Num::from_bool(true)))
             }
             Builtin::Movement => {
                 let f = self.num(args, line, env)?.f();

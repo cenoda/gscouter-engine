@@ -208,11 +208,12 @@ impl Character for Char {
     }
 }
 
-/// C4: the enemy in the field (a circle of radius 6 on the player) takes
+/// C4: the enemy in the field (its center in a circle of radius 6 on the
+/// player, EnemiesWithinArea) takes
 /// Anemo RES -40% for 1.2 s, hitlag affected; renewed with each heal tick.
 fn c4(s: &mut Sim) {
     let area = s.circle_on_player(0.0, 0.0, 6.0);
-    if area.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true) {
+    if s.enemy_within(area) {
         s.enemy_add_resist(C4, Element::Anemo, -0.4, 72);
     }
 }

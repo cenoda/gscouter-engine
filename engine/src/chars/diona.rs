@@ -37,9 +37,10 @@ const TASK_TICK: u8 = 1;
 const TASK_C1: u8 = 2;
 const TASK_C6: u8 = 3;
 
-/// The burst's field, a circle of 7 on the enemy: does it hold the player?
+/// The burst's field, a circle of 7 on the enemy: is the player in it
+/// (IsWithinArea)?
 fn in_field(s: &Sim) -> bool {
-    s.player_in_circle(s.target_dist, 7.0)
+    s.player_within(s.circle_on_target(7.0))
 }
 
 impl Character for Char {

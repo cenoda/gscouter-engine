@@ -172,9 +172,10 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
         }
     }
     // Neuvillette's burst places its waterfalls from the enemy's own
-    // direction, which gcsim leaves at (0, 1); the engine knows only the
-    // enemy's distance, along the player's facing, so that is the same
-    // only for an enemy straight up the y axis
+    // direction, which gcsim leaves at (0, 1), and his droplets' areas are
+    // taken from a player facing (0, 1): checked only for an enemy
+    // straight up the y axis. (Chevreuse's boxes now take the enemy's
+    // direction as gcsim does; no off-axis comparison has checked it yet.)
     if p.chars.iter().any(|c| char_name(c.key) == "neuvillette") && p.targets.iter().any(|t| t.pos.0 != 0.0 || t.pos.1 <= 0.0) {
         errs.push("unsupported: neuvillette with the target off the y axis".into());
     }
@@ -234,7 +235,7 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
         defhalt: p.defhalt,
         ignore_burst_energy: p.ignore_burst_energy,
         enemy_hp: t.hp,
-        target_dist: t.pos.0.hypot(t.pos.1),
+        target_pos: t.pos,
         target_radius: t.radius,
     })
 }

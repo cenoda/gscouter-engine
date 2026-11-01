@@ -177,13 +177,13 @@ impl Character for Char {
         let lvl = s.talent(ci, 1);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_FISCHL, Element::Electro, 25.0, g::BIRD_SUM[lvl]);
         ai.abil = "Oz (Summon)";
-        // a circle 1.5 beyond the enemy (it faces away from the player)
+        // a circle 1.5 beyond the enemy along its own direction
         let mut r = 2.0;
         if s.chars[ci].cons >= 2 {
             ai.mult += 2.0;
             r = 3.0;
         }
-        ai.pattern = Pattern::Circle { x: 0.0, y: s.target_dist + 1.5, r };
+        ai.pattern = s.circle_on_enemy(0.0, 1.5, r);
         s.queue_attack(ai, 0, g::SKILL_OZ_SPAWN, g::SKILL_OZ_HITMARK);
         s.set_cd(ci, Action::Skill, 25 * 60 + g::SKILL_OZ_SPAWN);
         s.add_task(Task::Char { c: ci as u8, id: TASK_RECAST_CD, arg: 0 }, g::SKILL_OZ_SPAWN);
@@ -341,8 +341,9 @@ fn oz_spawn(s: &mut Sim, ci: usize, burst: bool, first_tick: i32) {
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_FISCHL, Element::Electro, 25.0, g::BIRD_ATK[lvl]);
     ai.abil = if burst { "Oz (Burst)" } else { "Oz (Skill)" };
-    // from Oz, 1.5 in front of the player, to the enemy: the same line
-    ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
+    // NewBoxHit from Oz's position, a point, not a target: along the
+    // default direction
+    ai.pattern = s.box_on_enemy(0.0, -0.5, 0.1, 1.0);
     s.st_mut::<State>(ci).oz = s.snapshot_event(ai, CB_PARTICLE);
     s.add_task(Task::Char { c: ci as u8, id: TASK_OZ_TICK, arg: f }, first_tick);
 }

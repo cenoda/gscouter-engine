@@ -508,7 +508,7 @@ fn roller(s: &mut Sim, ci: usize) -> ActInfo {
 /// The enemy within 10 of the player (gcsim's EnemiesWithinArea of a
 /// circle on the player).
 fn enemy_in_range(s: &Sim) -> bool {
-    s.enemy_alive && Pattern::Circle { x: 0.0, y: 0.0, r: 10.0 }.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true)
+    s.enemy_alive && s.enemy_within(s.circle_on_player(0.0, 0.0, 10.0))
 }
 
 fn apply_shred(s: &mut Sim, ci: usize, ele: Element) {

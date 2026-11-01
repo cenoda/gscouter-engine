@@ -109,9 +109,8 @@ impl Character for Char {
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::SKILL_PRESS[lvl]);
             ai.abil = "Short-Range Rapid Interdiction Fire";
             // NewBoxHitOnTarget on the enemy, along the enemy's own
-            // direction, (0, 1): the player's facing for an enemy up the
-            // y axis, which the profile requires
-            ai.pattern = s.box_on_target(0.0, -0.5, 2.0, 6.0);
+            // direction, gcsim's default
+            ai.pattern = s.box_on_enemy(0.0, -0.5, 2.0, 6.0);
             s.queue_attack(ai, CB_PARTICLE | CB_ARKHE_PRESS, g::SKILL_PRESS_HITMARK, g::SKILL_PRESS_HITMARK);
             skill_heal(s, ci, g::SKILL_PRESS_CD_START);
             s.set_cd_with_delay(ci, Action::Skill, 15 * 60, g::SKILL_PRESS_CD_START);
@@ -137,7 +136,7 @@ impl Character for Char {
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::SKILL_HOLD[lvl]);
             ai.abil = "Short-Range Rapid Interdiction Fire [Hold]";
             // as the press, along the enemy's own direction
-            ai.pattern = s.box_on_target(0.0, -0.5, 3.0, 7.0);
+            ai.pattern = s.box_on_enemy(0.0, -0.5, 3.0, 7.0);
             ai
         };
         if s.mod_active(ci, C4_STATUS) {
@@ -174,7 +173,7 @@ impl Character for Char {
         mine.poise = 25.0;
         // eight mines in five groups, each a 60 degree fan of radius 6 on
         // the enemy, facing its own step from the player's facing
-        let steps: [&[f32]; 5] = [&[0.0], &[45.0, 315.0], &[90.0, 270.0], &[135.0, 225.0], &[180.0]];
+        let steps: [&[f64]; 5] = [&[0.0], &[45.0, 315.0], &[90.0, 270.0], &[135.0, 225.0], &[180.0]];
         for (dirs, delay) in steps.into_iter().zip([24, 33, 42, 51, 60]) {
             for &dir in dirs {
                 mine.pattern = s.fan_dir_on_target(6.0, 60.0, dir);
@@ -268,9 +267,11 @@ impl Character for Char {
             // along the player's facing: the enemy, which the hold shot
             // reaches before any gadget (gcsim checks enemies first, and
             // the ICD holds off the rest)
-            ai.pattern = Pattern::Circle { x: -1.5, y: s.target_dist, r: 3.0 };
+            let (x, y) = offset_point(s.enemy_pos, (-1.5, 0.0), s.player_dir);
+            ai.pattern = Pattern::Circle { x, y, r: 3.0 };
             s.queue_attack(ai, 0, d1, d1);
-            ai.pattern = Pattern::Circle { x: 1.5, y: s.target_dist, r: 3.0 };
+            let (x, y) = offset_point(s.enemy_pos, (1.5, 0.0), s.player_dir);
+            ai.pattern = Pattern::Circle { x, y, r: 3.0 };
             s.queue_attack(ai, 0, d2, d2);
         }
         if cbs & (CB_ARKHE_PRESS | CB_ARKHE_HOLD) != 0 && !s.mod_active(ci, ARKHE_ICD) {

@@ -39,3 +39,10 @@ crate::chars! {
     Kirara => kirara,
     Xilonen => xilonen,
 }
+
+/// The characters whose modules have been checked against gcsim for a
+/// player that set_player_pos moved away from the origin: every pattern,
+/// area and point taken from the player's position or direction, and at
+/// the time gcsim takes it. Moving the player with anyone else on the team
+/// is an error that names them.
+pub const MOVES_WITH_PLAYER: &[CharKind] = &[CharKind::Bennett, CharKind::Diluc, CharKind::Gaming, CharKind::Sucrose, CharKind::Xingqiu, CharKind::Yoimiya];

@@ -63,9 +63,10 @@ fn add_stack(s: &Sim, ci: usize) {
     }
 }
 
-/// Whether the enemy is within an area (gcsim's EnemiesWithinArea).
+/// Whether the enemy is within an area (gcsim's EnemiesWithinArea: its
+/// center in the area).
 fn enemy_within(s: &Sim, p: Pattern) -> bool {
-    p.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true)
+    s.enemy_within(p)
 }
 
 impl Character for Char {
@@ -287,7 +288,7 @@ fn burst_tick(s: &mut Sim, ci: usize, progress: i32) {
         let mut found = [(0.0f64, 0.0f64); 16];
         let mut n = 0;
         for g in &s.gadgets {
-            if g.enemy_camp && area.hits_circle(g.x, g.y, g.r) == Some(true) {
+            if g.enemy_camp && area.contains_point(g.x, g.y) == Some(true) {
                 if n == found.len() {
                     s.unsupported("lisa c4 with more than 16 gadgets");
                     return;
@@ -372,13 +373,9 @@ fn burst_tick(s: &mut Sim, ci: usize, progress: i32) {
     }
 }
 
-/// A discharge with the burst's snapshot. The engine's attacks always hit
-/// the enemy, so one whose circle does not reach it is an error.
+/// A discharge with the burst's snapshot: it hits the enemy when its
+/// circle reaches it (a discharge on a gadget may not).
 fn discharge(s: &mut Sim, ci: usize, p: Pattern, cb: u16) {
-    if !enemy_within(s, p) {
-        s.unsupported("lisa burst discharge missing the enemy");
-        return;
-    }
     let mut ev = s.st::<State>(ci).burst;
     ev.info.pattern = p;
     s.queue_attack_with_snap(ev, cb, 0);

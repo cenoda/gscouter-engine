@@ -150,9 +150,9 @@ impl Character for Char {
         // 9 frames; the group's ICD lets one deal damage every 0.5 s. A box
         // that misses the enemy still reaches the gadgets it covers.
         for i in 0..5 {
-            ai.pattern = s.box_on_player(0.0, 1.65 * (i + 1) as f64, 2.0, 2.0);
+            ai.pattern = s.box_from_player(s.point_from_player(0.0, 1.65 * (i + 1) as f64), 0.0, 0.0, 2.0, 2.0);
             let d = g::CHARGE_HITMARK + i * 9 - windup;
-            if ai.pattern.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true) {
+            if s.hits_enemy(ai.pattern) == Some(true) {
                 s.queue_attack(ai, 0, 0, d);
             } else {
                 s.queue_gadget_attack(ai, d);
@@ -242,7 +242,7 @@ impl Character for Char {
                 // An enemy out of it would make the totem strike a gadget
                 // or nothing, which is not ported.
                 let r = if s.chars[ci].cons >= 2 { 20.0 } else { 12.5 };
-                if (Pattern::Circle { x: 0.0, y: 0.0, r }).hits_circle(0.0, s.target_dist, s.target_radius) != Some(true) {
+                if !s.enemy_within(s.circle_on_player(0.0, 0.0, r)) {
                     s.unsupported("yaemiko Sesshou Sakura with the enemy out of its range");
                     return;
                 }

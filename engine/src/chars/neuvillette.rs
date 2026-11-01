@@ -459,6 +459,8 @@ fn add_droplet(s: &mut Sim, ci: usize, x: f64, y: f64) {
 
 /// getSourcewaterDroplets: centers in the 8 by 18 box from 7 behind the
 /// player, or the 80 degree fan of radius 14 ahead; with c6, within 15.
+/// (x, y) is from the player, who faces (0, 1): the profile keeps the
+/// enemy up the y axis, and the player does not move with Neuvillette.
 fn in_area(x: f64, y: f64, c6: bool) -> bool {
     if c6 {
         return x * x + y * y <= 15.0 * 15.0;
@@ -482,7 +484,7 @@ fn droplets(s: &Sim, ci: usize, c6: bool) -> ([usize; DROPLET_LIMIT], usize) {
     let mut out = [0; DROPLET_LIMIT];
     let mut n = 0;
     for (k, gd) in s.gadgets.iter().enumerate() {
-        if gd.owner as usize == ci && gd.id == DROPLET && in_area(gd.x, gd.y, c6) {
+        if gd.owner as usize == ci && gd.id == DROPLET && in_area(gd.x - s.player_pos.0, gd.y - s.player_pos.1, c6) {
             out[n] = k;
             n += 1;
         }
@@ -523,10 +525,9 @@ fn legal_eval_find(s: &mut Sim, ci: usize) -> usize {
 
 /// The skill's three droplets, nearer the player the nearer the enemy.
 fn skill_droplets(s: &mut Sim, ci: usize) {
-    let d2 = s.target_dist * s.target_dist;
-    let i = if d2 <= 5.0 * 5.0 {
+    let i = if s.enemy_within(s.circle_on_player(0.0, 0.0, 5.0)) {
         0
-    } else if d2 <= 10.0 * 10.0 {
+    } else if s.enemy_within(s.circle_on_player(0.0, 0.0, 10.0)) {
         1
     } else {
         2
@@ -534,7 +535,8 @@ fn skill_droplets(s: &mut Sim, ci: usize) {
     for j in 0..3 {
         let off = g::SKILL_DROPLET_OFFSETS[i][j];
         let rr = g::SKILL_DROPLET_RANDOM_RANGES[i][j];
-        let (x, y) = random_point(s, off[0], off[1], rr[0], rr[1]);
+        let (cx, cy) = s.point_from_player(off[0], off[1]);
+        let (x, y) = random_point(s, cx, cy, rr[0], rr[1]);
         add_droplet(s, ci, x, y);
     }
 }
@@ -551,7 +553,7 @@ fn short_charge(s: &mut Sim, ci: usize, windup: i32) {
         let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Hydro, 25.0, g::CHARGE[lvl]);
         ai.abil = "Charge Attack";
         ai.pattern = s.box_on_player(0.0, 0.0, 3.0, 8.0);
-        if ai.pattern.hits_circle(0.0, s.target_dist, s.target_radius) != Some(true) {
+        if s.hits_enemy(ai.pattern) != Some(true) {
             s.unsupported("neuvillette short charge missing the enemy");
             return;
         }
@@ -598,7 +600,7 @@ fn judgment_wave(s: &mut Sim, ci: usize) {
     ai.flat_dmg = flat;
     ai.pattern = s.box_on_player(0.0, 0.0, 3.5, 15.0);
     let cbs = if s.chars[ci].cons >= 6 { CB_C6 } else { 0 };
-    if ai.pattern.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true) {
+    if s.hits_enemy(ai.pattern) == Some(true) {
         s.queue_attack(ai, cbs, 0, 0);
     } else {
         s.queue_gadget_attack(ai, 0);
@@ -734,17 +736,17 @@ fn burst_tick(s: &mut Sim, ci: usize, i: usize) {
         s.circle_on_player(0.0, 1.0, 8.0)
     } else {
         let off = g::DEFAULT_BURST_ATK_POS_OFFSETS[i - 1];
-        let (mut x, mut y) = (off[0], off[1]);
-        let d = s.target_dist;
-        if d * d <= 10.0 * 10.0 {
+        let (mut x, mut y) = s.point_from_player(off[0], off[1]);
+        if s.enemy_within(s.circle_on_player(0.0, 0.0, 10.0)) {
             // the enemy faces (0, 1), gcsim's default
-            let (px, py) = random_point(s, g::BURST_TICK_TARGET_X_OFFSETS[i - 1], d, 0.0, 1.5);
+            let (cx, cy) = offset_point(s.enemy_pos, (g::BURST_TICK_TARGET_X_OFFSETS[i - 1], 0.0), DEFAULT_DIR);
+            let (px, py) = random_point(s, cx, cy, 0.0, 1.5);
             x = px;
             y = py;
         }
         Pattern::Circle { x, y, r: 5.0 }
     };
-    if ai.pattern.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true) {
+    if s.hits_enemy(ai.pattern) == Some(true) {
         s.queue_attack(ai, 0, 0, 0);
     } else {
         s.queue_gadget_attack(ai, 0);

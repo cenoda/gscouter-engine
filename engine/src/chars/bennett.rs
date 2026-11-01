@@ -13,6 +13,12 @@ pub struct Char;
 pub struct State {
     /// Bennett's healing bonus when he cast the burst.
     heal_bonus: f64,
+    /// The burst's field: a circle of radius 6, 0.5 in front of where the
+    /// player stood as he cast it.
+    field: Option<Pattern>,
+    /// The hold skill's two hits' areas, from where the player stood as
+    /// it began.
+    hold: [Option<Pattern>; 2],
 }
 
 const FIELD: ModKey = ModKey::new(g::BURST_FIELD_KEY);
@@ -127,7 +133,9 @@ impl Character for Char {
         ai.abil = "Fantastic Voyage";
         ai.pattern = s.circle_on_player(0.0, 0.5, 6.0);
         s.queue_attack(ai, 0, 37, 37);
-        // the field ticks from 0 s to 12 s; the player is always in it
+        // the field ticks from 0 s to 12 s, on the player when it is in
+        // the area (IsWithinArea); the cooldown keeps one field at a time
+        s.st_mut::<State>(ci).field = Some(ai.pattern);
         s.st_mut::<State>(ci).heal_bonus = s.stats(ci)[st::HEAL];
         s.add_task(Task::Char { c: ci as u8, id: TASK_FIELD, arg: 1 }, g::BURST_START_FRAME);
         for i in (60..=12 * 60).step_by(60) {
@@ -147,8 +155,7 @@ impl Character for Char {
                 let mut ai = hold_info(ci, level);
                 ai.mult = g::SKILL_HOLD[level - 1][i][lvl];
                 ai.hitlag_halt = 0.09 * 60.0;
-                let (off, hb) = (g::SKILL_HOLD_OFFSETS[i], g::SKILL_HOLD_HITBOXES[i]);
-                ai.pattern = if i == 1 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
+                ai.pattern = s.st::<State>(ci).hold[i].unwrap();
                 s.queue_attack(ai, CB_HOLD_PARTICLE, 0, 0);
             }
             _ => unreachable!(),
@@ -210,6 +217,8 @@ fn hold_info(ci: usize, level: usize) -> AttackInfo {
 fn skill_hold(s: &mut Sim, ci: usize, level: usize, c4: bool) -> ActInfo {
     let lvl = s.talent(ci, 1);
     for (i, &hitmark) in g::SKILL_HOLD_HITMARKS[level - 1].iter().enumerate() {
+        let (off, hb) = (g::SKILL_HOLD_OFFSETS[i], g::SKILL_HOLD_HITBOXES[i]);
+        s.st_mut::<State>(ci).hold[i] = Some(if i == 1 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) });
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_HOLD_HIT, arg: (level * 2 + i) as i32 }, hitmark);
     }
     if level == 2 {
@@ -241,6 +250,9 @@ fn skill_hold(s: &mut Sim, ci: usize, level: usize, c4: bool) -> ActInfo {
 /// first tick), and buffs its ATK when over the threshold (any HP from C1),
 /// infusing its weapon with pyro from C6.
 fn field_tick(s: &mut Sim, ci: usize, first: bool) {
+    if !s.player_within(s.st::<State>(ci).field.unwrap()) {
+        return;
+    }
     s.apply_self_infusion(AURA_PYRO, 25.0, g::BURST_BUFF_DURATION);
     let lvl = s.talent(ci, 2);
     let heal = g::BURSTHP[lvl] + g::BURSTHPP[lvl] * s.max_hp(ci);

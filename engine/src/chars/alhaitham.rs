@@ -348,7 +348,7 @@ fn rush(s: &mut Sim, ci: usize, abil: &'static str, hitmark: i32, oy: f64, r: f6
     ai.hitlag_factor = 0.01;
     ai.hitlag_halt = 0.04 * 60.0;
     ai.def_halt = true;
-    ai.pattern = Pattern::Circle { x: 0.0, y: s.target_dist + oy, r };
+    ai.pattern = s.circle_toward_target(0.0, oy, r);
     s.queue_attack(ai, 0, hitmark, hitmark);
 }
 

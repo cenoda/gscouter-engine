@@ -16,6 +16,9 @@ pub struct State {
     absorb: Option<Element>,
     /// The absorbed hit, snapshot as the burst is used.
     absorb_snap: Option<AttackEvent>,
+    /// Where the burst checks for an element to absorb: a 2.5 by 2.5 box
+    /// 4 in front of the player as it used the burst.
+    absorb_area: Option<Pattern>,
     /// A4's EM, taken when it triggers.
     a4_em: f64,
     /// A1's same-frame guard, by swirled element (pyro, hydro, electro,
@@ -130,6 +133,7 @@ impl Character for Char {
     fn burst(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
         let duration = if s.chars[ci].cons >= 2 { 480 } else { 360 };
         s.st_mut::<State>(ci).absorb = None;
+        s.st_mut::<State>(ci).absorb_area = Some(s.box_on_player(0.0, 4.0, 2.5, 2.5));
         s.add_core_status(BURST, duration);
         let lvl = s.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 25.0, g::BURST_DOT[lvl]);
@@ -178,9 +182,9 @@ impl Character for Char {
                 if arg == duration / 18 {
                     return;
                 }
-                // a 2.5 by 2.5 box 4 in front of the player: the enemy's
-                // edge, not the player or Guoba
-                let area = s.box_on_player(0.0, 4.0, 2.5, 2.5);
+                // a 2.5 by 2.5 box 4 in front of where the player stood:
+                // the enemy's edge, not the player or Guoba
+                let area = s.st::<State>(ci).absorb_area.unwrap();
                 let e = s.absorb_check_in(area, &[Element::Pyro, Element::Hydro, Element::Electro, Element::Cryo]);
                 if e != Element::NoElement {
                     s.st_mut::<State>(ci).absorb = Some(e);

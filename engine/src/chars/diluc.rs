@@ -97,6 +97,8 @@ impl Character for Char {
         ai.hitlag_factor = 0.01;
         ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n] * 60.0;
         ai.def_halt = true;
+        let (off, hb) = (g::ATTACK_OFFSETS[n], g::ATTACK_HITBOXES[n]);
+        ai.pattern = if n == 1 || n == 3 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.fan_on_player(0.0, off, hb[0], g::ATTACK_FAN_ANGLES[n]) };
         let h = g::ATTACK_HITMARKS[n];
         s.queue_attack(ai, 0, h, h);
         let atkspd = s.stat(ci, st::ATKSPD);
@@ -126,6 +128,8 @@ impl Character for Char {
         ai.hitlag_factor = 0.01;
         ai.hitlag_halt = g::SKILL_HITLAG_STAGES[e] * 60.0;
         ai.def_halt = true;
+        let (off, hb) = (g::SKILL_OFFSETS[e], g::SKILL_HITBOXES[e]);
+        ai.pattern = if e == 0 || e == 2 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.fan_on_player(0.0, off, hb[0], g::SKILL_FAN_ANGLES[e]) };
         s.queue_attack(ai, CB_PARTICLE, h, h);
         if s.chars[ci].cons >= 4 {
             s.add_task(Task::Char { c: ci as u8, id: TASK_C4, arg: 0 }, h + 120);
@@ -172,25 +176,29 @@ impl Character for Char {
                 ai.hitlag_factor = 0.01;
                 ai.hitlag_halt = 0.09 * 60.0;
                 ai.def_halt = true;
+                ai.pattern = s.box_on_player(0.0, -1.0, 16.0, 6.0);
                 s.queue_attack(ai, 0, 0, 1);
                 ai.blunt = false;
                 ai.abil = "Dawn (Tick)";
                 ai.mult = g::BURST_DOT[lvl];
                 ai.hitlag_halt = 0.0;
                 ai.def_halt = false;
-                // the phoenix flies away from the player: 8 ticks, a box 16
-                // wide and 8 long 1 + 2.8 i ahead less 5, then the
-                // explosion's 10 long 1 + 14 * 1.7 ahead less 6
+                // the phoenix flies away from where the player stands now:
+                // 8 ticks, a box 16 wide and 8 long centered 1 + 2.8 i
+                // ahead, 5 back toward the player, then the explosion's 10
+                // long 1 + 14 * 1.7 ahead, 6 back (gcsim's NewBoxHit from
+                // the player onto each point); the ones that miss the enemy
+                // reach only gadgets
                 for i in 0..8 {
-                    if s.box_hits(1.0 + 2.8 * i as f64 - 5.0, 16.0, 8.0) {
-                        s.queue_attack(ai, 0, 0, (i + 1) * 12);
-                    }
+                    let at = s.point_from_player(0.0, 1.0 + 2.8 * i as f64);
+                    ai.pattern = s.box_from_player(at, 0.0, -5.0, 16.0, 8.0);
+                    s.queue_attack(ai, 0, 0, (i + 1) * 12);
                 }
                 ai.abil = "Dawn (Explode)";
                 ai.mult = g::BURST_EXPLODE[lvl];
-                if s.box_hits(1.0 + 14.0 * 1.7 - 6.0, 16.0, 10.0) {
-                    s.queue_attack(ai, 0, 0, (1.7 * 60.0) as i32);
-                }
+                let at = s.point_from_player(0.0, 1.0 + 14.0 * 1.7);
+                ai.pattern = s.box_from_player(at, 0.0, -6.0, 16.0, 10.0);
+                s.queue_attack(ai, 0, 0, (1.7 * 60.0) as i32);
             }
             _ => unreachable!(),
         }

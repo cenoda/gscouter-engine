@@ -169,61 +169,53 @@ const SUPERCONDUCT_SHRED: ModKey = ModKey::new("superconduct-phys-shred");
 
 // ---------------------------------------------------------------- attacks
 
-/// Where an attack hits (gcsim's AttackPattern), for the gadgets it may
-/// hit besides the enemy, in the player's frame: the player at the origin,
-/// facing the enemy along +y.
+/// gcsim's DefaultDirection.
+pub const DEFAULT_DIR: (f64, f64) = (0.0, 1.0);
+
+/// Where an attack hits (gcsim's AttackPattern), in gcsim's own world
+/// coordinates: the player starts at the origin, the enemy is where the
+/// config puts it, and the player faces the enemy (gcsim's direction from
+/// setup and from set_player_pos). Fans and boxes carry the direction
+/// they face, as gcsim's shapes do.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Pattern {
-    /// Not given. The enemy is taken to be hit; a dendro core that could
-    /// react to it is an error.
+    /// Not given. The enemy is taken to be hit while the player stands
+    /// where it started; a dendro core that could react to it is an
+    /// error, and so is the attack once the player has moved.
     Unknown,
     /// One target, the enemy: never a gadget.
     Single,
     /// A full circle.
     Circle { x: f64, y: f64, r: f64 },
-    /// A circle cut to a fan of `fan` degrees facing the enemy.
-    Fan { x: f64, y: f64, r: f64, fan: f64 },
-    /// A fan facing `dir` degrees clockwise from the enemy (gcsim's
-    /// NewCircle with DegreesToDirection(dir) as its direction). The angle
-    /// is kept in an f32 so the pattern stays the size it was; the angles
-    /// given are whole degrees, exact in it.
-    FanDir { x: f64, y: f64, r: f64, fan: f64, dir: f32 },
-    /// gcsim's rectangle facing the enemy: w wide, from its spawn (x, y)
+    /// A circle cut to a fan of `fan` degrees facing (dx, dy) (gcsim's
+    /// NewCircle with a fan angle).
+    Fan { x: f64, y: f64, r: f64, fan: f64, dx: f64, dy: f64 },
+    /// The same fan, tested step by step as gcsim computes it whatever its
+    /// direction (Chevreuse's mines, turned from the player's facing).
+    FanDir { x: f64, y: f64, r: f64, fan: f64, dx: f64, dy: f64 },
+    /// gcsim's rectangle facing (dx, dy): w wide, from its spawn (x, y)
     /// to h ahead.
-    Box { x: f64, y: f64, w: f64, h: f64 },
-}
-
-/// Pattern's shapes, for the tests.
-#[derive(Clone, Copy)]
-enum Wide {
-    Unknown,
-    Single,
-    Circle { x: f64, y: f64, r: f64 },
-    Fan { x: f64, y: f64, r: f64, fan: f64 },
-    FanDir { x: f64, y: f64, r: f64, fan: f64, dir: f64 },
-    Box { x: f64, y: f64, w: f64, h: f64 },
+    Box { x: f64, y: f64, w: f64, h: f64, dx: f64, dy: f64 },
 }
 
 impl Pattern {
-    fn wide(self) -> Wide {
-        match self {
-            Pattern::Unknown => Wide::Unknown,
-            Pattern::Single => Wide::Single,
-            Pattern::Circle { x, y, r } => Wide::Circle { x, y, r },
-            Pattern::Fan { x, y, r, fan } => Wide::Fan { x, y, r, fan },
-            Pattern::FanDir { x, y, r, fan, dir } => Wide::FanDir { x, y, r, fan, dir: dir as f64 },
-            Pattern::Box { x, y, w, h } => Wide::Box { x, y, w, h },
-        }
+    /// A fan facing `dir` degrees clockwise from the y axis, for the tests.
+    #[cfg(test)]
+    pub fn fan_dir(x: f64, y: f64, r: f64, fan: f64, dir: f64) -> Pattern {
+        let (dx, dy) = degrees_to_direction(dir);
+        Pattern::FanDir { x, y, r, fan, dx, dy }
     }
+
     /// Whether it reaches a circle at (cx, cy) of radius r (gcsim's
     /// IntersectCircle and IntersectRectangle); None when unknown.
     pub fn hits_circle(self, cx: f64, cy: f64, r: f64) -> Option<bool> {
-        match self.wide() {
-            Wide::Unknown => None,
-            Wide::Single => Some(false),
-            Wide::Circle { x, y, r: pr } => Some((cx - x) * (cx - x) + (cy - y) * (cy - y) <= (pr + r) * (pr + r)),
-            Wide::Fan { x, y, r: pr, fan } if fan <= 0.0 || fan >= 360.0 => Some((cx - x) * (cx - x) + (cy - y) * (cy - y) <= (pr + r) * (pr + r)),
-            Wide::Fan { x, y, r: pr, fan } => {
+        match self {
+            Pattern::Unknown => None,
+            Pattern::Single => Some(false),
+            Pattern::Circle { x, y, r: pr } => Some((cx - x) * (cx - x) + (cy - y) * (cy - y) <= (pr + r) * (pr + r)),
+            Pattern::Fan { x, y, r: pr, fan, .. } if fan <= 0.0 || fan >= 360.0 => Some((cx - x) * (cx - x) + (cy - y) * (cy - y) <= (pr + r) * (pr + r)),
+            Pattern::Fan { x, y, r: pr, fan, dx, dy } if (dx, dy) != DEFAULT_DIR => Some(fan_dir_hits_circle(x, y, pr, fan, dx, dy, cx, cy, r)),
+            Pattern::Fan { x, y, r: pr, fan, .. } => {
                 if (cx - x) * (cx - x) + (cy - y) * (cy - y) > (pr + r) * (pr + r) {
                     return Some(false);
                 }
@@ -247,8 +239,9 @@ impl Pattern {
                 let dy = if cx == x && cy == y { 1.0 } else { (cy - y) / (cx - x).hypot(cy - y) };
                 Some(dy.clamp(-1.0, 1.0).acos().to_degrees() <= fan / 2.0)
             }
-            Wide::FanDir { x, y, r: pr, fan, dir } => Some(fan_dir_hits_circle(x, y, pr, fan, dir, cx, cy, r)),
-            Wide::Box { x, y, w, h } => {
+            Pattern::FanDir { x, y, r: pr, fan, dx, dy } => Some(fan_dir_hits_circle(x, y, pr, fan, dx, dy, cx, cy, r)),
+            Pattern::Box { x, y, w, h, dx, dy } if (dx, dy) != DEFAULT_DIR => Some(box_hits_circle(x, y, w, h, dx, dy, cx, cy, r)),
+            Pattern::Box { x, y, w, h, .. } => {
                 let (hw, hh) = (w / 2.0, h / 2.0);
                 let (lx, ly) = ((cx - x).abs(), (cy - (y + hh)).abs());
                 if lx > r + hw || ly > r + hh {
@@ -261,28 +254,89 @@ impl Pattern {
             }
         }
     }
+
+    /// Whether the point (px, py) is inside it (gcsim's PointInShape, what
+    /// IsWithinArea asks of a target's center); None when unknown.
+    pub fn contains_point(self, px: f64, py: f64) -> Option<bool> {
+        match self {
+            Pattern::Unknown | Pattern::Single => None,
+            Pattern::Circle { x, y, r } => Some(sub_mag2(x, y, px, py) <= r * r),
+            Pattern::Fan { x, y, r, fan, dx, dy } | Pattern::FanDir { x, y, r, fan, dx, dy } => {
+                let range = sub_mag2(x, y, px, py) <= r * r;
+                if fan <= 0.0 || fan >= 360.0 {
+                    return Some(range);
+                }
+                Some(range && fan_angle_area_check(x, y, px, py, dx, dy, fan))
+            }
+            Pattern::Box { x, y, w, h, dx, dy } => {
+                let (ox, oy) = rotate(0.0, h / 2.0, dx, dy);
+                let (lx, ly) = rotate(px - (ox + x), py - (oy + y), -dx, dy);
+                Some(lx >= -w / 2.0 && lx <= w / 2.0 && ly >= -h / 2.0 && ly <= h / 2.0)
+            }
+        }
+    }
+}
+
+/// (x0, y0) - (x1, y1), squared (gcsim's Sub then MagnitudeSquared).
+fn sub_mag2(x0: f64, y0: f64, x1: f64, y1: f64) -> f64 {
+    let (dx, dy) = (x0 - x1, y0 - y1);
+    dx * dx + dy * dy
+}
+
+/// gcsim's DegreesToDirection.
+pub fn degrees_to_direction(angle: f64) -> (f64, f64) {
+    let rad = angle * std::f64::consts::PI / 180.0;
+    (rad.sin(), rad.cos())
+}
+
+/// gcsim's CalcDirection: the unit vector from src to trg, the default
+/// direction when they are the same point.
+pub fn calc_direction(src: (f64, f64), trg: (f64, f64)) -> (f64, f64) {
+    if trg == src {
+        return DEFAULT_DIR;
+    }
+    let (x, y) = (trg.0 - src.0, trg.1 - src.1);
+    let d = (x * x + y * y).sqrt();
+    (x / d, y / d)
+}
+
+/// gcsim's CalcOffsetPoint: pos plus the offset turned to dir.
+pub fn offset_point(pos: (f64, f64), off: (f64, f64), dir: (f64, f64)) -> (f64, f64) {
+    if dir == DEFAULT_DIR {
+        return (pos.0 + off.0, pos.1 + off.1);
+    }
+    let (x, y) = rotate(off.0, off.1, dir.0, dir.1);
+    (pos.0 + x, pos.1 + y)
 }
 
 /// gcsim's Point.Rotate, with its shortcut for the default direction.
-fn rotate(px: f64, py: f64, dx: f64, dy: f64) -> (f64, f64) {
+pub fn rotate(px: f64, py: f64, dx: f64, dy: f64) -> (f64, f64) {
     if dx == 0.0 && dy == 1.0 {
         return (px, py);
     }
     (px * dy + py * dx, -px * dx + py * dy)
 }
 
+/// gcsim's fanAngleAreaCheck: whether (tx, ty) lies within the fan's
+/// angle from its center.
+#[allow(clippy::too_many_arguments)]
+fn fan_angle_area_check(x: f64, y: f64, tx: f64, ty: f64, dx: f64, dy: f64, fan: f64) -> bool {
+    let (nx, ny) = calc_direction((x, y), (tx, ty));
+    let dot = (dx * nx + dy * ny).clamp(-1.0, 1.0);
+    let ang = dot.acos() * 180.0 / std::f64::consts::PI;
+    ang >= -fan / 2.0 && ang <= fan / 2.0
+}
+
 /// gcsim's Circle.IntersectCircle of a target's full circle (cx, cy, r)
 /// against a fan centered at (x, y) of radius pr and `fan` degrees,
-/// facing DegreesToDirection(dir), step by step as gcsim computes it
-/// (NewCircle's calcSegments, then fanAngleAreaCheck).
+/// facing (dx, dy), step by step as gcsim computes it (NewCircle's
+/// calcSegments, then fanAngleAreaCheck).
 #[allow(clippy::too_many_arguments)]
-fn fan_dir_hits_circle(x: f64, y: f64, pr: f64, fan: f64, dir: f64, cx: f64, cy: f64, r: f64) -> bool {
+fn fan_dir_hits_circle(x: f64, y: f64, pr: f64, fan: f64, dx: f64, dy: f64, cx: f64, cy: f64, r: f64) -> bool {
     let (ddx, ddy) = (cx - x, cy - y);
     if ddx * ddx + ddy * ddy > (pr + r) * (pr + r) {
         return false;
     }
-    let rad = dir * std::f64::consts::PI / 180.0;
-    let (dx, dy) = (rad.sin(), rad.cos());
     if fan <= 0.0 || fan >= 360.0 {
         return true;
     }
@@ -290,8 +344,8 @@ fn fan_dir_hits_circle(x: f64, y: f64, pr: f64, fan: f64, dir: f64, cx: f64, cy:
     let (opx, opy) = (x - cx, y - cy);
     let op_dist = (opx * opx + opy * opy).sqrt();
     for a in [-fan / 2.0, fan / 2.0] {
-        let ar = a * std::f64::consts::PI / 180.0;
-        let (qx, qy) = rotate(sx, sy, ar.sin(), ar.cos());
+        let (ax, ay) = degrees_to_direction(a);
+        let (qx, qy) = rotate(sx, sy, ax, ay);
         let (qx, qy) = (qx + x, qy + y);
         let (qpx, qpy) = (x - qx, y - qy);
         let (pqx, pqy) = (qx - x, qy - y);
@@ -305,16 +359,51 @@ fn fan_dir_hits_circle(x: f64, y: f64, pr: f64, fan: f64, dir: f64, cx: f64, cy:
             return true;
         }
     }
-    // fanAngleAreaCheck: the target's center within the fan's angle
-    let (nx, ny) = if cx == x && cy == y {
-        (0.0, 1.0)
-    } else {
-        let d = (ddx * ddx + ddy * ddy).sqrt();
-        (ddx / d, ddy / d)
-    };
-    let dot = (dx * nx + dy * ny).clamp(-1.0, 1.0);
-    let ang = dot.acos() * 180.0 / std::f64::consts::PI;
-    ang >= -fan / 2.0 && ang <= fan / 2.0
+    fan_angle_area_check(x, y, cx, cy, dx, dy, fan)
+}
+
+/// gcsim's IntersectRectangle of a target's circle (cx, cy, r) against a
+/// rectangle spawned at (x, y), w wide and h long, facing (dx, dy): the
+/// AABB test, then the circle's center turned into the rectangle's frame.
+#[allow(clippy::too_many_arguments)]
+fn box_hits_circle(x: f64, y: f64, w: f64, h: f64, dx: f64, dy: f64, cx: f64, cy: f64, r: f64) -> bool {
+    // calcCorners: top left, top right, bottom right, bottom left
+    let corners = [(-w / 2.0, h), (w / 2.0, h), (w / 2.0, 0.0), (-w / 2.0, 0.0)].map(|(px, py)| {
+        let (rx, ry) = rotate(px, py, dx, dy);
+        (rx + x, ry + y)
+    });
+    // calcRectangleAABB
+    let (mut min_x, mut min_y) = corners[3];
+    let (mut max_x, mut max_y) = corners[1];
+    for (px, py) in corners {
+        if min_x > px {
+            min_x = px;
+        }
+        if min_y > py {
+            min_y = py;
+        }
+        if max_x < px {
+            max_x = px;
+        }
+        if max_y < py {
+            max_y = py;
+        }
+    }
+    // AABBTest against the circle's (cx - r, cy - r) to (cx + r, cy + r)
+    if !(min_x <= cx + r && max_x >= cx - r && min_y <= cy + r && max_y >= cy - r) {
+        return false;
+    }
+    let (ox, oy) = rotate(0.0, h / 2.0, dx, dy);
+    let (lx, ly) = rotate(cx - (ox + x), cy - (oy + y), -dx, dy);
+    let (lx, ly) = (lx.abs(), ly.abs());
+    let (tx, ty) = (w / 2.0, h / 2.0);
+    if lx > r + tx || ly > r + ty {
+        return false;
+    }
+    if lx <= tx || ly <= ty {
+        return true;
+    }
+    sub_mag2(lx, ly, tx, ty) <= r * r
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -452,9 +541,10 @@ pub enum Task {
     QuickenBloom { slot: u16 },
     /// A bloom's dendro core appears, from the attack in the slot.
     SpawnCore { slot: u16 },
-    /// A dendro core's attack: bloom, burgeon or hyperbloom, by actor, and
-    /// whether its self damage reaches the player.
-    CoreAttack { kind: AttackTag, actor: u8, on_player: bool },
+    /// A dendro core's attack: bloom, burgeon or hyperbloom, by actor; its area
+    /// (in the pattern of the attack in slot `area`) reaches the player or not
+    /// when it lands.
+    CoreAttack { kind: AttackTag, actor: u8, area: u16 },
     PlayerIcdResetDmg { i: u16 },
     /// An attack that reaches only gadgets (swirl's aoe).
     GadgetAttack { slot: u16 },
@@ -969,8 +1059,9 @@ pub struct Config {
     pub ignore_burst_energy: bool,
     /// The enemy's HP in damage mode (a target with hp); 0 otherwise.
     pub enemy_hp: f64,
-    /// The enemy's distance from the player and its radius.
-    pub target_dist: f64,
+    /// The enemy's position (gcsim's world coordinates, the player
+    /// starting at the origin) and its radius.
+    pub target_pos: (f64, f64),
     pub target_radius: f64,
 }
 
@@ -1035,7 +1126,7 @@ pub struct Gadget {
     /// A dendro core (owner CORE): the frame it appeared, where it is, and
     /// the character whose bloom made it.
     pub src: i32,
-    /// Where it is and its radius, from the player.
+    /// Where it is and its radius, in gcsim's world coordinates.
     pub x: f64,
     pub y: f64,
     pub r: f64,
@@ -1154,8 +1245,16 @@ pub struct Sim {
     /// the program has no more actions.
     pub damage_mode: bool,
     pub enemy_hp: f64,
-    pub target_dist: f64,
+    /// Where the enemy is and its radius, where the player is (radius
+    /// 0.3, starting at the origin) and the direction it faces (toward the
+    /// enemy, from setup and set_player_pos), in gcsim's world coordinates.
+    pub enemy_pos: (f64, f64),
     pub target_radius: f64,
+    pub player_pos: (f64, f64),
+    pub player_dir: (f64, f64),
+    /// The player has left the origin this fight: an attack without a
+    /// hit pattern is an error from then on.
+    pub player_moved: bool,
     pub enemy_alive: bool,
     pub no_more_actions: bool,
     /// The holder of gcsim's "utility-dash" stamina mod (dash stamina
@@ -1281,8 +1380,12 @@ impl Sim {
             error: None,
             damage_mode: cfg.enemy_hp > 0.0,
             enemy_hp: cfg.enemy_hp,
-            target_dist: cfg.target_dist,
+            enemy_pos: cfg.target_pos,
             target_radius: cfg.target_radius,
+            player_pos: (0.0, 0.0),
+            // SetupTargetsInCore: the player faces the enemy
+            player_dir: calc_direction((0.0, 0.0), cfg.target_pos),
+            player_moved: false,
             enemy_alive: true,
             no_more_actions: false,
             utility_dash: None,
@@ -1989,7 +2092,7 @@ impl Sim {
             Task::BurningTick { src, counter } => self.burning_tick(src, counter),
             Task::QuickenBloom { slot } => self.quicken_bloom(slot),
             Task::SpawnCore { slot } => self.spawn_core(slot),
-            Task::CoreAttack { kind, actor, on_player } => self.core_attack(kind, actor as usize, on_player),
+            Task::CoreAttack { kind, actor, area } => self.core_attack(kind, actor as usize, area),
             Task::GadgetAttack { slot } => {
                 let ev = self.slots[slot as usize];
                 self.free.push(slot);
@@ -2100,18 +2203,38 @@ impl Sim {
     }
 
     fn apply_attack(&mut self, slot: u16) {
-        // one enemy, always in range while it lives
+        // one enemy, hit while it lives when the attack's area reaches it
+        // (AttackWillLand)
         if !self.enemy_alive {
             self.free.push(slot);
             return;
         }
+        let lands = match self.hits_enemy(self.slots[slot as usize].info.pattern) {
+            Some(l) => l,
+            // without a pattern, taken to land: what the engine was
+            // verified on, with the player where it starts
+            None => {
+                if self.player_moved {
+                    let info = self.slots[slot as usize].info;
+                    let who = crate::gcsl::char_name(self.chars[info.actor as usize].key);
+                    self.unsupported(&format!("hit pattern {who} {} with the player moved", info.abil));
+                }
+                true
+            }
+        };
         // gadgets see the attack as it was before the enemy took it
         let orig = if self.gadgets.is_empty() { None } else { Some(self.slots[slot as usize]) };
-        self.handle_attack(slot);
+        if lands {
+            self.handle_attack(slot);
+        }
         if let Some(orig) = orig {
             self.hit_gadgets(&orig);
         }
         let info = self.slots[slot as usize].info;
+        if !lands {
+            self.free.push(slot);
+            return;
+        }
         if self.hitlag && !info.deployable {
             let mut dur = info.hitlag_halt;
             if self.defhalt && info.def_halt {
@@ -2383,7 +2506,7 @@ impl Sim {
             let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::OverloadDamage, icd::TAG_OVERLOAD_DAMAGE, icd::GROUP_REACTION_B, Element::Pyro, 0.0, 0.0);
             ai.abil = "overload";
             ai.ignore_def = 1.0;
-            ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist, r: 3.0 };
+            ai.pattern = self.circle_on_target(3.0);
             let mut atk = self.reaction_attack(ai);
             atk.info.flat_dmg *= 2.75;
             self.queue_attack_with_snap(atk, 0, 1);
@@ -2509,7 +2632,7 @@ impl Sim {
         let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::SuperconductDamage, icd::TAG_SUPERCONDUCT_DAMAGE, icd::GROUP_REACTION_A, Element::Cryo, 0.0, 0.0);
         ai.abil = "superconduct";
         ai.ignore_def = 1.0;
-        ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist, r: 3.0 };
+        ai.pattern = self.circle_on_target(3.0);
         let mut atk = self.reaction_attack(ai);
         atk.info.flat_dmg *= 1.5;
         self.queue_attack_with_snap(atk, 0, 1);
@@ -2630,7 +2753,7 @@ impl Sim {
         let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::BurningDamage, icd::TAG_BURNING_DAMAGE, icd::GROUP_BURNING, Element::Pyro, 25.0, 0.0);
         ai.abil = "burning";
         ai.ignore_def = 1.0;
-        ai.pattern = Pattern::Circle { x: 0.0, y: self.target_dist, r: 1.0 };
+        ai.pattern = self.circle_on_target(1.0);
         let mut atk = self.reaction_attack(ai);
         atk.info.flat_dmg *= 0.25;
         self.enemy.burning_atk = atk;
@@ -2647,7 +2770,7 @@ impl Sim {
         if counter != 9 {
             let mut atk = self.enemy.burning_atk;
             self.queue_attack_with_snap(atk, 0, 0);
-            if self.player_in_circle(self.target_dist, 1.0) {
+            if self.hits_player(self.circle_on_target(1.0)) {
                 atk.info.abil = "burning (self damage)";
                 self.player_hit(atk);
             }
@@ -2655,37 +2778,126 @@ impl Sim {
         self.queue_enemy_task(Task::BurningTick { src, counter: counter + 1 }, 15);
     }
 
+    /// gcsim's getCenterAndDirection for a target and itself: its position
+    /// plus the offset turned to its direction (none when the offset is 0).
+    fn on_player(&self, ox: f64, oy: f64) -> (f64, f64) {
+        if ox == 0.0 && oy == 0.0 {
+            return self.player_pos;
+        }
+        offset_point(self.player_pos, (ox, oy), self.player_dir)
+    }
     /// gcsim's NewCircleHitOnTarget on the player, with its offset.
     pub fn circle_on_player(&self, ox: f64, oy: f64, r: f64) -> Pattern {
-        Pattern::Circle { x: ox, y: oy, r }
+        let (x, y) = self.on_player(ox, oy);
+        Pattern::Circle { x, y, r }
     }
     /// gcsim's NewCircleHitOnTargetFanAngle on the player.
     pub fn fan_on_player(&self, ox: f64, oy: f64, r: f64, fan: f64) -> Pattern {
-        Pattern::Fan { x: ox, y: oy, r, fan }
+        let (x, y) = self.on_player(ox, oy);
+        let (dx, dy) = self.player_dir;
+        Pattern::Fan { x, y, r, fan, dx, dy }
     }
-    /// gcsim's NewCircle on the enemy with a fan facing `dir` degrees
-    /// clockwise from the player's facing.
-    pub fn fan_dir_on_target(&self, r: f64, fan: f64, dir: f32) -> Pattern {
-        Pattern::FanDir { x: 0.0, y: self.target_dist, r, fan, dir }
+    /// Chevreuse's mines: gcsim's NewCircle on the enemy with a fan facing
+    /// `dir` degrees clockwise from the player's facing
+    /// (DegreesToDirection(dir).Rotate(player's direction)).
+    pub fn fan_dir_on_target(&self, r: f64, fan: f64, dir: f64) -> Pattern {
+        let (sx, sy) = degrees_to_direction(dir);
+        let (dx, dy) = rotate(sx, sy, self.player_dir.0, self.player_dir.1);
+        let (x, y) = self.enemy_pos;
+        Pattern::FanDir { x, y, r, fan, dx, dy }
     }
     /// gcsim's NewBoxHitOnTarget on the player.
     pub fn box_on_player(&self, ox: f64, oy: f64, w: f64, h: f64) -> Pattern {
-        Pattern::Box { x: ox, y: oy, w, h }
+        let (x, y) = self.on_player(ox, oy);
+        let (dx, dy) = self.player_dir;
+        Pattern::Box { x, y, w, h, dx, dy }
     }
-    /// gcsim's NewCircleHitOnTarget on the enemy, without offset.
+    /// gcsim's NewCircleHitOnTarget on the enemy, without offset (and
+    /// NewCircleHit from the player centered on it, the same circle).
     pub fn circle_on_target(&self, r: f64) -> Pattern {
-        Pattern::Circle { x: 0.0, y: self.target_dist, r }
+        let (x, y) = self.enemy_pos;
+        Pattern::Circle { x, y, r }
+    }
+    /// gcsim's NewCircleHitOnTarget on the enemy with an offset: the enemy
+    /// faces gcsim's default direction, so the offset is not turned.
+    pub fn circle_on_enemy(&self, ox: f64, oy: f64, r: f64) -> Pattern {
+        let (x, y) = if ox == 0.0 && oy == 0.0 { self.enemy_pos } else { offset_point(self.enemy_pos, (ox, oy), DEFAULT_DIR) };
+        Pattern::Circle { x, y, r }
+    }
+    /// gcsim's NewBoxHitOnTarget on the enemy: along the enemy's own
+    /// direction, gcsim's default.
+    pub fn box_on_enemy(&self, ox: f64, oy: f64, w: f64, h: f64) -> Pattern {
+        let (x, y) = if ox == 0.0 && oy == 0.0 { self.enemy_pos } else { offset_point(self.enemy_pos, (ox, oy), DEFAULT_DIR) };
+        let (dx, dy) = DEFAULT_DIR;
+        Pattern::Box { x, y, w, h, dx, dy }
+    }
+    /// gcsim's NewBoxHit from the player centered on a point or another
+    /// target: the direction from the player to it (CalcTempDirection),
+    /// and the offset turned to that direction.
+    pub fn box_from_player(&self, at: (f64, f64), ox: f64, oy: f64, w: f64, h: f64) -> Pattern {
+        let dir = calc_direction(self.player_pos, at);
+        let (x, y) = if ox == 0.0 && oy == 0.0 { at } else { offset_point(at, (ox, oy), dir) };
+        Pattern::Box { x, y, w, h, dx: dir.0, dy: dir.1 }
+    }
+    /// gcsim's NewCircleHit from the player centered on the enemy, with its
+    /// offset along the way to it (CalcTempDirection).
+    pub fn circle_toward_target(&self, ox: f64, oy: f64, r: f64) -> Pattern {
+        let dir = calc_direction(self.player_pos, self.enemy_pos);
+        let (x, y) = if ox == 0.0 && oy == 0.0 { self.enemy_pos } else { offset_point(self.enemy_pos, (ox, oy), dir) };
+        Pattern::Circle { x, y, r }
     }
     /// gcsim's NewBoxHit from the player centered on the enemy, with its
     /// offset along the way to it.
     pub fn box_on_target(&self, ox: f64, oy: f64, w: f64, h: f64) -> Pattern {
-        Pattern::Box { x: ox, y: self.target_dist + oy, w, h }
+        self.box_from_player(self.enemy_pos, ox, oy, w, h)
+    }
+    /// A point offset from the player along its facing (gcsim's
+    /// CalcOffsetPoint(player.Pos(), offset, player.Direction())), where
+    /// gadgets and fields are placed.
+    pub fn point_from_player(&self, ox: f64, oy: f64) -> (f64, f64) {
+        offset_point(self.player_pos, (ox, oy), self.player_dir)
     }
 
-    /// Whether the player (at the origin, radius 0.3: gcsim's default) is
-    /// within a circle of radius r centered y ahead of it, toward the enemy.
-    pub fn player_in_circle(&self, y: f64, r: f64) -> bool {
-        y.abs() <= r + 0.3
+    /// Whether an attack's area reaches the player's circle (radius 0.3,
+    /// gcsim's default): AttackWillLand on the player.
+    pub fn hits_player(&self, p: Pattern) -> bool {
+        p.hits_circle(self.player_pos.0, self.player_pos.1, 0.3).expect("an attack on the player with an unknown pattern")
+    }
+    /// Whether the player's center is inside an area (gcsim's
+    /// Player().IsWithinArea).
+    pub fn player_within(&self, p: Pattern) -> bool {
+        p.contains_point(self.player_pos.0, self.player_pos.1).expect("an area with an unknown pattern")
+    }
+    /// Whether an attack's area reaches the enemy (AttackWillLand): a
+    /// single target always does.
+    pub fn hits_enemy(&self, p: Pattern) -> Option<bool> {
+        match p {
+            Pattern::Single => Some(true),
+            _ => p.hits_circle(self.enemy_pos.0, self.enemy_pos.1, self.target_radius),
+        }
+    }
+    /// Whether the enemy's center is inside an area (gcsim's
+    /// EnemiesWithinArea and IsWithinArea on the enemy).
+    pub fn enemy_within(&self, p: Pattern) -> bool {
+        p.contains_point(self.enemy_pos.0, self.enemy_pos.1).expect("an area with an unknown pattern")
+    }
+
+    /// The first member of the team whose module has not been checked for a
+    /// player away from the origin (every place gcsim reads the player's
+    /// position or direction, and when): moving the player with it is an
+    /// error.
+    pub fn not_ported_for_player_moves(&self) -> Option<&'static str> {
+        self.chars.iter().find(|c| !crate::chars::MOVES_WITH_PLAYER.contains(&c.kind)).map(|c| crate::gcsl::char_name(c.key))
+    }
+
+    /// gcsim's set_player_pos: the player moves to (x, y) and faces the
+    /// closest enemy (SetDirectionToClosestEnemy).
+    pub fn set_player_pos(&mut self, x: f64, y: f64) {
+        self.player_pos = (x, y);
+        self.player_dir = calc_direction(self.player_pos, self.enemy_pos);
+        if (x, y) != (0.0, 0.0) {
+            self.player_moved = true;
+        }
     }
 
     /// gcsim's TryAggravate and TrySpread: on quicken, flat damage from the
@@ -2799,7 +3011,7 @@ impl Sim {
                 let rr = (r * r + self.rng.float64() * (r * r - r * r)).sqrt();
                 let (x, y) = if x == 0.0 && y == 0.0 { (0.0, 1.0) } else { (x, y) };
                 let factor = rr / (x * x + y * y).sqrt();
-                break (x * factor, self.target_dist + y * factor);
+                break (x * factor + self.enemy_pos.0, y * factor + self.enemy_pos.1);
             }
         };
         let mut oldest: Option<usize> = None;
@@ -2823,14 +3035,23 @@ impl Sim {
     /// A core expired or was killed: its bloom 1 frame later, a circle of
     /// radius 5 on it.
     fn core_explode(&mut self, actor: u8, x: f64, y: f64) {
-        let on_player = x * x + y * y <= (5.0 + 0.3) * (5.0 + 0.3);
-        self.add_task(Task::CoreAttack { kind: AttackTag::Bloom, actor, on_player }, 1);
+        let area = self.core_area(Pattern::Circle { x, y, r: 5.0 });
+        self.add_task(Task::CoreAttack { kind: AttackTag::Bloom, actor, area }, 1);
+    }
+
+    /// A slot holding a core attack's area until it lands.
+    fn core_area(&mut self, p: Pattern) -> u16 {
+        let mut ev = AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0), 0);
+        ev.info.pattern = p;
+        self.alloc(ev)
     }
 
     /// The attack of a core: bloom (2), burgeon (3) or hyperbloom (3) times
     /// the attacker's reaction damage, and 2% of it to the player when its
-    /// area reaches the player.
-    fn core_attack(&mut self, kind: AttackTag, actor: usize, on_player: bool) {
+    /// area reaches the player, where the player is when it lands.
+    fn core_attack(&mut self, kind: AttackTag, actor: usize, area: u16) {
+        let on_player = self.hits_player(self.slots[area as usize].info.pattern);
+        self.free.push(area);
         let (icd_tag, abil, mult) = match kind {
             AttackTag::Bloom => (icd::TAG_BLOOM_DAMAGE, "bloom", 2.0),
             AttackTag::Burgeon => (icd::TAG_BURGEON_DAMAGE, "burgeon", 3.0),
@@ -2907,13 +3128,14 @@ impl Sim {
         self.gadgets.remove(k);
         let actor = ev.info.actor;
         if ev.info.element == Element::Electro {
-            // a circle of radius 1 on the enemy, which the player is not in
-            let on_player = self.player_in_circle(self.target_dist, 1.0);
-            self.add_task(Task::CoreAttack { kind: AttackTag::Hyperbloom, actor, on_player }, 60);
+            // a circle of radius 1 on the enemy (the closest within 15 of
+            // the core, always the enemy: the core is 0.5 beyond its edge)
+            let area = self.core_area(self.circle_on_target(1.0));
+            self.add_task(Task::CoreAttack { kind: AttackTag::Hyperbloom, actor, area }, 60);
             self.emit(Event::Reaction(Reaction::Hyperbloom, ev));
         } else {
-            let on_player = g.x * g.x + g.y * g.y <= (5.0 + 0.3) * (5.0 + 0.3);
-            self.add_task(Task::CoreAttack { kind: AttackTag::Burgeon, actor, on_player }, 1);
+            let area = self.core_area(Pattern::Circle { x: g.x, y: g.y, r: 5.0 });
+            self.add_task(Task::CoreAttack { kind: AttackTag::Burgeon, actor, area }, 1);
             self.emit(Event::Reaction(Reaction::Burgeon, ev));
         }
     }
@@ -3273,8 +3495,8 @@ impl Sim {
     /// enemy, the gadgets and the player (gcsim's AttackWillLand).
     pub fn absorb_check_in(&self, p: Pattern, prio: &[Element]) -> Element {
         let hit = |x: f64, y: f64, r: f64| p.hits_circle(x, y, r).expect("absorb check with an unknown pattern");
-        let enemy = hit(0.0, self.target_dist, self.target_radius);
-        let player = hit(0.0, 0.0, 0.3);
+        let enemy = hit(self.enemy_pos.0, self.enemy_pos.1, self.target_radius);
+        let player = hit(self.player_pos.0, self.player_pos.1, 0.3);
         for &e in prio {
             if (enemy && self.enemy.aura.contains(e)) || self.gadgets.iter().any(|g| g.aura.contains(e) && hit(g.x, g.y, g.r)) || (player && self.player_aura.contains(e)) {
                 return e;
@@ -3317,19 +3539,8 @@ impl Sim {
         self.enemy.aura.contains(e)
     }
 
-    /// Whether a box hit lands on the enemy: a box `w` wide and `h` long,
-    /// centered `y` ahead of the player, who stands at the origin facing
-    /// the enemy (gcsim's direction from setup; the player never moves).
-    pub fn box_hits(&self, y: f64, w: f64, h: f64) -> bool {
-        let r = self.target_radius;
-        let dy = (self.target_dist - y).abs() - h / 2.0;
-        let dx = -w / 2.0;
-        let (dx, dy) = (dx.max(0.0), dy.max(0.0));
-        dx * dx + dy * dy <= r * r
-    }
-
     /// gcsim's Combat.AddGadget.
-    /// The gadget is at (x, y) from the player, of radius r.
+    /// The gadget is at (x, y), of radius r (gcsim's world coordinates).
     pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
         let f = self.f;
         self.push_gadget(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: f, x, y, r, actor: 0, takes_hits: false, enemy_camp: false, key: 0 });
@@ -3463,7 +3674,7 @@ impl Sim {
             // every element reaches Lynette's Bogglecat Box)
             if matches!(ele, Element::Pyro | Element::Electro) || self.gadgets.iter().any(|g| g.takes_hits) {
                 atk.info.durability = aoe_dur;
-                atk.info.pattern = Pattern::Circle { x: 0.0, y: self.target_dist, r: 5.0 };
+                atk.info.pattern = self.circle_on_target(5.0);
                 let slot = self.alloc(atk);
                 self.add_task(Task::GadgetAttack { slot }, 1 + 4);
             }
