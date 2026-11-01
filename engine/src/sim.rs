@@ -1020,6 +1020,9 @@ pub struct Gadget {
     /// and EndGadgetTypEnemy: dendro cores, the Bogglecat Box), which
     /// abilities that pick gadgets as targets choose from.
     pub enemy_camp: bool,
+    /// gcsim's TargetKey: gadgets get increasing keys as they are added,
+    /// so the list, which keeps the order they came in, is sorted by key.
+    pub key: u32,
 }
 
 /// The owner of dendro cores, which belong to no character.
@@ -1146,8 +1149,13 @@ pub struct Sim {
     pub subs: [Vec<Owner>; N_EVENTS],
     /// Constructs (gcsim's Constructs) and shields, by owner.
     pub constructs: Vec<Construct>,
-    /// Gadgets, in the order they were added.
+    /// Gadgets, in the order they were added. gcsim's Kill sets a slot to
+    /// nil and compacts the list later; removing one here at once keeps
+    /// the same order, and loops that run hooks between gadgets follow
+    /// them by key (`gadget_from`), as gcsim's slots stay put.
     pub gadgets: Vec<Gadget>,
+    /// The key the next gadget gets.
+    gadget_key: u32,
     /// Crystallize shards. gcsim keeps them among the gadgets; nothing
     /// reaches them but pick_up_crystallize, so their order among the
     /// others does not matter.
@@ -1257,6 +1265,7 @@ impl Sim {
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
             gadgets: Vec::with_capacity(4),
+            gadget_key: 0,
             shards: Vec::with_capacity(4),
             shields: Vec::with_capacity(4),
             shield_bonus_mods: Vec::new(),
@@ -2717,7 +2726,7 @@ impl Sim {
             self.core_explode(g.actor, g.x, g.y);
         }
         let f = self.f;
-        self.gadgets.push(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true });
+        self.push_gadget(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true, key: 0 });
     }
 
     /// A core expired or was killed: its bloom 1 frame later, a circle of
@@ -2754,26 +2763,17 @@ impl Sim {
         }
     }
 
-    /// The gadgets an attack reaches besides the enemy: a dendro core hit
-    /// by electro (hyperbloom, 1 s later, on the enemy) or pyro (burgeon,
-    /// a circle of radius 5 on the core) is used up. gcsim hands each
-    /// target its own copy of the attack, so the core sees it before ICD
-    /// or reactions on the enemy.
+    /// The gadgets an attack reaches besides the enemy, in their order
+    /// (gcsim's ApplyAttack over its gadget slots): a dendro core hit by
+    /// electro (hyperbloom, 1 s later, on the enemy) or pyro (burgeon, a
+    /// circle of radius 5 on the core) is used up, and a gadget added with
+    /// `add_hittable_gadget` goes to its owner's gadget_hit. gcsim hands
+    /// each target its own copy of the attack, so the gadgets see it before
+    /// ICD or reactions on the enemy. A gadget removed on the way (a core
+    /// used up, the Box converting) leaves the others' slots in gcsim, and
+    /// one added on the way is reached too (the loop reads the length each
+    /// time), so the loop follows keys.
     fn hit_gadgets(&mut self, ev: &AttackEvent) {
-        if self.gadgets.iter().any(|g| g.takes_hits) {
-            let mut k = 0;
-            while k < self.gadgets.len() {
-                let g = self.gadgets[k];
-                if g.takes_hits {
-                    let lands = ev.info.pattern.hits_circle(g.x, g.y, g.r);
-                    crate::chars::dispatch::gadget_hit(self.chars[g.owner as usize].kind, self, g.owner as usize, g.id, ev, lands);
-                }
-                // the gadget may have been removed
-                if k < self.gadgets.len() && self.gadgets[k].owner == g.owner && self.gadgets[k].id == g.id && self.gadgets[k].src == g.src {
-                    k += 1;
-                }
-            }
-        }
         // gcsim's Guoba swirls its pyro window when Sucrose's skill (or
         // Faruzan's, not ported) reaches it: not ported either
         if ev.info.tag == AttackTag::ElementalArt && self.chars[ev.info.actor as usize].kind == crate::chars::CharKind::Sucrose {
@@ -2783,40 +2783,47 @@ impl Sim {
                 return;
             }
         }
-        if ev.info.durability < ZERO_DUR || !matches!(ev.info.element, Element::Electro | Element::Pyro) {
+        let cores_react = ev.info.durability >= ZERO_DUR && matches!(ev.info.element, Element::Electro | Element::Pyro);
+        if !cores_react && !self.gadgets.iter().any(|g| g.takes_hits) {
             return;
         }
         let mut k = 0;
         while k < self.gadgets.len() {
             let g = self.gadgets[k];
-            if g.owner != CORE {
-                k += 1;
-                continue;
-            }
-            match ev.info.pattern.hits_circle(g.x, g.y, 2.0) {
-                None => {
-                    let who = crate::gcsl::char_name(self.chars[ev.info.actor as usize].key);
-                    self.unsupported(&format!("hit pattern {who} {}", ev.info.abil));
-                    return;
+            if g.owner == CORE {
+                if cores_react {
+                    match ev.info.pattern.hits_circle(g.x, g.y, 2.0) {
+                        None => {
+                            let who = crate::gcsl::char_name(self.chars[ev.info.actor as usize].key);
+                            self.unsupported(&format!("hit pattern {who} {}", ev.info.abil));
+                            return;
+                        }
+                        Some(false) => {}
+                        Some(true) => self.core_hit(k, g, ev),
+                    }
                 }
-                Some(false) => {
-                    k += 1;
-                    continue;
-                }
-                Some(true) => {}
+            } else if g.takes_hits {
+                let lands = ev.info.pattern.hits_circle(g.x, g.y, g.r);
+                crate::chars::dispatch::gadget_hit(self.chars[g.owner as usize].kind, self, g.owner as usize, g.id, ev, lands);
             }
-            self.gadgets.remove(k);
-            let actor = ev.info.actor;
-            if ev.info.element == Element::Electro {
-                // a circle of radius 1 on the enemy, which the player is not in
-                let on_player = self.player_in_circle(self.target_dist, 1.0);
-                self.add_task(Task::CoreAttack { kind: AttackTag::Hyperbloom, actor, on_player }, 60);
-                self.emit(Event::Reaction(Reaction::Hyperbloom, ev));
-            } else {
-                let on_player = g.x * g.x + g.y * g.y <= (5.0 + 0.3) * (5.0 + 0.3);
-                self.add_task(Task::CoreAttack { kind: AttackTag::Burgeon, actor, on_player }, 1);
-                self.emit(Event::Reaction(Reaction::Burgeon, ev));
-            }
+            // on to the next slot, wherever the hooks left it
+            k = if self.gadgets.get(k).is_some_and(|x| x.key == g.key) { k + 1 } else { self.gadget_from(g.key + 1) };
+        }
+    }
+
+    /// The core at index k, hit by electro or pyro, is used up.
+    fn core_hit(&mut self, k: usize, g: Gadget, ev: &AttackEvent) {
+        self.gadgets.remove(k);
+        let actor = ev.info.actor;
+        if ev.info.element == Element::Electro {
+            // a circle of radius 1 on the enemy, which the player is not in
+            let on_player = self.player_in_circle(self.target_dist, 1.0);
+            self.add_task(Task::CoreAttack { kind: AttackTag::Hyperbloom, actor, on_player }, 60);
+            self.emit(Event::Reaction(Reaction::Hyperbloom, ev));
+        } else {
+            let on_player = g.x * g.x + g.y * g.y <= (5.0 + 0.3) * (5.0 + 0.3);
+            self.add_task(Task::CoreAttack { kind: AttackTag::Burgeon, actor, on_player }, 1);
+            self.emit(Event::Reaction(Reaction::Burgeon, ev));
         }
     }
 
@@ -3233,7 +3240,23 @@ impl Sim {
     /// gcsim's Combat.AddGadget.
     /// The gadget is at (x, y) from the player, of radius r.
     pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
-        self.gadgets.push(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: self.f, x, y, r, actor: 0, takes_hits: false, enemy_camp: false });
+        let f = self.f;
+        self.push_gadget(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: f, x, y, r, actor: 0, takes_hits: false, enemy_camp: false, key: 0 });
+    }
+
+    /// Appends a gadget with the next key (the end of gcsim's AddGadget).
+    fn push_gadget(&mut self, mut g: Gadget) {
+        g.key = self.gadget_key;
+        self.gadget_key += 1;
+        self.gadgets.push(g);
+    }
+
+    /// The index of the first gadget whose key is `key` or later (the list
+    /// is sorted by key), the length when there is none: where a loop over
+    /// gcsim's slots goes on after hooks removed or added gadgets.
+    #[inline]
+    fn gadget_from(&self, key: u32) -> usize {
+        self.gadgets.partition_point(|g| g.key < key)
     }
 
     /// add_gadget for a gadget whose owner handles the attacks reaching it
@@ -3268,11 +3291,20 @@ impl Sim {
     }
 
     /// Each gadget's Tick: its aura, then Gadget.Tick (expiry), then its
-    /// owner's hook with the ticks so far.
+    /// owner's hook with the ticks so far. gcsim ranges over the gadgets
+    /// as they are when the tick starts and skips the slots a Kill set to
+    /// nil: a gadget a hook removes (Lynette's Box converting in its own
+    /// think, a core used up) does not tick after it, and one added during
+    /// the tick first ticks next frame. Hooks may remove gadgets before or
+    /// after the one ticking, so the loop follows keys, not indices. (Go's
+    /// range keeps reading the old array when an append in the tick grows
+    /// the slice, so a gadget killed after that would still tick there; no
+    /// ported hook adds a gadget during the tick.)
     fn tick_gadgets(&mut self) {
-        let n = self.gadgets.len();
+        // gadgets with this key or later came during the tick
+        let end = self.gadget_key;
         let mut k = 0;
-        for _ in 0..n {
+        while k < self.gadgets.len() && self.gadgets[k].key < end {
             let g = &mut self.gadgets[k];
             if !g.aura.idle() {
                 g.aura.tick();
@@ -3283,13 +3315,11 @@ impl Sim {
                 expired = g.duration == 0;
             }
             g.timer += 1;
-            let (owner, id, timer) = (g.owner as usize, g.id, g.timer);
+            let (owner, id, timer, key) = (g.owner as usize, g.id, g.timer, g.key);
             let core = g.owner == CORE;
             let (actor, gx, gy) = (g.actor, g.x, g.y);
             if expired {
                 self.gadgets.remove(k);
-            } else {
-                k += 1;
             }
             if core {
                 if expired {
@@ -3298,6 +3328,8 @@ impl Sim {
             } else {
                 crate::chars::dispatch::gadget_tick(self.chars[owner].kind, self, owner, id, timer);
             }
+            // on to the next slot, wherever the hooks left it
+            k = if self.gadgets.get(k).is_some_and(|x| x.key == key) { k + 1 } else { self.gadget_from(key + 1) };
         }
     }
 
