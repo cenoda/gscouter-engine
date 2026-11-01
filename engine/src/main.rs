@@ -24,6 +24,7 @@ mod queue;
 mod rng;
 mod sets;
 mod sim;
+mod stellar;
 mod types;
 mod weapons;
 

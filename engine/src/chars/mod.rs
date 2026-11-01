@@ -38,6 +38,7 @@ crate::chars! {
     Neuvillette => neuvillette,
     Kirara => kirara,
     Xilonen => xilonen,
+    Sandrone => sandrone,
 }
 
 /// The characters whose modules have been checked against gcsim for a

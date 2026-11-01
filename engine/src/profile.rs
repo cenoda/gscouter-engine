@@ -106,7 +106,6 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("breakthrough", Some(CharKind::Yelan)) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             ("hexerei", Some(CharKind::Sucrose)) => {}
-            // only Radiance reads it, which needs a Polestar Field
             ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko)) => {}
             // the character itself is unsupported
             (_, None) => {}
@@ -206,6 +205,17 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
         for c in p.chars.iter().filter(is_hexerei) {
             if char_kind(char_name(c.key)).is_some_and(|k| !k.hexerei()) {
                 errs.push(format!("unsupported: hexerei {}", char_name(c.key)));
+            }
+        }
+    }
+    // A Stellar character (stellar::enables_stellar) turns cryo swirls into
+    // Stellar Swirl, which is not ported: an anemo character with one is an
+    // error (anemo attacks come only from anemo characters among those the
+    // engine has).
+    if p.chars.iter().any(|c| char_kind(char_name(c.key)).is_some_and(crate::stellar::enables_stellar)) {
+        for c in &p.chars {
+            if data::CHARS.iter().any(|d| d.key == char_name(c.key) && Element::from_gcsim(d.element) == Element::Anemo) {
+                errs.push(format!("unsupported: stellar swirl {}", char_name(c.key)));
             }
         }
     }
