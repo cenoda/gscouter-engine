@@ -1,10 +1,13 @@
-//! Yae Miko, from gcsim's internal/characters/yaemiko, at C0: normal
-//! attacks, the skill's Sesshou Sakura (three charges, up to three
-//! totems), the burst's thunderbolts, A1, A4 and the revelation (longer
-//! totems, superconduct's enhanced strike, A1's extra strike) and charged
-//! attacks. No plunges or constellations. Radiance needs a Polestar Field and
-//! Stellar-Conduct, which nothing the engine has makes, so it never
-//! applies; port it with the first content that makes them.
+//! Yae Miko, from gcsim's internal/characters/yaemiko: normal attacks, the
+//! skill's Sesshou Sakura (three charges, up to three totems), the burst's
+//! thunderbolts, A1, A4 and the revelation (longer totems, superconduct's
+//! enhanced strike, A1's extra strike), charged attacks and constellations
+//! 1 to 6. No plunges. Radiance needs a Polestar Field and Stellar-Conduct,
+//! which nothing the engine has makes, so it never applies; port it with the
+//! first content that makes them. With it go the Stellar-Conduct parts of
+//! the constellations, which never apply either: C1's buff on
+//! Stellar-Conduct reactions and damage and its Stellar-Conduct DMG bonus,
+//! and C6's CRIT DMG on Stellar-Conduct DMG.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::yaemiko as g;
@@ -28,13 +31,20 @@ const REVELATION: ModKey = ModKey::new(g::REVELATION_KEY);
 const REVELATION_ICD: ModKey = ModKey::new(g::REVELATION_ICD_KEY);
 const TOTEM_STATUS: ModKey = ModKey::new(g::YAE_TOTEM_STATUS);
 const A4: ModKey = ModKey::new("yaemiko-a4");
+const C1_ELECTRO: ModKey = ModKey::new("yae-c1-electro");
+const C2: ModKey = ModKey::new(g::C2_KEY);
+const C4: ModKey = ModKey::new(g::C4_KEY);
+const C4_ELECTRO: ModKey = ModKey::new("yaemiko-c4");
+const C4_ENERGY_ICD: ModKey = ModKey::new(g::C4_ENERGY_ICD_KEY);
 
 const CB_PARTICLE: u16 = 1 << 0;
+const CB_C4: u16 = 1 << 1;
 
 const TASK_MAKE: u8 = 0;
 // arg: the totem's id
 const TASK_TICK: u8 = 1;
 const TASK_TIMEOUT: u8 = 2;
+const TASK_C1_ENERGY: u8 = 3;
 
 impl State {
     fn has(&self, id: i32) -> bool {
@@ -65,8 +75,6 @@ fn pop_oldest(s: &mut Sim, ci: usize) {
 
 impl Character for Char {
     const KEY: &'static str = "yaemiko";
-    // C1 to C6 are not ported
-    const MAX_CONS: i32 = 0;
     type State = State;
 
     fn new_state(cs: &CharSetup) -> State {
@@ -82,8 +90,21 @@ impl Character for Char {
         if s.chars[ci].ascension >= 4 {
             s.chars[ci].mods.push(Mod::owned(A4, ModKind::Attack, Owner::Char(ci as u8), st::NONE, false, false, -1));
         }
-        if s.st::<State>(ci).revelation {
-            s.subscribe(EventKind::Reaction, Owner::Char(ci as u8));
+        let o = Owner::Char(ci as u8);
+        let revelation = s.st::<State>(ci).revelation;
+        if revelation {
+            s.subscribe(EventKind::Reaction, o);
+        }
+        // C2 with the revelation: EM to Yae and the active character while
+        // there are totems
+        if s.chars[ci].cons >= 2 && revelation {
+            for i in 0..s.chars.len() {
+                s.chars[i].mods.push(Mod::owned(C2, ModKind::Stat, o, st::EM, false, false, -1));
+            }
+        }
+        // C4 with the revelation: burst DMG +100%
+        if s.chars[ci].cons >= 4 && revelation {
+            s.chars[ci].mods.push(Mod::owned(C4, ModKind::Attack, o, st::NONE, false, false, -1));
         }
     }
 
@@ -165,6 +186,10 @@ impl Character for Char {
         for i in 0..count as i32 {
             let d = g::BURST_THUNDERBOLT1_HITMARK + i * 24;
             s.queue_attack(ai, 0, d, d);
+            // C1: 8 energy as each thunderbolt lands
+            if s.chars[ci].cons >= 1 {
+                s.add_task(Task::Char { c: ci as u8, id: TASK_C1_ENERGY, arg: 0 }, d);
+            }
             if s.chars[ci].ascension >= 1 {
                 s.reset_cd(ci, Action::Skill);
             }
@@ -212,13 +237,26 @@ impl Character for Char {
                 if !s.st::<State>(ci).has(arg) {
                     return;
                 }
-                // RandomEnemyWithinArea: the one enemy, always in range
+                // RandomEnemyWithinArea on a circle on the player of
+                // radius 12.5, 20 with C2 (60% more range): the one enemy.
+                // An enemy out of it would make the totem strike a gadget
+                // or nothing, which is not ported.
+                let r = if s.chars[ci].cons >= 2 { 20.0 } else { 12.5 };
+                if (Pattern::Circle { x: 0.0, y: 0.0, r }).hits_circle(0.0, s.target_dist, s.target_radius) != Some(true) {
+                    s.unsupported("yaemiko Sesshou Sakura with the enemy out of its range");
+                    return;
+                }
                 let _ = s.rng.intn(1);
-                let level = s.st::<State>(ci).count;
+                // the Sakura level: the totems, one more with C2
+                let level = s.st::<State>(ci).count + usize::from(s.chars[ci].cons >= 2);
                 let lvl = s.talent(ci, 1);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Electro, 25.0, g::SKILL[level - 1][lvl]);
                 ai.abil = "Sesshou Sakura Tick";
                 ai.pattern = s.circle_on_target(0.5);
+                // C6: the strikes ignore 60% of DEF
+                if s.chars[ci].cons >= 6 {
+                    ai.ignore_def = 0.6;
+                }
                 // the revelation: after a superconduct, the next strike deals
                 // 80% of her ATK more, once every 2.5 s
                 if s.st::<State>(ci).revelation && s.mod_active(ci, REVELATION) && !s.mod_active(ci, REVELATION_ICD) {
@@ -226,7 +264,8 @@ impl Character for Char {
                     s.delete_mod(ci, REVELATION);
                     ai.flat_dmg = 0.8 * total_atk(&s.stats(ci));
                 }
-                s.queue_attack(ai, CB_PARTICLE, 1, 1);
+                let c4 = if s.chars[ci].cons >= 4 { CB_C4 } else { 0 };
+                s.queue_attack(ai, CB_PARTICLE | c4, 1, 1);
                 s.add_task(Task::Char { c: ci as u8, id: TASK_TICK, arg }, 176);
             }
             TASK_TIMEOUT => {
@@ -234,12 +273,31 @@ impl Character for Char {
                     pop_oldest(s, ci);
                 }
             }
+            TASK_C1_ENERGY => s.add_energy(ci, 8.0),
             _ => unreachable!(),
         }
     }
 
-    fn attack_mod(s: &Sim, ci: usize, _: usize, _: &Mod, ev: &mut AttackEvent) {
-        if ev.info.tag == AttackTag::ElementalArt {
+    /// C2: 60 / 90 / 120 / 200 EM by the Sakura level, to Yae and the
+    /// active character.
+    fn mod_amount(s: &Sim, ci: usize, on: usize, _: &Mod, out: &mut Stats) -> bool {
+        if on != ci && s.player.active as usize != on {
+            return false;
+        }
+        let count = s.st::<State>(ci).count;
+        if count == 0 {
+            return false;
+        }
+        out[st::EM] += g::C2_BUFF_VAL[count + 1];
+        true
+    }
+
+    fn attack_mod(s: &Sim, ci: usize, _: usize, m: &Mod, ev: &mut AttackEvent) {
+        if m.key == C4 {
+            if ev.info.tag == AttackTag::ElementalBurst {
+                ev.stats[st::DMGP] += 1.0;
+            }
+        } else if ev.info.tag == AttackTag::ElementalArt {
             ev.stats[st::DMGP] += s.stat(ci, st::EM) * 0.0015;
         }
     }
@@ -249,14 +307,31 @@ impl Character for Char {
             s.add_status(ci, PARTICLE_ICD, 150, true);
             s.queue_particle(1.0, Element::Electro, s.particle_delay[ci]);
         }
+        // C4: a strike hitting the enemy gives the party 20% electro DMG for
+        // 5 s and, with the revelation, Yae 8 energy once every 5 s
+        if cbs & CB_C4 != 0 {
+            for i in 0..s.chars.len() {
+                s.add_stat_mod(i, C4_ELECTRO, st::ELECTROP, 0.2, 5 * 60, true);
+            }
+            if s.st::<State>(ci).revelation && !s.mod_active(ci, C4_ENERGY_ICD) {
+                s.add_status(ci, C4_ENERGY_ICD, 5 * 60, true);
+                s.add_energy(ci, 8.0);
+            }
+        }
     }
 
     /// The revelation: a superconduct on the enemy by anyone readies the
-    /// enhanced strike.
+    /// enhanced strike. C1 with the revelation: a superconduct on the enemy
+    /// by Yae gives the party 50% electro DMG for 10 s.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         if let Event::Reaction(Reaction::Superconduct, ev) = *e {
             if !ev.on_player {
                 s.add_status(ci, REVELATION, 8 * 60, true);
+                if s.chars[ci].cons >= 1 && ev.info.actor as usize == ci {
+                    for i in 0..s.chars.len() {
+                        s.add_stat_mod(i, C1_ELECTRO, st::ELECTROP, 0.5, 10 * 60, true);
+                    }
+                }
             }
         }
     }
