@@ -669,7 +669,7 @@ func main() {
 	}
 	rep.BuildSpace = buildSpaceSummary(rep.Results)
 	for _, r := range rep.Results {
-		if r.Verdict != "pass" && r.Verdict != "unsupported" && r.Verdict != "dry-run" && r.Verdict != "deferred" {
+		if r.Verdict != "pass" && r.Verdict != "both-error" && r.Verdict != "unsupported" && r.Verdict != "dry-run" && r.Verdict != "deferred" {
 			rep.Pass = false
 		}
 	}
@@ -831,6 +831,17 @@ func check(gse, tmp, id, cfg string) ([]string, error) {
 
 var errUnsupported = errors.New("unsupported")
 
+// bothError is a build that gcsim and the engine both refuse to run: the
+// rotation errors under both (Yae Miko's plunge without Xianyun's burst up,
+// when a variant starves the burst of energy). It is agreement, not a
+// difference, and its verdict is "both-error".
+type bothError struct{ gcsim, gse error }
+
+func (e *bothError) Error() string {
+	first := func(err error) string { m, _, _ := strings.Cut(err.Error(), "\n"); return m }
+	return fmt.Sprintf("both refuse: gcsim: %s; %s", first(e.gcsim), first(e.gse))
+}
+
 func runGse(gse, path string, n int, seed int64, warmup float64) (*harness.Output, error) {
 	var stderr bytes.Buffer
 	cmd := exec.Command(gse, path, strconv.Itoa(n), fmt.Sprint(warmup), strconv.Itoa(*workers), "--seed", strconv.FormatInt(seed, 10))
@@ -932,6 +943,11 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 		start := time.Now()
 		gb, err := gcsimCache.RunCached(cfg, more, v.warm(), int64(1+n), *workers, true)
 		if err != nil {
+			// a build gcsim cannot run (a rotation that errors under it)
+			// agrees when the engine refuses it too
+			if _, gerr := runGse(gse, path, more, int64(1+n), v.warm()); gerr != nil && !errors.Is(gerr, errUnsupported) {
+				return &bothError{gcsim: err, gse: gerr}
+			}
 			return fmt.Errorf("gcsim: %w", err)
 		}
 		res.GcsimSeconds += time.Since(start).Seconds()
@@ -982,6 +998,10 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 	res.Iter = n
 	if err != nil {
 		res.Verdict, res.Error = "error", err.Error()
+		var both *bothError
+		if errors.As(err, &both) {
+			res.Verdict = "both-error"
+		}
 		if errors.Is(err, errUnsupported) {
 			res.Verdict, res.Error = "unsupported", "unsupported: "+strings.TrimPrefix(err.Error(), "unsupported: ")
 		}
@@ -1565,7 +1585,7 @@ func markdown(rep *Report) string {
 		passed, notRun, deferred := 0, 0, 0
 		for _, r := range rep.Results {
 			switch {
-			case r.Verdict == "pass":
+			case r.Verdict == "pass" || r.Verdict == "both-error":
 				passed++
 			case r.Verdict == "deferred":
 				deferred++
