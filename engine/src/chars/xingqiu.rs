@@ -51,9 +51,23 @@ impl Character for Char {
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Skill | Action::Burst => None,
+            Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    fn charge(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        let lvl = s.talent(ci, 0);
+        for (i, mult) in g::CA.iter().enumerate() {
+            let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, mult[lvl]);
+            ai.abil = "Charge";
+            ai.pattern = s.circle_on_player(0.0, 0.0, 2.2);
+            let h = g::CHARGE_HITMARKS[i];
+            s.queue_attack(ai, 0, h, h);
+        }
+        let t = &g::CHARGE_FRAMES;
+        let last = *g::CHARGE_HITMARKS.last().unwrap();
+        ActInfo::new(Frames::Table(t), t[0], last, AnimState::Charge)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {

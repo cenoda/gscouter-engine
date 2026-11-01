@@ -1,7 +1,7 @@
 //! Candace, from gcsim's internal/characters/candace: normal attacks, the
 //! skill pressed, held or perfect (with its shield), the burst with its
-//! waves on swap and its infusion, A4 and every constellation. No charged
-//! attacks or plunges.
+//! waves on swap and its infusion, A4 and every constellation, and charged
+//! attacks. No plunges.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::candace as g;
@@ -57,9 +57,22 @@ impl Character for Char {
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Skill | Action::Burst => None,
+            Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    fn charge(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        let lvl = s.talent(ci, 0);
+        let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_EXTRA_ATTACK, icd::GROUP_POLE_EXTRA_ATTACK, Element::Physical, 25.0, g::CHARGE[lvl]);
+        ai.abil = "Charge";
+        ai.hitlag_factor = 0.01;
+        ai.def_halt = true;
+        ai.deployable = true;
+        ai.pattern = s.circle_on_target(0.8);
+        s.queue_attack(ai, 0, 0, g::CHARGE_HITMARK);
+        let t = &g::CHARGE_FRAMES;
+        ActInfo::new(Frames::Table(t), t[0], t[Action::Jump as usize], AnimState::Charge)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {

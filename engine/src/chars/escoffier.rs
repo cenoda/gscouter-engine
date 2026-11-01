@@ -1,6 +1,6 @@
 //! Escoffier, from gcsim's internal/characters/escoffier: normal attacks,
 //! the skill and its ticks (with its Surging Blade), the burst with its
-//! heals, A1, A4 and constellations 1 to 6. No charged attacks or plunges.
+//! heals, A1, A4, constellations 1 to 6 and charged attacks. No plunges.
 //! C1's CRIT DMG on Stellar reactions (gcsim's OnSpecialReactionAttack)
 //! never applies: the engine has no lunar or Stellar reactions (nothing
 //! ported makes them).
@@ -91,9 +91,23 @@ impl Character for Char {
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Skill | Action::Burst => None,
+            Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    fn charge(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        let lvl = s.talent(ci, 0);
+        let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NONE, icd::GROUP_POLE_EXTRA_ATTACK, Element::Physical, 25.0, g::CHARGE[lvl]);
+        ai.abil = "Charge";
+        // gcsim's HitlagHaltFrames is 0.10 here, in frames
+        ai.hitlag_halt = 0.10;
+        ai.hitlag_factor = 0.01;
+        ai.def_halt = true;
+        ai.pattern = s.box_on_target(0.0, -1.2, 3.3, 3.5);
+        s.queue_attack(ai, 0, g::CHARGE_HITMARK, g::CHARGE_HITMARK);
+        let t = &g::CHARGE_FRAMES;
+        ActInfo::new(Frames::Table(t), t[0], g::CHARGE_HITMARK, AnimState::Charge)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
