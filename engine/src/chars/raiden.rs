@@ -1,10 +1,12 @@
 //! Raiden Shogun, from gcsim's internal/characters/raiden: normal and
 //! charged attacks with and without Musou Isshin, the Eye of Stormy
 //! Judgment and its coordinated attacks, the burst with its Resolve, A1,
-//! A4 and every constellation. Plunges are not implemented.
+//! A4, every constellation, and the plunges from Xianyun's airborne state,
+//! with and without Musou Isshin.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::raiden as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -48,6 +50,25 @@ const TASK_BURST_HIT: u8 = 4;
 const TASK_C4: u8 = 5;
 const TASK_A4: u8 = 6;
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go; in Musou
+/// Isshin, electro burst damage with their own hitmarks and frames.
+const PLUNGE: plunge::Spec = plunge::Spec {
+    low_queue: Action::Skill,
+    high_queue: Action::Attack,
+    ..plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION)
+};
+const PLUNGE_B: plunge::Spec = plunge::Spec {
+    low_hitmark: g::LOW_PLUNGE_HITMARK_B,
+    high_hitmark: g::HIGH_PLUNGE_HITMARK_B,
+    collision_hitmark: g::COLLISION_HITMARK_B,
+    low_frames: &g::LOW_PLUNGE_FRAMES_B,
+    high_frames: &g::HIGH_PLUNGE_FRAMES_B,
+    low_queue: Action::Attack,
+    high_queue: Action::Skill,
+    element: Element::Electro,
+    ..PLUNGE
+};
+
 impl Character for Char {
     const KEY: &'static str = "raidenshogun";
     type State = State;
@@ -71,11 +92,25 @@ impl Character for Char {
         s.subscribe(EventKind::Swap, o);
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge_xy(s, ci, true, p)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge_xy(s, ci, false, p)
     }
 
     fn charge_stam(s: &Sim, ci: usize) -> Option<f64> {
@@ -376,4 +411,34 @@ fn c6(s: &mut Sim, ci: usize) {
             s.reduce_cd(i, Action::Burst, 60);
         }
     }
+}
+
+/// The airborne plunges. In Musou Isshin they are burst damage, electro
+/// ignoring infusions, their mults gcsim's plunge tables at the burst's
+/// talent level plus the Resolve consumed.
+fn plunge_xy(s: &mut Sim, ci: usize, high: bool, p: &Params) -> ActInfo {
+    if !s.mod_active(ci, BURST) {
+        return plunge::standard(s, ci, high, p, &PLUNGE, 0);
+    }
+    let f = s.f;
+    s.st_mut::<State>(ci).burst_anim_src = f;
+    let (lvl, consumed) = (s.talent(ci, 2), s.st::<State>(ci).stacks_consumed);
+    let bonus = g::RESOLVE_BONUS[lvl] * consumed;
+    if plunge::wants_collision(p) {
+        let mut ai = plunge::collision_info(s, ci, &PLUNGE_B);
+        ai.abil = "Plunge Collision (Musou Isshin)";
+        ai.tag = AttackTag::ElementalBurst;
+        ai.ignore_infusion = true;
+        ai.mult = g::COLLISION[lvl] + bonus;
+        let h = PLUNGE_B.collision_hitmark;
+        s.queue_attack(ai, 0, h, h);
+    }
+    let mut ai = plunge::hit_info(s, ci, high, &PLUNGE_B);
+    ai.abil = if high { "High Plunge (Musou Isshin)" } else { "Low Plunge (Musou Isshin)" };
+    ai.tag = AttackTag::ElementalBurst;
+    ai.ignore_infusion = true;
+    ai.mult = (if high { g::HIGH_PLUNGE[lvl] } else { g::LOW_PLUNGE[lvl] }) + bonus;
+    let h = plunge::hitmark(&PLUNGE_B, high);
+    s.queue_attack(ai, 0, h, h);
+    plunge::act(&PLUNGE_B, high)
 }

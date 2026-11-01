@@ -1,0 +1,3 @@
+# Xilonen C2: the geo Sampler always on, the geo member's (Chiori's) DMG +50%, and the pyro members' ATK while the Samplers are active.
+team yoimiya-xilonen-bennett-chiori
+xilonen char lvl=90/90 cons=2 talent=9,9,9;

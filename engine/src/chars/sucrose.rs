@@ -1,10 +1,12 @@
 //! Sucrose, from gcsim's internal/characters/sucrose: normal and charged
 //! attacks, her own dash frames, the skill, the burst with its absorbed
-//! element, A1, A4 and every constellation. Her Hexerei bonuses need a
-//! second Hexerei character, which is an error elsewhere. No plunges.
+//! element, A1, A4, every constellation and her Hexerei bonuses (with a
+//! second Hexerei character). Plunges from
+//! Xianyun's airborne state.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::sucrose as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -16,6 +18,9 @@ pub struct State {
     absorb: Option<Element>,
     /// The absorbed hit, snapshot as the burst is used.
     absorb_snap: Option<AttackEvent>,
+    /// Where the burst checks for an element to absorb: a 2.5 by 2.5 box
+    /// 4 in front of the player as it used the burst.
+    absorb_area: Option<Pattern>,
     /// A4's EM, taken when it triggers.
     a4_em: f64,
     /// A1's same-frame guard, by swirled element (pyro, hydro, electro,
@@ -24,6 +29,8 @@ pub struct State {
     c4_count: i32,
     /// C6's element.
     c6: Option<Element>,
+    /// Her Hexerei bonuses are on: she is Hexerei with another in the team.
+    hex: bool,
 }
 
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
@@ -31,6 +38,8 @@ const BURST: ModKey = ModKey::new("sucroseburst");
 const A1: ModKey = ModKey::new("sucrose-a1");
 const A4: ModKey = ModKey::new("sucrose-a4");
 const C6: ModKey = ModKey::new("sucrose-c6");
+const HEX_SKILL: ModKey = ModKey::new("sucrose-hexerei-skill");
+const HEX_BURST: ModKey = ModKey::new("sucrose-hexerei-burst");
 
 const CB_A4: u16 = 1 << 0;
 const CB_PARTICLE: u16 = 1 << 1;
@@ -40,8 +49,12 @@ const TASK_ABSORB_HIT: u8 = 0;
 // arg: the checks done so far
 const TASK_ABSORB_CHECK: u8 = 1;
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::catalyst(Element::Anemo, g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "sucrose";
+    const HEXEREI: bool = true;
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
@@ -58,13 +71,28 @@ impl Character for Char {
         if s.chars[ci].ascension >= 1 {
             s.subscribe(EventKind::Reaction, Owner::Char(ci as u8));
         }
+        s.st_mut::<State>(ci).hex = s.chars[ci].hexerei && s.hexerei_count() >= 2;
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
@@ -111,6 +139,12 @@ impl Character for Char {
         ai.pattern = s.circle_on_player(0.0, 5.0, 6.0);
         s.queue_attack(ai, CB_A4 | CB_PARTICLE, 0, 42);
         s.set_cd_with_delay(ci, Action::Skill, 900, 9);
+        // Hexerei: DMG for the party's attacks for 15 s
+        if s.st::<State>(ci).hex {
+            for i in 0..s.chars.len() {
+                s.add_mod(i, Mod::owned(HEX_SKILL, ModKind::Attack, Owner::Char(ci as u8), st::NONE, false, true, -1), 15 * 60);
+            }
+        }
         let t = &g::SKILL_FRAMES;
         ActInfo::new(Frames::Table(t), t[0], t[Action::Dash as usize], AnimState::Skill)
     }
@@ -118,6 +152,7 @@ impl Character for Char {
     fn burst(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
         let duration = if s.chars[ci].cons >= 2 { 480 } else { 360 };
         s.st_mut::<State>(ci).absorb = None;
+        s.st_mut::<State>(ci).absorb_area = Some(s.box_on_player(0.0, 4.0, 2.5, 2.5));
         s.add_core_status(BURST, duration);
         let lvl = s.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 25.0, g::BURST_DOT[lvl]);
@@ -140,6 +175,14 @@ impl Character for Char {
         s.add_task(Task::Char { c: ci as u8, id: TASK_ABSORB_CHECK, arg: 0 }, 136);
         s.set_cd_with_delay(ci, Action::Burst, 1200, 18);
         s.consume_energy(ci, 21);
+        // Hexerei: DMG for the Hexerei characters' attacks for 20 s
+        if s.st::<State>(ci).hex {
+            for i in 0..s.chars.len() {
+                if s.chars[i].hexerei {
+                    s.add_mod(i, Mod::owned(HEX_BURST, ModKind::Attack, Owner::Char(ci as u8), st::NONE, false, true, -1), 20 * 60);
+                }
+            }
+        }
         let t = &g::BURST_FRAMES;
         ActInfo::new(Frames::Table(t), t[0], t[Action::Dash as usize], AnimState::Burst)
     }
@@ -158,9 +201,9 @@ impl Character for Char {
                 if arg == duration / 18 {
                     return;
                 }
-                // a 2.5 by 2.5 box 4 in front of the player: the enemy's
-                // edge, not the player or Guoba
-                let area = s.box_on_player(0.0, 4.0, 2.5, 2.5);
+                // a 2.5 by 2.5 box 4 in front of where the player stood:
+                // the enemy's edge, not the player or Guoba
+                let area = s.st::<State>(ci).absorb_area.unwrap();
                 let e = s.absorb_check_in(area, &[Element::Pyro, Element::Hydro, Element::Electro, Element::Cryo]);
                 if e != Element::NoElement {
                     s.st_mut::<State>(ci).absorb = Some(e);
@@ -185,6 +228,15 @@ impl Character for Char {
         let Some(e) = st.c6 else { return false };
         out[e.dmg_stat()] += 0.20 + if s.chars[on].hexerei { 0.085714 } else { 0.0 };
         true
+    }
+
+    /// Hexerei: the skill's and the burst's DMG bonus, on normal, charged
+    /// and plunging attacks, skills and bursts.
+    fn attack_mod(_: &Sim, _: usize, _: usize, m: &Mod, ev: &mut AttackEvent) {
+        if !matches!(ev.info.tag, AttackTag::Normal | AttackTag::Extra | AttackTag::Plunge | AttackTag::ElementalArt | AttackTag::ElementalArtHold | AttackTag::ElementalBurst) {
+            return;
+        }
+        ev.stats[st::DMGP] += if m.key == HEX_SKILL { 0.0571428 } else { 0.0714285 };
     }
 
     fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {

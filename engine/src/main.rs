@@ -23,11 +23,13 @@ mod data;
 mod eval;
 mod gcsimdata;
 mod gcsl;
+mod nightsoul;
 mod profile;
 mod queue;
 mod rng;
 mod sets;
 mod sim;
+mod stellar;
 mod types;
 mod weapons;
 

@@ -1,0 +1,3 @@
+# Xianyun C5: burst talent +3.
+team xianyun-furina-fischl-bennett
+xianyun char lvl=90/90 cons=5 talent=9,9,9;

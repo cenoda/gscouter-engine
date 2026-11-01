@@ -24,6 +24,13 @@ pub enum Owner {
     Set(u8, u8),
     /// The fight itself (energy from normal attacks).
     Core,
+    /// gcsim's setupNightsoulBurst: its OnEnemyDamage subscription, made
+    /// after every Init when a Natlan character is on the team.
+    NightsoulBurst,
+    /// gcsim's "ns-extend-state-<character>" OnStateChange subscription of
+    /// the character in this slot: its Nightsoul's Blessing waits for the
+    /// end of an action before it expires.
+    NightsoulExtend(u8),
 }
 
 /// The events of gcsim's event handler that the engine emits.
@@ -45,8 +52,16 @@ pub enum EventKind {
     Shielded,
     ShieldBreak,
     ConstructSpawned,
+    HpDebt,
+    Attack,
+    Dash,
+    Plunge,
+    NightsoulBurst,
+    NightsoulGenerate,
+    NightsoulConsume,
+    ApplyAttack,
 }
-pub const N_EVENTS: usize = 15;
+pub const N_EVENTS: usize = 23;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -65,8 +80,12 @@ pub enum Event<'a> {
     Reaction(Reaction, &'a AttackEvent),
     /// OnHeal, once for each character healed: the healer, the heal's
     /// target (None for the whole party), the character healed, the HP it
-    /// gained and the overheal.
-    Heal { caller: usize, target: Option<usize>, on: usize, amount: f64, overheal: f64 },
+    /// gained (after paying its Bond of Life), the overheal, and the heal
+    /// before the Bond of Life took its part (gcsim's amount_before_debt).
+    Heal { caller: usize, target: Option<usize>, on: usize, amount: f64, overheal: f64, before_debt: f64 },
+    /// OnHPDebt: a character's Bond of Life changed; `change` is how much
+    /// it went down (negative when it grew).
+    HpDebt { on: usize, change: f64 },
     /// OnPlayerHPDrain: the character drained, the HP it lost, and whether
     /// it came from outside the party (gcsim's DrainInfo.External).
     Drain { on: usize, amount: f64, external: bool },
@@ -86,6 +105,20 @@ pub enum Event<'a> {
     ShieldBreak(&'a crate::sim::Shield),
     /// OnConstructSpawned.
     ConstructSpawned,
+    /// OnAttack, before the normal attack runs.
+    Attack,
+    /// OnDash, before the dash runs.
+    Dash,
+    /// OnPlunge, before a low or high plunge runs.
+    Plunge,
+    /// OnNightsoulBurst, with the attack that triggered it.
+    NightsoulBurst(&'a AttackEvent),
+    /// OnNightsoulGenerate: the character and the points it gained.
+    NightsoulGenerate { on: usize, amount: f64 },
+    /// OnNightsoulConsume: the character and the points it used.
+    NightsoulConsume { on: usize, amount: f64 },
+    /// OnApplyAttack: an attack is applied, before it reaches any target.
+    ApplyAttack(&'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -103,9 +136,17 @@ impl Event<'_> {
             Event::Shielded(_) => EventKind::Shielded,
             Event::ShieldBreak(_) => EventKind::ShieldBreak,
             Event::ConstructSpawned => EventKind::ConstructSpawned,
+            Event::HpDebt { .. } => EventKind::HpDebt,
             Event::ParticleReceived => EventKind::ParticleReceived,
             Event::EnergyBurst { .. } => EventKind::EnergyBurst,
             Event::EnemyHit(_) => EventKind::EnemyHit,
+            Event::Attack => EventKind::Attack,
+            Event::Dash => EventKind::Dash,
+            Event::Plunge => EventKind::Plunge,
+            Event::NightsoulBurst(_) => EventKind::NightsoulBurst,
+            Event::NightsoulGenerate { .. } => EventKind::NightsoulGenerate,
+            Event::NightsoulConsume { .. } => EventKind::NightsoulConsume,
+            Event::ApplyAttack(_) => EventKind::ApplyAttack,
         }
     }
 }
@@ -116,6 +157,11 @@ pub trait Character {
     const KEY: &'static str;
     /// The highest constellation it implements; a higher one is an error.
     const MAX_CONS: i32 = 6;
+    /// gcsim makes it Hexerei (IsHexerei, in `profile::HEXEREI`) and its
+    /// Hexerei bonuses, which need two Hexerei characters in the team
+    /// (`Sim::hexerei_count`), are implemented. A Hexerei character
+    /// without them is an error in a team of two or more.
+    const HEXEREI: bool = false;
     type State;
     fn new_state(cs: &CharSetup) -> Self::State;
 
@@ -215,6 +261,14 @@ pub trait Character {
     fn shield_bonus(_s: &Sim, _ci: usize, _key: ModKey) -> (f64, bool) {
         (0.0, false)
     }
+    /// Its ActionStam, when it is not the template's (gcsim's override of
+    /// it): the stamina an action costs before percentage mods.
+    fn action_stam(_s: &Sim, _ci: usize, _a: Action) -> Option<f64> {
+        None
+    }
+    /// Its own part of a dash or jump (gcsim's override of Dash or Jump),
+    /// run before the template's.
+    fn template_action(_s: &mut Sim, _ci: usize, _a: Action) {}
 }
 
 /// gcsim's template NextQueueItemIsValid: swords and polearms charge
@@ -306,6 +360,10 @@ macro_rules! chars {
                 use $crate::content::Character;
                 match self { $(CharKind::$kind => $m::Char::MAX_CONS),* }
             }
+            pub fn hexerei(self) -> bool {
+                use $crate::content::Character;
+                match self { $(CharKind::$kind => $m::Char::HEXEREI),* }
+            }
             pub fn new_state(self, cs: &$crate::sim::CharSetup) -> CharState {
                 use $crate::content::Character;
                 match self { $(CharKind::$kind => CharState::$kind($m::Char::new_state(cs))),* }
@@ -369,6 +427,9 @@ macro_rules! chars {
             pub fn dash_info(k: CharKind, s: &mut Sim, ci: usize, info: ActInfo) -> ActInfo { match k { $(CharKind::$kind => $m::Char::dash_info(s, ci, info)),* } }
             pub fn shield_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_expired(s, ci, key)),* } }
             pub fn shield_bonus(k: CharKind, s: &Sim, ci: usize, key: ModKey) -> (f64, bool) { match k { $(CharKind::$kind => $m::Char::shield_bonus(s, ci, key)),* } }
+            #[inline]
+            pub fn action_stam(k: CharKind, s: &Sim, ci: usize, a: Action) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::action_stam(s, ci, a)),* } }
+            pub fn template_action(k: CharKind, s: &mut Sim, ci: usize, a: Action) { match k { $(CharKind::$kind => $m::Char::template_action(s, ci, a)),* } }
         }
     };
 }

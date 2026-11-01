@@ -1,13 +1,16 @@
 //! Escoffier, from gcsim's internal/characters/escoffier: normal attacks,
 //! the skill and its ticks (with its Surging Blade), the burst with its
-//! heals, A1, A4 and constellations 1 to 6. No charged attacks or plunges.
-//! C1's CRIT DMG on Stellar reactions (gcsim's OnSpecialReactionAttack)
-//! never applies: the engine has no lunar or Stellar reactions (nothing
-//! ported makes them).
+//! heals, A1, A4 and constellations 1 to 6. Plunges from
+//! Xianyun's airborne state; no charged attacks.
+//! C1's CRIT DMG on Stellar reactions (gcsim's OnSpecialReactionAttack,
+//! IsStellarReact) is for Stellar Swirl only, which is not ported (an error
+//! with any anemo character in a Stellar team, `stellar.rs`), so it never
+//! applies.
 
 use crate::content::{Character, Event, EventKind, Owner};
 use crate::gcsl::Num;
 use crate::gcsimdata::chars::escoffier as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -56,6 +59,9 @@ fn ceil(x: f64) -> i32 {
     x.ceil() as i32
 }
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec { collision_offset: 0.0, ..plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION) };
+
 impl Character for Char {
     const KEY: &'static str = "escoffier";
     type State = State;
@@ -89,11 +95,25 @@ impl Character for Char {
         Some(Ok(Num::Int(n as i64)))
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {

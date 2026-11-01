@@ -1,0 +1,8 @@
+# Jean C1 with a held skill: held for 1 s, Gale Blade does 40% more damage (no library rotation holds her skill).
+# Build lines replace the library build's; "rotation-" lines, then
+# "rotation+" lines, replace those consecutive lines of the team's
+# rotation.gcsl, which must match exactly once (see README, "Running").
+team lisa-xingqiu-fischl-jean
+jean char lvl=90/90 cons=1 talent=9,9,9;
+rotation- jean skill;
+rotation+ jean skill[hold=60];

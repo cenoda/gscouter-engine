@@ -7,10 +7,10 @@
 //! member of an element and then locks that element. Crystallize, swirl,
 //! electro-charged, overload, superconduct, quicken and aggravate count
 //! only on an enemy; hyperbloom counts only from a dendro core, which is
-//! the only place the engine emits it. gcsim also listens to lunar-charged
-//! (hydro, like electro-charged) and stellar-conduct (cryo, like
-//! superconduct). The engine never emits those reactions; whoever adds
-//! them should buff them here too.
+//! the only place the engine emits it. Stellar-Conduct counts as cryo, like
+//! superconduct. gcsim also listens to lunar-charged (hydro, like
+//! electro-charged), which the engine never emits; whoever adds it should
+//! buff it here too.
 
 use crate::content::{Event, EventKind, Owner, WeaponImpl};
 use crate::gcsimdata::weapons::catalyst_hakushin::{BUFF_KEY, ICD_KEY};
@@ -100,7 +100,7 @@ impl WeaponImpl for Weapon {
             Reaction::SwirlElectro => (Element::Anemo, false),
             Reaction::ElectroCharged => (Element::Hydro, false),
             Reaction::Overload => (Element::Pyro, false),
-            Reaction::Superconduct => (Element::Cryo, false),
+            Reaction::Superconduct | Reaction::StellarConduct => (Element::Cryo, false),
             Reaction::Quicken | Reaction::Aggravate => (Element::Dendro, false),
             // hyperbloom's event is the attack that hit the dendro core
             Reaction::Hyperbloom => (Element::Dendro, true),

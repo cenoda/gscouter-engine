@@ -1,0 +1,5 @@
+# Xilonen C6 with longer strings: Blade Rollers after A1's points are spent while C6 lasts, and a dash under C6.
+team gaming-furina-bennett-xilonen
+xilonen char lvl=90/90 cons=6 talent=9,9,9;
+rotation- xilonen skill, attack:2;
+rotation+ xilonen skill, attack:4, dash, attack:3;

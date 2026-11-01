@@ -3,11 +3,12 @@
 //! burst's Bogglecat Box (a gadget that absorbs cryo, pyro, hydro or
 //! electro from an attack that reaches it or, every 0.3 s, from what is
 //! around it, then fires Vivid Shots of that element), A1, A4 and every
-//! constellation (gcsim leaves C1 out: it pulls enemies). No plunges or
-//! held skill.
+//! constellation (gcsim leaves C1 out: it pulls enemies). Plunges from
+//! Xianyun's airborne state; no held skill.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::lynette as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -47,6 +48,9 @@ const BOX_Y: f64 = 1.8;
 
 const CHARGE_NAMES: [&str; 2] = ["Charge 0", "Charge 1"];
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "lynette";
     type State = State;
@@ -65,10 +69,24 @@ impl Character for Char {
 
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Skill if p.get("hold").is_some_and(|h| h > 0) => Some("skill hold".into()),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
@@ -250,7 +268,8 @@ impl Character for Char {
 /// The Box appears: its first hit, its ticks for its whole duration, and
 /// the burst's status.
 fn spawn_box(s: &mut Sim, ci: usize, travel: i32) {
-    s.add_hittable_gadget(ci, BOX, g::BURST_DURATION, 0.0, BOX_Y, 1.0, true);
+    let (x, y) = s.point_from_player(0.0, BOX_Y);
+    s.add_hittable_gadget(ci, BOX, g::BURST_DURATION, x, y, 1.0, true);
     s.add_status(ci, BURST, g::BURST_DURATION, false);
     let st = s.st_mut::<State>(ci);
     st.vivid_travel = travel;

@@ -1,0 +1,3 @@
+# Xilonen C3: skill talent +3 (the Samplers' shred and the rush).
+team klee-furina-xilonen-bennett
+xilonen char lvl=90/90 cons=3 talent=9,9,9;

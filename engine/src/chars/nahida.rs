@@ -214,7 +214,7 @@ impl Character for Char {
     fn mod_amount(s: &Sim, ci: usize, on: usize, m: &Mod, out: &mut Stats) -> bool {
         if m.key == C4 {
             // the one enemy, its center in a circle of radius 30 on the player
-            if !s.enemy_alive || !s.enemy_status_active(MARK) || s.target_dist * s.target_dist > 30.0 * 30.0 {
+            if !s.enemy_alive || !s.enemy_status_active(MARK) || !s.enemy_within(s.circle_on_player(0.0, 0.0, 30.0)) {
                 return false;
             }
             // 80 + 20 per enemy, for the engine's one enemy

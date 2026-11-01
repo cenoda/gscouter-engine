@@ -1,8 +1,10 @@
 //! Shenhe, from gcsim's internal/characters/shenhe: normal and charged
 //! attacks, the pressed and held skill with their Icy Quills (flat cryo
 //! DMG from her ATK at each hit), the burst's field (its DoT, cryo and
-//! physical shred), A1, A4 and every constellation. C2's bonus to
-//! Stellar-Conduct reactions is out of reach: the engine has none. No
+//! physical shred), A1, A4 and every constellation. C2's CRIT DMG on
+//! Stellar reactions (gcsim's OnSpecialReactionAttack, IsStellarReact) is
+//! for Stellar Swirl only, which is not ported (an error with any anemo
+//! character in a Stellar team, `stellar.rs`), so it never applies. No
 //! plunges.
 
 use crate::content::{Character, Event};

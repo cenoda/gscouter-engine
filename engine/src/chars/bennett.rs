@@ -1,9 +1,11 @@
 //! Bennett, from gcsim's internal/characters/bennett: normal and charged
 //! attacks, the skill pressed and held (levels 1 and 2, and the C4 variant) and the
-//! burst's field, which also infuses the player with pyro.
+//! burst's field, which also infuses the player with pyro, and the plunges from Xianyun's
+//! airborne state.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::bennett as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -13,6 +15,12 @@ pub struct Char;
 pub struct State {
     /// Bennett's healing bonus when he cast the burst.
     heal_bonus: f64,
+    /// The burst's field: a circle of radius 6, 0.5 in front of where the
+    /// player stood as he cast it.
+    field: Option<Pattern>,
+    /// The hold skill's two hits' areas, from where the player stood as
+    /// it began.
+    hold: [Option<Pattern>; 2],
 }
 
 const FIELD: ModKey = ModKey::new(g::BURST_FIELD_KEY);
@@ -30,6 +38,9 @@ const CB_HOLD_PARTICLE: u16 = 1 << 1;
 const TASK_FIELD: u8 = 0;
 const TASK_HOLD_HIT: u8 = 1;
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "bennett";
     type State = State;
@@ -46,11 +57,25 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn mod_amount(s: &Sim, ci: usize, _on: usize, m: &Mod, out: &mut Stats) -> bool {
@@ -127,7 +152,9 @@ impl Character for Char {
         ai.abil = "Fantastic Voyage";
         ai.pattern = s.circle_on_player(0.0, 0.5, 6.0);
         s.queue_attack(ai, 0, 37, 37);
-        // the field ticks from 0 s to 12 s; the player is always in it
+        // the field ticks from 0 s to 12 s, on the player when it is in
+        // the area (IsWithinArea); the cooldown keeps one field at a time
+        s.st_mut::<State>(ci).field = Some(ai.pattern);
         s.st_mut::<State>(ci).heal_bonus = s.stats(ci)[st::HEAL];
         s.add_task(Task::Char { c: ci as u8, id: TASK_FIELD, arg: 1 }, g::BURST_START_FRAME);
         for i in (60..=12 * 60).step_by(60) {
@@ -147,8 +174,7 @@ impl Character for Char {
                 let mut ai = hold_info(ci, level);
                 ai.mult = g::SKILL_HOLD[level - 1][i][lvl];
                 ai.hitlag_halt = 0.09 * 60.0;
-                let (off, hb) = (g::SKILL_HOLD_OFFSETS[i], g::SKILL_HOLD_HITBOXES[i]);
-                ai.pattern = if i == 1 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
+                ai.pattern = s.st::<State>(ci).hold[i].unwrap();
                 s.queue_attack(ai, CB_HOLD_PARTICLE, 0, 0);
             }
             _ => unreachable!(),
@@ -210,6 +236,8 @@ fn hold_info(ci: usize, level: usize) -> AttackInfo {
 fn skill_hold(s: &mut Sim, ci: usize, level: usize, c4: bool) -> ActInfo {
     let lvl = s.talent(ci, 1);
     for (i, &hitmark) in g::SKILL_HOLD_HITMARKS[level - 1].iter().enumerate() {
+        let (off, hb) = (g::SKILL_HOLD_OFFSETS[i], g::SKILL_HOLD_HITBOXES[i]);
+        s.st_mut::<State>(ci).hold[i] = Some(if i == 1 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) });
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_HOLD_HIT, arg: (level * 2 + i) as i32 }, hitmark);
     }
     if level == 2 {
@@ -241,6 +269,9 @@ fn skill_hold(s: &mut Sim, ci: usize, level: usize, c4: bool) -> ActInfo {
 /// first tick), and buffs its ATK when over the threshold (any HP from C1),
 /// infusing its weapon with pyro from C6.
 fn field_tick(s: &mut Sim, ci: usize, first: bool) {
+    if !s.player_within(s.st::<State>(ci).field.unwrap()) {
+        return;
+    }
     s.apply_self_infusion(AURA_PYRO, 25.0, g::BURST_BUFF_DURATION);
     let lvl = s.talent(ci, 2);
     let heal = g::BURSTHP[lvl] + g::BURSTHPP[lvl] * s.max_hp(ci);

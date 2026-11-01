@@ -2,10 +2,11 @@
 //! their Arkhe strikes, the charged attack that switches Ousia and Pneuma,
 //! the skill (the Salon Members, which drain the party, or the Singer,
 //! which heals), the burst's fanfare from every HP change, A1, A4 and every
-//! constellation. Plunges are not implemented.
+//! constellation, and the plunges from Xianyun's airborne state.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::furina as g;
+use crate::chars::plunge;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;
@@ -118,6 +119,9 @@ const MEMBERS: [Member; 3] = [
     },
 ];
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "furina";
     type State = State;
@@ -171,16 +175,26 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
     }
 
-    /// Furina charges without a normal attack before it.
-    fn invalid(_: &Sim, _: usize, _: Action, _: &Params) -> Option<String> {
-        None
+    /// Furina charges without a normal attack before it; she plunges only
+    /// while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a)
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge_xy(s, ci, true, p)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge_xy(s, ci, false, p)
     }
 
     fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {
@@ -372,7 +386,7 @@ impl Character for Char {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
-            Event::Heal { caller, target, on, amount, overheal } => {
+            Event::Heal { caller, target, on, amount, overheal, .. } => {
                 if s.chars[ci].ascension >= 1 {
                     a1(s, ci, caller, target, overheal);
                 }
@@ -405,6 +419,32 @@ fn c6_flat(s: &Sim, ci: usize, extra: bool) -> f64 {
 
 fn c6_active(s: &Sim, ci: usize) -> bool {
     s.chars[ci].cons >= 6 && s.mod_active(ci, C6)
+}
+
+/// The airborne plunges: with C6, hydro and its bonus, the collision
+/// without Pneuma's extra and without C6's callback.
+fn plunge_xy(s: &mut Sim, ci: usize, high: bool, p: &Params) -> ActInfo {
+    if plunge::wants_collision(p) {
+        let mut ai = plunge::collision_info(s, ci, &PLUNGE);
+        if c6_active(s, ci) {
+            ai.element = Element::Hydro;
+            ai.ignore_infusion = true;
+            ai.flat_dmg = c6_flat(s, ci, false);
+        }
+        let h = PLUNGE.collision_hitmark;
+        s.queue_attack(ai, 0, h, h);
+    }
+    let mut ai = plunge::hit_info(s, ci, high, &PLUNGE);
+    let mut cbs = 0;
+    if c6_active(s, ci) {
+        ai.element = Element::Hydro;
+        ai.ignore_infusion = true;
+        ai.flat_dmg = c6_flat(s, ci, true);
+        cbs = CB_C6;
+    }
+    let h = plunge::hitmark(&PLUNGE, high);
+    s.queue_attack(ai, cbs, h, h);
+    plunge::act(&PLUNGE, high)
 }
 
 fn normal_hit(s: &mut Sim, ci: usize, n: usize) {

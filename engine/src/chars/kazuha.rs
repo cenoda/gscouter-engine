@@ -1,11 +1,11 @@
 //! Kaedehara Kazuha, from gcsim's internal/characters/kaedeharakazuha:
 //! normal and charged attacks, the skill pressed and held with its plunge,
-//! the burst with its absorbed element, A1, A4 and every constellation.
-//! Plunges other than after the skill need Xianyun, whom the engine does
-//! not implement.
+//! the burst with its absorbed element, A1, A4 and every constellation,
+//! and the plunges from Xianyun's airborne state.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::kazuha as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -53,6 +53,9 @@ fn absorb_check(s: &Sim) -> Element {
     s.absorb_check(&ABSORB)
 }
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "kaedeharakazuha";
     type State = State;
@@ -78,17 +81,20 @@ impl Character for Char {
         s.utility_dash = Some(ci as u8);
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Charge | Action::Skill | Action::Burst | Action::HighPlunge => None,
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
+            Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
     }
 
     fn invalid(s: &Sim, ci: usize, a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::HighPlunge if s.player.last.action != Action::Skill => Some("high_plunge can only be used while airborne".into()),
-            Action::HighPlunge if s.st::<State>(ci).skill_glide => Some("only plunge after skill without glide cancel".into()),
+            Action::LowPlunge if s.player.last.action == Action::Skill => Some("cannot low_plunge after skill".into()),
+            Action::HighPlunge if s.player.last.action == Action::Skill && s.st::<State>(ci).skill_glide => Some("only plunge after skill without glide cancel".into()),
+            Action::HighPlunge if s.player.last.action == Action::Skill => None,
+            Action::LowPlunge | Action::HighPlunge => plunge::grounded(s, a),
             _ => crate::content::template_invalid(s, a),
         }
     }
@@ -147,13 +153,22 @@ impl Character for Char {
         ActInfo::new(Frames::Table(frames), frames[0], frames[shortest as usize], AnimState::Skill)
     }
 
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
+    }
+
+    /// After the skill, its plunge; otherwise the airborne one.
     fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        if s.player.last.action != Action::Skill {
+            return plunge::standard(s, ci, true, p, &PLUNGE, 0);
+        }
         let (hitmark, frames) = if s.st::<State>(ci).skill_hold { (g::PLUNGE_HOLD_HITMARK, &g::PLUNGE_HOLD_FRAMES) } else { (g::PLUNGE_PRESS_HITMARK, &g::PLUNGE_PRESS_FRAMES) };
         let lvl = s.talent(ci, 0);
         if p.get("collision").unwrap_or(0) > 0 {
             let mut ai = AttackInfo::new(ci, AttackTag::Plunge, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 0.0, g::COLLISION[lvl]);
             ai.abil = "Plunge Collision";
             ai.ignore_infusion = true;
+            ai.pattern = s.circle_on_player(0.0, 1.0, 1.0);
             s.queue_attack(ai, 0, hitmark - 6, hitmark - 6);
         }
         let mut ai = AttackInfo::new(ci, AttackTag::Plunge, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 25.0, g::HIGH_PLUNGE[lvl]);
@@ -161,6 +176,7 @@ impl Character for Char {
         ai.blunt = true;
         ai.poise = 150.0;
         ai.ignore_infusion = true;
+        ai.pattern = s.circle_on_player(0.0, 0.5, 4.5);
         s.queue_attack(ai, 0, hitmark, hitmark);
         // A1: the absorbed element
         let absorbed = s.st::<State>(ci).a1_absorb;

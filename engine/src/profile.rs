@@ -106,7 +106,6 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("breakthrough", Some(CharKind::Yelan)) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             ("hexerei", Some(CharKind::Sucrose)) => {}
-            // only Radiance reads it, which needs a Polestar Field
             ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko)) => {}
             // the character itself is unsupported
             (_, None) => {}
@@ -172,9 +171,10 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
         }
     }
     // Neuvillette's burst places its waterfalls from the enemy's own
-    // direction, which gcsim leaves at (0, 1); the engine knows only the
-    // enemy's distance, along the player's facing, so that is the same
-    // only for an enemy straight up the y axis
+    // direction, which gcsim leaves at (0, 1), and his droplets' areas are
+    // taken from a player facing (0, 1): checked only for an enemy
+    // straight up the y axis. (Chevreuse's boxes now take the enemy's
+    // direction as gcsim does; no off-axis comparison has checked it yet.)
     if p.chars.iter().any(|c| char_name(c.key) == "neuvillette") && p.targets.iter().any(|t| t.pos.0 != 0.0 || t.pos.1 <= 0.0) {
         errs.push("unsupported: neuvillette with the target off the y axis".into());
     }
@@ -195,11 +195,29 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
         }
 
     }
-    // gcsim's Hexerei bonuses need two Hexerei characters; the engine
-    // implements none of them
-    let hexerei = p.chars.iter().filter(|c| HEXEREI.contains(&char_name(c.key)) && !c.params.iter().any(|(k, v)| k == "hexerei" && *v == 0)).count();
-    if hexerei >= 2 {
-        errs.push("unsupported: hexerei".into());
+    // gcsim's Hexerei bonuses need two Hexerei characters: each Hexerei
+    // character's own bonuses must then be implemented (Character::HEXEREI).
+    // A character the engine lacks is an error of its own, and so are the
+    // weapons and sets that read Hexerei (none is implemented yet; each
+    // must read `Sim::hexerei_count` when it is).
+    let is_hexerei = |c: &&CharProfile| HEXEREI.contains(&char_name(c.key)) && !c.params.iter().any(|(k, v)| k == "hexerei" && *v == 0);
+    if p.chars.iter().filter(is_hexerei).count() >= 2 {
+        for c in p.chars.iter().filter(is_hexerei) {
+            if char_kind(char_name(c.key)).is_some_and(|k| !k.hexerei()) {
+                errs.push(format!("unsupported: hexerei {}", char_name(c.key)));
+            }
+        }
+    }
+    // A Stellar character (stellar::enables_stellar) turns cryo swirls into
+    // Stellar Swirl, which is not ported: an anemo character with one is an
+    // error (anemo attacks come only from anemo characters among those the
+    // engine has).
+    if p.chars.iter().any(|c| char_kind(char_name(c.key)).is_some_and(crate::stellar::enables_stellar)) {
+        for c in &p.chars {
+            if data::CHARS.iter().any(|d| d.key == char_name(c.key) && Element::from_gcsim(d.element) == Element::Anemo) {
+                errs.push(format!("unsupported: stellar swirl {}", char_name(c.key)));
+            }
+        }
     }
     let mut chars = Vec::new();
     for c in &p.chars {
@@ -227,7 +245,7 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
         defhalt: p.defhalt,
         ignore_burst_energy: p.ignore_burst_energy,
         enemy_hp: t.hp,
-        target_dist: t.pos.0.hypot(t.pos.1),
+        target_pos: t.pos,
         target_radius: t.radius,
     })
 }

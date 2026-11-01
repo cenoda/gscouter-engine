@@ -1,0 +1,3 @@
+# Kazuha's airborne low plunge, Fischl with The Stringless.
+team kaedeharakazuha-furina-fischl-xianyun
+fischl add weapon="stringless" refine=5 lvl=90/90;

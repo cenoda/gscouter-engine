@@ -1,0 +1,8 @@
+# Chiori C6 with a low plunge after a held skill: the plunge triggers A1's Tailoring, so C4's Kinu and C6's cooldown cut come from it (no library rotation holds her skill or plunges).
+# Build lines replace the library build's; "rotation-" lines, then
+# "rotation+" lines, replace those consecutive lines of the team's
+# rotation.gcsl, which must match exactly once (see README, "Running").
+team zhongli-chiori-bennett-fischl
+chiori char lvl=90/90 cons=6 talent=9,9,9;
+rotation- chiori skill:2;
+rotation+ chiori skill[hold=1], low_plunge, attack:3;

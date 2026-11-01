@@ -110,6 +110,16 @@ impl Walker<'_> {
                     if name == "execute_action" {
                         self.action(args);
                     }
+                    // moving the player away from the origin needs every
+                    // member's module checked for it
+                    let origin = args.len() == 2 && args.iter().all(|a| matches!(a, Expr::Num(n) if n.f() == 0.0));
+                    if name == "set_player_pos" && !origin {
+                        for (key, kind) in self.kinds {
+                            if kind.is_some_and(|k| !crate::chars::MOVES_WITH_PLAYER.contains(&k)) {
+                                self.found.push(format!("unsupported: set_player_pos with {}", char_name(*key)));
+                            }
+                        }
+                    }
                 }
                 self.expr(fun);
                 for a in args {

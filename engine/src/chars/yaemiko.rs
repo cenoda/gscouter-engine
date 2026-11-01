@@ -2,15 +2,16 @@
 //! skill's Sesshou Sakura (three charges, up to three totems), the burst's
 //! thunderbolts, A1, A4 and the revelation (longer totems, superconduct's
 //! enhanced strike, A1's extra strike), charged attacks and constellations
-//! 1 to 6. No plunges. Radiance needs a Polestar Field and Stellar-Conduct,
-//! which nothing the engine has makes, so it never applies; port it with the
-//! first content that makes them. With it go the Stellar-Conduct parts of
-//! the constellations, which never apply either: C1's buff on
-//! Stellar-Conduct reactions and damage and its Stellar-Conduct DMG bonus,
-//! and C6's CRIT DMG on Stellar-Conduct DMG.
+//! 1 to 6, with their Stellar-Conduct parts and Radiance: Stellar-Conduct
+//! (stellar.go): inside a Polestar Field an enhanced strike adds a direct
+//! Stellar-Conduct hit of 200% ATK, A1's strike becomes one of 50%, C1 is
+//! also triggered by Stellar-Conduct (and Yae's direct Stellar-Conduct
+//! DMG) and adds 50% Stellar-Conduct DMG, and C6 gives her direct
+//! Stellar-Conduct DMG 200% CRIT DMG. Plunges from Xianyun's airborne state.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::yaemiko as g;
+use crate::chars::plunge;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;
@@ -32,6 +33,8 @@ const REVELATION_ICD: ModKey = ModKey::new(g::REVELATION_ICD_KEY);
 const TOTEM_STATUS: ModKey = ModKey::new(g::YAE_TOTEM_STATUS);
 const A4: ModKey = ModKey::new("yaemiko-a4");
 const C1_ELECTRO: ModKey = ModKey::new("yae-c1-electro");
+const C1_SSC: ModKey = ModKey::new("yae-c1-ssc");
+const C6: ModKey = ModKey::new(g::C6_KEY);
 const C2: ModKey = ModKey::new(g::C2_KEY);
 const C4: ModKey = ModKey::new(g::C4_KEY);
 const C4_ELECTRO: ModKey = ModKey::new("yaemiko-c4");
@@ -39,6 +42,8 @@ const C4_ENERGY_ICD: ModKey = ModKey::new(g::C4_ENERGY_ICD_KEY);
 
 const CB_PARTICLE: u16 = 1 << 0;
 const CB_C4: u16 = 1 << 1;
+/// Radiance: Stellar-Conduct: the enhanced strike's extra hit.
+const CB_REV_SSC: u16 = 1 << 2;
 
 const TASK_MAKE: u8 = 0;
 // arg: the totem's id
@@ -73,6 +78,9 @@ fn pop_oldest(s: &mut Sim, ci: usize) {
     }
 }
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::catalyst(Element::Electro, g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "yaemiko";
     type State = State;
@@ -95,6 +103,11 @@ impl Character for Char {
         if revelation {
             s.subscribe(EventKind::Reaction, o);
         }
+        // C1 with the revelation: her direct Stellar-Conduct DMG on the
+        // enemy renews the buffs (only Radiance makes it)
+        if s.chars[ci].cons >= 1 && revelation && s.stellar.conduct {
+            s.subscribe(EventKind::EnemyDamage, o);
+        }
         // C2 with the revelation: EM to Yae and the active character while
         // there are totems
         if s.chars[ci].cons >= 2 && revelation {
@@ -106,15 +119,34 @@ impl Character for Char {
         if s.chars[ci].cons >= 4 && revelation {
             s.chars[ci].mods.push(Mod::owned(C4, ModKind::Attack, o, st::NONE, false, false, -1));
         }
+        // C6 with the revelation: CRIT DMG +200% on her direct
+        // Stellar-Conduct DMG
+        if s.chars[ci].cons >= 6 && revelation {
+            s.chars[ci].mods.push(Mod::owned(C6, ModKind::Attack, o, st::NONE, false, false, -1));
+        }
     }
 
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             // gcsim's ChargeAttack reads no params
             Action::Charge => p.0.first().map(|(k, _)| format!("charge param {k}")),
             Action::Attack | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {
@@ -150,9 +182,9 @@ impl Character for Char {
         // 9 frames; the group's ICD lets one deal damage every 0.5 s. A box
         // that misses the enemy still reaches the gadgets it covers.
         for i in 0..5 {
-            ai.pattern = s.box_on_player(0.0, 1.65 * (i + 1) as f64, 2.0, 2.0);
+            ai.pattern = s.box_from_player(s.point_from_player(0.0, 1.65 * (i + 1) as f64), 0.0, 0.0, 2.0, 2.0);
             let d = g::CHARGE_HITMARK + i * 9 - windup;
-            if ai.pattern.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true) {
+            if s.hits_enemy(ai.pattern) == Some(true) {
                 s.queue_attack(ai, 0, 0, d);
             } else {
                 s.queue_gadget_attack(ai, d);
@@ -225,6 +257,13 @@ impl Character for Char {
                     if s.chars[ci].ascension >= 1 && s.st::<State>(ci).revelation {
                         let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Electro, 0.0, 0.4);
                         ai.abil = "Yae A1";
+                        // Radiance: a direct Stellar-Conduct hit of 50%
+                        if radiance(s, ci) {
+                            ai.tag = AttackTag::DirectStellarConduct;
+                            ai.abil = "Yae A1 (Stellar-Conduct)";
+                            ai.ignore_def = 1.0;
+                            ai.mult = 0.5;
+                        }
                         ai.pattern = s.circle_on_target(0.5);
                         s.queue_attack(ai, 0, 64, 64);
                     }
@@ -242,7 +281,7 @@ impl Character for Char {
                 // An enemy out of it would make the totem strike a gadget
                 // or nothing, which is not ported.
                 let r = if s.chars[ci].cons >= 2 { 20.0 } else { 12.5 };
-                if (Pattern::Circle { x: 0.0, y: 0.0, r }).hits_circle(0.0, s.target_dist, s.target_radius) != Some(true) {
+                if !s.enemy_within(s.circle_on_player(0.0, 0.0, r)) {
                     s.unsupported("yaemiko Sesshou Sakura with the enemy out of its range");
                     return;
                 }
@@ -257,15 +296,21 @@ impl Character for Char {
                 if s.chars[ci].cons >= 6 {
                     ai.ignore_def = 0.6;
                 }
-                // the revelation: after a superconduct, the next strike deals
-                // 80% of her ATK more, once every 2.5 s
+                // the revelation: after a superconduct or Stellar-Conduct,
+                // the next strike deals 80% of her ATK more, once every
+                // 2.5 s; in Radiance it also adds a direct Stellar-Conduct
+                // hit
+                let mut rev = 0;
                 if s.st::<State>(ci).revelation && s.mod_active(ci, REVELATION) && !s.mod_active(ci, REVELATION_ICD) {
                     s.add_status(ci, REVELATION_ICD, 150, true);
                     s.delete_mod(ci, REVELATION);
                     ai.flat_dmg = 0.8 * total_atk(&s.stats(ci));
+                    if radiance(s, ci) {
+                        rev = CB_REV_SSC;
+                    }
                 }
                 let c4 = if s.chars[ci].cons >= 4 { CB_C4 } else { 0 };
-                s.queue_attack(ai, CB_PARTICLE | c4, 1, 1);
+                s.queue_attack(ai, CB_PARTICLE | rev | c4, 1, 1);
                 s.add_task(Task::Char { c: ci as u8, id: TASK_TICK, arg }, 176);
             }
             TASK_TIMEOUT => {
@@ -293,7 +338,11 @@ impl Character for Char {
     }
 
     fn attack_mod(s: &Sim, ci: usize, _: usize, m: &Mod, ev: &mut AttackEvent) {
-        if m.key == C4 {
+        if m.key == C6 {
+            if ev.info.tag == AttackTag::DirectStellarConduct {
+                ev.stats[st::CD] += 2.0;
+            }
+        } else if m.key == C4 {
             if ev.info.tag == AttackTag::ElementalBurst {
                 ev.stats[st::DMGP] += 1.0;
             }
@@ -302,10 +351,24 @@ impl Character for Char {
         }
     }
 
+    /// C1 with the revelation: Stellar-Conduct DMG +50%.
+    fn react_bonus(_: &Sim, _: usize, _: usize, _: &Mod, info: &AttackInfo) -> f64 {
+        if info.tag == AttackTag::DirectStellarConduct { 0.5 } else { 0.0 }
+    }
+
     fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
         if cbs & CB_PARTICLE != 0 && !s.mod_active(ci, PARTICLE_ICD) {
             s.add_status(ci, PARTICLE_ICD, 150, true);
             s.queue_particle(1.0, Element::Electro, s.particle_delay[ci]);
+        }
+        // Radiance: the enhanced strike's extra direct Stellar-Conduct hit,
+        // 200% of her ATK, 12 frames later
+        if cbs & CB_REV_SSC != 0 {
+            let mut ai = AttackInfo::new(ci, AttackTag::DirectStellarConduct, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Electro, 0.0, 2.0);
+            ai.abil = "Sesshou Sakura (Stellar-Conduct)";
+            ai.ignore_def = 1.0;
+            ai.pattern = Pattern::Single;
+            s.queue_attack(ai, 0, 12, 12);
         }
         // C4: a strike hitting the enemy gives the party 20% electro DMG for
         // 5 s and, with the revelation, Yae 8 energy once every 5 s
@@ -320,19 +383,38 @@ impl Character for Char {
         }
     }
 
-    /// The revelation: a superconduct on the enemy by anyone readies the
-    /// enhanced strike. C1 with the revelation: a superconduct on the enemy
-    /// by Yae gives the party 50% electro DMG for 10 s.
+    /// The revelation: a superconduct or Stellar-Conduct on the enemy by
+    /// anyone readies the enhanced strike. C1 with the revelation: such a
+    /// reaction by Yae, or her direct Stellar-Conduct DMG on the enemy,
+    /// gives the party 50% electro DMG and 50% Stellar-Conduct DMG for
+    /// 10 s.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
-        if let Event::Reaction(Reaction::Superconduct, ev) = *e {
-            if !ev.on_player {
+        match *e {
+            Event::Reaction(Reaction::Superconduct | Reaction::StellarConduct, ev) if !ev.on_player => {
                 s.add_status(ci, REVELATION, 8 * 60, true);
                 if s.chars[ci].cons >= 1 && ev.info.actor as usize == ci {
-                    for i in 0..s.chars.len() {
-                        s.add_stat_mod(i, C1_ELECTRO, st::ELECTROP, 0.5, 10 * 60, true);
-                    }
+                    c1_buffs(s, ci);
                 }
             }
+            Event::EnemyDamage(ev) if ev.info.actor as usize == ci && ev.info.tag == AttackTag::DirectStellarConduct => {
+                c1_buffs(s, ci);
+            }
+            _ => {}
         }
+    }
+}
+
+/// Radiance: Stellar-Conduct (with the revelation): inside a Polestar
+/// Field.
+fn radiance(s: &Sim, ci: usize) -> bool {
+    s.st::<State>(ci).revelation && s.mod_active(ci, crate::stellar::POLESTAR_FIELD)
+}
+
+/// C1's buffs to every member: 50% electro DMG and 50% Stellar-Conduct
+/// DMG for 10 s.
+fn c1_buffs(s: &mut Sim, ci: usize) {
+    for i in 0..s.chars.len() {
+        s.add_stat_mod(i, C1_ELECTRO, st::ELECTROP, 0.5, 10 * 60, true);
+        s.add_mod(i, Mod::owned(C1_SSC, ModKind::ReactBonus, Owner::Char(ci as u8), st::NONE, false, true, -1), 10 * 60);
     }
 }

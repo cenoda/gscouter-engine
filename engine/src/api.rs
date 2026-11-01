@@ -229,9 +229,13 @@ mod tests {
         let src = config("team-looped.txt");
         assert!(run_iterations(&src, 150.0, 1, 0, 0).is_err());
         assert!(run_iterations(&src, 450.0, 1, 0, 1).unwrap_err().contains("longer than warmup"));
-        let bad = src.replace("hutao char", "xilonen char").replace("hutao add", "xilonen add");
-        assert_eq!(run_iterations(&bad, 150.0, 1, 0, 1).unwrap_err(), "unsupported: character xilonen");
-        assert_eq!(unsupported(&bad).unwrap(), ["unsupported: character xilonen"]);
+        // a character gcsim has and the engine does not port yet, whichever
+        // that is when the test runs
+        let (name, _) = crate::data::CHAR_NAMES.iter().find(|(n, _)| crate::profile::char_kind(n).is_none()).expect("a character not ported");
+        let bad = src.replace("hutao char", &format!("{name} char")).replace("hutao add", &format!("{name} add"));
+        let want = format!("unsupported: character {name}");
+        assert_eq!(unsupported(&bad).unwrap(), [want.clone()]);
+        assert_eq!(run_iterations(&bad, 150.0, 1, 0, 1).unwrap_err(), want);
         assert!(unsupported(&src).unwrap().is_empty());
     }
 

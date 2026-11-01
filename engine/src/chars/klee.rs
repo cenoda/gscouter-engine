@@ -1,11 +1,13 @@
-//! Klee, from gcsim's internal/characters/klee, at C0: normal attacks (9
-//! frames later after a dash, skill or burst; a cancel into one of those
-//! fires the throw early), charged attacks with A1's Explosive Spark, the
+//! Klee, from gcsim's internal/characters/klee: normal attacks (9 frames
+//! later after a dash, skill or burst; a cancel into one of those fires
+//! the throw early), charged attacks with A1's Explosive Spark, the
 //! skill's bounces and mines (dropped when cancelled before they are
-//! thrown), the burst's waves, A1 and A4. No plunges or constellations.
+//! thrown), the burst's waves, A1, A4 and constellations 1 to 6, and
+//! the plunges from Xianyun's airborne state.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::klee as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -26,17 +28,22 @@ pub struct State {
     particle_done: [bool; 2],
     parity: usize,
     burst: Option<AttackEvent>,
+    /// C1's chance of a spark (gcsim's c1Chance, which starts at 0).
+    c1_chance: f64,
 }
 
 const A1_ICD: ModKey = ModKey::new(g::A1_ICD_KEY);
 const SPARK: ModKey = ModKey::new(g::A1_SPARK_KEY);
 const A4_ICD: ModKey = ModKey::new(g::A4_ICD_KEY);
 const BURST: ModKey = ModKey::new("kleeq");
+const C2: ModKey = ModKey::new("kleec2");
+const C6: ModKey = ModKey::new("klee-c6");
 
 const CB_A1: u16 = 1 << 0;
 const CB_A4: u16 = 1 << 1;
 // the skill's particles, by parity
 const CB_PARTICLE: [u16; 2] = [1 << 2, 1 << 3];
+const CB_C2: u16 = 1 << 4;
 
 const TASK_THROW: u8 = 0;
 const TASK_SKILL: u8 = 1;
@@ -44,6 +51,7 @@ const TASK_SKILL: u8 = 1;
 const TASK_CHARGE: u8 = 2;
 const TASK_BURST_SNAPSHOT: u8 = 3;
 const TASK_WAVE: u8 = 4;
+const TASK_C6: u8 = 5;
 
 const ON_REMOVED_ATTACK: u8 = 0;
 
@@ -64,12 +72,36 @@ fn throw(s: &mut Sim, ci: usize) {
     ai.pattern = s.circle_on_target(g::ATTACK_RADIUS[s.chars[ci].normal_counter as usize]);
     let cbs = a1(s, ci);
     s.queue_attack(ai, cbs, 0, travel);
+    c1(s, ci, travel);
 }
+
+/// C1: an attack has a chance (0 at first, +8% after each miss, 10% after
+/// a spark) to call a spark: 120% of the burst's damage, delay frames
+/// later.
+fn c1(s: &mut Sim, ci: usize, delay: i32) {
+    if s.chars[ci].cons < 1 {
+        return;
+    }
+    let chance = s.st::<State>(ci).c1_chance;
+    if s.rng.float64() > chance {
+        s.st_mut::<State>(ci).c1_chance += 0.08;
+        return;
+    }
+    s.st_mut::<State>(ci).c1_chance = 0.1;
+    let lvl = s.talent(ci, 2);
+    let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_DEFAULT, Element::Pyro, 25.0, 1.2 * g::BURST[lvl]);
+    ai.abil = "Sparks'n'Splash (C1)";
+    ai.def_halt = true;
+    ai.deployable = true;
+    ai.pattern = s.circle_on_target(1.5);
+    s.queue_attack(ai, 0, 0, delay);
+}
+
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::catalyst(Element::Pyro, g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
 
 impl Character for Char {
     const KEY: &'static str = "klee";
-    // C1 to C6 are not ported
-    const MAX_CONS: i32 = 0;
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
@@ -85,10 +117,24 @@ impl Character for Char {
 
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Skill if p.get("bounce").is_some_and(|b| b > 3) => Some("skill bounce above 3".into()),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn charge_stam(s: &Sim, ci: usize) -> Option<f64> {
@@ -128,6 +174,7 @@ impl Character for Char {
             _ => 0,
         };
         s.add_task(Task::Char { c: ci as u8, id: TASK_CHARGE, arg: travel }, g::CHARGE_SNAPSHOT - windup);
+        c1(s, ci, g::CHARGE_HITMARK - windup + travel);
         let t = &g::CHARGE_FRAMES;
         ActInfo::new(Frames::Char { id: FRAMES_CHARGE, arg: windup as i16 }, t[0] - windup, t[Action::Jump as usize] - windup, AnimState::Charge)
     }
@@ -177,6 +224,19 @@ impl Character for Char {
         for &h in g::WAVE_HITMARKS {
             s.add_task(Task::Char { c: ci as u8, id: TASK_WAVE, arg: 0 }, h);
         }
+        if s.chars[ci].cons >= 6 {
+            // C6: 3 energy to the others every 3 s while the burst lasts
+            let mut i = g::BURST_START + 180;
+            while i < g::BURST_START + 600 {
+                s.add_task(Task::Char { c: ci as u8, id: TASK_C6, arg: 0 }, i);
+                i += 180;
+            }
+            // and Pyro DMG +10% for 25 s to every member
+            for i in 0..s.chars.len() {
+                s.add_stat_mod(i, C6, st::PYROP, 0.1, 1500, true);
+            }
+        }
+        c1(s, ci, g::WAVE_HITMARKS[0]);
         s.set_cd_with_delay(ci, Action::Burst, 15 * 60, 9);
         s.consume_energy(ci, 12);
         let t = &g::BURST_FRAMES;
@@ -198,11 +258,13 @@ impl Character for Char {
                         s.queue_attack_with_snap(ev, a1 | CB_PARTICLE[p], g::BOUNCE_HITMARKS[i] - 33);
                     }
                 }
+                let c2 = if s.chars[ci].cons >= 2 { CB_C2 } else { 0 };
                 if let Some(ev) = mine {
                     for _ in 0..mines {
-                        s.queue_attack_with_snap(ev, 0, mine_delay - 33);
+                        s.queue_attack_with_snap(ev, c2, mine_delay - 33);
                     }
                 }
+                c1(s, ci, g::BOUNCE_HITMARKS[0] - 33);
                 s.set_cd(ci, Action::Skill, 1200);
             }
             TASK_CHARGE => {
@@ -248,6 +310,16 @@ impl Character for Char {
                     s.queue_attack_with_snap(ev, 0, 24);
                 }
             }
+            TASK_C6 => {
+                if s.core_status(BURST.name) <= 0 {
+                    return;
+                }
+                for i in 0..s.chars.len() {
+                    if i != ci {
+                        s.add_energy(i, 3.0);
+                    }
+                }
+            }
             _ => unreachable!(),
         }
     }
@@ -266,6 +338,10 @@ impl Character for Char {
                 s.queue_particle(4.0, Element::Pyro, s.particle_delay[ci]);
             }
         }
+        // C2: a mine hit takes 23.3% of the enemy's DEF for 10 s
+        if cbs & CB_C2 != 0 {
+            s.enemy_add_def(C2, -0.233, 10 * 60);
+        }
         // A4: a critical charged attack gives the party 2 energy
         if cbs & CB_A4 != 0 && ev.crit && !s.mod_active(ci, A4_ICD) {
             s.add_status(ci, A4_ICD, 36, true);
@@ -275,10 +351,19 @@ impl Character for Char {
         }
     }
 
-    /// Leaving the field ends the burst.
-    fn event(s: &mut Sim, _: usize, _: &crate::content::Event) {
-        if s.core_status(BURST.name) > 0 {
-            s.delete_core_status(BURST);
+    /// Leaving the field ends the burst; at C4, with an explosion.
+    fn event(s: &mut Sim, ci: usize, _: &crate::content::Event) {
+        if s.core_status(BURST.name) <= 0 {
+            return;
+        }
+        s.delete_core_status(BURST);
+        if s.chars[ci].cons >= 4 {
+            let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 50.0, 5.55);
+            ai.abil = "Sparkly Explosion (C4)";
+            ai.def_halt = true;
+            ai.deployable = true;
+            ai.pattern = s.circle_on_player(0.0, 0.0, 5.0);
+            s.queue_attack(ai, 0, 0, 0);
         }
     }
 }
