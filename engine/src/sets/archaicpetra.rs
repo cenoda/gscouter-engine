@@ -1,6 +1,7 @@
 //! Archaic Petra, from gcsim's internal/artifacts/archaic. Lunar-Crystallize
-//! does not exist in the engine, so only a crystallize shard picked up
-//! sets the 4-piece's element.
+//! is an error in the engine (nothing ported enables it), so only a
+//! crystallize shard picked up sets the 4-piece's element; gcsim's
+//! OnLunarCrystallize by the active holder would set hydro.
 
 use crate::content::{Event, SetImpl};
 use crate::sim::*;

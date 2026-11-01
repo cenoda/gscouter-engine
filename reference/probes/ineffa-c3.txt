@@ -1,0 +1,3 @@
+# Ineffa C3: skill +3 levels (shield, Birgitta).
+team neuvillette-furina-lynette-ineffa
+ineffa char lvl=90/90 cons=3 talent=9,9,9;

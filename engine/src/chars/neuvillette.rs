@@ -19,8 +19,9 @@
 //!
 //! A1 counts the reactions gcsim lists: bloom, hydro crystallize,
 //! electro-charged, frozen, hydro swirl and vaporize on the enemy, and
-//! Lunar-Bloom, Lunar-Charged and Lunar-Crystallize, which the engine does
-//! not have (nothing ported enables them: lunar-bloom is an error). A4
+//! Lunar-Bloom, Lunar-Charged and Lunar-Crystallize (Lunar-Bloom and
+//! Lunar-Crystallize are errors in the engine: nothing ported enables
+//! them). A4
 //! starts at 0: gcsim computes it in Init, before the starting HP is set,
 //! from a ratio of 0, and then only on his drains and heals.
 
@@ -72,7 +73,7 @@ const C6_ICD: ModKey = ModKey::new(g::C6_ICD_KEY);
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
 const ALIGNED_ICD: ModKey = ModKey::new(g::SKILL_ALIGNED_ICD_KEY);
 
-/// A1's statuses, in gcsim's order. The lunar ones are never added.
+/// A1's statuses, in gcsim's order.
 const A1_KEYS: [ModKey; 9] = [
     ModKey::new("neuvillette-a1-bloom"),
     ModKey::new("neuvillette-a1-lunarbloom"),
@@ -319,8 +320,11 @@ impl Character for Char {
                 }
                 let k = match r {
                     Reaction::Bloom => 0,
+                    Reaction::LunarBloom => 1,
                     Reaction::CrystallizeHydro => 2,
                     Reaction::ElectroCharged => 3,
+                    Reaction::LunarCharged => 4,
+                    Reaction::LunarCrystallize => 5,
                     Reaction::Frozen => 6,
                     Reaction::SwirlHydro => 7,
                     Reaction::Vaporize => 8,

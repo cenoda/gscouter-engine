@@ -8,9 +8,7 @@
 //! electro-charged, overload, superconduct, quicken and aggravate count
 //! only on an enemy; hyperbloom counts only from a dendro core, which is
 //! the only place the engine emits it. Stellar-Conduct counts as cryo, like
-//! superconduct. gcsim also listens to lunar-charged (hydro, like
-//! electro-charged), which the engine never emits; whoever adds it should
-//! buff it here too.
+//! superconduct, and Lunar-Charged as hydro, like electro-charged.
 
 use crate::content::{Event, EventKind, Owner, WeaponImpl};
 use crate::gcsimdata::weapons::catalyst_hakushin::{BUFF_KEY, ICD_KEY};
@@ -98,7 +96,7 @@ impl WeaponImpl for Weapon {
         let (other, gadget) = match r {
             Reaction::CrystallizeElectro => (Element::Geo, false),
             Reaction::SwirlElectro => (Element::Anemo, false),
-            Reaction::ElectroCharged => (Element::Hydro, false),
+            Reaction::ElectroCharged | Reaction::LunarCharged => (Element::Hydro, false),
             Reaction::Overload => (Element::Pyro, false),
             Reaction::Superconduct | Reaction::StellarConduct => (Element::Cryo, false),
             Reaction::Quicken | Reaction::Aggravate => (Element::Dendro, false),
@@ -117,7 +115,9 @@ impl WeaponImpl for Weapon {
             | Reaction::Spread
             | Reaction::Bloom
             | Reaction::Burgeon
-            | Reaction::Burning => return,
+            | Reaction::Burning
+            | Reaction::LunarBloom
+            | Reaction::LunarCrystallize => return,
         };
         // gcsim's target check: an enemy, or a gadget for hyperbloom
         if !gadget && ev.on_player {

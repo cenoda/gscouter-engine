@@ -161,6 +161,20 @@ pub const PYRO_RESONANCE: ModKey = ModKey::new("pyro-res");
 pub const HYDRO_RESONANCE: ModKey = ModKey::new("hydro-res-hpp");
 pub const CRYO_RESONANCE: ModKey = ModKey::new("cryo-res");
 const LUNAR_BLOOM: ModKey = ModKey::new("lunarbloom-enabled");
+const LUNAR_CRYSTALLIZE: ModKey = ModKey::new("lunarcrystallize-enabled");
+/// gcsim's LunarChargeEnableKey, which content that enables Lunar-Charged
+/// sets (`Sim::enable_lunar_charge`).
+pub const LUNAR_CHARGE: ModKey = ModKey::new("lunarcharge-enabled");
+/// gcsim's LcKey: the Lunar-Charged cloud, a status of the whole fight.
+pub const LC_CLOUD: ModKey = ModKey::new("lunarcharged-cloud");
+const LC_ICD: ModKey = ModKey::new("lunarcharged-cloud-icd");
+/// gcsim's LcExtraHitOverride: the chance of a second Lunar-Charged hit,
+/// set by content not ported (Columbina).
+const LC_EXTRA_HIT: ModKey = ModKey::new("lunarcrystallize-bonus-hit-chance");
+pub const ASCENDANT_GLEAM: ModKey = ModKey::new("ascendant-gleam");
+/// gcsim's lcContributorMult: the share of each contribution to a lunar
+/// reaction's damage, largest first.
+const LUNAR_CONTRIB_MULT: [f64; 4] = [0.6, 0.3, 0.05, 0.05];
 pub const GEO_RESONANCE: ModKey = ModKey::new("geo-res");
 pub const DENDRO_RESONANCE: ModKey = ModKey::new("dendro-res-50");
 const DENDRO_RESONANCE_30: ModKey = ModKey::new("dendro-res-30");
@@ -513,11 +527,14 @@ pub struct AttackEvent {
     /// (the ones gcsim gives are whole hundredths; a byte here takes no
     /// room, where an f64 in AttackInfo slowed every attack).
     pub elevation: u8,
+    /// gcsim's reduceLCAuraCB: a Lunar-Charged hit that takes 10 off the
+    /// enemy's electro and hydro when it lands.
+    pub lc_consume: bool,
 }
 
 impl AttackEvent {
     pub fn new(info: AttackInfo, callbacks: u16) -> Self {
-        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false, on_player: false, elevation: 0 }
+        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false, on_player: false, elevation: 0, lc_consume: false }
     }
 }
 
@@ -572,6 +589,13 @@ pub enum Task {
     /// set at src, with its callback (`nightsoul::CB_EXIT` or the
     /// character's task id).
     NightsoulExit { c: u8, src: i32, cb: u8 },
+    /// The Lunar-Charged cloud's tick, of the cloud started at src.
+    LcTick { src: i32 },
+    /// A second Lunar-Charged hit (gcsim's LcExtraHitOverride), with the
+    /// contributors of the first, as bits.
+    LcHit { contrib: u8 },
+    /// Ascendant Gleam's update of its bonus from character c's stats.
+    GleamUpdate { c: u8, src: i32 },
 }
 
 // ---------------------------------------------------------------- actions
@@ -725,6 +749,8 @@ pub struct Char {
     /// Its Nightsoul state (gcsim's nightsoul.State), for the characters
     /// that have one.
     pub ns: crate::nightsoul::Nightsoul,
+    /// gcsim's Moonsign: 1 for a Moonsign character.
+    pub moonsign: i32,
 }
 
 impl Char {
@@ -1035,6 +1061,9 @@ pub struct Enemy {
     pub ec_wane_sub: bool,
     /// Burning: the attack of its ticks, recalculated whenever it is fed.
     pub burning_atk: AttackEvent,
+    /// The character who last triggered Lunar-Charged on it (gcsim's
+    /// lcAtkOwner), who owns its Lunar-Charged damage.
+    pub lc_owner: u8,
 }
 
 // ---------------------------------------------------------------- player
@@ -1199,6 +1228,7 @@ pub enum ShieldType {
     BaizhuBurst,
     KiraraSkill,
     ThomaSkill,
+    IneffaSkill,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -1352,6 +1382,24 @@ pub struct Sim {
     /// CRIT Rate an EnemyHit subscriber adds to the hit and the CRIT DMG it
     /// sets (Nahida's C2 on reaction damage).
     pub hit_crit: Option<(f64, f64)>,
+    /// BaseDmgBonus SpecialReactionAttack subscribers add to a lunar
+    /// contribution (Ineffa on Lunar-Charged).
+    pub special_base_bonus: f64,
+    /// The index, among the event's subscribers, of the one being run (for
+    /// content subscribed more than once, as gcsim's keys allow).
+    pub emit_sub: usize,
+    /// A lunar contribution as SpecialReactionAttack subscribers change it
+    /// (gcsim hands them the contribution's AttackEvent).
+    pub special_atk: AttackEvent,
+    /// Lunar-Charged replaces electro-charged (gcsim's
+    /// Flags.Custom[LunarChargeEnableKey]).
+    pub lunar_charge: bool,
+    /// The frame the Lunar-Charged cloud's ticks started (gcsim's
+    /// Flags.Custom[lcSrcKey]).
+    lc_src: i32,
+    /// Ascendant Gleam (two Moonsign characters or more): its bonus to
+    /// lunar reactions and the frame its updates started.
+    pub gleam: Option<(f64, i32)>,
     // normal attack energy
     pub na_icd: i32,
     pub na_chance: [f64; 4],
@@ -1404,6 +1452,7 @@ impl Sim {
                 ec_tick_src: -1,
                 ec_wane_sub: false,
                 burning_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::BurningDamage, icd::TAG_BURNING_DAMAGE, icd::GROUP_BURNING, Element::Pyro, 25.0, 0.0), 0),
+                lc_owner: 0,
             },
             player: Player {
                 active: cfg.active as u8,
@@ -1469,6 +1518,12 @@ impl Sim {
             hit_base_bonus: 0.0,
             stellar: Default::default(),
             hit_crit: None,
+            special_base_bonus: 0.0,
+            emit_sub: 0,
+            special_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0), 0),
+            lunar_charge: false,
+            lc_src: 0,
+            gleam: None,
             na_icd: 0,
             na_chance: [0.0; 4],
             window_start: ((warmup * 60.0) as i32 / 30) * 30,
@@ -1546,6 +1601,7 @@ impl Sim {
             state: cs.kind.new_state(cs),
             hexerei: crate::profile::HEXEREI.contains(&crate::gcsl::char_name(cs.key)) && !cs.params.iter().any(|(k, v)| k == "hexerei" && *v == 0),
             ns: crate::nightsoul::Nightsoul::new(),
+            moonsign: cs.kind.moonsign(),
         }
     }
 
@@ -1590,6 +1646,10 @@ impl Sim {
             if electro >= 2 || dendro >= 2 {
                 self.subscribe(EventKind::Reaction, Owner::Core);
             }
+            // cryo resonance's CRIT Rate on lunar contributions
+            if cryo >= 2 {
+                self.subscribe(EventKind::SpecialReactionAttack, Owner::Core);
+            }
             // geo resonance: shield strength +15%, and DMG and geo shred
             // while shielded; its ticker starts with the first swap or
             // shield
@@ -1623,6 +1683,12 @@ impl Sim {
         }
         // the Nightsoul Burst needs the characters set up
         self.nightsoul_burst_setup();
+        // setupAscendantGleam, after the characters' inits
+        if self.chars.iter().map(|c| c.moonsign).sum::<i32>() >= 2 {
+            self.gleam = Some((0.0, -1));
+            self.subscribe(EventKind::Skill, Owner::Core);
+            self.subscribe(EventKind::Burst, Owner::Core);
+        }
         for i in 0..n {
             let (hp, ratio) = (self.starts[i].0, self.starts[i].1);
             match (hp > 0.0, ratio > 0.0) {
@@ -1685,6 +1751,7 @@ impl Sim {
     pub fn emit(&mut self, e: Event) {
         let k = e.kind() as usize;
         for i in 0..self.subs[k].len() {
+            self.emit_sub = i;
             match self.subs[k][i] {
                 Owner::Char(c) => crate::chars::dispatch::event(self.chars[c as usize].kind, self, c as usize, &e),
                 Owner::Weapon(c) => crate::weapons::dispatch::event(self.chars[c as usize].weapon, self, c as usize, &e),
@@ -1732,7 +1799,7 @@ impl Sim {
                 // electro resonance: an electro reaction gives a particle,
                 // once every 5 s (hyperbloom's comes from the dendro core)
                 if let Some(last) = self.electro_res {
-                    if matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::StellarConduct | Reaction::ElectroCharged | Reaction::Quicken | Reaction::Aggravate | Reaction::Hyperbloom) && (self.f - last >= 300 || last == 0) {
+                    if matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::StellarConduct | Reaction::ElectroCharged | Reaction::LunarCharged | Reaction::Quicken | Reaction::Aggravate | Reaction::Hyperbloom) && (self.f - last >= 300 || last == 0) {
                         self.distribute_particle(1.0, Element::Electro);
                         self.electro_res = Some(self.f);
                     }
@@ -1740,7 +1807,7 @@ impl Sim {
                 // dendro resonance: EM to the party for 6 s
                 if self.dendro_res {
                     let em = match r {
-                        Reaction::Burning | Reaction::Bloom | Reaction::Quicken => Some((DENDRO_RESONANCE_30, 30.0)),
+                        Reaction::Burning | Reaction::Bloom | Reaction::LunarBloom | Reaction::Quicken => Some((DENDRO_RESONANCE_30, 30.0)),
                         Reaction::Aggravate | Reaction::Spread | Reaction::Hyperbloom | Reaction::Burgeon => Some((DENDRO_RESONANCE_20, 20.0)),
                         _ => None,
                     };
@@ -1764,8 +1831,81 @@ impl Sim {
                 self.geo_res_src = self.f;
                 self.geo_res_update(self.f);
             }
+            // cryo resonance: CRIT Rate +15% on a lunar contribution against
+            // an enemy with cryo or frozen
+            Event::SpecialReactionAttack(_) => {
+                if self.enemy.aura.contains(Element::Cryo) {
+                    self.special_atk.stats[st::CR] += 0.15;
+                }
+            }
+            // Ascendant Gleam: a skill or burst by a character who is not
+            // Moonsign gives the party its bonus for 20 s
+            Event::Skill | Event::Burst => {
+                let f = self.f;
+                if let Some(g) = &mut self.gleam {
+                    g.1 = f;
+                }
+                let c = self.player.active as usize;
+                if self.chars[c].moonsign != 0 {
+                    return;
+                }
+                for i in 0..self.chars.len() {
+                    self.add_mod(i, Mod::owned(ASCENDANT_GLEAM, ModKind::ReactBonus, Owner::Core, st::NONE, false, false, -1), 20 * 60);
+                }
+                self.gleam_update(c, f);
+            }
             _ => {}
         }
+    }
+
+    /// Ascendant Gleam's bonus from character c's stats without the extra
+    /// ones, every second while c's mod lasts and no other skill or burst
+    /// has restarted it.
+    fn gleam_update(&mut self, c: usize, src: i32) {
+        if self.gleam.is_none_or(|g| g.1 != src) || !self.mod_active(c, ASCENDANT_GLEAM) {
+            return;
+        }
+        let buff = match self.chars[c].element {
+            Element::Electro | Element::Pyro | Element::Cryo => (total_atk(&self.select_stats(c, [st::BASEATK, st::ATKP, st::ATK], true)) * 0.009 / 100.0).min(0.36),
+            Element::Hydro => (max_hp(&self.select_stats(c, [st::BASEHP, st::HPP, st::HP], true)) * 0.006 / 1000.0).min(0.36),
+            Element::Dendro | Element::Anemo => (self.stat_ex(c, st::EM, true) * 0.0225 / 100.0).min(0.36),
+            Element::Geo => (total_def(&self.select_stats(c, [st::BASEDEF, st::DEFP, st::DEF], true)) * 0.01 / 100.0).min(0.36),
+            _ => return,
+        };
+        if let Some(g) = &mut self.gleam {
+            g.0 = buff;
+        }
+        self.add_task(Task::GleamUpdate { c: c as u8, src }, 60);
+    }
+
+    /// gcsim's SelectStat over three stats: base stats plus the stat mods
+    /// that affect one of them (or any stat), without extra ones when
+    /// non_extra.
+    pub fn select_stats(&self, ci: usize, which: [usize; 3], non_extra: bool) -> Stats {
+        let c = &self.chars[ci];
+        let mut s = [0.0; N_STATS];
+        for k in which {
+            s[k] += c.base[k];
+        }
+        for m in &c.mods {
+            if m.kind != ModKind::Stat || !(m.affected == st::NONE || which.contains(&m.affected)) || (non_extra && m.extra) {
+                continue;
+            }
+            if m.applies(self.f) {
+                let mut t = [0.0; N_STATS];
+                if self.mod_amount(ci, m, &mut t) {
+                    for k in which {
+                        s[k] += t[k];
+                    }
+                }
+            }
+        }
+        s
+    }
+
+    /// gcsim's TotalAtk (SelectStat over the ATK stats).
+    pub fn total_atk(&self, ci: usize) -> f64 {
+        total_atk(&self.select_stats(ci, [st::BASEATK, st::ATKP, st::ATK], false))
     }
 
     // ------------------------------------------------------------ slots
@@ -1883,6 +2023,8 @@ impl Sim {
                     let kind = self.chars[o as usize].sets[si as usize].kind;
                     crate::sets::dispatch::react_bonus(kind, self, o as usize, si as usize, ci, m, info)
                 }
+                // Ascendant Gleam, on lunar reactions
+                Amount::Owner(Owner::Core) if m.key == ASCENDANT_GLEAM && info.tag.is_lunar() => self.gleam.map_or(0.0, |g| g.0),
                 _ => 0.0,
             };
         }
@@ -2175,6 +2317,9 @@ impl Sim {
             }
             Task::GeoRes { src } => self.geo_res_update(src),
             Task::NightsoulExit { c, src, cb } => self.ns_exit_timer(c as usize, src, cb),
+            Task::LcTick { src } => self.lc_tick(src),
+            Task::LcHit { contrib } => self.lc_hit(contrib, false),
+            Task::GleamUpdate { c, src } => self.gleam_update(c as usize, src),
             Task::PlayerIcdResetDmg { i } => {
                 let s = &mut self.player_icd[i as usize];
                 s.dmg_count = 0;
@@ -2513,6 +2658,9 @@ impl Sim {
                 ] {
                     // pyro crystallizes off burning too, then checks it
                     let burning = m == AURA_PYRO && self.enemy.aura.get(AURA_BURNING) > ZERO_DUR;
+                    if m == AURA_HYDRO {
+                        self.check_lunar_crystallize();
+                    }
                     if self.enemy.aura.get(m) > ZERO_DUR || burning {
                         self.try_crystallize(ev, m, r);
                         if m == AURA_PYRO {
@@ -3048,10 +3196,21 @@ impl Sim {
     }
 
     /// Lunar-Bloom (gcsim's Flags.Custom "lunarbloom-enabled") would replace
-    /// bloom; nothing the engine implements enables it.
+    /// bloom's event with OnLunarBloom and add Verdant Dew
+    /// (Player.OnLunarBloom); nothing the engine implements enables it.
     fn check_lunar_bloom(&mut self) {
         if self.flag(LUNAR_BLOOM) != 0.0 {
             self.unsupported("lunar-bloom");
+        }
+    }
+
+    /// Lunar-Crystallize (gcsim's Flags.Custom "lunarcrystallize-enabled")
+    /// would replace hydro crystallize (TryAddLCr, its Moondrift constructs
+    /// and Moondrift Harmony); nothing the engine implements enables it.
+    /// `Sim::lunar_attack` computes its hits as it does Lunar-Charged's.
+    fn check_lunar_crystallize(&mut self) {
+        if self.flag(LUNAR_CRYSTALLIZE) != 0.0 {
+            self.unsupported("lunar-crystallize");
         }
     }
 
@@ -3468,6 +3627,10 @@ impl Sim {
     }
 
     fn try_add_ec(&mut self, ev: &mut AttackEvent) {
+        if self.lunar_charge {
+            self.try_add_lc(ev);
+            return;
+        }
         let dur = ev.info.durability;
         if dur < ZERO_DUR {
             return;
@@ -3550,6 +3713,177 @@ impl Sim {
             self.enemy.ec_tick_src = -1;
             self.enemy.ec_wane_sub = false;
         }
+    }
+
+    // ------------------------------------------------------------ lunar reactions
+
+    /// Content enables Lunar-Charged (gcsim's
+    /// Flags.Custom[LunarChargeEnableKey] = 1): it replaces electro-charged
+    /// for the whole fight.
+    pub fn enable_lunar_charge(&mut self) {
+        self.lunar_charge = true;
+        self.set_flag(LUNAR_CHARGE, 1.0);
+    }
+
+    /// gcsim's Status.Duration by key.
+    pub fn core_status_key(&self, key: ModKey) -> i32 {
+        self.statuses.iter().find(|s| s.0 == key).map_or(0, |s| (s.1 - self.f).max(0))
+    }
+
+    /// gcsim's TryAddLC: hydro on electro or electro on hydro refills the
+    /// aura (unless the hit already reacted), emits OnLunarCharged, makes
+    /// the attacker the owner of the enemy's Lunar-Charged damage, and
+    /// starts the cloud or makes it last another 5.5 s.
+    fn try_add_lc(&mut self, ev: &mut AttackEvent) {
+        let dur = ev.info.durability;
+        if dur < ZERO_DUR {
+            return;
+        }
+        // frozen rejects Lunar-Charged
+        if self.enemy.aura.get(AURA_FROZEN) > ZERO_DUR {
+            return;
+        }
+        let src = ev.info.actor as usize;
+        match ev.info.element {
+            Element::Hydro => {
+                if self.enemy.aura.get(AURA_ELECTRO) < ZERO_DUR {
+                    return;
+                }
+                if !ev.reacted {
+                    self.enemy.aura.attach_overlap(AURA_HYDRO, 0.8 * dur, 6.0 * dur + 420.0, src);
+                }
+            }
+            Element::Electro => {
+                if self.enemy.aura.get(AURA_HYDRO) < ZERO_DUR {
+                    return;
+                }
+                if !ev.reacted {
+                    self.enemy.aura.attach_overlap(AURA_ELECTRO, 0.8 * dur, 6.0 * dur + 420.0, src);
+                }
+            }
+            _ => return,
+        }
+        ev.reacted = true;
+        self.emit(Event::Reaction(Reaction::LunarCharged, ev));
+        self.enemy.lc_owner = src as u8;
+        if self.core_status_key(LC_CLOUD) == 0 {
+            let f = self.f;
+            self.lc_src = f;
+            self.add_task(Task::LcTick { src: f }, 9);
+        }
+        self.add_core_status(LC_CLOUD, 330);
+    }
+
+    /// gcsim's nextLCTick: every 0.1 s while the cloud lasts, an enemy
+    /// within 8 of the player with both electro and hydro, and not hit in
+    /// the last 2 s, takes Lunar-Charged damage.
+    fn lc_tick(&mut self, src: i32) {
+        if self.lc_src != src || self.core_status_key(LC_CLOUD) == 0 {
+            return;
+        }
+        // EnemiesWithinArea: the enemy's center within 8 of the player
+        let within = self.enemy_within(self.circle_on_player(0.0, 0.0, 8.0));
+        if self.enemy_alive && within && !self.enemy_status_active(LC_ICD) && self.enemy.aura.get(AURA_ELECTRO) > ZERO_DUR && self.enemy.aura.get(AURA_HYDRO) > ZERO_DUR {
+            self.enemy_add_status(LC_ICD, 2 * 60, true);
+            self.do_lc_attack();
+        }
+        self.add_task(Task::LcTick { src }, 6);
+    }
+
+    /// gcsim's DoLCAttack: the characters with electro or hydro on the
+    /// enemy contribute; a second hit 0.6 s later when content gives it a
+    /// chance (LcExtraHitOverride).
+    fn do_lc_attack(&mut self) {
+        let mut contrib = 0u8;
+        let a = &self.enemy.aura;
+        for i in 0..self.chars.len() {
+            if a.dur[AURA_HYDRO][i] <= ZERO_DUR && a.dur[AURA_ELECTRO][i] <= ZERO_DUR {
+                continue;
+            }
+            contrib |= 1 << i;
+        }
+        self.lc_hit(contrib, true);
+        if let Some(chance) = self.flags.iter().find(|f| f.0 == LC_EXTRA_HIT).map(|f| f.1) {
+            if self.rng.float64() < chance {
+                self.add_task(Task::LcHit { contrib }, 36);
+            }
+        }
+    }
+
+    /// gcsim's doSingleLCAttack: Lunar-Charged damage from the contributors,
+    /// owned by the enemy's owner; the first hit takes 10 off electro and
+    /// hydro when it lands.
+    fn lc_hit(&mut self, contrib: u8, consume: bool) {
+        let owner = self.enemy.lc_owner as usize;
+        let Some(mut ev) = self.lunar_attack(contrib, AttackTag::ReactionLunarCharge, Element::Electro, "lunarcharged", 3.0, owner) else { return };
+        ev.lc_consume = consume;
+        self.queue_attack_with_snap(ev, 0, 0);
+    }
+
+    /// The damage of a lunar reaction (gcsim's doSingleLCAttack and
+    /// doSingleLCrAttack): each contributor's reaction damage, from its own
+    /// snapshot as SpecialReactionAttack subscribers change it, its EM and
+    /// reaction bonus, crit drawn for it; the largest counts 60%, the next
+    /// 30%, the others 5% each, as the flat damage of one hit owned by
+    /// `owner` that crits when the largest did. None without contributors.
+    fn lunar_attack(&mut self, contrib: u8, tag: AttackTag, element: Element, abil: &'static str, mult: f64, owner: usize) -> Option<AttackEvent> {
+        // (damage, crit) by contribution, in the characters' order
+        let mut parts = [(0.0f64, false); 4];
+        let mut n = 0;
+        for ci in 0..self.chars.len() {
+            if contrib & 1 << ci == 0 {
+                continue;
+            }
+            let mut ai = AttackInfo::new(ci, tag, icd::TAG_NONE, icd::GROUP_DEFAULT, element, 0.0, 0.0);
+            ai.abil = abil;
+            ai.ignore_def = 1.0;
+            ai.pattern = Pattern::Single;
+            let ev = self.snapshot_event(ai, 0);
+            self.special_atk = ev;
+            self.special_base_bonus = 0.0;
+            if !self.subs[EventKind::SpecialReactionAttack as usize].is_empty() {
+                self.emit(Event::SpecialReactionAttack(&ev));
+            }
+            let ev = self.special_atk;
+            let base_bonus = self.special_base_bonus;
+            let (em, cr, cd) = (ev.stats[st::EM], ev.stats[st::CR], ev.stats[st::CD]);
+            let react = self.react_bonus(ci, &ev.info);
+            let lvl = self.chars[ci].level;
+            // gcsim's CalcSpecialReactionDmg
+            let base = crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
+            let mut dmg = (mult * (1.0 + (6.0 * em) / (2000.0 + em) + react) * base * (1.0 + base_bonus) + ev.info.flat_dmg) * (1.0 + ev.elevation as f64 / 100.0);
+            let mut crit = false;
+            if self.rng.float64() <= cr {
+                dmg *= 1.0 + cd;
+                crit = true;
+            }
+            parts[n] = (dmg, crit);
+            n += 1;
+        }
+        if n == 0 {
+            return None;
+        }
+        // a stable sort, largest first
+        for i in 1..n {
+            let mut j = i;
+            while j > 0 && parts[j - 1].0 < parts[j].0 {
+                parts.swap(j - 1, j);
+                j -= 1;
+            }
+        }
+        let mut ai = AttackInfo::new(owner, tag, icd::TAG_NONE, icd::GROUP_DEFAULT, element, 0.0, 0.0);
+        ai.abil = abil;
+        ai.ignore_def = 1.0;
+        ai.pattern = Pattern::Single;
+        for (i, p) in parts[..n].iter().enumerate() {
+            ai.flat_dmg += p.0 * LUNAR_CONTRIB_MULT[i];
+        }
+        let mut ev = AttackEvent::new(ai, 0);
+        if parts[0].1 {
+            ev.stats[st::CR] = 1.0;
+        }
+        ev.snap_f = self.f;
+        Some(ev)
     }
 
     /// gcsim's Player.ApplySelfInfusion: the element on the player for f
@@ -3915,6 +4249,45 @@ impl Sim {
         (damage, crit)
     }
 
+    /// gcsim's calcDirectReaction, for direct lunar and Stellar-Conduct
+    /// DMG: no DMG bonus; the talent part with its BaseDmgBonus, times the
+    /// reaction's multiplier (Lunar-Charged 3, Lunar-Crystallize 1.6,
+    /// Lunar-Bloom 1, Stellar-Conduct by the attacker's stacks tag), the EM
+    /// bonus of special reactions and its reaction bonuses; then flat
+    /// damage, DEF, RES, the damage group and elevation, and the crit last.
+    fn calc_direct(&mut self, ev: &mut AttackEvent, grp: f64, base_bonus: f64) -> (f64, bool) {
+        let actor = ev.info.actor as usize;
+        let s = &ev.stats;
+        let a = if ev.info.use_def { total_def(s) } else { total_atk(s) };
+        let mut damage = ev.info.mult * a * (1.0 + base_bonus);
+        damage *= match ev.info.tag {
+            AttackTag::DirectLunarCharged => 3.0,
+            AttackTag::DirectLunarCrystallize => 1.6,
+            AttackTag::DirectStellarConduct => self.stellar_conduct_mult(actor),
+            _ => 1.0,
+        };
+        let em = s[st::EM];
+        let em_bonus = (6.0 * em) / (2000.0 + em);
+        let react_bonus = self.react_bonus(actor, &ev.info);
+        damage *= 1.0 + em_bonus + react_bonus;
+        damage += ev.info.flat_dmg;
+        let (res, defadj) = self.enemy_resist_def(ev.info.element);
+        let defadj = defadj.min(0.9);
+        let defmod = (ev.char_lvl + 100) as f64 / ((ev.char_lvl + 100) as f64 + (self.enemy.level + 100) as f64 * (1.0 + defadj) * (1.0 - ev.info.ignore_def.min(1.0)));
+        damage *= defmod;
+        damage *= crate::stellar::resmod(res);
+        damage *= grp;
+        damage *= 1.0 + ev.elevation as f64 / 100.0;
+        let s = &mut ev.stats;
+        s[st::CR] = s[st::CR].clamp(0.0, 1.0);
+        let mut crit = false;
+        if self.rng.float64() <= s[st::CR] {
+            damage *= 1.0 + s[st::CD];
+            crit = true;
+        }
+        (damage, crit)
+    }
+
     /// The enemy's resistance to an element and its DEF adjustment (gcsim's
     /// resist and defAdj), from the mods that count now.
     pub(crate) fn enemy_resist_def(&self, e: Element) -> (f64, f64) {
@@ -3981,6 +4354,10 @@ impl Sim {
         self.emit(Event::EnemyDamage(&ev));
         // electro-charged's hook subscribes when it starts, after the others
         self.ec_wane_hook(&ev);
+        if ev.lc_consume {
+            self.enemy.aura.reduce_mod(AURA_ELECTRO, 10.0);
+            self.enemy.aura.reduce_mod(AURA_HYDRO, 10.0);
+        }
         if ev.callbacks != 0 {
             crate::chars::dispatch::attack_cb(self.chars[ci].kind, self, ci, ev.callbacks, &ev);
         }

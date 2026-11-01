@@ -32,14 +32,15 @@ impl SetImpl for Set {
         s.subscribe(EventKind::Reaction, o);
     }
 
-    /// Bloom, hyperbloom and burgeon DMG +40%, and a quarter of that more
-    /// per stack while the stacks' mod lasts. (gcsim's 10% for direct
-    /// Lunar-Bloom is not here: the engine has no lunar reactions.)
+    /// Bloom, hyperbloom and burgeon DMG +40%, direct Lunar-Bloom +10%,
+    /// and a quarter of that more per stack while the stacks' mod lasts.
     fn react_bonus(s: &Sim, ci: usize, si: usize, _: usize, m: &Mod, info: &AttackInfo) -> f64 {
-        if !matches!(info.tag, AttackTag::Bloom | AttackTag::Hyperbloom | AttackTag::Burgeon) {
-            return 0.0;
-        }
-        if m.key == BUFF { 0.4 * s.set_st::<State>(ci, si).stacks as f64 * 0.25 } else { 0.4 }
+        let v = match info.tag {
+            AttackTag::Bloom | AttackTag::Hyperbloom | AttackTag::Burgeon => 0.4,
+            AttackTag::DirectLunarBloom => 0.1,
+            _ => return 0.0,
+        };
+        if m.key == BUFF { v * s.set_st::<State>(ci, si).stacks as f64 * 0.25 } else { v }
     }
 
     /// A bloom on an enemy, or a hyperbloom or burgeon, by the holder, on
@@ -50,7 +51,7 @@ impl SetImpl for Set {
         match r {
             // gcsim's OnBloom subscription skips targets other than enemies
             Reaction::Bloom if !ev.on_player => {}
-            Reaction::Hyperbloom | Reaction::Burgeon => {}
+            Reaction::Hyperbloom | Reaction::Burgeon | Reaction::LunarBloom => {}
             _ => return,
         }
         if ev.info.actor as usize != ci || s.mod_active(ci, ICD) {

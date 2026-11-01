@@ -29,29 +29,28 @@ impl SetImpl for Set {
     }
 
     /// Overloaded, electro-charged, superconduct and hyperbloom DMG +40%;
-    /// aggravate's bonus and Stellar-Conduct DMG +20%. gcsim's
-    /// lunar-charged (+20%) is a reaction the engine does not have.
+    /// aggravate's bonus +20%; Lunar-Charged, direct or not, and direct
+    /// Stellar-Conduct DMG +20%.
     fn react_bonus(_: &Sim, _: usize, _: usize, _: usize, _: &Mod, info: &AttackInfo) -> f64 {
         if info.catalyzed == Some(Reaction::Aggravate) {
             return 0.2;
         }
         match info.tag {
             AttackTag::OverloadDamage | AttackTag::ECDamage | AttackTag::SuperconductDamage | AttackTag::Hyperbloom => 0.4,
-            AttackTag::DirectStellarConduct => 0.2,
+            AttackTag::DirectStellarConduct | AttackTag::DirectLunarCharged | AttackTag::ReactionLunarCharge => 0.2,
             _ => 0.0,
         }
     }
 
-    /// Overloaded, electro-charged, superconduct, Stellar-Conduct, quicken
-    /// and aggravate on an enemy, and hyperbloom (from a dendro core, which
-    /// gcsim does not check), triggered by the holder while on field: skill
-    /// cooldown −1 s, once every 0.8 s. gcsim also listens to
-    /// lunar-charged, which the engine does not have.
+    /// Overloaded, electro-charged, Lunar-Charged, superconduct,
+    /// Stellar-Conduct, quicken and aggravate on an enemy, and hyperbloom
+    /// (from a dendro core, which gcsim does not check), triggered by the
+    /// holder while on field: skill cooldown −1 s, once every 0.8 s.
     fn event(s: &mut Sim, ci: usize, _: usize, e: &Event) {
         let Event::Reaction(r, ev) = *e else { return };
         // every reaction the engine emits, so that a new one must be placed
         let counts = match r {
-            Reaction::Overload | Reaction::ElectroCharged | Reaction::Superconduct | Reaction::StellarConduct | Reaction::Quicken | Reaction::Aggravate => !ev.on_player,
+            Reaction::Overload | Reaction::ElectroCharged | Reaction::LunarCharged | Reaction::Superconduct | Reaction::StellarConduct | Reaction::Quicken | Reaction::Aggravate => !ev.on_player,
             Reaction::Hyperbloom => true,
             Reaction::Vaporize
             | Reaction::Melt
@@ -68,7 +67,9 @@ impl SetImpl for Set {
             | Reaction::Spread
             | Reaction::Bloom
             | Reaction::Burgeon
-            | Reaction::Burning => false,
+            | Reaction::Burning
+            | Reaction::LunarBloom
+            | Reaction::LunarCrystallize => false,
         };
         if !counts || ev.info.actor as usize != ci || s.player.active as usize != ci || s.mod_active(ci, ICD) {
             return;
