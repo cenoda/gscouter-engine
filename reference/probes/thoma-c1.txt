@@ -1,0 +1,3 @@
+# Thoma C1: skill CD 12 s and burst CD 17 s, without C2's longer burst.
+team yoimiya-xingqiu-yelan-thoma
+thoma char lvl=90/90 cons=1 talent=9,9,9;
