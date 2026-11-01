@@ -342,6 +342,9 @@ pub struct CharData {
     pub element: u8,
     pub weapon_class: u8,
     pub body: u8,
+    /// gcsim's info.ZoneType (CharZone): ZONE_NATLAN for the characters
+    /// that count toward the Nightsoul Burst.
+    pub zone: u8,
     pub rarity: u8,
     pub energy_max: f64,
     pub normal_hit_num: i32,
@@ -353,7 +356,10 @@ pub struct CharData {
     pub module: &'static str,
 }
 
-`)
+/// gcsim's info.ZoneNatlan.
+pub const ZONE_NATLAN: u8 = %d;
+
+`, int(info.ZoneNatlan))
 	w("pub static CHARS: &[CharData] = &[\n")
 	var failed []string
 	for _, c := range d.Chars {
@@ -370,9 +376,9 @@ pub struct CharData {
 		curves[s.HpCurve], curves[s.AtkCurve], curves[s.DefCruve] = true, true, true
 		delay := [3]int{}
 		copy(delay[:], c.AnimDelay)
-		w("    CharData { key: %q, base: [%s, %s, %s], curves: [%d, %d, %d], em: %s, promo: %s, element: %d, weapon_class: %d, body: %d, rarity: %d, energy_max: %s, normal_hit_num: %d, cons: [%d, %d, %d], anim_delay: [%d, %d, %d], module: %q },\n",
+		w("    CharData { key: %q, base: [%s, %s, %s], curves: [%d, %d, %d], em: %s, promo: %s, element: %d, weapon_class: %d, body: %d, zone: %d, rarity: %d, energy_max: %s, normal_hit_num: %d, cons: [%d, %d, %d], anim_delay: [%d, %d, %d], module: %q },\n",
 			k.String(), fl(s.BaseHp), fl(s.BaseAtk), fl(s.BaseDef), s.HpCurve, s.AtkCurve, s.DefCruve, fl(s.ElementMastery), promo(s.PromoData),
-			c.Element, c.WeaponClass, c.Body, c.Rarity, fl(num(c.EnergyMax)), c.NormalHitNum, c.NormalCon, c.SkillCon, c.BurstCon,
+			c.Element, c.WeaponClass, c.Body, c.Zone, c.Rarity, fl(num(c.EnergyMax)), c.NormalHitNum, c.NormalCon, c.SkillCon, c.BurstCon,
 			delay[0], delay[1], delay[2], moduleName(c.Package))
 	}
 	w("];\n\n")

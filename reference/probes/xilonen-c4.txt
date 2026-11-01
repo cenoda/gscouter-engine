@@ -1,0 +1,3 @@
+# Xilonen C4: after her skill, six normal, charged or plunging hits of each member add 65% of her DEF (Wriothesley's normal and charged attacks).
+team wriothesley-furina-xilonen-bennett
+xilonen char lvl=90/90 cons=4 talent=9,9,9;

@@ -1,0 +1,3 @@
+# Xilonen C2 with an electro member: Raiden's energy and burst cooldown, and the hydro members' HP, as the Samplers activate (three converted Samplers: no geo Sampler).
+team neuvillette-furina-xilonen-raidenshogun
+xilonen char lvl=90/90 cons=2 talent=9,9,9;

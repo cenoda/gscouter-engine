@@ -18,6 +18,7 @@ mod data;
 mod eval;
 mod gcsimdata;
 mod gcsl;
+mod nightsoul;
 mod profile;
 mod queue;
 mod rng;

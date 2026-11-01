@@ -1,0 +1,3 @@
+# Xilonen C6: her first normal attack in the blessing stops its points for 5 s, adds 300% of her DEF to Blade Rollers and heals the party three times (Furina's Fanfare).
+team gaming-furina-bennett-xilonen
+xilonen char lvl=90/90 cons=6 talent=9,9,9;
