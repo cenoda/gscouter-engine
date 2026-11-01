@@ -183,6 +183,11 @@ pub enum Pattern {
     Circle { x: f64, y: f64, r: f64 },
     /// A circle cut to a fan of `fan` degrees facing the enemy.
     Fan { x: f64, y: f64, r: f64, fan: f64 },
+    /// A fan facing `dir` degrees clockwise from the enemy (gcsim's
+    /// NewCircle with DegreesToDirection(dir) as its direction). The angle
+    /// is kept in an f32 so the pattern stays the size it was; the angles
+    /// given are whole degrees, exact in it.
+    FanDir { x: f64, y: f64, r: f64, fan: f64, dir: f32 },
     /// gcsim's rectangle facing the enemy: w wide, from its spawn (x, y)
     /// to h ahead.
     Box { x: f64, y: f64, w: f64, h: f64 },
@@ -195,6 +200,7 @@ enum Wide {
     Single,
     Circle { x: f64, y: f64, r: f64 },
     Fan { x: f64, y: f64, r: f64, fan: f64 },
+    FanDir { x: f64, y: f64, r: f64, fan: f64, dir: f64 },
     Box { x: f64, y: f64, w: f64, h: f64 },
 }
 
@@ -205,6 +211,7 @@ impl Pattern {
             Pattern::Single => Wide::Single,
             Pattern::Circle { x, y, r } => Wide::Circle { x, y, r },
             Pattern::Fan { x, y, r, fan } => Wide::Fan { x, y, r, fan },
+            Pattern::FanDir { x, y, r, fan, dir } => Wide::FanDir { x, y, r, fan, dir: dir as f64 },
             Pattern::Box { x, y, w, h } => Wide::Box { x, y, w, h },
         }
     }
@@ -240,6 +247,7 @@ impl Pattern {
                 let dy = if cx == x && cy == y { 1.0 } else { (cy - y) / (cx - x).hypot(cy - y) };
                 Some(dy.clamp(-1.0, 1.0).acos().to_degrees() <= fan / 2.0)
             }
+            Wide::FanDir { x, y, r: pr, fan, dir } => Some(fan_dir_hits_circle(x, y, pr, fan, dir, cx, cy, r)),
             Wide::Box { x, y, w, h } => {
                 let (hw, hh) = (w / 2.0, h / 2.0);
                 let (lx, ly) = ((cx - x).abs(), (cy - (y + hh)).abs());
@@ -253,6 +261,60 @@ impl Pattern {
             }
         }
     }
+}
+
+/// gcsim's Point.Rotate, with its shortcut for the default direction.
+fn rotate(px: f64, py: f64, dx: f64, dy: f64) -> (f64, f64) {
+    if dx == 0.0 && dy == 1.0 {
+        return (px, py);
+    }
+    (px * dy + py * dx, -px * dx + py * dy)
+}
+
+/// gcsim's Circle.IntersectCircle of a target's full circle (cx, cy, r)
+/// against a fan centered at (x, y) of radius pr and `fan` degrees,
+/// facing DegreesToDirection(dir), step by step as gcsim computes it
+/// (NewCircle's calcSegments, then fanAngleAreaCheck).
+#[allow(clippy::too_many_arguments)]
+fn fan_dir_hits_circle(x: f64, y: f64, pr: f64, fan: f64, dir: f64, cx: f64, cy: f64, r: f64) -> bool {
+    let (ddx, ddy) = (cx - x, cy - y);
+    if ddx * ddx + ddy * ddy > (pr + r) * (pr + r) {
+        return false;
+    }
+    let rad = dir * std::f64::consts::PI / 180.0;
+    let (dx, dy) = (rad.sin(), rad.cos());
+    if fan <= 0.0 || fan >= 360.0 {
+        return true;
+    }
+    let (sx, sy) = rotate(0.0, pr, dx, dy);
+    let (opx, opy) = (x - cx, y - cy);
+    let op_dist = (opx * opx + opy * opy).sqrt();
+    for a in [-fan / 2.0, fan / 2.0] {
+        let ar = a * std::f64::consts::PI / 180.0;
+        let (qx, qy) = rotate(sx, sy, ar.sin(), ar.cos());
+        let (qx, qy) = (qx + x, qy + y);
+        let (qpx, qpy) = (x - qx, y - qy);
+        let (pqx, pqy) = (qx - x, qy - y);
+        let (oqx, oqy) = (qx - cx, qy - cy);
+        let oq_dist = (oqx * oqx + oqy * oqy).sqrt();
+        let mut min_dist = op_dist.min(oq_dist);
+        if opx * qpx + opy * qpy > 0.0 && oqx * pqx + oqy * pqy > 0.0 {
+            min_dist = (opx * oqy - opy * oqx).abs() / pr;
+        }
+        if min_dist <= r {
+            return true;
+        }
+    }
+    // fanAngleAreaCheck: the target's center within the fan's angle
+    let (nx, ny) = if cx == x && cy == y {
+        (0.0, 1.0)
+    } else {
+        let d = (ddx * ddx + ddy * ddy).sqrt();
+        (ddx / d, ddy / d)
+    };
+    let dot = (dx * nx + dy * ny).clamp(-1.0, 1.0);
+    let ang = dot.acos() * 180.0 / std::f64::consts::PI;
+    ang >= -fan / 2.0 && ang <= fan / 2.0
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -2490,6 +2552,11 @@ impl Sim {
     /// gcsim's NewCircleHitOnTargetFanAngle on the player.
     pub fn fan_on_player(&self, ox: f64, oy: f64, r: f64, fan: f64) -> Pattern {
         Pattern::Fan { x: ox, y: oy, r, fan }
+    }
+    /// gcsim's NewCircle on the enemy with a fan facing `dir` degrees
+    /// clockwise from the player's facing.
+    pub fn fan_dir_on_target(&self, r: f64, fan: f64, dir: f32) -> Pattern {
+        Pattern::FanDir { x: 0.0, y: self.target_dist, r, fan, dir }
     }
     /// gcsim's NewBoxHitOnTarget on the player.
     pub fn box_on_player(&self, ox: f64, oy: f64, w: f64, h: f64) -> Pattern {

@@ -178,6 +178,11 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
     if p.chars.iter().any(|c| char_name(c.key) == "neuvillette") && p.targets.iter().any(|t| t.pos.0 != 0.0 || t.pos.1 <= 0.0) {
         errs.push("unsupported: neuvillette with the target off the y axis".into());
     }
+    // Chevreuse's skill shots are boxes along the enemy's own direction
+    // too (NewBoxHitOnTarget on the primary target)
+    if p.chars.iter().any(|c| char_name(c.key) == "chevreuse") && p.targets.iter().any(|t| t.pos.0 != 0.0 || t.pos.1 <= 0.0) {
+        errs.push("unsupported: chevreuse with the target off the y axis".into());
+    }
     if p.hurt {
         errs.push("unsupported: hurt".into());
     }

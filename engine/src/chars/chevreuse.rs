@@ -89,6 +89,9 @@ impl Character for Char {
             ai.hitlag_factor = 0.01;
             ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
             ai.def_halt = g::ATTACK_DEF_HALT[n][i];
+            // boxes for N1, N3's first hit and N4, circles for the rest
+            let (hb, off) = (g::ATTACK_HITBOXES[n], g::ATTACK_OFFSETS[n][i]);
+            ai.pattern = if n == 0 || (n == 2 && i == 0) || n == 3 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
             let h = g::ATTACK_HITMARKS[n][i];
             s.queue_attack(ai, 0, h, h);
         }
@@ -105,6 +108,10 @@ impl Character for Char {
         if hold == 0 {
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::SKILL_PRESS[lvl]);
             ai.abil = "Short-Range Rapid Interdiction Fire";
+            // NewBoxHitOnTarget on the enemy, along the enemy's own
+            // direction, (0, 1): the player's facing for an enemy up the
+            // y axis, which the profile requires
+            ai.pattern = s.box_on_target(0.0, -0.5, 2.0, 6.0);
             s.queue_attack(ai, CB_PARTICLE | CB_ARKHE_PRESS, g::SKILL_PRESS_HITMARK, g::SKILL_PRESS_HITMARK);
             skill_heal(s, ci, g::SKILL_PRESS_CD_START);
             s.set_cd_with_delay(ci, Action::Skill, 15 * 60, g::SKILL_PRESS_CD_START);
@@ -120,6 +127,7 @@ impl Character for Char {
             ai.abil = "Short-Range Rapid Interdiction Fire [Overcharged]";
             ai.blunt = true;
             ai.poise = 125.0;
+            ai.pattern = s.circle_on_target(5.0);
             s.st_mut::<State>(ci).overcharged_ball = false;
             if s.chars[ci].ascension >= 4 {
                 s.add_task(Task::Char { c: ci as u8, id: TASK_A4, arg: 0 }, cd_start);
@@ -128,6 +136,8 @@ impl Character for Char {
         } else {
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::SKILL_HOLD[lvl]);
             ai.abil = "Short-Range Rapid Interdiction Fire [Hold]";
+            // as the press, along the enemy's own direction
+            ai.pattern = s.box_on_target(0.0, -0.5, 3.0, 7.0);
             ai
         };
         if s.mod_active(ci, C4_STATUS) {
@@ -156,14 +166,18 @@ impl Character for Char {
         ai.abil = "Explosive Grenade";
         ai.blunt = true;
         ai.poise = 100.0;
+        ai.pattern = s.circle_on_target(6.0);
         s.queue_attack(ai, 0, g::SNAPSHOT_DELAY, g::BURST_HITMARK);
         let mut mine = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_CHEVREUSE_BURST_MINES, Element::Pyro, 25.0, g::BURST_SECONDARY[lvl]);
         mine.abil = "Secondary Explosive Shell";
         mine.blunt = true;
         mine.poise = 25.0;
-        // eight mines in five groups
-        for (count, delay) in [(1, 24), (2, 33), (2, 42), (2, 51), (1, 60)] {
-            for _ in 0..count {
+        // eight mines in five groups, each a 60 degree fan of radius 6 on
+        // the enemy, facing its own step from the player's facing
+        let steps: [&[f32]; 5] = [&[0.0], &[45.0, 315.0], &[90.0, 270.0], &[135.0, 225.0], &[180.0]];
+        for (dirs, delay) in steps.into_iter().zip([24, 33, 42, 51, 60]) {
+            for &dir in dirs {
+                mine.pattern = s.fan_dir_on_target(6.0, 60.0, dir);
                 s.queue_attack(mine, 0, g::SNAPSHOT_DELAY, g::BURST_HITMARK + delay);
             }
         }
@@ -250,7 +264,13 @@ impl Character for Char {
             // each bomb 0.6 s to 1 s after the hit
             let d1 = (60.0 * (0.6 + s.rng.float64() * (1.0 - 0.6))) as i32;
             let d2 = (60.0 * (0.6 + s.rng.float64() * (1.0 - 0.6))) as i32;
+            // circles of radius 3, 1.5 to either side of the target hit
+            // along the player's facing: the enemy, which the hold shot
+            // reaches before any gadget (gcsim checks enemies first, and
+            // the ICD holds off the rest)
+            ai.pattern = Pattern::Circle { x: -1.5, y: s.target_dist, r: 3.0 };
             s.queue_attack(ai, 0, d1, d1);
+            ai.pattern = Pattern::Circle { x: 1.5, y: s.target_dist, r: 3.0 };
             s.queue_attack(ai, 0, d2, d2);
         }
         if cbs & (CB_ARKHE_PRESS | CB_ARKHE_HOLD) != 0 && !s.mod_active(ci, ARKHE_ICD) {
@@ -258,6 +278,8 @@ impl Character for Char {
             let lvl = s.talent(ci, 1);
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 0.0, g::ARKHE[lvl]);
             ai.abil = "Surging Blade (chevreuse)";
+            // a circle of radius 2 on the target hit: the enemy, as for C2
+            ai.pattern = s.circle_on_target(2.0);
             let delay = if cbs & CB_ARKHE_PRESS != 0 { g::SKILL_PRESS_ARKHE_HITMARK - g::SKILL_PRESS_HITMARK } else { g::SKILL_HOLD_ARKHE_HITMARK - g::SKILL_HOLD_HITMARK };
             s.queue_attack(ai, 0, delay, delay);
         }
