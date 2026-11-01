@@ -186,12 +186,37 @@ pub enum AttackTag {
     Bloom,
     Burgeon,
     Hyperbloom,
+    /// gcsim's AttackTagDirectStellarConduct: an ability's own hit counted
+    /// as Stellar-Conduct DMG (gcsim's IsDirect), which Radiance makes.
+    DirectStellarConduct,
 }
 
 impl AttackTag {
-    /// gcsim's IsReaction: damage that ignores the attacker's DMG bonus.
+    /// gcsim's IsReaction: every tag past AttackTagNoneStat, direct
+    /// reaction damage included.
     pub fn is_reaction(self) -> bool {
-        matches!(self, AttackTag::OverloadDamage | AttackTag::ECDamage | AttackTag::SwirlPyro | AttackTag::SwirlHydro | AttackTag::SwirlElectro | AttackTag::SwirlCryo | AttackTag::SuperconductDamage | AttackTag::Shatter | AttackTag::BurningDamage | AttackTag::Bloom | AttackTag::Burgeon | AttackTag::Hyperbloom)
+        matches!(
+            self,
+            AttackTag::OverloadDamage
+                | AttackTag::ECDamage
+                | AttackTag::SwirlPyro
+                | AttackTag::SwirlHydro
+                | AttackTag::SwirlElectro
+                | AttackTag::SwirlCryo
+                | AttackTag::SuperconductDamage
+                | AttackTag::Shatter
+                | AttackTag::BurningDamage
+                | AttackTag::Bloom
+                | AttackTag::Burgeon
+                | AttackTag::Hyperbloom
+                | AttackTag::DirectStellarConduct
+        )
+    }
+    /// gcsim's IsDirect: direct lunar and Stellar damage (the engine has
+    /// Stellar-Conduct's), which takes attack mods and its own formula.
+    #[inline]
+    pub fn is_direct(self) -> bool {
+        self == AttackTag::DirectStellarConduct
     }
 }
 
@@ -235,6 +260,9 @@ pub enum Reaction {
     Burning,
     /// Not an elemental reaction to gcsim, but among its reaction events.
     Shatter,
+    /// gcsim's OnStellarConduct: superconduct while a Stellar character is
+    /// in the team (`Sim::stellar`).
+    StellarConduct,
 }
 
 impl Reaction {
@@ -263,6 +291,7 @@ impl Reaction {
             Reaction::Burgeon => &[Element::Dendro, Element::Pyro],
             Reaction::Burning => &[Element::Dendro, Element::Pyro],
             Reaction::Shatter => &[],
+            Reaction::StellarConduct => &[Element::Electro, Element::Cryo],
         }
     }
 }

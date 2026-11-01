@@ -445,6 +445,11 @@ pub struct AttackInfo {
 pub mod add_tag {
     /// AttackTagNightsoul: Nightsoul-aligned damage.
     pub const NIGHTSOUL: u8 = 1 << 0;
+    /// AttackTagWrioSSCN5: Wriothesley's fifth enhanced normal attack as
+    /// Stellar-Conduct DMG.
+    pub const WRIO_SSC_N5: u8 = 1 << 1;
+    /// AttackTagWrioSSCCA: Wriothesley's Luster: Vaulting Fist.
+    pub const WRIO_SSC_CA: u8 = 1 << 2;
 }
 
 impl AttackInfo {
@@ -500,11 +505,16 @@ pub struct AttackEvent {
     /// The reaction it causes is on the player (ReactWithSelf), not the
     /// enemy: subscribers that check for an enemy target skip it.
     pub on_player: bool,
+    /// gcsim's Info.Elevation, in hundredths: a factor on the damage after
+    /// the damage group. The hit hooks (`own_hit`) set it, as gcsim's do
+    /// (the ones gcsim gives are whole hundredths; a byte here takes no
+    /// room, where an f64 in AttackInfo slowed every attack).
+    pub elevation: u8,
 }
 
 impl AttackEvent {
     pub fn new(info: AttackInfo, callbacks: u16) -> Self {
-        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false, on_player: false }
+        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false, on_player: false, elevation: 0 }
     }
 }
 
@@ -1320,6 +1330,10 @@ pub struct Sim {
     pub nightsoul_burst_icd: i32,
     /// Flat damage EnemyHit subscribers add to the hit.
     pub hit_flat: f64,
+    /// BaseDmgBonus EnemyHit subscribers add to the hit.
+    pub hit_base_bonus: f64,
+    /// Stellar-Conduct and the Polestar Field.
+    pub stellar: crate::stellar::Stellar,
     /// CRIT Rate an EnemyHit subscriber adds to the hit and the CRIT DMG it
     /// sets (Nahida's C2 on reaction damage).
     pub hit_crit: Option<(f64, f64)>,
@@ -1427,6 +1441,8 @@ impl Sim {
             flags: Vec::new(),
             nightsoul_burst_icd: 0,
             hit_flat: 0.0,
+            hit_base_bonus: 0.0,
+            stellar: Default::default(),
             hit_crit: None,
             na_icd: 0,
             na_chance: [0.0; 4],
@@ -1564,6 +1580,12 @@ impl Sim {
         }
         self.subscribe(EventKind::EnemyDamage, Owner::Core);
         self.subscribe(EventKind::Swap, Owner::Core);
+        // the Stellar characters' Init sets these flags, which only the
+        // fight reads; set before any Init, so that every one sees them
+        if self.chars.iter().any(|c| crate::stellar::enables_stellar(c.kind)) {
+            self.stellar.conduct = true;
+            self.stellar.swirl = true;
+        }
         for i in 0..n {
             crate::chars::dispatch::init(self.chars[i].kind, self, i);
             crate::weapons::dispatch::post_init(self.chars[i].weapon, self, i);
@@ -1682,7 +1704,7 @@ impl Sim {
                 // electro resonance: an electro reaction gives a particle,
                 // once every 5 s (hyperbloom's comes from the dendro core)
                 if let Some(last) = self.electro_res {
-                    if matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::ElectroCharged | Reaction::Quicken | Reaction::Aggravate | Reaction::Hyperbloom) && (self.f - last >= 300 || last == 0) {
+                    if matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::StellarConduct | Reaction::ElectroCharged | Reaction::Quicken | Reaction::Aggravate | Reaction::Hyperbloom) && (self.f - last >= 300 || last == 0) {
                         self.distribute_particle(1.0, Element::Electro);
                         self.electro_res = Some(self.f);
                     }
@@ -2349,6 +2371,8 @@ impl Sim {
         let mut ev = self.slots[slot as usize];
         let grp = if ev.info.sim { 1.0 } else { self.group_dmg_mult(&ev.info) };
         let actor = ev.info.actor as usize;
+        // gcsim's BaseDmgBonus, which only EnemyHit subscribers add
+        let mut base_bonus = 0.0;
         // OnEnemyHit, unless the group takes no damage from this hit:
         // subscribers (sets and weapons first), then the attacker's own
         if grp > 0.0 {
@@ -2356,21 +2380,24 @@ impl Sim {
                 // a subscriber can apply an attack inside the emit (an
                 // attack queued with no delay, as Escoffier's C6 with
                 // travel 0): keep the outer hit's accumulators
-                let outer = (self.hit_flat, self.hit_crit);
+                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus);
                 self.hit_flat = 0.0;
                 self.hit_crit = None;
+                self.hit_base_bonus = 0.0;
                 self.emit(Event::EnemyHit(&ev));
                 ev.info.flat_dmg += self.hit_flat;
+                base_bonus = self.hit_base_bonus;
                 if let Some((cr, cd)) = self.hit_crit {
                     ev.stats[st::CR] += cr;
                     ev.stats[st::CD] = cd;
                 }
-                (self.hit_flat, self.hit_crit) = outer;
+                (self.hit_flat, self.hit_crit, self.hit_base_bonus) = outer;
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }
-        // gcsim's ApplyAttackMods skips reaction damage
-        if !ev.info.sim && !ev.info.tag.is_reaction() {
+        // gcsim's ApplyAttackMods skips reaction damage, not direct
+        // reaction damage
+        if !ev.info.sim && (!ev.info.tag.is_reaction() || ev.info.tag.is_direct()) {
             self.apply_attack_mods(actor, &mut ev);
         }
         // poise, then shatter, on a frozen enemy
@@ -2394,7 +2421,7 @@ impl Sim {
                 self.react(&mut ev);
             }
         }
-        let (dmg, crit) = self.calc(&mut ev, grp);
+        let (dmg, crit) = self.calc(&mut ev, grp, base_bonus);
         // enemy hitlag
         let mut dur = ev.info.hitlag_halt;
         if self.defhalt && ev.info.def_halt {
@@ -2413,6 +2440,8 @@ impl Sim {
     /// gcsim's Reactable.React, for the elements the engine applies:
     /// each reaction in gcsim's order, its event emitted as it happens.
     fn react(&mut self, ev: &mut AttackEvent) {
+        // OnElementApplied: the Polestar Field's hook
+        self.polestar_element_applied(ev);
         match ev.info.element {
             Element::Electro => {
                 self.try_catalyze(ev, Reaction::Aggravate);
@@ -2627,11 +2656,17 @@ impl Sim {
         };
         ev.info.durability = (dur - consumed).max(0.0);
         ev.reacted = true;
-        self.queue_superconduct(ev);
+        if self.stellar.conduct {
+            self.queue_stellar_conduct(ev);
+        } else {
+            self.queue_superconduct(ev);
+        }
     }
 
     /// Electro on frozen: cryo first, then frozen with what is left, and
-    /// the attack's durability is all spent.
+    /// the attack's durability is all spent. With Stellar-Conduct on, the
+    /// same reaction is a Stellar-Conduct (gcsim's TryStellarConduct and
+    /// TryFrozenStellarConduct react exactly as these do).
     fn try_frozen_superconduct(&mut self, ev: &mut AttackEvent) {
         if ev.info.durability < ZERO_DUR || ev.info.element != Element::Electro {
             return;
@@ -2644,7 +2679,11 @@ impl Sim {
         a.reduce(AURA_FROZEN, ev.info.durability, 1.0);
         ev.info.durability = 0.0;
         ev.reacted = true;
-        self.queue_superconduct(ev);
+        if self.stellar.conduct {
+            self.queue_stellar_conduct(ev);
+        } else {
+            self.queue_superconduct(ev);
+        }
     }
 
     fn queue_superconduct(&mut self, ev: &AttackEvent) {
@@ -3667,6 +3706,10 @@ impl Sim {
         if dur < ZERO_DUR || self.enemy.aura.get(m) < ZERO_DUR {
             return;
         }
+        if self.stellar.swirl && (m == AURA_CRYO || m == AURA_FROZEN) {
+            self.unsupported("stellar swirl");
+            return;
+        }
         let rd = self.enemy.aura.reduce(m, dur, 0.5);
         // calcSwirlAtkDurability: the aoe's gauge
         let aoe_dur = if rd < dur { 1.25 * (0.5 * rd - 1.0) + 25.0 } else { 1.25 * (dur - 1.0) + 25.0 };
@@ -3740,6 +3783,10 @@ impl Sim {
         if dur < ZERO_DUR || self.player_aura.get(m) < ZERO_DUR {
             return;
         }
+        if self.stellar.swirl && m == AURA_CRYO {
+            self.unsupported("stellar swirl");
+            return;
+        }
         if m == AURA_FROZEN {
             self.unsupported("swirl of frozen on the player");
             return;
@@ -3799,14 +3846,17 @@ impl Sim {
         }
     }
 
-    fn calc(&mut self, ev: &mut AttackEvent, grp: f64) -> (f64, bool) {
+    fn calc(&mut self, ev: &mut AttackEvent, grp: f64, base_bonus: f64) -> (f64, bool) {
+        if ev.info.tag.is_direct() {
+            return self.calc_direct(ev, grp, base_bonus);
+        }
         let s = &mut ev.stats;
         let st_ele = ev.info.element.dmg_stat();
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
         // reaction damage takes no DMG bonus
         let dmg_bonus = if ev.info.tag.is_reaction() { 0.0 } else { ele_per + s[st::DMGP] };
         let a = if ev.info.use_def { total_def(s) } else { total_atk(s) };
-        let base = ev.info.mult * a * (1.0 + 0.0) + ev.info.flat_dmg;
+        let base = ev.info.mult * a * (1.0 + base_bonus) + ev.info.flat_dmg;
         let mut damage = base * (1.0 + dmg_bonus);
         s[st::CR] = s[st::CR].clamp(0.0, 1.0);
         let (res, defadj) = self.enemy_resist_def(ev.info.element);
@@ -3833,12 +3883,13 @@ impl Sim {
             damage *= ev.info.amp_mult * (1.0 + em_bonus + react_bonus);
         }
         damage *= grp;
+        damage *= 1.0 + ev.elevation as f64 / 100.0;
         (damage, crit)
     }
 
     /// The enemy's resistance to an element and its DEF adjustment (gcsim's
     /// resist and defAdj), from the mods that count now.
-    fn enemy_resist_def(&self, e: Element) -> (f64, f64) {
+    pub(crate) fn enemy_resist_def(&self, e: Element) -> (f64, f64) {
         let mut r = self.enemy.resist[e as usize];
         let mut d = 0.0;
         for m in &self.enemy.mods {
@@ -4332,6 +4383,10 @@ impl Sim {
         // gadgets, those already there when the tick starts
         if !self.gadgets.is_empty() {
             self.tick_gadgets();
+        }
+        // the Polestar Field, after them
+        if !self.stellar.fields.is_empty() {
+            self.tick_polestar();
         }
         // shards last the same 15 s, so they go in the order they came
         if f >= self.next_expiry {

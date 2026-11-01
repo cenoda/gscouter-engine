@@ -2,9 +2,10 @@
 //! the skill and its ticks (with its Surging Blade), the burst with its
 //! heals, A1, A4 and constellations 1 to 6. Plunges from
 //! Xianyun's airborne state; no charged attacks.
-//! C1's CRIT DMG on Stellar reactions (gcsim's OnSpecialReactionAttack)
-//! never applies: the engine has no lunar or Stellar reactions (nothing
-//! ported makes them).
+//! C1's CRIT DMG on Stellar reactions (gcsim's OnSpecialReactionAttack,
+//! IsStellarReact) is for Stellar Swirl only, which is not ported (an error
+//! with any anemo character in a Stellar team, `stellar.rs`), so it never
+//! applies.
 
 use crate::content::{Character, Event, EventKind, Owner};
 use crate::gcsl::Num;

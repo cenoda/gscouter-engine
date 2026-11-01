@@ -384,7 +384,7 @@ fn with_oz_snapshot(s: &Sim, ci: usize, ai: AttackInfo) -> AttackEvent {
 /// A4: an electro reaction by the active character while Oz is out calls
 /// down Thundering Retribution, with Oz's snapshot.
 fn a4(s: &mut Sim, ci: usize, r: Reaction, ev: &AttackEvent) {
-    if !matches!(r, Reaction::Overload | Reaction::ElectroCharged | Reaction::Superconduct | Reaction::SwirlElectro | Reaction::CrystallizeElectro | Reaction::Hyperbloom | Reaction::Quicken | Reaction::Aggravate) {
+    if !matches!(r, Reaction::Overload | Reaction::ElectroCharged | Reaction::Superconduct | Reaction::StellarConduct | Reaction::SwirlElectro | Reaction::CrystallizeElectro | Reaction::Hyperbloom | Reaction::Quicken | Reaction::Aggravate) {
         return;
     }
     let active = s.player.active as usize;
