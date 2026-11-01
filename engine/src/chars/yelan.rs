@@ -80,7 +80,6 @@ impl Character for Char {
             // a burst's travel changes gcsim's package variable for every
             // later burst, of every Yelan
             Action::Burst if p.get("travel").is_some() => Some("burst[travel]".into()),
-            Action::Aim if p.get("weakspot").unwrap_or(0) != 0 => Some("aim[weakspot]".into()),
             Action::Aim if !matches!(p.get("hold"), None | Some(0) | Some(1)) => Some("aim[hold]".into()),
             Action::Attack | Action::Skill | Action::Burst | Action::Aim => None,
             _ => Some(crate::gcsl::action_name(a).into()),
@@ -126,17 +125,22 @@ impl Character for Char {
         let hold = p.get("hold").unwrap_or(1) as usize;
         let travel = p.get("travel").map_or(TRAVEL, |t| t as i32);
         let lvl = s.talent(ci, 0);
+        let weak_point = p.get("weakspot") == Some(1);
         if s.st::<State>(ci).breakthrough && hold == 1 {
             s.st_mut::<State>(ci).breakthrough = false;
             let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_YELAN_BREAKTHROUGH, icd::GROUP_YELAN_BREAKTHROUGH, Element::Hydro, 25.0, 0.0);
             ai.abil = "Breakthrough Barb";
             ai.flat_dmg = g::BARB[lvl] * s.max_hp(ci);
+            ai.weak_point = weak_point;
+            ai.pattern = s.circle_on_target(6.0);
             s.queue_attack(ai, 0, g::AIMED_BARB_HITMARK, g::AIMED_BARB_HITMARK + travel);
             let t = &g::AIMED_BARB_FRAMES;
             return ActInfo::new(Frames::Table(t), t[0], g::AIMED_BARB_HITMARK, AnimState::Aim);
         }
         let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Hydro, 25.0, g::FULLAIM[lvl]);
         ai.abil = "Fully-Charged Aimed Shot";
+        ai.weak_point = weak_point;
+        ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
         if hold < 1 {
             ai.abil = "Aimed Shot";
             ai.element = Element::Physical;

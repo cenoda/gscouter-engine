@@ -99,7 +99,6 @@ impl Character for Char {
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
             Action::Attack | Action::Skill | Action::Burst => None,
-            Action::Aim if p.get("weakspot").unwrap_or(0) != 0 => Some("aim[weakspot]".into()),
             Action::Aim if !matches!(p.get("hold"), None | Some(0) | Some(1)) => Some("aim[hold]".into()),
             Action::Aim => None,
             _ => Some(crate::gcsl::action_name(a).into()),
@@ -153,10 +152,14 @@ impl Character for Char {
         let hold = p.get("hold").unwrap_or(1) as usize;
         let travel = p.get("travel").map_or(10, |t| t as i32);
         let lvl = s.talent(ci, 0);
-        // without a weak spot hit, its hitlag (on headshots only) never applies
         let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Electro, 25.0, g::FULLAIM[lvl]);
         ai.abil = "Fully-Charged Aimed Shot";
         ai.deployable = true;
+        // its hitlag applies on weak spot hits only (HitlagOnHeadshotOnly)
+        if p.get("weakspot") == Some(1) {
+            ai.weak_point = true;
+            ai.hitlag_halt = 0.12 * 60.0;
+        }
         if hold < 1 {
             ai.abil = "Aimed Shot";
             ai.element = Element::Physical;

@@ -439,6 +439,8 @@ pub struct AttackInfo {
     pub use_def: bool,
     /// gcsim's AdditionalTags, as `add_tag` bits.
     pub add_tags: u8,
+    /// gcsim's HitWeakPoint: it always crits, without a random draw.
+    pub weak_point: bool,
 }
 
 /// gcsim's additional attack tags (AttackInfo.AdditionalTags), as bits.
@@ -480,6 +482,7 @@ impl AttackInfo {
             pattern: Pattern::Unknown,
             use_def: false,
             add_tags: 0,
+            weak_point: false,
         }
     }
 }
@@ -3160,7 +3163,7 @@ impl Sim {
         let def = total_def(&self.stats(active)) * (1.0 - ev.info.ignore_def.min(1.0));
         damage *= 1.0 - def / (def + (5 * ev.char_lvl) as f64 + 500.0);
         let (cr, cd, em) = (ev.stats[st::CR], ev.stats[st::CD], ev.stats[st::EM]);
-        if self.rng.float64() <= cr {
+        if ev.info.weak_point || self.rng.float64() <= cr {
             damage *= 1.0 + cd;
         }
         if ev.info.amped {
@@ -3798,7 +3801,7 @@ impl Sim {
         };
         damage *= resmod;
         let mut crit = false;
-        if self.rng.float64() <= s[st::CR] {
+        if ev.info.weak_point || self.rng.float64() <= s[st::CR] {
             damage *= 1.0 + s[st::CD];
             crit = true;
         }
