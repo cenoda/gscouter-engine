@@ -861,10 +861,16 @@ func runGse(gse, path string, n int, seed int64, warmup float64) (*harness.Outpu
 	return &res, nil
 }
 
+// zeroDPS is DPS too small to be anything but floating-point residue:
+// gcsim can leave 1e-12 for a character whose every hit in the window does
+// no damage, where the engine sums an exact 0, and the relative difference
+// of the two is -100%.
+const zeroDPS = 1e-6
+
 func metric(name string, g, r harness.Stat) Metric {
 	m := Metric{Name: name, Gcsim: g.Mean, GcsimSE: g.StdErr, Gse: r.Mean, GseSE: r.StdErr}
 	switch {
-	case g.Mean == 0 && r.Mean == 0:
+	case g.Mean == 0 && r.Mean == 0, math.Abs(g.Mean) < zeroDPS && math.Abs(r.Mean) < zeroDPS:
 		m.Verdict = "pass"
 		return m
 	case g.Mean == 0:
