@@ -1,9 +1,10 @@
 //! Jean, from gcsim's internal/characters/jean: normal and charged
 //! attacks, the skill (pressed or held), the burst with its field's heals
-//! and self swirl (gcsim's ReactWithSelf), A1 and A4. No plunges or
-//! constellations.
+//! and self swirl (gcsim's ReactWithSelf), A1, A4 and constellations 1
+//! to 6. No plunges (gcsim's package has none). C6 (less damage taken in
+//! the field) does nothing, as in gcsim, which logs it as not implemented.
 
-use crate::content::Character;
+use crate::content::{Character, Event, EventKind, Owner};
 use crate::gcsimdata::chars::jean as g;
 use crate::sim::*;
 use crate::types::*;
@@ -22,6 +23,8 @@ pub struct State {
 const BURST: ModKey = ModKey::new("jean-q");
 const BASE_PARTICLE_ICD: ModKey = ModKey::new(g::BASE_PARTICLE_ICD_KEY);
 const EXTRA_PARTICLE_ICD: ModKey = ModKey::new(g::EXTRA_PARTICLE_ICD_KEY);
+const C2: ModKey = ModKey::new("jean-c2");
+const C4: ModKey = ModKey::new("jean-c4");
 
 const CB_PARTICLES: u16 = 1 << 0;
 const CB_A1: u16 = 1 << 1;
@@ -29,14 +32,21 @@ const CB_A1: u16 = 1 << 1;
 const TASK_HEAL: u8 = 0;
 const TASK_FIELD: u8 = 1;
 const TASK_A4: u8 = 2;
+const TASK_C4: u8 = 3;
 
 impl Character for Char {
     const KEY: &'static str = "jean";
-    const MAX_CONS: i32 = 0;
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
         State::default()
+    }
+
+    fn init(s: &mut Sim, ci: usize) {
+        // C2: OnParticleReceived
+        if s.chars[ci].cons >= 2 {
+            s.subscribe(EventKind::ParticleReceived, Owner::Char(ci as u8));
+        }
     }
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
@@ -83,7 +93,11 @@ impl Character for Char {
         ai.abil = "Gale Blade";
         ai.pattern = s.box_on_player(0.0, 0.0, 4.0, 4.1);
         // snapshot as the skill is used
-        let ev = s.snapshot_event(ai, CB_PARTICLES);
+        let mut ev = s.snapshot_event(ai, CB_PARTICLES);
+        // C1: held for 1 s or more, 40% more damage
+        if s.chars[ci].cons >= 1 && p.get("hold").unwrap_or(0) >= 60 {
+            ev.stats[st::DMGP] += 0.4;
+        }
         s.queue_attack_with_snap(ev, CB_PARTICLES, hitmark);
         s.set_cd_with_delay(ci, Action::Skill, 360, hitmark - 2);
         let t = &g::SKILL_FRAMES;
@@ -118,6 +132,10 @@ impl Character for Char {
         st.heal = g::BURST_INITIAL_HEAL_FLAT[lvl] + atk * g::BURST_INITIAL_HEAL_PER[lvl];
         st.heal_dot = g::BURST_DOT_HEAL_FLAT[lvl] + atk * g::BURST_DOT_HEAL_PER[lvl];
         s.add_task(Task::Char { c: ci as u8, id: TASK_HEAL, arg: 0 }, g::BURST_START);
+        // C4 also applies once right before the burst starts
+        if s.chars[ci].cons >= 4 {
+            s.add_task(Task::Char { c: ci as u8, id: TASK_C4, arg: 0 }, g::BURST_START - 1);
+        }
         // the field ticks every second; the player stays in it
         let mut i = 100;
         while i <= 600 + g::BURST_START {
@@ -142,7 +160,11 @@ impl Character for Char {
                 let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 25.0, 0.0);
                 ai.abil = "Dandelion Breeze (Self Swirl)";
                 s.react_with_self(ai);
+                if s.chars[ci].cons >= 4 {
+                    c4(s);
+                }
             }
+            TASK_C4 => c4(s),
             // A4: 20% of the burst's energy back
             TASK_A4 => {
                 if s.chars[ci].ascension >= 4 {
@@ -150,6 +172,18 @@ impl Character for Char {
                 }
             }
             _ => unreachable!(),
+        }
+    }
+
+    /// C2: when Jean is on the field as the party takes a particle, every
+    /// member gets ATK SPD +15% for 15 s, extended by its hitlag.
+    fn event(s: &mut Sim, ci: usize, e: &Event) {
+        let Event::ParticleReceived = *e else { return };
+        if s.player.active as usize != ci {
+            return;
+        }
+        for i in 0..s.chars.len() {
+            s.add_stat_mod(i, C2, st::ATKSPD, 0.15, 900, true);
         }
     }
 
@@ -171,5 +205,14 @@ impl Character for Char {
             let bonus = s.stat(ci, st::HEAL);
             s.heal_info(ci, None, false, total_atk(&ev.stats) * 0.15, bonus);
         }
+    }
+}
+
+/// C4: the enemy in the field (a circle of radius 6 on the player) takes
+/// Anemo RES -40% for 1.2 s, hitlag affected; renewed with each heal tick.
+fn c4(s: &mut Sim) {
+    let area = s.circle_on_player(0.0, 0.0, 6.0);
+    if area.hits_circle(0.0, s.target_dist, s.target_radius) == Some(true) {
+        s.enemy_add_resist(C4, Element::Anemo, -0.4, 72);
     }
 }
