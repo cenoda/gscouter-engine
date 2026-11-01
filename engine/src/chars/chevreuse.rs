@@ -1,7 +1,7 @@
 //! Chevreuse, from gcsim's internal/characters/chevreuse: normal attacks,
 //! the skill pressed and held (the overcharged ball after an overload),
 //! its heals and Arkhe hit, the burst and its mines, A1, A4 and every
-//! constellation. No charged attacks.
+//! constellation, and charged attacks.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::chevreuse as g;
@@ -71,9 +71,22 @@ impl Character for Char {
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Skill | Action::Burst => None,
+            Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    fn charge(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        let lvl = s.talent(ci, 0);
+        let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_EXTRA_ATTACK, icd::GROUP_POLE_EXTRA_ATTACK, Element::Physical, 25.0, g::CHARGE[lvl]);
+        ai.abil = "Charge Attack";
+        ai.hitlag_factor = 0.01;
+        ai.def_halt = true;
+        ai.deployable = true;
+        ai.pattern = s.circle_on_target(0.8);
+        s.queue_attack(ai, 0, g::CHARGE_HITMARK, g::CHARGE_HITMARK);
+        let t = &g::CHARGE_FRAMES;
+        ActInfo::new(Frames::Table(t), t[0], g::CHARGE_HITMARK, AnimState::Charge)
     }
 
     fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {

@@ -1,0 +1,8 @@
+# The dendro and burning auras read by conditions (.element.t0.dendro after Nahida's skill, .element.t0.burning after Bennett's), each gating a wait.
+team bennett-nahida-yoimiya-xingqiu
+rotation- nahida skill, attack;
+rotation+ nahida skill, attack;
+rotation+ if .element.t0.dendro > 0 { wait(40); }
+rotation- bennett skill,attack, burst;
+rotation+ bennett skill,attack, burst;
+rotation+ if .element.t0.burning > 0 { wait(40); }

@@ -2,7 +2,8 @@
 //! (with the skill's pyro and multiplier, applied as they snapshot), the
 //! skill, the burst and Aurous Blaze, A1, A4, C2, C4 and C6. C1 adds ATK
 //! when an enemy with Aurous Blaze dies, which no fight here has, so only
-//! its longer Aurous Blaze applies. No aimed shots.
+//! its longer Aurous Blaze applies. Aimed shots, with their Kindling
+//! Arrows.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::yoimiya as g;
@@ -48,11 +49,52 @@ impl Character for Char {
         s.subscribe(EventKind::EnemyDamage, Owner::Char(ci as u8));
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Skill | Action::Burst => None,
+            // gcsim's Aimed rejects any other hold (an error there too)
+            Action::Aim if !matches!(p.get("hold"), None | Some(0..=4)) => Some("aim[hold]".into()),
+            Action::Attack | Action::Skill | Action::Burst | Action::Aim => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Aimed shots: hold 2 to 4 adds one to three Kindling Arrows, which
+    /// never hit a weak spot.
+    fn aim(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        let travel = p.get("travel").map_or(10, |t| t as i32);
+        let hold = p.get("hold").unwrap_or(1) as usize;
+        let kindling_travel = p.get("kindling_travel").map_or(30, |t| t as i32);
+        let lvl = s.talent(ci, 0);
+        let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::FULLAIM[lvl]);
+        ai.abil = "Fully-Charged Aimed Shot";
+        ai.deployable = true;
+        ai.hitlag_factor = 0.01;
+        // its hitlag applies on weak spot hits only (HitlagOnHeadshotOnly)
+        if p.get("weakspot") == Some(1) {
+            ai.weak_point = true;
+            ai.hitlag_halt = 0.12 * 60.0;
+        }
+        let mut cb_c2 = if s.chars[ci].cons >= 2 { CB_C2 } else { 0 };
+        if hold < 1 {
+            ai.abil = "Aimed Shot";
+            ai.element = Element::Physical;
+            ai.mult = g::AIM[lvl];
+            cb_c2 = 0;
+        }
+        ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
+        let h = g::AIMED_HITMARKS[hold];
+        s.queue_attack(ai, cb_c2, h, h + travel);
+        if hold >= 2 {
+            let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_EXTRA_ATTACK, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::AIM_EXTRA[lvl]);
+            ai.hitlag_factor = 0.01;
+            ai.pattern = s.circle_on_target(0.6);
+            for i in 1..hold {
+                ai.abil = ["", "Kindling Arrow 1", "Kindling Arrow 2", "Kindling Arrow 3"][i];
+                s.queue_attack(ai, cb_c2, h, h + kindling_travel);
+            }
+        }
+        let t = &g::AIMED_FRAMES[hold];
+        ActInfo::new(Frames::Table(t), t[0], h, AnimState::Aim)
     }
 
     /// The skill turns normal attacks pyro and multiplies them as they

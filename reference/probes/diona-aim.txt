@@ -1,0 +1,4 @@
+# Diona's aimed shots (C6): a fully charged shot on a weak spot before her burst, then C4's faster shot in her field and a physical aimed shot (no library rotation aims with her).
+team gaming-diona-rosaria-bennett
+rotation- diona skill[hold=1], burst;
+rotation+ diona aim[weakspot=1], skill[hold=1], burst, aim, aim[hold=0];

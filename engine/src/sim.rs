@@ -439,6 +439,8 @@ pub struct AttackInfo {
     pub use_def: bool,
     /// gcsim's AdditionalTags, as `add_tag` bits.
     pub add_tags: u8,
+    /// gcsim's HitWeakPoint: it always crits, without a random draw.
+    pub weak_point: bool,
 }
 
 /// gcsim's additional attack tags (AttackInfo.AdditionalTags), as bits.
@@ -485,6 +487,7 @@ impl AttackInfo {
             pattern: Pattern::Unknown,
             use_def: false,
             add_tags: 0,
+            weak_point: false,
         }
     }
 }
@@ -3247,7 +3250,7 @@ impl Sim {
         let def = total_def(&self.stats(active)) * (1.0 - ev.info.ignore_def.min(1.0));
         damage *= 1.0 - def / (def + (5 * ev.char_lvl) as f64 + 500.0);
         let (cr, cd, em) = (ev.stats[st::CR], ev.stats[st::CD], ev.stats[st::EM]);
-        if self.rng.float64() <= cr {
+        if ev.info.weak_point || self.rng.float64() <= cr {
             damage *= 1.0 + cd;
         }
         if ev.info.amped {
@@ -3896,7 +3899,7 @@ impl Sim {
         };
         damage *= resmod;
         let mut crit = false;
-        if self.rng.float64() <= s[st::CR] {
+        if ev.info.weak_point || self.rng.float64() <= s[st::CR] {
             damage *= 1.0 + s[st::CD];
             crit = true;
         }
@@ -4785,11 +4788,23 @@ impl Sim {
             "element" => {
                 need(3, "element")?;
                 self.target(&fields[1])?;
+                let a = &self.enemy.aura;
                 let d = match fields[2].as_str() {
-                    "pyro" => self.enemy.aura.get(AURA_PYRO),
-                    "hydro" => self.enemy.aura.get(AURA_HYDRO),
-                    "electro" => self.enemy.aura.get(AURA_ELECTRO),
-                    "cryo" | "dendro" | "quicken" | "frozen" | "geo" | "burning" => 0.0,
+                    // gcsim's evalElement: burning's own slot while
+                    // IsBurning, unfloored
+                    "burning" => {
+                        let burning = a.get(AURA_BURNING_FUEL) > ZERO_DUR && a.get(AURA_BURNING) > ZERO_DUR;
+                        return Ok(Num::Float(if burning { a.get(AURA_BURNING) } else { 0.0 }));
+                    }
+                    "pyro" => a.get(AURA_PYRO),
+                    "hydro" => a.get(AURA_HYDRO),
+                    "electro" => a.get(AURA_ELECTRO),
+                    "cryo" => a.get(AURA_CRYO),
+                    "dendro" => a.get(AURA_DENDRO),
+                    "quicken" => a.get(AURA_QUICKEN),
+                    "frozen" => a.get(AURA_FROZEN),
+                    // geo never attaches
+                    "geo" => 0.0,
                     e => return Err(format!("bad element condition: invalid element {e}")),
                 };
                 Ok(Num::Float(if d < ZERO_DUR { 0.0 } else { d }))
@@ -4812,7 +4827,14 @@ impl Sim {
                 // ported characters the engine keeps, or an error
                 match fields[2].as_str() {
                     crate::gcsimdata::chars::lisa::CONDUCTIVE_TAG => Ok(int(crate::chars::lisa::conductive(self))),
-                    t @ (crate::gcsimdata::chars::yelan::SKILL_MARKED_TAG | crate::gcsimdata::chars::lynette::SKILL_TAG | crate::gcsimdata::chars::hutao::BB_DEBUFF) => Err(format!("unsupported: enemy tag {t}")),
+                    // the frame the current Blood Blossom started
+                    crate::gcsimdata::chars::hutao::BB_DEBUFF => Ok(int(crate::chars::hutao::bb_tag(self))),
+                    // Yelan marks and unmarks in two tasks of the same
+                    // frame, so no condition sees the mark
+                    crate::gcsimdata::chars::yelan::SKILL_MARKED_TAG => Ok(int(0)),
+                    // gcsim's held skill never calls the function that
+                    // sets it (see `chars::lynette`)
+                    crate::gcsimdata::chars::lynette::SKILL_TAG => Ok(int(0)),
                     _ => Ok(int(0)),
                 }
             }
@@ -4901,12 +4923,14 @@ impl Sim {
                         let f = self.f as f64;
                         Ok(b(self.infusion[ci].is_some_and(|i| i.key.name == fields[2] && !(i.expiry < f && i.expiry > -1.0))))
                     }
-                    // the character's tags (0 when unset); those ported
-                    // characters set are not kept
+                    // the character's tags (0 when unset): those ported
+                    // characters set on others (a character's own tags
+                    // are its condition's, such as Yae Miko's totems,
+                    // Zhongli's and Diona's)
                     "tags" => {
                         need(3, &what)?;
                         match fields[2].as_str() {
-                            t @ (crate::gcsimdata::chars::yaemiko::YAE_TOTEM_COUNT | crate::gcsimdata::chars::shenhe::QUILL_KEY) => Err(format!("unsupported: character tag {t}")),
+                            crate::gcsimdata::chars::shenhe::QUILL_KEY => Ok(int(crate::chars::shenhe::quill_tag(self, ci))),
                             crate::gcsimdata::chars::xilonen::C4KEY => Ok(int(crate::chars::xilonen::c4_tag(self, ci))),
                             t @ (crate::gcsimdata::chars::xianyun::A1_KEY | crate::gcsimdata::chars::xianyun::C6_KEY) => Ok(int(crate::chars::xianyun::tag(self, ci, t))),
                             _ => Ok(int(0)),

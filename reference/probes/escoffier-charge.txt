@@ -1,0 +1,4 @@
+# Escoffier's charged attack after a normal attack (no library rotation charges with her).
+team bennett-furina-rosaria-escoffier
+rotation- esco skill;
+rotation+ esco attack, charge, skill;

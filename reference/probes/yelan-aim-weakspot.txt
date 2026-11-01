@@ -1,0 +1,6 @@
+# Yelan's Breakthrough Barb and fully charged aimed shots on a weak spot: sure crits (the library aims with her without weakspot, and rarely).
+team bennett-yelan-fischl-chevreuse
+rotation- yelan aim;
+rotation+ yelan aim[weakspot=1];
+rotation- yelan burst, attack;
+rotation+ yelan burst, aim[weakspot=1], aim[weakspot=1];

@@ -1,0 +1,4 @@
+# Xingqiu's charged attack after a normal attack, in his burst (no library rotation charges with him).
+team alhaitham-nahida-xingqiu-kukishinobu
+rotation- xingqiu skill, dash, burst, attack;
+rotation+ xingqiu skill, dash, burst, attack, charge;

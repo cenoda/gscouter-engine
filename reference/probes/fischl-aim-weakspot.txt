@@ -1,0 +1,5 @@
+# Fischl's fully charged aimed shot on a weak spot (a sure crit, with its headshot hitlag), then a physical aimed shot, in every rotation (the library aims with her only before the first).
+team diluc-chevreuse-fischl-bennett
+rotation- bennett skill, burst;
+rotation+ fischl aim[weakspot=1], aim[hold=0];
+rotation+ bennett skill, burst;

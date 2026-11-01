@@ -1,0 +1,4 @@
+# Candace's charged attack after a normal attack (no library rotation charges with her).
+team bennett-furina-fischl-candace
+rotation- candace attack, skill, burst;
+rotation+ candace attack, charge, skill, burst;
