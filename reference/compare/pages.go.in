@@ -1,0 +1,124 @@
+// Command gse-pages prints, as JSON, the configs a Gscouter result page
+// runs for a library team and a build: every rotation and filler candidate
+// its search (steady.Best) tries, and the one-pass config of the rotation
+// it picks. It is not part of Gscouter: compare builds it inside
+// Gscouter's module with `go build -overlay` (it reads Gscouter's internal
+// packages), so that the configs are Gscouter's own and Gscouter is not
+// modified. The search runs on gcsim with the server's settings
+// (web.DefaultSettings, seed 1), as the server's does, so the candidates
+// are the ones a page with this build would try.
+//
+// Usage: gse-pages -team <dir> -build <file> [-iter n] [-enemy <boss>]
+//
+// Every config gets `options iteration=<iter>` as gscouter -dump gives it,
+// so the first is -dump's config to the byte (with the standard enemy).
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"os"
+	"regexp"
+
+	"github.com/cenoda/gscouter/internal/config"
+	"github.com/cenoda/gscouter/internal/library"
+	"github.com/cenoda/gscouter/internal/score"
+	"github.com/cenoda/gscouter/internal/steady"
+	"github.com/cenoda/gscouter/internal/web"
+)
+
+// Config is a config a page runs.
+type Config struct {
+	// Name is "looped:<rotation>.<candidate>" for the search's runs, in
+	// the order it runs them, or "once" for the one-pass config.
+	Name   string  `json:"name"`
+	Warmup float64 `json:"warmup"`
+	Config string  `json:"config"`
+}
+
+var iterationRe = regexp.MustCompile(`\biteration=\d+`)
+
+func main() {
+	teamDir := flag.String("team", "", "team library directory")
+	buildPath := flag.String("build", "", "build file")
+	iterations := flag.Int("iter", 1000, "iterations written in each config's options line")
+	boss := flag.String("enemy", "", "a boss preset's key (config.Bosses); empty for the standard enemy")
+	flag.Parse()
+	if err := run(*teamDir, *buildPath, *iterations, *boss); err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+}
+
+func run(teamDir, buildPath string, iterations int, boss string) error {
+	set := web.DefaultSettings
+	team, err := library.Load(teamDir)
+	if err != nil {
+		return err
+	}
+	if team.Status == library.StatusBlocked {
+		return fmt.Errorf("team %q is blocked: %s", team.ID, team.Notes)
+	}
+	raw, err := os.ReadFile(buildPath)
+	if err != nil {
+		return err
+	}
+	var enemy *config.Enemy
+	if boss != "" {
+		b, ok := config.FindBoss(boss)
+		if !ok {
+			return fmt.Errorf("no boss %q", boss)
+		}
+		enemy = &config.Enemy{Level: config.StandardEnemy.Level, Resist: b.Resist, Boss: b.Key}
+	}
+	// as cmd/gscouter builds a library build's runs
+	rotations := team.RotationsFor(library.BuildConstellations(string(raw)))
+	builds := make([]string, len(rotations))
+	runs := make([]steady.Rotation, len(rotations))
+	for i, t := range rotations {
+		builds[i] = string(raw)
+		for m, p := range t.Params {
+			builds[i] = config.AddParams(builds[i], m, p)
+		}
+		runs[i] = steady.Rotation{Rotation: t.Rotation, Members: t.Members}
+	}
+	if len(runs) == 0 {
+		return fmt.Errorf("team %q has no rotation for this build", team.ID)
+	}
+
+	var out []Config
+	seen := map[string]bool{}
+	add := func(name string, warmup float64, cfg string) {
+		cfg = iterationRe.ReplaceAllString(cfg, fmt.Sprintf("iteration=%d", iterations))
+		if seen[cfg] {
+			return
+		}
+		seen[cfg] = true
+		out = append(out, Config{Name: name, Warmup: warmup, Config: cfg})
+	}
+	// as the server's compute ranks them (internal/web/server.go)
+	counts := make([]int, len(runs))
+	best, _, err := steady.Best(runs, func(i int, looped string, rank bool) (*score.Result, error) {
+		n := set.Iterations
+		if rank {
+			n = min(n, 10) // exploreIterations
+		}
+		cfg := config.Assemble(config.Conditions{Iterations: n, Duration: set.Duration, Enemy: enemy}, builds[i], looped)
+		add(fmt.Sprintf("looped:%d.%d", i, counts[i]), set.Warmup, cfg)
+		counts[i]++
+		return score.Run(context.Background(), cfg, score.Options{Iterations: n, Warmup: set.Warmup, Seed: 1})
+	})
+	if err != nil {
+		return err
+	}
+	once := config.Assemble(config.Conditions{Iterations: set.Iterations, Enemy: enemy}, builds[best], runs[best].Rotation)
+	add("once", 0, once)
+	b, err := json.MarshalIndent(out, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(b))
+	return nil
+}

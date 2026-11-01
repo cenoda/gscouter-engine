@@ -94,7 +94,7 @@ var (
 	buildsFlag  = flag.String("builds", "", "comma-separated team/build pairs as the report names them (team/library, team/er-0, team/cons:xingqiu=C0, team/probe:kuki-c6): compare only those, of any kind; implies -only library,variants,buildspace,probes and -teams")
 	censusOnly  = flag.Bool("census", false, "only classify teams as supported or not; run nothing")
 	noVariants  = flag.Bool("no-variants", false, "compare library builds and probes only (same as -only library,probes)")
-	onlyFlag    = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, buildspace, probes")
+	onlyFlag    = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, buildspace, probes, pages")
 	bsWeapons   = flag.Int("buildspace-weapons", 2, "build space: other weapons of the class per member, chosen by a hash of team, member and weapon (0: every one the engine has)")
 	dryRun      = flag.Bool("dry-run", false, "list the builds that would be compared, and compare none")
 	shardFlag   = flag.String("shard", "", "k/n: compare only the k-th of n parts of the teams that have builds to compare (k from 0); the census still covers every team")
@@ -130,6 +130,18 @@ type variant struct {
 	force bool
 	// change is the axis a build-space build changes.
 	change *BuildChange
+	// page marks a config a result page runs besides the library's
+	// (pages.go); warmup, when set, is its own in place of -warmup.
+	page   bool
+	warmup *float64
+}
+
+// warm is the seconds excluded from the build's window.
+func (v variant) warm() float64 {
+	if v.warmup != nil {
+		return *v.warmup
+	}
+	return *warmup
 }
 
 // op scales a stat in every `add stats` line, then adds to the last one.
@@ -140,16 +152,16 @@ type op struct {
 }
 
 var variants = []variant{
-	{"er-0", "no ER from artifacts", []op{{"er", 0, 0}}, false, nil},
-	{"er-0-forced", "no ER from artifacts, bursts used without their readiness checks so that they wait for energy", []op{{"er", 0, 0}}, true, nil},
-	{"er-half", "half the ER from artifacts", []op{{"er", 0.5, 0}}, false, nil},
-	{"er-half-forced", "half the ER from artifacts, bursts used without their readiness checks", []op{{"er", 0.5, 0}}, true, nil},
-	{"er+", "ER +30%", []op{{"er", 1, 0.3}}, false, nil},
-	{"crit-", "CR −20%, CD −40%", []op{{"cr", 1, -0.2}, {"cd", 1, -0.4}}, false, nil},
-	{"crit+", "CR +20%, CD +40%", []op{{"cr", 1, 0.2}, {"cd", 1, 0.4}}, false, nil},
-	{"atk+", "ATK +40%", []op{{"atk%", 1, 0.4}}, false, nil},
-	{"hp+", "HP +40%", []op{{"hp%", 1, 0.4}}, false, nil},
-	{"em+", "EM +150", []op{{"em", 1, 150}}, false, nil},
+	{"er-0", "no ER from artifacts", []op{{"er", 0, 0}}, false, nil, false, nil},
+	{"er-0-forced", "no ER from artifacts, bursts used without their readiness checks so that they wait for energy", []op{{"er", 0, 0}}, true, nil, false, nil},
+	{"er-half", "half the ER from artifacts", []op{{"er", 0.5, 0}}, false, nil, false, nil},
+	{"er-half-forced", "half the ER from artifacts, bursts used without their readiness checks", []op{{"er", 0.5, 0}}, true, nil, false, nil},
+	{"er+", "ER +30%", []op{{"er", 1, 0.3}}, false, nil, false, nil},
+	{"crit-", "CR −20%, CD −40%", []op{{"cr", 1, -0.2}, {"cd", 1, -0.4}}, false, nil, false, nil},
+	{"crit+", "CR +20%, CD +40%", []op{{"cr", 1, 0.2}, {"cd", 1, 0.4}}, false, nil, false, nil},
+	{"atk+", "ATK +40%", []op{{"atk%", 1, 0.4}}, false, nil, false, nil},
+	{"hp+", "HP +40%", []op{{"hp%", 1, 0.4}}, false, nil, false, nil},
+	{"em+", "EM +150", []op{{"em", 1, 150}}, false, nil, false, nil},
 }
 
 type Metric struct {
@@ -334,6 +346,12 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
+	pages := ""
+	if strings.Contains(*onlyFlag, "pages") || *buildsFlag != "" {
+		if pages, err = buildPages(tmp); err != nil {
+			fail(err)
+		}
+	}
 
 	ids := listTeams()
 	if *teamsFlag != "" {
@@ -359,7 +377,7 @@ func main() {
 			}
 			wanted[team][b] = true
 		}
-		kinds, err = parseOnly("library,variants,buildspace,probes")
+		kinds, err = parseOnly("library,variants,buildspace,probes,pages")
 		if err != nil {
 			fail(err)
 		}
@@ -423,7 +441,7 @@ func main() {
 			if kinds["probes"] {
 				probes = probesFor(id)
 			}
-			if !(selected && (kinds["library"] || kinds["variants"] || kinds["buildspace"])) && len(probes) == 0 {
+			if !(selected && (kinds["library"] || kinds["variants"] || kinds["buildspace"] || kinds["pages"])) && len(probes) == 0 {
 				continue
 			}
 			part++
@@ -522,6 +540,9 @@ func main() {
 					jobs = append(jobs, job{v: bb.v, cfg: cfg})
 				}
 			}
+			if supported && kinds["pages"] {
+				jobs = append(jobs, pageJobs(pages, gse, tmp, id, configs[i])...)
+			}
 			for _, pr := range probes {
 				if !want(id, pr.v.Name) {
 					continue
@@ -619,7 +640,7 @@ func main() {
 				}
 				// a feature only the run finds makes the team unsupported,
 				// unless a build-space build alone carries it
-				if r.Verdict == "unsupported" && supported && j.v.change == nil {
+				if r.Verdict == "unsupported" && supported && j.v.change == nil && !j.v.page {
 					statuses[i].Status = "unsupported"
 					statuses[i].Unsupported = []string{r.Error}
 				}
@@ -685,11 +706,11 @@ func parseOnly(s string) (map[string]bool, error) {
 	for _, k := range strings.Split(s, ",") {
 		k = strings.TrimSpace(k)
 		switch k {
-		case "library", "variants", "buildspace", "probes":
+		case "library", "variants", "buildspace", "probes", "pages":
 			kinds[k] = true
 		case "":
 		default:
-			return nil, fmt.Errorf("-only: unknown kind %q (library, variants, buildspace, probes)", k)
+			return nil, fmt.Errorf("-only: unknown kind %q (library, variants, buildspace, probes, pages)", k)
 		}
 	}
 	if len(kinds) == 0 {
@@ -810,9 +831,9 @@ func check(gse, tmp, id, cfg string) ([]string, error) {
 
 var errUnsupported = errors.New("unsupported")
 
-func runGse(gse, path string, n int, seed int64) (*harness.Output, error) {
+func runGse(gse, path string, n int, seed int64, warmup float64) (*harness.Output, error) {
 	var stderr bytes.Buffer
-	cmd := exec.Command(gse, path, strconv.Itoa(n), fmt.Sprint(*warmup), strconv.Itoa(*workers), "--seed", strconv.FormatInt(seed, 10))
+	cmd := exec.Command(gse, path, strconv.Itoa(n), fmt.Sprint(warmup), strconv.Itoa(*workers), "--seed", strconv.FormatInt(seed, 10))
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
 	if err != nil {
@@ -909,13 +930,13 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 			}
 		}
 		start := time.Now()
-		gb, err := gcsimCache.RunCached(cfg, more, *warmup, int64(1+n), *workers, true)
+		gb, err := gcsimCache.RunCached(cfg, more, v.warm(), int64(1+n), *workers, true)
 		if err != nil {
 			return fmt.Errorf("gcsim: %w", err)
 		}
 		res.GcsimSeconds += time.Since(start).Seconds()
 		start = time.Now()
-		rb, err := runGse(gse, path, more, int64(1+n))
+		rb, err := runGse(gse, path, more, int64(1+n), v.warm())
 		if err != nil {
 			return err
 		}
@@ -945,7 +966,7 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 			// inconclusive at -max-iter: grow on the seeds gcsim's cache
 			// already holds, if any, running only the engine
 			extended = true
-			c, cerr := cachedLimit(cfg, n)
+			c, cerr := cachedLimit(cfg, n, v.warm())
 			if cerr != nil {
 				err = cerr
 				break
@@ -987,17 +1008,17 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 // cache alone: the iterations of the whole chunks from seed 1 that the
 // cache holds for its config, when compare has run its first n seeds
 // through the cache (n whole chunks); otherwise n, no further.
-func cachedLimit(cfg string, n int) (int, error) {
+func cachedLimit(cfg string, n int, warmup float64) (int, error) {
 	if gcsimCache == nil || cacheKeys == nil || n%harness.Chunk != 0 || n == 0 {
 		return n, nil
 	}
 	// the chunks just run through the cache must be where cacheView looks:
 	// if not, cachekeys.go no longer derives harness.Cache's paths
 	last := n/harness.Chunk - 1
-	if !cacheKeys.has(cfg, *warmup, true, 0) || !cacheKeys.has(cfg, *warmup, true, last) {
+	if !cacheKeys.has(cfg, warmup, true, 0) || !cacheKeys.has(cfg, warmup, true, last) {
 		return 0, errors.New("cache: chunks just run are not where cachekeys.go looks; it no longer derives harness.Cache's paths")
 	}
-	return cacheKeys.cachedFrom(cfg, *warmup, true, last+1) * harness.Chunk, nil
+	return cacheKeys.cachedFrom(cfg, warmup, true, last+1) * harness.Chunk, nil
 }
 
 // warmSeeds is -gcsim-only -seeds lo:hi: gcsim on the build's iterations
@@ -1012,16 +1033,16 @@ func warmSeeds(id string, v variant, cfg string) Warmed {
 			break
 		}
 		chunk := s / harness.Chunk
-		if cacheKeys.has(cfg, *warmup, true, chunk) {
+		if cacheKeys.has(cfg, v.warm(), true, chunk) {
 			res.Cached++
 		}
 		start := time.Now()
-		if _, err := gcsimCache.RunCached(cfg, harness.Chunk, *warmup, int64(1+s), *workers, true); err != nil {
+		if _, err := gcsimCache.RunCached(cfg, harness.Chunk, v.warm(), int64(1+s), *workers, true); err != nil {
 			res.Error = fmt.Sprintf("gcsim: %v", err)
 			break
 		}
 		res.GcsimSeconds += time.Since(start).Seconds()
-		if !cacheKeys.has(cfg, *warmup, true, chunk) {
+		if !cacheKeys.has(cfg, v.warm(), true, chunk) {
 			res.Error = "cache: the chunk just run is not where cachekeys.go looks; it no longer derives harness.Cache's paths"
 			break
 		}
@@ -1079,7 +1100,7 @@ func warm(id string, v variant, cfg string) Warmed {
 			return err
 		}
 		start := time.Now()
-		gb, err := gcsimCache.RunCached(cfg, more, *warmup, int64(1+n), *workers, true)
+		gb, err := gcsimCache.RunCached(cfg, more, v.warm(), int64(1+n), *workers, true)
 		if err != nil {
 			return fmt.Errorf("gcsim: %w", err)
 		}

@@ -14,8 +14,15 @@
 # refinement or weapon; compare -only buildspace) are about 34 runnable
 # builds per supported team, some 9,300 in all, so they run on the same
 # schedule in their own parts: BS_PARTS parts, BS_PER_DAY of them a day. A
-# manual run names them in "buildspace" ("0-79" for all). The library
-# builds run only when a run names no parts of either kind.
+# manual run names them in "buildspace" ("0-79" for all).
+#
+# The pages (compare -only pages) are the other configs a result page runs:
+# every rotation and filler candidate its search tries and the one-pass
+# config, for the library build and for no ER from artifacts (about 40
+# per team; reference/compare/pages.go). They run on the same schedule in
+# PG_PARTS parts, PG_PER_DAY a day; a manual run names them in "pages"
+# ("0-79" for all). The library builds run only when a run names no parts
+# of any kind.
 #
 # Variant and build-space jobs pass compare -deadline, below the job's
 # time limit: past it compare starts no more builds and grows none further,
@@ -86,6 +93,9 @@ on:
       buildspace:
         description: 'Build-space parts to run ("0-79", "3,7,12"): one member''s constellation, refinement or weapon changed; empty for none'
         default: ""
+      pages:
+        description: 'Page parts to run ("0-79", "3,7,12"): the configs a result page runs besides the library''s; empty for none'
+        default: ""
       warm:
         description: 'Team ids, comma-separated, whose gcsim runs to add to the cache (compare -gcsim-only); runs nothing else. Dispatch on main.'
         default: ""
@@ -108,6 +118,8 @@ env:
   PER_DAY: 8
   BS_PARTS: 80
   BS_PER_DAY: 16
+  PG_PARTS: 80
+  PG_PER_DAY: 16
   # inside the workspace: actions/cache refuses paths with ".."
   GCSIM_CACHE: ${{ github.workspace }}/gcsim-cache
 
@@ -118,6 +130,7 @@ jobs:
       library: ${{ steps.plan.outputs.library }}
       parts: ${{ steps.plan.outputs.parts }}
       bs_parts: ${{ steps.plan.outputs.bs_parts }}
+      pg_parts: ${{ steps.plan.outputs.pg_parts }}
       warm: ${{ steps.plan.outputs.warm }}
       warm_parts: ${{ steps.plan.outputs.warm_parts }}
       rerun: ${{ steps.plan.outputs.rerun }}
@@ -130,6 +143,7 @@ jobs:
           EVENT: ${{ github.event_name }}
           INPUT: ${{ inputs.parts }}
           BS_INPUT: ${{ inputs.buildspace }}
+          PG_INPUT: ${{ inputs.pages }}
           WARM: ${{ inputs.warm }}
           IMPORT: ${{ inputs.import_run }}
           RERUN: ${{ inputs.rerun }}
@@ -138,9 +152,11 @@ jobs:
         run: |
           parts=""
           bs=""
+          pg=""
           # strip all whitespace: a pasted list can carry a CRLF or newlines
           WARM=$(printf %s "$WARM" | tr -d "[:space:]")
           BS_INPUT=$(printf %s "$BS_INPUT" | tr -d "[:space:]")
+          PG_INPUT=$(printf %s "$PG_INPUT" | tr -d "[:space:]")
           INPUT=$(printf %s "$INPUT" | tr -d "[:space:]")
           # ranges ("0-3,7") to a list of parts below the count given
           expand() {
@@ -180,6 +196,7 @@ jobs:
             echo "library=false" >> "$GITHUB_OUTPUT"
             echo "parts=[]" >> "$GITHUB_OUTPUT"
             echo "bs_parts=[]" >> "$GITHUB_OUTPUT"
+            echo "pg_parts=[]" >> "$GITHUB_OUTPUT"
             echo "warm_parts=[]" >> "$GITHUB_OUTPUT"
             echo "rerun=[$(seq -s, 0 $(( n - 1 )))]" >> "$GITHUB_OUTPUT"
             echo "rerun_nshards=$RERUN_SHARDS" >> "$GITHUB_OUTPUT"
@@ -194,6 +211,7 @@ jobs:
             echo "library=false" >> "$GITHUB_OUTPUT"
             echo "parts=[]" >> "$GITHUB_OUTPUT"
             echo "bs_parts=[]" >> "$GITHUB_OUTPUT"
+            echo "pg_parts=[]" >> "$GITHUB_OUTPUT"
             echo "warm_parts=[]" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -205,6 +223,7 @@ jobs:
             echo "library=false" >> "$GITHUB_OUTPUT"
             echo "parts=[]" >> "$GITHUB_OUTPUT"
             echo "bs_parts=[]" >> "$GITHUB_OUTPUT"
+            echo "pg_parts=[]" >> "$GITHUB_OUTPUT"
             echo "warm=$WARM" >> "$GITHUB_OUTPUT"
             echo "warm_parts=[$(seq -s, 0 $(( n - 1 )))]" >> "$GITHUB_OUTPUT"
             exit 0
@@ -216,6 +235,8 @@ jobs:
             parts=$(seq -s, $first $(( first + PER_DAY - 1 )))
             first=$(( (day % (BS_PARTS / BS_PER_DAY)) * BS_PER_DAY ))
             bs=$(seq -s, $first $(( first + BS_PER_DAY - 1 )))
+            first=$(( (day % (PG_PARTS / PG_PER_DAY)) * PG_PER_DAY ))
+            pg=$(seq -s, $first $(( first + PG_PER_DAY - 1 )))
           elif [ "$EVENT" = workflow_dispatch ]; then
             if [ "$INPUT" != library ]; then
               parts=$(expand "$INPUT" "$PARTS") || exit 1
@@ -223,10 +244,14 @@ jobs:
             if [ -n "$BS_INPUT" ]; then
               bs=$(expand "$BS_INPUT" "$BS_PARTS") || exit 1
             fi
+            if [ -n "$PG_INPUT" ]; then
+              pg=$(expand "$PG_INPUT" "$PG_PARTS") || exit 1
+            fi
           fi
           echo "parts=[$parts]" >> "$GITHUB_OUTPUT"
           echo "bs_parts=[$bs]" >> "$GITHUB_OUTPUT"
-          if [ -z "$parts" ] && [ -z "$bs" ]; then
+          echo "pg_parts=[$pg]" >> "$GITHUB_OUTPUT"
+          if [ -z "$parts" ] && [ -z "$bs" ] && [ -z "$pg" ]; then
             echo "library=true" >> "$GITHUB_OUTPUT"
           else
             echo "library=false" >> "$GITHUB_OUTPUT"
@@ -412,6 +437,65 @@ jobs:
         if: always()
         with:
           name: gcsim-new-buildspace-${{ matrix.part }}
+          path: ${{ runner.temp }}/gcsim-new
+          if-no-files-found: ignore
+          retention-days: 1
+
+  pages:
+    needs: plan
+    if: needs.plan.outputs.pg_parts != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.plan.outputs.pg_parts) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: cenoda/Gscouter
+          ref: ${{ env.GSCOUTER_COMMIT }}
+          path: gscouter
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go.mod
+          cache-dependency-path: |
+            reference/go.sum
+            gscouter/go.sum
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.GCSIM_CACHE }}
+          key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+          restore-keys: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+      - name: Mark the cache's start
+        run: mkdir -p "$GCSIM_CACHE" && touch "$RUNNER_TEMP/cache-start"
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the engine
+        working-directory: engine
+        run: cargo build --release
+      - name: Compare with gcsim
+        working-directory: reference
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only pages -deadline 280m -shard ${{ matrix.part }}/${{ env.PG_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+      - name: Summary
+        if: always()
+        run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compare-pages-${{ matrix.part }}
+          path: |
+            compare.json
+            compare.md
+      - name: Collect the chunks this job added
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/gcsim-new"
+          cd "$GCSIM_CACHE" && find . -type f -name '*.json' -newer "$RUNNER_TEMP/cache-start" -exec cp --parents {} "$RUNNER_TEMP/gcsim-new" \;
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gcsim-new-pages-${{ matrix.part }}
           path: ${{ runner.temp }}/gcsim-new
           if-no-files-found: ignore
           retention-days: 1
@@ -633,7 +717,7 @@ jobs:
           retention-days: 1
 
   cache:
-    needs: [library, variants, buildspace, warm, rerun-gcsim, rerun]
+    needs: [library, variants, buildspace, pages, warm, rerun-gcsim, rerun]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     # one at a time per branch, so that each restores what the last saved
