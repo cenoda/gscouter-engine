@@ -15,7 +15,10 @@
 // engine's standard error is at most -target-se of the mean, and grow
 // further, up to -max-iter, while any verdict is inconclusive: each step
 // by the factor at which the inconclusive intervals would clear the bound,
-// from twice to four times.
+// from twice to four times. A build still inconclusive at -max-iter grows
+// on, in the same steps, as far as gcsim's cache holds the config's seeds
+// (whole chunks from seed 1): gcsim is never run past -max-iter, so those
+// steps run only the engine.
 //
 // Teams the engine cannot run are counted as "unsupported: <what>", and the
 // census of what blocks how many teams measures the port's progress.
@@ -48,6 +51,10 @@
 // to -iter and then to the iterations at which gcsim's own standard errors
 // reach -target-se, up to -max-iter, as compare would. It warms the cache
 // while a port is written, so that the port's compare runs only the engine.
+// With -seeds lo:hi it runs exactly iterations lo to hi of each build (with
+// -builds, any kind; build-space builds need the engine to assemble them),
+// so that CI jobs can split a heavy-tailed build's seeds between them and
+// leave its compare only the engine to run.
 package main
 
 import (
@@ -90,7 +97,7 @@ var (
 	dryRun      = flag.Bool("dry-run", false, "list the builds that would be compared, and compare none")
 	shardFlag   = flag.String("shard", "", "k/n: compare only the k-th of n parts of the teams that have builds to compare (k from 0); the census still covers every team")
 	iter0       = flag.Int("iter", 1000, "iterations of the first batch")
-	maxIter     = flag.Int("max-iter", 512000, "most iterations a config may grow to")
+	maxIter     = flag.Int("max-iter", 512000, "most iterations gcsim runs to for a build; a build still inconclusive there grows further on the seeds gcsim's cache already holds for its config (whole chunks from seed 1), running only the engine")
 	targetSE    = flag.Float64("target-se", 0.003, "standard error, relative to the mean, each engine must reach")
 	warmup      = flag.Float64("warmup", 150, "seconds of the looped fight excluded from the window")
 	workers     = flag.Int("j", runtime.NumCPU(), "workers")
@@ -99,7 +106,13 @@ var (
 	probesDir   = flag.String("probes", "probes", "directory of probes: library builds with a weapon, set or character line changed")
 	cacheDir    = flag.String("cache", harness.DefaultCacheDir(), "directory of stored gcsim results, by config and chunk of seeds; empty for none")
 	deadline    = flag.Duration("deadline", 0, "after this long, start no more builds and grow none further; builds not started are reported as deferred (0: no limit)")
-	gcsimOnly   = flag.Bool("gcsim-only", false, "run only gcsim, into the cache, on the selected builds, whether the engine supports their teams or not")
+	gcsimOnly   = flag.Bool("gcsim-only", false, "run only gcsim, into the cache, on the selected builds, whether the engine supports their teams or not (build-space builds need the engine to assemble and check them)")
+	seedsFlag   = flag.String("seeds", "", "lo:hi, with -gcsim-only: run gcsim on iterations lo to hi of each selected build (seeds lo+1 to hi), whole chunks, into the cache, and nothing else, so that several jobs can share a build's seeds; respects -deadline")
+
+	// cacheKeys reads what the cache holds without running gcsim.
+	cacheKeys *cacheView
+	// seedLo, seedHi are -seeds; seedHi is 0 without it.
+	seedLo, seedHi int
 
 	gcsimCache *harness.Cache
 )
@@ -238,6 +251,10 @@ type Warmed struct {
 	Cached       int     `json:"cached"`
 	GcsimSeconds float64 `json:"gcsim_seconds"`
 	Error        string  `json:"error,omitempty"`
+	// Seeds is -seeds, when given; Stopped says where -deadline stopped
+	// it (not an error: the build's compare runs what is missing).
+	Seeds   string `json:"seeds,omitempty"`
+	Stopped string `json:"stopped,omitempty"`
 }
 
 type job struct {
@@ -282,8 +299,19 @@ func main() {
 	if gcsimCache, err = harness.OpenCache(*cacheDir); err != nil {
 		fail(err)
 	}
+	if cacheKeys, err = openCacheView(*cacheDir); err != nil {
+		fail(err)
+	}
 	if *gcsimOnly && gcsimCache == nil {
 		fail(errors.New("-gcsim-only needs a cache (-cache)"))
+	}
+	if *seedsFlag != "" {
+		if !*gcsimOnly {
+			fail(errors.New("-seeds needs -gcsim-only"))
+		}
+		if seedLo, seedHi, err = parseSeeds(*seedsFlag); err != nil {
+			fail(err)
+		}
 	}
 	if *bsWeapons < 0 {
 		fail(errors.New("-buildspace-weapons: want 0 or more"))
@@ -313,8 +341,8 @@ func main() {
 		fail(err)
 	}
 	if *buildsFlag != "" {
-		if *teamsFlag != "" || *gcsimOnly || *censusOnly {
-			fail(fmt.Errorf("-builds takes no -teams, -gcsim-only or -census"))
+		if *teamsFlag != "" || *censusOnly {
+			fail(fmt.Errorf("-builds takes no -teams or -census"))
 		}
 		ids = nil
 		for _, tb := range strings.Split(*buildsFlag, ",") {
@@ -348,10 +376,6 @@ func main() {
 		rep.Variants = variants
 	}
 	if kinds["buildspace"] {
-		if *gcsimOnly {
-			// its weapons are those the engine has, its teams the supported
-			fail(errors.New("-gcsim-only does not take buildspace: it needs the engine"))
-		}
 		rep.BuildSpaceWeapons = *bsWeapons
 	}
 	weapons := &weaponSupport{gse: gse, tmp: tmp, known: map[string]bool{}}
@@ -365,7 +389,7 @@ func main() {
 		cfg, err := dump(gscouter, id, "")
 		if err != nil {
 			st.Status, st.Error = "error", err.Error()
-		} else if *gcsimOnly {
+		} else if *gcsimOnly && !needsEngine(id, kinds) {
 			// gcsim needs no support from the engine
 			st.Status = "dumped"
 			configs[i] = cfg
@@ -373,6 +397,10 @@ func main() {
 			st.Status, st.Error = "error", err.Error()
 		} else if len(miss) > 0 {
 			st.Status, st.Unsupported = "unsupported", miss
+			if *gcsimOnly {
+				// its library build, variants and probes need no engine
+				configs[i] = cfg
+			}
 		} else {
 			st.Status = "supported"
 			configs[i] = cfg
@@ -537,9 +565,13 @@ func main() {
 						w.Error = j.err.Error()
 					} else {
 						fmt.Fprintf(os.Stderr, "%s / %s ...\n", id, j.v.Name)
-						w = warm(id, j.v, j.cfg)
+						if seedHi > 0 {
+							w = warmSeeds(id, j.v, j.cfg)
+						} else {
+							w = warm(id, j.v, j.cfg)
+						}
 					}
-					fmt.Fprintf(os.Stderr, "%s / %s: %d iterations, %d of %d chunks cached, gcsim %.0f s %s\n", id, j.v.Name, w.Iter, w.Cached, w.Chunks, w.GcsimSeconds, w.Error)
+					fmt.Fprintf(os.Stderr, "%s / %s: %d iterations, %d of %d chunks cached, gcsim %.0f s %s%s\n", id, j.v.Name, w.Iter, w.Cached, w.Chunks, w.GcsimSeconds, w.Error, w.Stopped)
 					rep.Warmed = append(rep.Warmed, w)
 					continue
 				}
@@ -845,12 +877,14 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 	path := writeConfig(tmp, id+"-"+v.Name, cfg)
 	var g, r *harness.Output
 	n := 0
+	// limit is -max-iter, or past it the seeds the cache holds
+	limit := *maxIter
 	run := func(more int) error {
 		if gcsimCache != nil {
 			// whole chunks, which the cache can keep
 			more = (more + harness.Chunk - 1) / harness.Chunk * harness.Chunk
-			if n+more > *maxIter {
-				more = max(*maxIter-n, 0)
+			if n+more > limit {
+				more = max(limit-n, 0)
 			}
 		}
 		start := time.Now()
@@ -875,14 +909,33 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 			err = run(need - n)
 		}
 	}
+	extended := false
 	for err == nil {
 		res.Metrics = metrics(g, r)
 		res.Verdict = overall(res.Metrics)
 		// past -deadline an inconclusive build stays inconclusive
-		if res.Verdict != "inconclusive" || n >= *maxIter || pastDeadline() {
+		if res.Verdict != "inconclusive" || pastDeadline() {
 			break
 		}
-		err = run(min(int(float64(n)*growth(res.Metrics)), *maxIter) - n)
+		if n >= limit {
+			if extended {
+				break
+			}
+			// inconclusive at -max-iter: grow on the seeds gcsim's cache
+			// already holds, if any, running only the engine
+			extended = true
+			c, cerr := cachedLimit(cfg, n)
+			if cerr != nil {
+				err = cerr
+				break
+			}
+			if c <= n {
+				break
+			}
+			limit = c
+			fmt.Fprintf(os.Stderr, "%s / %s: inconclusive at -max-iter %d; the cache holds gcsim's first %d seeds, growing on them with the engine alone\n", id, v.Name, n, c)
+		}
+		err = run(min(int(float64(n)*growth(res.Metrics)), limit) - n)
 	}
 	res.Iter = n
 	if err != nil {
@@ -907,6 +960,83 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 		res.Abils = append(res.Abils, Abil{Name: k, GcsimHits: g.Abils[k][0], GseHits: r.Abils[k][0], GcsimDmg: g.Abils[k][1], GseDmg: r.Abils[k][1]})
 	}
 	return res
+}
+
+// cachedLimit is how far past n iterations a build may grow on gcsim's
+// cache alone: the iterations of the whole chunks from seed 1 that the
+// cache holds for its config, when compare has run its first n seeds
+// through the cache (n whole chunks); otherwise n, no further.
+func cachedLimit(cfg string, n int) (int, error) {
+	if gcsimCache == nil || cacheKeys == nil || n%harness.Chunk != 0 || n == 0 {
+		return n, nil
+	}
+	// the chunks just run through the cache must be where cacheView looks:
+	// if not, cachekeys.go no longer derives harness.Cache's paths
+	last := n/harness.Chunk - 1
+	if !cacheKeys.has(cfg, *warmup, true, 0) || !cacheKeys.has(cfg, *warmup, true, last) {
+		return 0, errors.New("cache: chunks just run are not where cachekeys.go looks; it no longer derives harness.Cache's paths")
+	}
+	return cacheKeys.cachedFrom(cfg, *warmup, true, last+1) * harness.Chunk, nil
+}
+
+// warmSeeds is -gcsim-only -seeds lo:hi: gcsim on the build's iterations
+// lo to hi (seeds lo+1 to hi), chunk by chunk through the cache, until
+// -deadline. Jobs given disjoint ranges of one build compute its chunks
+// together; each chunk is the one compare would run or read.
+func warmSeeds(id string, v variant, cfg string) Warmed {
+	res := Warmed{Team: id, Variant: v.Name, Seeds: fmt.Sprintf("%d:%d", seedLo, seedHi)}
+	for s := seedLo; s < seedHi; s += harness.Chunk {
+		if pastDeadline() {
+			res.Stopped = fmt.Sprintf("stopped at iteration %d of %d:%d by -deadline %s", s, seedLo, seedHi, *deadline)
+			break
+		}
+		chunk := s / harness.Chunk
+		if cacheKeys.has(cfg, *warmup, true, chunk) {
+			res.Cached++
+		}
+		start := time.Now()
+		if _, err := gcsimCache.RunCached(cfg, harness.Chunk, *warmup, int64(1+s), *workers, true); err != nil {
+			res.Error = fmt.Sprintf("gcsim: %v", err)
+			break
+		}
+		res.GcsimSeconds += time.Since(start).Seconds()
+		if !cacheKeys.has(cfg, *warmup, true, chunk) {
+			res.Error = "cache: the chunk just run is not where cachekeys.go looks; it no longer derives harness.Cache's paths"
+			break
+		}
+		res.Chunks++
+		res.Iter += harness.Chunk
+	}
+	return res
+}
+
+// parseSeeds reads -seeds lo:hi, whole chunks with 0 <= lo < hi.
+func parseSeeds(s string) (int, int, error) {
+	a, b, ok := strings.Cut(s, ":")
+	lo, err1 := strconv.Atoi(a)
+	hi, err2 := strconv.Atoi(b)
+	if !ok || err1 != nil || err2 != nil || lo < 0 || hi <= lo || lo%harness.Chunk != 0 || hi%harness.Chunk != 0 {
+		return 0, 0, fmt.Errorf("-seeds: want lo:hi, multiples of %d with 0 <= lo < hi, got %q", harness.Chunk, s)
+	}
+	return lo, hi, nil
+}
+
+// needsEngine is whether -gcsim-only needs gse to select the team's
+// builds: build-space builds are assembled from the weapons the engine
+// has, for supported teams, and checked by it.
+func needsEngine(id string, kinds map[string]bool) bool {
+	if !kinds["buildspace"] {
+		return false
+	}
+	if len(wanted) == 0 {
+		return true
+	}
+	for b := range wanted[id] {
+		if b != "library" && !strings.HasPrefix(b, "probe:") && !slices.ContainsFunc(variants, func(v variant) bool { return v.Name == b }) {
+			return true
+		}
+	}
+	return false
 }
 
 // warm runs gcsim alone on a build as compare runs it: through the cache,
@@ -994,7 +1124,11 @@ func warmMarkdown(rep *Report) string {
 	if len(rep.Warmed) > 0 {
 		w("| Team | Build | Iterations | Chunks cached | gcsim s | Error |\n|---|---|---|---|---|---|\n")
 		for _, r := range rep.Warmed {
-			w("| %s | %s | %d | %d of %d | %.0f | %s |\n", r.Team, r.Variant, r.Iter, r.Cached, r.Chunks, r.GcsimSeconds, r.Error)
+			it := strconv.Itoa(r.Iter)
+			if r.Seeds != "" {
+				it += " (of " + r.Seeds + ")"
+			}
+			w("| %s | %s | %s | %d of %d | %.0f | %s%s |\n", r.Team, r.Variant, it, r.Cached, r.Chunks, r.GcsimSeconds, r.Error, r.Stopped)
 		}
 	}
 	return b.String()

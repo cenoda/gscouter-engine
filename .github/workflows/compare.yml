@@ -21,8 +21,9 @@
 # time limit: past it compare starts no more builds and grows none further,
 # reports the builds it did not start as deferred, and the job still writes
 # its report and uploads gcsim's chunks. A team whose energy waits make it
-# heavy-tailed can grow to 512,000 iterations per build; the next run of the
-# part finds those chunks in the cache.
+# heavy-tailed can grow to 512,000 iterations per build of gcsim (further
+# on seeds the cache already holds, with the engine alone; see "rerun"
+# below); the next run of the part finds those chunks in the cache.
 #
 # gcsim's results are cached by config and chunk of seeds (reference/
 # harness/cache.go), so a run computes only what no earlier run did. Each
@@ -44,6 +45,20 @@
 # iterations (2,048,000 by default; compare -builds): builds whose DPS is
 # heavy-tailed under energy waits can stay inconclusive at 512,000. It runs
 # nothing else, and its gcsim chunks go to the cache as other jobs' do.
+# compare grows a build still inconclusive at -max-iter further on the
+# seeds the cache already holds for it, running only the engine there, so
+# a build cached past rerun_max_iter (or past 512,000 in the other jobs)
+# can go on without running gcsim again.
+#
+# gcsim is most of a rerun's time, so "rerun_shards" (1 by default: as
+# above) splits it: with k > 1, each build's gcsim on seeds [0,
+# rerun_max_iter) is first split evenly over k jobs (rerun-gcsim: compare
+# -builds b -gcsim-only -seeds lo:hi, a matrix of builds by shards, at most
+# 256 jobs), each uploading its chunks; then each build's rerun job adds
+# its shards' chunks to the restored cache and compares as above, running
+# only the engine up to rerun_max_iter. The cache job takes every job's
+# chunks, as for the other jobs. A shard job that fails or stops at its
+# deadline leaves its seeds to the rerun job's gcsim.
 #
 # A run on a branch saves its chunks in that branch's cache, which main
 # cannot read. A manual run on main with "import_run" set to that run's id
@@ -80,6 +95,9 @@ on:
       rerun_max_iter:
         description: 'Most iterations for rerun builds'
         default: "2048000"
+      rerun_shards:
+        description: 'Jobs to split each rerun build''s gcsim between, over seeds [0, rerun_max_iter), before its compare; 1 for none. Builds times shards at most 256.'
+        default: "1"
       import_run:
         description: 'A run id of this workflow, on any branch, whose gcsim chunks (artifacts gcsim-new-*, kept a day) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
@@ -103,6 +121,9 @@ jobs:
       warm: ${{ steps.plan.outputs.warm }}
       warm_parts: ${{ steps.plan.outputs.warm_parts }}
       rerun: ${{ steps.plan.outputs.rerun }}
+      rerun_shards: ${{ steps.plan.outputs.rerun_shards }}
+      rerun_nshards: ${{ steps.plan.outputs.rerun_nshards }}
+      rerun_max: ${{ steps.plan.outputs.rerun_max }}
     steps:
       - id: plan
         env:
@@ -113,6 +134,7 @@ jobs:
           IMPORT: ${{ inputs.import_run }}
           RERUN: ${{ inputs.rerun }}
           RERUN_MAX: ${{ inputs.rerun_max_iter }}
+          RERUN_SHARDS: ${{ inputs.rerun_shards }}
         run: |
           parts=""
           bs=""
@@ -135,20 +157,37 @@ jobs:
           }
           IMPORT=$(printf %s "$IMPORT" | tr -d "[:space:]")
           RERUN=$(printf %s "$RERUN" | tr -d "[:space:]")
+          RERUN_MAX=$(printf %s "$RERUN_MAX" | tr -d "[:space:]")
+          RERUN_SHARDS=$(printf %s "$RERUN_SHARDS" | tr -d "[:space:]")
           if [ "$EVENT" = workflow_dispatch ] && [ -n "$RERUN" ]; then
             [[ $RERUN =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.:=+-]+(,[A-Za-z0-9_.-]+/[A-Za-z0-9_.:=+-]+)*$ ]] || { echo "rerun: want team/build pairs separated by commas, got $RERUN"; exit 1; }
-            [[ $RERUN_MAX =~ ^[0-9]+$ ]] || { echo "rerun_max_iter: want a number, got $RERUN_MAX"; exit 1; }
+            [[ $RERUN_MAX =~ ^[1-9][0-9]*$ ]] || { echo "rerun_max_iter: want a number, got $RERUN_MAX"; exit 1; }
+            [[ $RERUN_SHARDS =~ ^[1-9][0-9]*$ ]] || { echo "rerun_shards: want a number from 1, got $RERUN_SHARDS"; exit 1; }
             n=$(echo "$RERUN" | tr , '\n' | wc -l)
             [ "$n" -le 256 ] || { echo "rerun: at most 256 builds, got $n"; exit 1; }
-            # a job per build, which reads its pair from the input by index
+            if [ "$RERUN_SHARDS" -gt 1 ]; then
+              # shards are whole chunks of gcsim's cache (500 seeds)
+              [ $(( RERUN_MAX % 500 )) -eq 0 ] || { echo "rerun_max_iter: want a multiple of 500 with rerun_shards above 1, got $RERUN_MAX"; exit 1; }
+              [ "$RERUN_SHARDS" -le $(( RERUN_MAX / 500 )) ] || { echo "rerun_shards: at most rerun_max_iter / 500 = $(( RERUN_MAX / 500 )), got $RERUN_SHARDS"; exit 1; }
+              # one matrix, at most 256 jobs
+              [ $(( n * RERUN_SHARDS )) -le 256 ] || { echo "rerun: builds times rerun_shards at most 256, got $n x $RERUN_SHARDS"; exit 1; }
+              echo "rerun_shards=[$(seq -s, 0 $(( RERUN_SHARDS - 1 )))]" >> "$GITHUB_OUTPUT"
+            else
+              echo "rerun_shards=[]" >> "$GITHUB_OUTPUT"
+            fi
+            # a job per build (and per shard), which reads its pair from the
+            # input by index
             echo "library=false" >> "$GITHUB_OUTPUT"
             echo "parts=[]" >> "$GITHUB_OUTPUT"
             echo "bs_parts=[]" >> "$GITHUB_OUTPUT"
             echo "warm_parts=[]" >> "$GITHUB_OUTPUT"
             echo "rerun=[$(seq -s, 0 $(( n - 1 )))]" >> "$GITHUB_OUTPUT"
+            echo "rerun_nshards=$RERUN_SHARDS" >> "$GITHUB_OUTPUT"
+            echo "rerun_max=$RERUN_MAX" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo "rerun=[]" >> "$GITHUB_OUTPUT"
+          echo "rerun_shards=[]" >> "$GITHUB_OUTPUT"
           if [ "$EVENT" = workflow_dispatch ] && [ -n "$IMPORT" ]; then
             [[ $IMPORT =~ ^[0-9]+$ ]] || { echo "import_run: want a run id, got $IMPORT"; exit 1; }
             # only the cache job runs, and takes that run's chunks
@@ -374,9 +413,86 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-  rerun:
+  # gcsim alone on a part of each rerun build's seeds (input rerun_shards)
+  rerun-gcsim:
     needs: plan
-    if: needs.plan.outputs.rerun != '[]'
+    if: needs.plan.outputs.rerun != '[]' && needs.plan.outputs.rerun_shards != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.plan.outputs.rerun) }}
+        shard: ${{ fromJSON(needs.plan.outputs.rerun_shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: cenoda/Gscouter
+          ref: ${{ env.GSCOUTER_COMMIT }}
+          path: gscouter
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go.mod
+          cache-dependency-path: |
+            reference/go.sum
+            gscouter/go.sum
+      - uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.GCSIM_CACHE }}
+          key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+          restore-keys: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
+      - name: Mark the cache's start
+        run: mkdir -p "$GCSIM_CACHE" && touch "$RUNNER_TEMP/cache-start"
+      # build-space builds are assembled and checked with the engine
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the engine
+        working-directory: engine
+        run: cargo build --release
+      - name: Run gcsim on a part of the seeds
+        working-directory: reference
+        env:
+          RERUN: ${{ inputs.rerun }}
+          RERUN_MAX: ${{ needs.plan.outputs.rerun_max }}
+          SHARDS: ${{ needs.plan.outputs.rerun_nshards }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          b=$(printf %s "$RERUN" | tr -d "[:space:]" | cut -d, -f$(( ${{ matrix.part }} + 1 )))
+          # chunks [c*k/n, c*(k+1)/n) of the c chunks of 500 seeds
+          c=$(( RERUN_MAX / 500 ))
+          lo=$(( c * SHARD / SHARDS * 500 ))
+          hi=$(( c * (SHARD + 1) / SHARDS * 500 ))
+          echo "build: $b, iterations $lo to $hi"
+          go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -builds "$b" -gcsim-only -seeds "$lo:$hi" -deadline 300m -cache "$GCSIM_CACHE" -json ../warm.json -md ../warm.md
+      - name: Summary
+        if: always()
+        run: test -f warm.md && cat warm.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rerun-gcsim-${{ matrix.part }}-${{ matrix.shard }}
+          path: |
+            warm.json
+            warm.md
+          if-no-files-found: ignore
+      - name: Collect the chunks this job added
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/gcsim-new"
+          cd "$GCSIM_CACHE" && find . -type f -name '*.json' -newer "$RUNNER_TEMP/cache-start" -exec cp --parents {} "$RUNNER_TEMP/gcsim-new" \;
+      # the build's rerun job takes these by name, then the cache job
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gcsim-new-rerun-gcsim-${{ matrix.part }}-${{ matrix.shard }}
+          path: ${{ runner.temp }}/gcsim-new
+          if-no-files-found: ignore
+          retention-days: 1
+
+  rerun:
+    needs: [plan, rerun-gcsim]
+    # after the shards, whether they ran (rerun_shards above 1), failed or not
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.rerun != '[]' }}
     runs-on: ubuntu-latest
     timeout-minutes: 355
     strategy:
@@ -401,8 +517,23 @@ jobs:
           path: ${{ env.GCSIM_CACHE }}
           key: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
           restore-keys: gcsim-${{ hashFiles('reference/go.sum', 'reference/harness/*.go') }}-
-      - name: Mark the cache's start
-        run: mkdir -p "$GCSIM_CACHE" && touch "$RUNNER_TEMP/cache-start"
+      # the chunks this build's rerun-gcsim jobs computed
+      - uses: actions/download-artifact@v4
+        if: needs.plan.outputs.rerun_shards != '[]'
+        continue-on-error: true
+        with:
+          pattern: gcsim-new-rerun-gcsim-${{ matrix.part }}-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/gcsim-shards
+      # after the shards' chunks, so that this job uploads only what it adds
+      - name: Add the shards' chunks and mark the cache's start
+        run: |
+          mkdir -p "$GCSIM_CACHE"
+          if [ -d "$RUNNER_TEMP/gcsim-shards" ]; then
+            echo "$(find "$RUNNER_TEMP/gcsim-shards" -type f | wc -l) chunks from the rerun-gcsim jobs"
+            cp -r "$RUNNER_TEMP/gcsim-shards/." "$GCSIM_CACHE/"
+          fi
+          touch "$RUNNER_TEMP/cache-start"
       - uses: dtolnay/rust-toolchain@stable
       - name: Build the engine
         working-directory: engine
@@ -411,7 +542,7 @@ jobs:
         working-directory: reference
         env:
           RERUN: ${{ inputs.rerun }}
-          RERUN_MAX: ${{ inputs.rerun_max_iter }}
+          RERUN_MAX: ${{ needs.plan.outputs.rerun_max }}
         run: |
           b=$(printf %s "$RERUN" | tr -d "[:space:]" | cut -d, -f$(( ${{ matrix.part }} + 1 )))
           echo "build: $b"
@@ -499,7 +630,7 @@ jobs:
           retention-days: 1
 
   cache:
-    needs: [library, variants, buildspace, warm, rerun]
+    needs: [library, variants, buildspace, warm, rerun-gcsim, rerun]
     if: always() && !cancelled()
     runs-on: ubuntu-latest
     # one at a time per branch, so that each restores what the last saved
