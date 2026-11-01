@@ -2943,7 +2943,7 @@ impl Sim {
                 broken.push(sh);
             }
             if sh.typ != ShieldType::Crystallize && sh.typ != ShieldType::CandaceSkill {
-                crate::chars::dispatch::shield_damaged(self.chars[sh.owner as usize].kind, self, sh.owner as usize, sh.key, !ok);
+                crate::chars::dispatch::shield_damaged(self.chars[sh.owner as usize].kind, self, sh.owner as usize, sh.key, dmg, !ok);
             }
         }
         if !broken.is_empty() {

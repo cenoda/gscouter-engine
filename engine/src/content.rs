@@ -206,8 +206,8 @@ pub trait Character {
         info
     }
     /// A shield of its took damage (gcsim's OnDamage of its own shield
-    /// type), and whether that broke it.
-    fn shield_damaged(_s: &mut Sim, _ci: usize, _key: ModKey, _broken: bool) {}
+    /// type): the damage it was handed, and whether that broke it.
+    fn shield_damaged(_s: &mut Sim, _ci: usize, _key: ModKey, _dmg: f64, _broken: bool) {}
     /// A shield of its expired (gcsim's OnExpire).
     fn shield_expired(_s: &mut Sim, _ci: usize, _key: ModKey) {}
     /// A shield bonus mod it owns: the bonus, and whether gcsim's
@@ -365,7 +365,7 @@ macro_rules! chars {
             pub fn construct_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::construct_expired(s, ci, key)),* } }
             pub fn gadget_tick(k: CharKind, s: &mut Sim, ci: usize, id: u8, timer: i32) { match k { $(CharKind::$kind => $m::Char::gadget_tick(s, ci, id, timer)),* } }
             pub fn gadget_hit(k: CharKind, s: &mut Sim, ci: usize, id: u8, ev: &AttackEvent, lands: Option<bool>) { match k { $(CharKind::$kind => $m::Char::gadget_hit(s, ci, id, ev, lands)),* } }
-            pub fn shield_damaged(k: CharKind, s: &mut Sim, ci: usize, key: ModKey, broken: bool) { match k { $(CharKind::$kind => $m::Char::shield_damaged(s, ci, key, broken)),* } }
+            pub fn shield_damaged(k: CharKind, s: &mut Sim, ci: usize, key: ModKey, dmg: f64, broken: bool) { match k { $(CharKind::$kind => $m::Char::shield_damaged(s, ci, key, dmg, broken)),* } }
             pub fn dash_info(k: CharKind, s: &mut Sim, ci: usize, info: ActInfo) -> ActInfo { match k { $(CharKind::$kind => $m::Char::dash_info(s, ci, info)),* } }
             pub fn shield_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_expired(s, ci, key)),* } }
             pub fn shield_bonus(k: CharKind, s: &Sim, ci: usize, key: ModKey) -> (f64, bool) { match k { $(CharKind::$kind => $m::Char::shield_bonus(s, ci, key)),* } }
