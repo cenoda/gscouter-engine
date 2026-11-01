@@ -1,8 +1,12 @@
-//! Escoffier, from gcsim's internal/characters/escoffier, at C0: normal
-//! attacks, the skill and its ticks (with its Surging Blade), the burst
-//! with its heals, A1 and A4. No charged attacks or plunges.
+//! Escoffier, from gcsim's internal/characters/escoffier: normal attacks,
+//! the skill and its ticks (with its Surging Blade), the burst with its
+//! heals, A1, A4 and constellations 1 to 6. No charged attacks or plunges.
+//! C1's CRIT DMG on Stellar reactions (gcsim's OnSpecialReactionAttack)
+//! never applies: the engine has no lunar or Stellar reactions (nothing
+//! ported makes them).
 
-use crate::content::Character;
+use crate::content::{Character, Event, EventKind, Owner};
+use crate::gcsl::Num;
 use crate::gcsimdata::chars::escoffier as g;
 use crate::sim::*;
 use crate::types::*;
@@ -16,6 +20,13 @@ pub struct State {
     a1_src: i32,
     /// Hydro and cryo members, for A4's shred.
     hydro_cryo: usize,
+    /// C1: every member is hydro or cryo (with A4).
+    c1_active: bool,
+    /// Cold Dishes left (C2), extra-heal procs left (C4), Frozen Parfaits
+    /// left (C6).
+    c2_count: i32,
+    c4_count: i32,
+    c6_count: i32,
 }
 
 const SKILL: ModKey = ModKey::new(g::SKILL_KEY);
@@ -24,6 +35,9 @@ const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
 const A1: ModKey = ModKey::new(g::A1KEY);
 const A4_CRYO: ModKey = ModKey::new("escoffier-a4-shred-cryo");
 const A4_HYDRO: ModKey = ModKey::new("escoffier-a4-shred-hydro");
+const C1: ModKey = ModKey::new(g::C1_KEY);
+const C2: ModKey = ModKey::new(g::C2_KEY);
+const C6_ICD: ModKey = ModKey::new(g::C6_ICD_KEY);
 
 const CB_PARTICLE: u16 = 1 << 0;
 const CB_A4: u16 = 1 << 1;
@@ -44,8 +58,6 @@ fn ceil(x: f64) -> i32 {
 
 impl Character for Char {
     const KEY: &'static str = "escoffier";
-    // C1, C2, C4 and C6 are not ported
-    const MAX_CONS: i32 = 0;
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
@@ -55,6 +67,26 @@ impl Character for Char {
     fn init(s: &mut Sim, ci: usize) {
         let n = s.chars.iter().filter(|c| matches!(c.element, Element::Hydro | Element::Cryo)).count();
         s.st_mut::<State>(ci).hydro_cryo = n;
+        // C1 (with A4): only when every member is hydro or cryo
+        if s.chars[ci].cons >= 1 && s.chars[ci].ascension >= 4 {
+            s.st_mut::<State>(ci).c1_active = n == s.chars.len();
+        }
+        // C2 and C6: OnEnemyHit (gcsim subscribes C2, then C6; one
+        // subscription handles both in that order)
+        if s.chars[ci].cons >= 2 {
+            s.subscribe(EventKind::EnemyHit, Owner::Char(ci as u8));
+        }
+    }
+
+    fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {
+        let st = s.st::<State>(ci);
+        let n = match fields[0].as_str() {
+            "c2-count" => st.c2_count,
+            "c4-count" => st.c4_count,
+            "c6-count" => st.c6_count,
+            _ => return None,
+        };
+        Some(Ok(Num::Int(n as i64)))
     }
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
@@ -96,6 +128,16 @@ impl Character for Char {
         s.add_status(ci, SKILL, g::SKILL_FIRST_TICK_DELAY + ceil((g::SKILL_TICKS - 1) as f64 * g::SKILL_INTERVAL), false);
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_BLADE, arg: 0 }, g::SKILL_ALIGNED_HITMARK);
         s.set_cd_with_delay(ci, Action::Skill, g::SKILL_CD, 22);
+        c1(s, ci);
+        // C2: five Cold Dishes for 15 s
+        if s.chars[ci].cons >= 2 {
+            s.add_status(ci, C2, g::C2_DUR, true);
+            s.st_mut::<State>(ci).c2_count = 5;
+        }
+        // C6: six Frozen Parfaits
+        if s.chars[ci].cons >= 6 {
+            s.st_mut::<State>(ci).c6_count = g::C6_LIMIT;
+        }
         let t = &g::SKILL_FRAMES;
         ActInfo::new(Frames::Table(t), t[0], t[Action::Swap as usize], AnimState::Skill)
     }
@@ -107,7 +149,12 @@ impl Character for Char {
         if s.chars[ci].ascension >= 1 {
             let f = s.f;
             s.st_mut::<State>(ci).a1_src = f;
-            let ticks = g::A1_COUNT;
+            // C4: six more ticks, and seven chances at an extra heal
+            let mut ticks = g::A1_COUNT;
+            if s.chars[ci].cons >= 4 {
+                s.st_mut::<State>(ci).c4_count = g::C4_LIMIT;
+                ticks += g::C4_EXTRA;
+            }
             for i in 0..ticks {
                 s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_A1, arg: f }, g::A1_FIRST_TICK + ceil(g::A1_INTERVAL * i as f64));
             }
@@ -115,6 +162,7 @@ impl Character for Char {
         }
         s.set_cd(ci, Action::Burst, g::BURST_CD * 60);
         s.consume_energy(ci, 5);
+        c1(s, ci);
         let t = &g::BURST_FRAMES;
         ActInfo::new(Frames::Table(t), t[0], t[Action::Swap as usize], AnimState::Burst)
     }
@@ -175,12 +223,61 @@ impl Character for Char {
                 if arg != s.st::<State>(ci).a1_src {
                     return;
                 }
-                let heal = g::A1_SCALING * total_atk(&s.stats(ci));
+                let scale = g::A1_SCALING + c4_extra_heal(s, ci);
+                let heal = scale * total_atk(&s.stats(ci));
                 let bonus = s.stat(ci, st::HEAL);
                 let active = s.player.active as usize;
                 s.heal(ci, active, heal, bonus);
             }
             _ => unreachable!(),
+        }
+    }
+
+    /// C1: CRIT DMG +60% on cryo attacks.
+    fn attack_mod(_: &Sim, _: usize, _: usize, _: &Mod, ev: &mut AttackEvent) {
+        if ev.info.element == Element::Cryo {
+            ev.stats[st::CD] += 0.6;
+        }
+    }
+
+    fn event(s: &mut Sim, ci: usize, e: &Event) {
+        let Event::EnemyHit(ev) = *e else { return };
+        let actor = ev.info.actor as usize;
+        if s.player.active as usize != actor {
+            return;
+        }
+        // C2: a cryo hit of these kinds by the active character (not
+        // Escoffier) adds 240% of her ATK, using up a Cold Dish
+        if actor != ci
+            && s.mod_active(ci, C2)
+            && s.st::<State>(ci).c2_count > 0
+            && ev.info.element == Element::Cryo
+            && matches!(
+                ev.info.tag,
+                AttackTag::Normal | AttackTag::Extra | AttackTag::Plunge | AttackTag::ElementalArt | AttackTag::ElementalArtHold | AttackTag::ElementalBurst
+            )
+        {
+            let amt = total_atk(&s.stats(ci)) * g::C2_PER;
+            s.st_mut::<State>(ci).c2_count -= 1;
+            s.hit_flat += amt;
+        }
+        // C6: a normal, charged or plunging hit by the active character
+        // while the skill lasts strikes with a Frozen Parfait, once per
+        // 0.5 s, six times per skill
+        if s.chars[ci].cons >= 6
+            && matches!(ev.info.tag, AttackTag::Normal | AttackTag::Extra | AttackTag::Plunge)
+            && s.mod_active(ci, SKILL)
+            && s.st::<State>(ci).c6_count > 0
+            && !s.mod_active(ci, C6_ICD)
+        {
+            s.add_status(ci, C6_ICD, g::C6_ICD as i32, true);
+            let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_ESCOFFIER_SKILL, Element::Cryo, 25.0, g::C6_SCALING as f64);
+            ai.abil = "Special-Grade Frozen Parfait (C6)";
+            ai.pattern = s.circle_on_target(4.0);
+            let travel = s.st::<State>(ci).skill_travel;
+            let a4 = a4_cb(s, ci);
+            s.queue_attack(ai, a4, 0, travel);
+            s.st_mut::<State>(ci).c6_count -= 1;
         }
     }
 
@@ -195,6 +292,32 @@ impl Character for Char {
             s.enemy_add_resist(A4_HYDRO, Element::Hydro, -shred, g::A4_DUR);
         }
     }
+}
+
+/// C1 (with A4, every member hydro or cryo): each member's cryo attacks
+/// get CRIT DMG +60% for 15 s, extended by that member's hitlag.
+fn c1(s: &mut Sim, ci: usize) {
+    if s.chars[ci].cons < 1 || s.chars[ci].ascension < 4 || !s.st::<State>(ci).c1_active {
+        return;
+    }
+    for i in 0..s.chars.len() {
+        let m = Mod::owned(C1, ModKind::Attack, Owner::Char(ci as u8), st::NONE, false, true, -1);
+        s.add_mod(i, m, g::C1_DUR);
+    }
+}
+
+/// C4 (with A1): while procs are left, an A1 tick heals 100% of her ATK
+/// more and gives her 2 energy, at her CRIT Rate.
+fn c4_extra_heal(s: &mut Sim, ci: usize) -> f64 {
+    if s.chars[ci].cons < 4 || s.st::<State>(ci).c4_count <= 0 {
+        return 0.0;
+    }
+    if s.rng.float64() > s.stat(ci, st::CR) {
+        return 0.0;
+    }
+    s.add_energy(ci, g::C4_REGEN);
+    s.st_mut::<State>(ci).c4_count -= 1;
+    g::C4_EXTRA_SCALING as f64
 }
 
 fn a4_cb(s: &Sim, ci: usize) -> u16 {

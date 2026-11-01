@@ -2120,6 +2120,10 @@ impl Sim {
         // subscribers (sets and weapons first), then the attacker's own
         if grp > 0.0 {
             if !self.subs[EventKind::EnemyHit as usize].is_empty() {
+                // a subscriber can apply an attack inside the emit (an
+                // attack queued with no delay, as Escoffier's C6 with
+                // travel 0): keep the outer hit's accumulators
+                let outer = (self.hit_flat, self.hit_crit);
                 self.hit_flat = 0.0;
                 self.hit_crit = None;
                 self.emit(Event::EnemyHit(&ev));
@@ -2128,6 +2132,7 @@ impl Sim {
                     ev.stats[st::CR] += cr;
                     ev.stats[st::CD] = cd;
                 }
+                (self.hit_flat, self.hit_crit) = outer;
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }
