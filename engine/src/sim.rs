@@ -571,6 +571,9 @@ pub enum Frames {
     Char { id: u8, arg: i16 },
     Dash { len: i32, jump: i32 },
     Const(i32),
+    /// An airborne jump: the plunges after `low` and `high` frames,
+    /// anything else after 60 (gcsim then errors on it).
+    Jump { low: i32, high: i32 },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -1039,7 +1042,22 @@ pub struct Player {
     pub state: AnimState,
     pub state_start: i32,
     pub last: LastAction,
+    /// gcsim's Player.airborne: set by a jump with Xianyun's buff, back to
+    /// the ground when a plunge runs.
+    pub airborne: Airborne,
 }
+
+/// gcsim's AirborneSource, for the sources the engine has. Xiao's, Venti's,
+/// Kazuha's and Stellar Swirl's come from content not ported.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Airborne {
+    Grounded,
+    Xianyun,
+}
+
+/// gcsim's player.XianyunAirborneBuff: the status Xianyun's burst gives
+/// every character, which makes their jump airborne.
+pub const XIANYUN_AIRBORNE: ModKey = ModKey::new("xianyun-airborne-buff");
 
 // ---------------------------------------------------------------- sim
 
@@ -1361,6 +1379,7 @@ impl Sim {
                 state: AnimState::Idle,
                 state_start: 0,
                 last: LastAction { char: 0, action: Action::Invalid },
+                airborne: Airborne::Grounded,
             },
             slots: Vec::with_capacity(64),
             free: Vec::with_capacity(64),
@@ -2203,6 +2222,11 @@ impl Sim {
     }
 
     fn apply_attack(&mut self, slot: u16) {
+        // OnApplyAttack, before anything else
+        if !self.subs[EventKind::ApplyAttack as usize].is_empty() {
+            let ev = self.slots[slot as usize];
+            self.emit(Event::ApplyAttack(&ev));
+        }
         // one enemy, hit while it lives when the attack's area reaches it
         // (AttackWillLand)
         if !self.enemy_alive {
@@ -4187,6 +4211,11 @@ impl Sim {
                 }
             }
             Frames::Const(n) => n,
+            Frames::Jump { low, high } => match next {
+                Action::LowPlunge => low,
+                Action::HighPlunge => high,
+                _ => 60,
+            },
         }
     }
 
@@ -4444,11 +4473,15 @@ impl Sim {
             Action::Aim => chars::dispatch::aim(kind, self, ci, p),
             Action::HighPlunge => {
                 self.emit(Event::Plunge);
-                chars::dispatch::high_plunge(kind, self, ci, p)
+                let info = chars::dispatch::high_plunge(kind, self, ci, p);
+                self.player.airborne = Airborne::Grounded;
+                info
             }
             Action::LowPlunge => {
                 self.emit(Event::Plunge);
-                chars::dispatch::low_plunge(kind, self, ci, p)
+                let info = chars::dispatch::low_plunge(kind, self, ci, p);
+                self.player.airborne = Airborne::Grounded;
+                info
             }
             Action::Swap => {
                 if self.player.swap_cd > 0 {
@@ -4494,10 +4527,16 @@ impl Sim {
         ActInfo::new(Frames::Dash { len, jump }, len, jump, AnimState::Dash)
     }
 
-    /// The template character's Jump, outside Xianyun's and Stellar
-    /// Swirl's airborne states.
+    /// The template character's Jump: airborne with Xianyun's buff, or the
+    /// plain jump (Stellar Swirl's airborne state comes from content not
+    /// ported).
     fn char_jump(&mut self, ci: usize) -> ActInfo {
         let c = &self.chars[ci];
+        if self.mod_active(ci, XIANYUN_AIRBORNE) {
+            let (low, high) = if matches!(c.class, WeaponClass::Sword | WeaponClass::Spear) { (5, 9) } else { (4, 8) };
+            self.player.airborne = Airborne::Xianyun;
+            return ActInfo::new(Frames::Jump { low, high }, 60, low, AnimState::Jump);
+        }
         let after_dash = self.player.last.action == Action::Dash;
         // JumpLength
         let f = match (c.body, after_dash) {
@@ -4624,7 +4663,7 @@ impl Sim {
             "state" => Ok(int(self.current_state() as i64)),
             "previous-action" => Ok(int(self.player.last.action as i64)),
             "previous-char" => Ok(int(self.chars[self.player.last.char as usize].key as i64)),
-            "airborne" => Ok(b(false)),
+            "airborne" => Ok(b(self.player.airborne != Airborne::Grounded)),
             "status" => {
                 need(2, "status")?;
                 Ok(int(self.core_status(&fields[1]) as i64))
@@ -4772,6 +4811,7 @@ impl Sim {
                         match fields[2].as_str() {
                             t @ (crate::gcsimdata::chars::yaemiko::YAE_TOTEM_COUNT | crate::gcsimdata::chars::shenhe::QUILL_KEY) => Err(format!("unsupported: character tag {t}")),
                             crate::gcsimdata::chars::xilonen::C4KEY => Ok(int(crate::chars::xilonen::c4_tag(self, ci))),
+                            t @ (crate::gcsimdata::chars::xianyun::A1_KEY | crate::gcsimdata::chars::xianyun::C6_KEY) => Ok(int(crate::chars::xianyun::tag(self, ci, t))),
                             _ => Ok(int(0)),
                         }
                     }

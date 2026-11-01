@@ -475,6 +475,13 @@ impl<'s> Eval<'s> {
                 if let Some(what) = crate::sim::unsupported_action(self.sim.chars[ci].kind, action, &params) {
                     return err(format!("unsupported: action {} {what}", char_name(key)));
                 }
+                // gcsim's Exec: while airborne the next action must be a
+                // plunge (a swap to another character is one too)
+                if self.sim.player.airborne != crate::sim::Airborne::Grounded && !matches!(action, Action::LowPlunge | Action::HighPlunge)
+                    || self.sim.player.airborne != crate::sim::Airborne::Grounded && ci != self.sim.player.active as usize
+                {
+                    return err("player must use low_plunge or high_plunge while airborne".into());
+                }
                 if ci != self.sim.player.active as usize && !self.sim.queue_action(ci, Action::Swap, &Params::default()) {
                     return Err(Stop::Terminated);
                 }

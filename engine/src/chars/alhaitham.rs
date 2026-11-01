@@ -1,11 +1,8 @@
 //! Alhaitham, from gcsim's internal/characters/alhaitham: normal and
 //! charged attacks, Universality pressed or held, the low plunge after a
 //! held skill, Particular Field, the Chisel-Light Mirrors, A1, A4 and
-//! every constellation.
-//!
-//! A high plunge, and a low plunge with `collision`, are Xianyun's
-//! airborne plunges. That state is not in the engine, so those actions
-//! are errors that name it. The held skill's low plunge is not that.
+//! every constellation, and the plunges from Xianyun's airborne state
+//! (the low one with the held skill's frames, as gcsim has it).
 //!
 //! The burst's flat damage uses the skill's talent level, as gcsim's
 //! Burst does. Projection attacks draw one random number, for the left
@@ -14,6 +11,7 @@
 use crate::content::{Character, Event};
 use crate::gcsl::Num;
 use crate::gcsimdata::chars::alhaitham as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -63,6 +61,14 @@ const PROJ: [&str; 3] = [
     "Chisel-Light Mirror: Projection Attack 3",
 ];
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::physical(g::LOW_PLUNGE_HITMARK_XY, g::HIGH_PLUNGE_HITMARK_XY, g::COLLISION_HITMARK_XY, &g::LOW_PLUNGE_FRAMES_AL, &g::HIGH_PLUNGE_FRAMES_XY, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
+/// The last action was his held skill: the low plunge is his own.
+fn after_hold(s: &Sim, ci: usize) -> bool {
+    s.player.last.char as usize == ci && s.player.last.action == Action::Skill && s.st::<State>(ci).skill_hold
+}
+
 impl Character for Char {
     const KEY: &'static str = "alhaitham";
     type State = State;
@@ -89,23 +95,26 @@ impl Character for Char {
         match a {
             Action::Attack | Action::Charge | Action::Burst => p.0.first().map(|(k, _)| format!("{name} param {k}")),
             Action::Skill => unknown(&["hold"]),
-            Action::LowPlunge if p.get("collision").is_some() => Some("low_plunge[collision] needs xianyun".into()),
-            Action::LowPlunge => unknown(&["short"]),
-            Action::HighPlunge => Some("high_plunge needs xianyun".into()),
+            Action::LowPlunge => plunge::unknown_param(a, p, &["short"]),
+            Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             _ => Some(name.into()),
         }
     }
 
-    /// The low plunge after a held skill. Anything else needs Xianyun's
-    /// airborne state, which the engine does not have.
+    /// The low plunge after a held skill is his own; any other plunge
+    /// needs Xianyun's airborne state.
     fn invalid(s: &Sim, ci: usize, a: Action, _: &Params) -> Option<String> {
-        let after_hold = s.player.last.char as usize == ci
-            && s.player.last.action == Action::Skill
-            && s.st::<State>(ci).skill_hold;
-        if a == Action::LowPlunge && !after_hold {
+        if a == Action::LowPlunge && !after_hold(s, ci) && s.player.airborne == Airborne::Grounded {
             return Some("low_plunge can only be used while airborne or after hold skill".into());
         }
+        if a == Action::HighPlunge {
+            return plunge::grounded(s, a);
+        }
         crate::content::template_invalid(s, a)
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, CB_A1 | CB_PROJECTION)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
@@ -171,6 +180,10 @@ impl Character for Char {
     }
 
     fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        if !after_hold(s, ci) {
+            // the airborne one: gcsim gives it the held skill's frames
+            return plunge::standard(s, ci, false, p, &PLUNGE, CB_A1 | CB_PROJECTION);
+        }
         let skip = if p.get("short").unwrap_or(0) > 0 { 20 } else { 0 };
         let lvl = s.talent(ci, 0);
         let mut ai = AttackInfo::new(ci, AttackTag::Plunge, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Dendro, 25.0, g::LOW_PLUNGE[lvl]);

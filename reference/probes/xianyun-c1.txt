@@ -1,0 +1,3 @@
+# Xianyun C1: Skyladder gains a second charge.
+team xianyun-furina-fischl-bennett
+xianyun char lvl=90/90 cons=1 talent=9,9,9;

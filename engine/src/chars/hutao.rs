@@ -2,6 +2,7 @@
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::hutao as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -64,6 +65,25 @@ fn pp_charge_frames(prev: i16, next: Action) -> i32 {
     }
 }
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go; in Paramita
+/// Papilio, pyro with their own hitmarks and frames.
+const PLUNGE: plunge::Spec = plunge::Spec {
+    low_queue: Action::Attack,
+    high_queue: Action::Attack,
+    ..plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION)
+};
+const PLUNGE_B: plunge::Spec = plunge::Spec {
+    low_hitmark: g::LOW_PLUNGE_HITMARK_B,
+    high_hitmark: g::HIGH_PLUNGE_HITMARK_B,
+    collision_hitmark: g::COLLISION_HITMARK_B,
+    low_frames: &g::LOW_PLUNGE_FRAMES_B,
+    high_frames: &g::HIGH_PLUNGE_FRAMES_B,
+    low_queue: Action::Attack,
+    high_queue: Action::Burst,
+    element: Element::Pyro,
+    ..PLUNGE
+};
+
 impl Character for Char {
     const KEY: &'static str = "hutao";
     type State = State;
@@ -86,11 +106,25 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge_xy(s, ci, true, p)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge_xy(s, ci, false, p)
     }
 
     fn mod_amount(s: &Sim, ci: usize, _on: usize, m: &Mod, out: &mut Stats) -> bool {
@@ -316,4 +350,27 @@ fn burst_heal_cb(s: &mut Sim, ci: usize) {
     let src = st.heal_src;
     let bonus = s.stat(ci, st::HEAL);
     s.heal(ci, ci, src, bonus);
+}
+
+/// The airborne plunges; in Paramita Papilio pyro, ignoring infusions,
+/// named after it, and the collision pyro too.
+fn plunge_xy(s: &mut Sim, ci: usize, high: bool, p: &Params) -> ActInfo {
+    let pp = s.mod_active(ci, PARAMITA);
+    let spec = if pp { &PLUNGE_B } else { &PLUNGE };
+    if plunge::wants_collision(p) {
+        let mut ai = plunge::collision_info(s, ci, spec);
+        // the collision is physical unless in Paramita Papilio
+        ai.element = if pp { Element::Pyro } else { Element::Physical };
+        ai.ignore_infusion = pp;
+        let h = spec.collision_hitmark;
+        s.queue_attack(ai, 0, h, h);
+    }
+    let mut ai = plunge::hit_info(s, ci, high, spec);
+    if pp {
+        ai.abil = if high { "High Plunge (Paramita Papilio)" } else { "Low Plunge (Paramita Papilio)" };
+        ai.ignore_infusion = true;
+    }
+    let h = plunge::hitmark(spec, high);
+    s.queue_attack(ai, 0, h, h);
+    plunge::act(spec, high)
 }

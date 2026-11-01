@@ -1,12 +1,13 @@
 //! Diluc, from gcsim's internal/characters/diluc: normal attacks, the
 //! three-part skill, the burst and its infusion, A4 and every
 //! constellation but C2, which needs Diluc to be hit: an error when he is.
-//! Plunges need Xianyun.
+//! The plunges are those from Xianyun's airborne state.
 
 use std::cell::Cell;
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::diluc as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -37,6 +38,9 @@ const TASK_BURST: u8 = 1;
 
 const SKILL_NAMES: [&str; 3] = ["Searing Onslaught 0", "Searing Onslaught 1", "Searing Onslaught 2"];
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec { collision_offset: 0.0, ..plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION) };
+
 impl Character for Char {
     const KEY: &'static str = "diluc";
     type State = State;
@@ -63,11 +67,25 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     /// The skill can follow up while its window lasts, whatever its

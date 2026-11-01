@@ -1,0 +1,4 @@
+# Escoffier's airborne plunges with Rosaria, Escoffier with Golden Troupe, Xianyun with Favonius Codex.
+team escoffier-rosaria-bennett-xianyun
+escoffier add set="gt" count=4;
+xianyun add weapon="favcodex" refine=3 lvl=90/90;

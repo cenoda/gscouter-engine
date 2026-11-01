@@ -1,6 +1,7 @@
 //! The characters the engine implements. Each module has a `Char` type
 //! implementing `content::Character`; a line here registers it.
 
+pub mod plunge;
 pub mod watch;
 
 crate::chars! {
@@ -38,6 +39,7 @@ crate::chars! {
     Neuvillette => neuvillette,
     Kirara => kirara,
     Xilonen => xilonen,
+    Xianyun => xianyun,
 }
 
 /// The characters whose modules have been checked against gcsim for a

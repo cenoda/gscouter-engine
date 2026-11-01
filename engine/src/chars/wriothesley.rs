@@ -1,12 +1,14 @@
 //! Wriothesley, from gcsim's internal/characters/wriothesley: normal
 //! attacks (with Chilling Penalty), charged attacks (A1's Rebuke), the
-//! skill, the burst with its Surging Blade, A1, A4 and C1 to C6. No plunges.
+//! skill, the burst with its Surging Blade, A1, A4 and C1 to C6. Plunges
+//! from Xianyun's airborne state.
 //! Radiance (stellar.go, and the Radiance halves of C1, C2, C4 and C6)
 //! needs a Polestar Field, which nothing the engine has makes, so it never
 //! applies; port it with the first content that makes one.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::wriothesley as g;
+use crate::chars::plunge;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;
@@ -96,6 +98,9 @@ fn keep_combo(s: &mut Sim, ci: usize) {
     }
 }
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::catalyst(Element::Cryo, g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "wriothesley";
     const MAX_CONS: i32 = 6;
@@ -116,15 +121,27 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
     }
 
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
+    }
+
     /// He charges only right after a normal attack.
     fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        if let Some(why) = plunge::grounded(s, a) {
+            return Some(why);
+        }
         (a == Action::Charge && s.player.last.action != Action::Attack).then(|| "need to use attack right before charge".into())
     }
 

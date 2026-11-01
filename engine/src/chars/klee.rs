@@ -2,12 +2,12 @@
 //! later after a dash, skill or burst; a cancel into one of those fires
 //! the throw early), charged attacks with A1's Explosive Spark, the
 //! skill's bounces and mines (dropped when cancelled before they are
-//! thrown), the burst's waves, A1, A4 and constellations 1 to 6. No
-//! plunges: gcsim's are only from Xianyun's airborne state, which the
-//! engine lacks.
+//! thrown), the burst's waves, A1, A4 and constellations 1 to 6, and
+//! the plunges from Xianyun's airborne state.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::klee as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -97,6 +97,9 @@ fn c1(s: &mut Sim, ci: usize, delay: i32) {
     s.queue_attack(ai, 0, 0, delay);
 }
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::catalyst(Element::Pyro, g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "klee";
     type State = State;
@@ -114,10 +117,24 @@ impl Character for Char {
 
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Skill if p.get("bounce").is_some_and(|b| b > 3) => Some("skill bounce above 3".into()),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn charge_stam(s: &Sim, ci: usize) -> Option<f64> {

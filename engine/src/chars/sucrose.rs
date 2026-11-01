@@ -1,10 +1,12 @@
 //! Sucrose, from gcsim's internal/characters/sucrose: normal and charged
 //! attacks, her own dash frames, the skill, the burst with its absorbed
 //! element, A1, A4, every constellation and her Hexerei bonuses (with a
-//! second Hexerei character). No plunges.
+//! second Hexerei character). Plunges from
+//! Xianyun's airborne state.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::sucrose as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -47,6 +49,9 @@ const TASK_ABSORB_HIT: u8 = 0;
 // arg: the checks done so far
 const TASK_ABSORB_CHECK: u8 = 1;
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::catalyst(Element::Anemo, g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "sucrose";
     const HEXEREI: bool = true;
@@ -69,11 +74,25 @@ impl Character for Char {
         s.st_mut::<State>(ci).hex = s.chars[ci].hexerei && s.hexerei_count() >= 2;
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {

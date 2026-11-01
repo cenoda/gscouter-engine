@@ -2,7 +2,7 @@
 //! skill's Sesshou Sakura (three charges, up to three totems), the burst's
 //! thunderbolts, A1, A4 and the revelation (longer totems, superconduct's
 //! enhanced strike, A1's extra strike), charged attacks and constellations
-//! 1 to 6. No plunges. Radiance needs a Polestar Field and Stellar-Conduct,
+//! 1 to 6. Plunges from Xianyun's airborne state. Radiance needs a Polestar Field and Stellar-Conduct,
 //! which nothing the engine has makes, so it never applies; port it with the
 //! first content that makes them. With it go the Stellar-Conduct parts of
 //! the constellations, which never apply either: C1's buff on
@@ -11,6 +11,7 @@
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::yaemiko as g;
+use crate::chars::plunge;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;
@@ -73,6 +74,9 @@ fn pop_oldest(s: &mut Sim, ci: usize) {
     }
 }
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::catalyst(Element::Electro, g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "yaemiko";
     type State = State;
@@ -110,11 +114,25 @@ impl Character for Char {
 
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             // gcsim's ChargeAttack reads no params
             Action::Charge => p.0.first().map(|(k, _)| format!("charge param {k}")),
             Action::Attack | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {

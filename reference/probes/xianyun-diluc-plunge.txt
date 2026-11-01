@@ -1,0 +1,3 @@
+# Diluc's airborne plunges, with Crimson Witch for Long Night's Oath.
+team diluc-xianyun-furina-chevreuse
+diluc add set="cw" count=4;

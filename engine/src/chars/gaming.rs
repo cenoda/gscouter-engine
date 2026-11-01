@@ -1,10 +1,11 @@
 //! Gaming, from gcsim's internal/characters/gaming: normal attacks, the
 //! skill and the plunge that follows it (Charmed Cloudstrider), the burst
-//! and Man Chai, A1, A4 and every constellation. Plunges other than the
-//! skill's need Xianyun.
+//! and Man Chai, A1, A4 and every constellation, and the plunges from
+//! Xianyun's airborne state.
 
 use crate::content::{template_invalid, Character, Event};
 use crate::gcsimdata::chars::gaming as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -36,6 +37,12 @@ const TASK_BURST_START: u8 = 2;
 const TASK_MAN_CHAI: u8 = 3;
 const TASK_MAN_CHAI_BACK: u8 = 4;
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec {
+    collision_offset: 0.0,
+    ..plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION)
+};
+
 impl Character for Char {
     const KEY: &'static str = "gaming";
     type State = State;
@@ -59,18 +66,20 @@ impl Character for Char {
         s.subscribe(EventKind::Swap, Owner::Char(ci as u8));
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Skill | Action::Burst | Action::LowPlunge | Action::HighPlunge => None,
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[g::MAN_CHAI_PARAM]),
+            Action::Attack | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
     }
 
-    /// Only the plunge right after the skill; the others need Xianyun.
+    /// The plunge right after the skill is his own; any other needs
+    /// Xianyun's airborne state.
     fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::LowPlunge if s.player.last.action != Action::Skill => Some("low_plunge can only be used while airborne".into()),
-            Action::HighPlunge if s.player.last.action != Action::Skill => Some("high_plunge can only be used while airborne".into()),
+            Action::LowPlunge | Action::HighPlunge if s.player.last.action == Action::Skill => None,
+            Action::LowPlunge | Action::HighPlunge => plunge::grounded(s, a),
             _ => template_invalid(s, a),
         }
     }
@@ -107,10 +116,16 @@ impl Character for Char {
     }
 
     fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        if s.player.last.action != Action::Skill {
+            return plunge::standard(s, ci, false, p, &PLUNGE, 0);
+        }
         special_plunge(s, ci, p)
     }
 
     fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        if s.player.last.action != Action::Skill {
+            return plunge::standard(s, ci, true, p, &PLUNGE, 0);
+        }
         special_plunge(s, ci, p)
     }
 

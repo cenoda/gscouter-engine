@@ -1,10 +1,12 @@
 //! Xiangling, from gcsim's internal/characters/xiangling: normal and
 //! charged attacks, Guoba (a gadget with its pyro window, which absorb
 //! checks read) and Pyronado, A1, A4's chili pepper (the skill's
-//! `a4_delay`), C1, C2, C4 and C6.
+//! `a4_delay`), C1, C2, C4 and C6,
+//! and the plunges from Xianyun's airborne state.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::xiangling as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -46,6 +48,9 @@ const GADGET_GUOBA: u8 = 0;
 /// Guoba's lifetime.
 const GUOBA_DURATION: i32 = 438;
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec { low_queue: Action::Burst, high_queue: Action::Attack, ..plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION) };
+
 impl Character for Char {
     const KEY: &'static str = "xiangling";
     type State = State;
@@ -55,11 +60,25 @@ impl Character for Char {
         State { guoba: empty, spin: empty }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Plunges only while airborne (Xianyun's jump).
+    fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        plunge::grounded(s, a).or_else(|| crate::content::template_invalid(s, a))
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
     }
 
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {

@@ -2,12 +2,14 @@
 //! attacks, the pressed and held skill with the enemy's Conductive stacks
 //! (the held skill's multiplier by the stacks it consumes), the burst's
 //! Lightning Rose with C4's discharges on enemy-camp gadgets, A1, A4 (the
-//! enemy's DEF −15%) and every constellation. No plunges.
+//! enemy's DEF −15%) and every constellation. Plunges from
+//! Xianyun's airborne state.
 
 use std::cell::Cell;
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::lisa as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -69,6 +71,9 @@ fn enemy_within(s: &Sim, p: Pattern) -> bool {
     s.enemy_within(p)
 }
 
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::catalyst(Element::Electro, g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
+
 impl Character for Char {
     const KEY: &'static str = "lisa";
     type State = State;
@@ -90,16 +95,28 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
+            Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
     }
 
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, true, p, &PLUNGE, 0)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge::standard(s, ci, false, p, &PLUNGE, 0)
+    }
+
     /// gcsim's NextQueueItemIsValid: no charge right after a normal attack
     /// that ended the combo.
     fn invalid(s: &Sim, _: usize, a: Action, _: &Params) -> Option<String> {
+        if let Some(why) = plunge::grounded(s, a) {
+            return Some(why);
+        }
         let active = &s.chars[s.player.active as usize];
         (a == Action::Charge && s.player.last.action == Action::Attack && active.normal_counter == 0).then(|| "need to use attack right before charge".into())
     }

@@ -9,11 +9,13 @@
 //! points, 90 at most, that drain 0.5 every 6 frames on her own queue; it
 //! ends when they run out (not in a normal attack), when she leaves the
 //! field, when the skill is pressed again, or after 9 s (waiting for the
-//! end of a normal attack). gcsim's plunges need Xianyun's airborne state,
-//! which the engine does not have: they are errors.
+//! end of a normal attack). Her plunges are those from Xianyun's airborne
+//! state: geo Nightsoul damage while she can use Nightsoul (the high one;
+//! gcsim forbids the low one then).
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::xilonen as g;
+use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;
 
@@ -77,12 +79,17 @@ const TASK_C2_BUFF: u8 = 4;
 const TASK_C6_HEAL: u8 = 5;
 /// The healing burst's heals (the fight's queue).
 const TASK_BURST_HEAL: u8 = 6;
+/// After a plunge's hitmark: out of Nightsoul, the blessing ends.
+const TASK_PLUNGE_EXIT: u8 = 7;
 
 /// The Blade Roller's OnRemoved.
 const REMOVED_ROLLER: u8 = 0;
 
 const NORMAL_NAMES: [&str; 3] = ["Normal 0", "Normal 1", "Normal 2"];
 const ROLLER_NAMES: [&str; 4] = ["Blade Roller 0", "Blade Roller 1", "Blade Roller 2", "Blade Roller 3"];
+
+/// The airborne plunges (Xianyun's), from gcsim's plunge.go.
+const PLUNGE: plunge::Spec = plunge::Spec::physical(g::LOW_PLUNGE_HITMARK, g::HIGH_PLUNGE_HITMARK, g::COLLISION_HITMARK, &g::LOW_PLUNGE_FRAMES, &g::HIGH_PLUNGE_FRAMES, g::LOW_PLUNGE_POISE_DMG, g::HIGH_PLUNGE_POISE_DMG, g::LOW_PLUNGE_RADIUS, g::HIGH_PLUNGE_RADIUS, g::LOW_PLUNGE, g::HIGH_PLUNGE, g::COLLISION);
 
 impl Character for Char {
     const KEY: &'static str = "xilonen";
@@ -149,12 +156,12 @@ impl Character for Char {
         s.subscribe(EventKind::Swap, o);
     }
 
-    /// gcsim reads no params of hers; her plunges need Xianyun.
+    /// gcsim reads no params of hers but a plunge's collision.
     fn unsupported(a: Action, p: &Params) -> Option<String> {
         let name = crate::gcsl::action_name(a);
         match a {
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => p.0.first().map(|(k, _)| format!("{name} param {k}")),
-            Action::HighPlunge | Action::LowPlunge => Some(format!("{name} needs xianyun")),
+            Action::HighPlunge | Action::LowPlunge => plunge::unknown_param(a, p, &[]),
             _ => Some(name.into()),
         }
     }
@@ -164,7 +171,22 @@ impl Character for Char {
         if a == Action::Charge && can_use_nightsoul(s, ci) {
             return Some("xilonen cannot charge in nightsoul blessing".into());
         }
+        if let Some(why) = plunge::grounded(s, a) {
+            return Some(why);
+        }
+        // gcsim checks this as the plunge runs
+        if a == Action::LowPlunge && can_use_nightsoul(s, ci) {
+            return Some("xilonen cannot low_plunge while in nightsoul blessing".into());
+        }
         crate::content::template_invalid(s, a)
+    }
+
+    fn low_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge_xy(s, ci, false, p)
+    }
+
+    fn high_plunge(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        plunge_xy(s, ci, true, p)
     }
 
     /// The skill waits out its recast's 1 s lockout (with no failure).
@@ -334,6 +356,11 @@ impl Character for Char {
                 let bonus = s.stat(ci, st::HEAL);
                 let heal = total_def(&s.stats(ci)) * 1.2;
                 s.heal_info(ci, None, false, heal, bonus);
+            }
+            TASK_PLUNGE_EXIT => {
+                if !can_use_nightsoul(s, ci) {
+                    exit_nightsoul(s, ci);
+                }
             }
             TASK_BURST_HEAL => {
                 let lvl = s.talent(ci, 2);
@@ -615,4 +642,47 @@ fn apply_c6(s: &mut Sim, ci: usize) {
     for i in 1..=3 {
         s.add_task(Task::Char { c: ci as u8, id: TASK_C6_HEAL, arg: 0 }, i * 90);
     }
+}
+
+/// The airborne plunges, scaling with DEF. While she can use Nightsoul the
+/// high plunge and its collision are geo Nightsoul damage with A1's
+/// callback, on the skill's frames and collision hitmark (the plunge's
+/// hitmark stays the plain one, as gcsim has it). After the hitmark, out
+/// of Nightsoul, the blessing ends.
+fn plunge_xy(s: &mut Sim, ci: usize, high: bool, p: &Params) -> ActInfo {
+    let ns = high && can_use_nightsoul(s, ci);
+    let geo = |ai: &mut AttackInfo| {
+        ai.element = Element::Geo;
+        ai.ignore_infusion = true;
+        ai.add_tags = add_tag::NIGHTSOUL;
+    };
+    let cbs = if ns { CB_A1 } else { 0 };
+    let mut ai = plunge::hit_info(s, ci, high, &PLUNGE);
+    ai.use_def = true;
+    if ns {
+        geo(&mut ai);
+    }
+    if !high && plunge::wants_collision(p) {
+        let mut c = plunge::collision_info(s, ci, &PLUNGE);
+        c.use_def = true;
+        let h = PLUNGE.collision_hitmark;
+        s.queue_attack(c, 0, h, h);
+    }
+    if high && plunge::wants_collision(p) {
+        let mut c = plunge::collision_info(s, ci, &PLUNGE);
+        c.use_def = true;
+        if ns {
+            geo(&mut c);
+        }
+        let h = if ns { g::SKILL_COLLISION_HITMARK } else { PLUNGE.collision_hitmark };
+        s.queue_attack(c, cbs, h, h);
+    }
+    let h = plunge::hitmark(&PLUNGE, high);
+    s.queue_attack(ai, cbs, h, h);
+    s.add_task(Task::Char { c: ci as u8, id: TASK_PLUNGE_EXIT, arg: 0 }, h);
+    if ns {
+        let t = &g::SKILL_HIGH_PLUNGE_FRAMES;
+        return ActInfo::new(Frames::Table(t), t[0], t[Action::Dash as usize], AnimState::Plunge);
+    }
+    plunge::act(&PLUNGE, high)
 }

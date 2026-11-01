@@ -59,8 +59,9 @@ pub enum EventKind {
     NightsoulBurst,
     NightsoulGenerate,
     NightsoulConsume,
+    ApplyAttack,
 }
-pub const N_EVENTS: usize = 22;
+pub const N_EVENTS: usize = 23;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -116,6 +117,8 @@ pub enum Event<'a> {
     NightsoulGenerate { on: usize, amount: f64 },
     /// OnNightsoulConsume: the character and the points it used.
     NightsoulConsume { on: usize, amount: f64 },
+    /// OnApplyAttack: an attack is applied, before it reaches any target.
+    ApplyAttack(&'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -143,6 +146,7 @@ impl Event<'_> {
             Event::NightsoulBurst(_) => EventKind::NightsoulBurst,
             Event::NightsoulGenerate { .. } => EventKind::NightsoulGenerate,
             Event::NightsoulConsume { .. } => EventKind::NightsoulConsume,
+            Event::ApplyAttack(_) => EventKind::ApplyAttack,
         }
     }
 }
