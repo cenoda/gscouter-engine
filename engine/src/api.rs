@@ -202,6 +202,32 @@ mod tests {
         assert!(run_iterations(&bad, 150.0, 1, 0, 1).is_err());
     }
 
+    /// team-looped.txt's characters with other conditions and program.
+    fn with_program(options: &str, target: &str, program: &str) -> String {
+        let src = config("team-looped.txt");
+        let build: Vec<&str> = src.lines().filter(|l| l.contains(" char ") || l.contains(" add ")).collect();
+        format!("{options}\ntarget lvl=100 resist=0.1 radius=2 pos=0,2.4 {target};\n{}\nactive hutao;\n{program}\n", build.join("\n"))
+    }
+
+    #[test]
+    fn stuck_on_one_frame() {
+        let src = with_program("options swap_delay=12 duration=450;", "", "while 1 { wait(0); }");
+        let e = run_iterations(&src, 0.0, 1, 0, 1).unwrap_err();
+        assert!(e.ends_with(crate::sim::STUCK), "{e}");
+        let src = with_program("options swap_delay=12 duration=450;", "", "hutao attack; while 1 { delay(0); }");
+        assert!(run_iterations(&src, 0.0, 1, 0, 1).unwrap_err().ends_with(crate::sim::STUCK));
+    }
+
+    #[test]
+    fn longest_fight() {
+        // no duration and an enemy that takes no damage: the rotation never
+        // ends, and the fight stops at Gscouter's limit
+        let src = with_program("options swap_delay=12;", "hp=999999999", "while 1 { wait(600); }");
+        let its = run_iterations(&src, 0.0, 1, 0, 1).unwrap();
+        assert_eq!(its[0].frames, crate::sim::MAX_FIGHT_FRAMES);
+        assert_eq!(its[0].dps, 0.0);
+    }
+
     #[test]
     fn json_shape() {
         let it = Iteration { dps: 1.5, first: 1.0, second: 2.0, chars: vec![1.5, 0.0], waits: vec![vec![("insufficient_energy", 0.25)], vec![]], frames: 600, names: vec!["hutao", "xingqiu"] };

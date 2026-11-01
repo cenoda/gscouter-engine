@@ -926,6 +926,17 @@ pub struct Player {
 
 // ---------------------------------------------------------------- sim
 
+/// Gscouter's maxFightFrames (internal/score/score.go): a fight ends there,
+/// as at the end of its duration, so that a fight without one whose
+/// rotation never ends, or whose enemy never dies, stops. gcsim has no such
+/// end; Gscouter adds it.
+pub const MAX_FIGHT_FRAMES: i32 = 100_000 * 60;
+
+/// Gscouter's maxStillActions: more actions than this handed to the sim on
+/// one frame stop the fight with `STUCK`, Gscouter's ErrStuck.
+pub const MAX_STILL_ACTIONS: u32 = 10_000;
+pub const STUCK: &str = "the rotation plays actions that take no time, such as walk[f=0], without end";
+
 pub struct Config {
     pub chars: Vec<CharSetup>,
     pub active: usize,
@@ -1184,6 +1195,10 @@ pub struct Sim {
     pub window_start: i32,
     pub total: f64,
     pub window_char: [f64; 4],
+    /// Gscouter's guard on rotations stuck on one frame: the frame the
+    /// program last handed the sim an action, and how many it handed then.
+    still_frame: i32,
+    still_count: u32,
     /// Team damage in the window by 0.5 s bucket from `window_start`
     /// (gcsim's DamageBuckets, which Gscouter splits into the window's
     /// halves).
@@ -1240,7 +1255,9 @@ impl Sim {
             },
             slots: Vec::with_capacity(64),
             free: Vec::with_capacity(64),
-            end: (cfg.duration * 60.0) as i32,
+            // a fight in damage mode ends only at MAX_FIGHT_FRAMES, one with
+            // a duration at the earlier of the two
+            end: if cfg.enemy_hp > 0.0 { MAX_FIGHT_FRAMES } else { ((cfg.duration * 60.0) as i32).min(MAX_FIGHT_FRAMES) },
             swap_delay: cfg.swap_delay,
             energy: cfg.energy,
             energy_once: cfg.energy_once,
@@ -1285,6 +1302,8 @@ impl Sim {
             window_start: ((warmup * 60.0) as i32 / 30) * 30,
             total: 0.0,
             window_char: [0.0; 4],
+            still_frame: -1,
+            still_count: 0,
             window_buckets: Vec::with_capacity(((cfg.duration - warmup) * 2.0).max(0.0) as usize + 2),
             waits: [[0; N_FAILURES]; 4],
             wait_open: [[None; N_ACTIONS]; 4],
@@ -4066,9 +4085,22 @@ impl Sim {
             }
         }
         if self.damage_mode {
-            return self.no_more_actions || !self.enemy_alive;
+            return self.no_more_actions || !self.enemy_alive || f == self.end;
         }
         f == self.end
+    }
+
+    /// Counts an action the program hands the sim (`wait`, `delay`,
+    /// `execute_action`), as Gscouter's stillGuard counts the calls of
+    /// gcsim's exec; false once there are more than `MAX_STILL_ACTIONS` on
+    /// one frame.
+    pub fn count_action(&mut self) -> bool {
+        if self.f != self.still_frame {
+            self.still_frame = self.f;
+            self.still_count = 0;
+        }
+        self.still_count += 1;
+        self.still_count <= MAX_STILL_ACTIONS
     }
 
     // ------------------------------------------------------------ actions

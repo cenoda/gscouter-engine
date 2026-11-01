@@ -420,6 +420,9 @@ impl<'s> Eval<'s> {
             }
             Builtin::Wait => {
                 let f = self.num(args, line, env)?.i();
+                if f >= 0 && !self.sim.count_action() {
+                    return err(crate::sim::STUCK.into());
+                }
                 if f >= 0 && !self.sim.wait(f as i32) {
                     return Err(Stop::Terminated);
                 }
@@ -428,6 +431,9 @@ impl<'s> Eval<'s> {
             Builtin::Delay => {
                 let f = self.num(args, line, env)?.i();
                 if f >= 0 {
+                    if !self.sim.count_action() {
+                        return err(crate::sim::STUCK.into());
+                    }
                     if self.sim.done {
                         return Err(Stop::Terminated);
                     }
@@ -473,6 +479,9 @@ impl<'s> Eval<'s> {
                 };
                 if let Some(what) = crate::sim::unsupported_action(self.sim.chars[ci].kind, action, &params) {
                     return err(format!("unsupported: action {} {what}", char_name(key)));
+                }
+                if !self.sim.count_action() {
+                    return err(crate::sim::STUCK.into());
                 }
                 if ci != self.sim.player.active as usize && !self.sim.queue_action(ci, Action::Swap, &Params::default()) {
                     return Err(Stop::Terminated);
