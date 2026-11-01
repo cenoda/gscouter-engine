@@ -1431,6 +1431,11 @@ impl Sim {
         }
     }
 
+    /// gcsim's GetHexereiCount: the Hexerei characters in the team.
+    pub fn hexerei_count(&self) -> usize {
+        self.chars.iter().filter(|c| c.hexerei).count()
+    }
+
     pub fn talent(&self, ci: usize, i: usize) -> usize {
         let c = &self.chars[ci];
         let con = c.talent_cons[i];

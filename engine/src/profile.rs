@@ -195,11 +195,18 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
         }
 
     }
-    // gcsim's Hexerei bonuses need two Hexerei characters; the engine
-    // implements none of them
-    let hexerei = p.chars.iter().filter(|c| HEXEREI.contains(&char_name(c.key)) && !c.params.iter().any(|(k, v)| k == "hexerei" && *v == 0)).count();
-    if hexerei >= 2 {
-        errs.push("unsupported: hexerei".into());
+    // gcsim's Hexerei bonuses need two Hexerei characters: each Hexerei
+    // character's own bonuses must then be implemented (Character::HEXEREI).
+    // A character the engine lacks is an error of its own, and so are the
+    // weapons and sets that read Hexerei (none is implemented yet; each
+    // must read `Sim::hexerei_count` when it is).
+    let is_hexerei = |c: &&CharProfile| HEXEREI.contains(&char_name(c.key)) && !c.params.iter().any(|(k, v)| k == "hexerei" && *v == 0);
+    if p.chars.iter().filter(is_hexerei).count() >= 2 {
+        for c in p.chars.iter().filter(is_hexerei) {
+            if char_kind(char_name(c.key)).is_some_and(|k| !k.hexerei()) {
+                errs.push(format!("unsupported: hexerei {}", char_name(c.key)));
+            }
+        }
     }
     let mut chars = Vec::new();
     for c in &p.chars {

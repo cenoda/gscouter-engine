@@ -1,7 +1,7 @@
 //! Fischl, from gcsim's internal/characters/fischl: normal attacks, aimed
 //! shots (without weak spots), Oz from the skill (and its recast) and from
-//! the burst, A4, C1, C2, C4 and C6. Her Hexerei bonus needs a second
-//! Hexerei character, which `profile` rejects.
+//! the burst, A4, C1, C2, C4, C6 and her Hexerei bonus (with a second
+//! Hexerei character, C6 doubling it).
 
 use super::watch::Watcher;
 use crate::content::{Character, Event};
@@ -25,12 +25,17 @@ pub struct State {
     /// The frame of the burst whose Oz has not spawned yet, -1 once it has.
     burst_oz_spawn_src: i32,
     watch_src: i32,
+    /// Her Hexerei bonus is on: she is Hexerei with another in the team.
+    hex: bool,
 }
 
 const OZ_ACTIVE: ModKey = ModKey::new(g::OZ_ACTIVE_KEY);
 const RECAST_CD: ModKey = ModKey::new(g::SKILL_RECAST_CD_KEY);
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
 const A4_ICD: ModKey = ModKey::new(g::A4_ICD_KEY);
+const HEX_ATKP: ModKey = ModKey::new(g::HEX_ATKP_KEY);
+const HEX_EM: ModKey = ModKey::new(g::HEX_EM_KEY);
+const C6_HEX: ModKey = ModKey::new(g::C6_HEXEREI_KEY);
 
 const CB_PARTICLE: u16 = 1 << 0;
 
@@ -54,6 +59,7 @@ const WATCH: Watcher = Watcher { status: OZ_ACTIVE, icd: None, tick_on_active: t
 
 impl Character for Char {
     const KEY: &'static str = "fischl";
+    const HEXEREI: bool = true;
     type State = State;
 
     fn new_state(cs: &CharSetup) -> State {
@@ -66,12 +72,24 @@ impl Character for Char {
             oz_travel,
             burst_oz_spawn_src: 0,
             watch_src: 0,
+            hex: false,
         }
     }
 
     fn init(s: &mut Sim, ci: usize) {
-        if s.chars[ci].ascension >= 4 {
+        let hex = s.chars[ci].hexerei && s.hexerei_count() >= 2;
+        s.st_mut::<State>(ci).hex = hex;
+        if s.chars[ci].ascension >= 4 || hex {
             s.subscribe(EventKind::Reaction, Owner::Char(ci as u8));
+        }
+        // Hexerei: the active character shares her ATK and EM bonuses
+        if hex {
+            for i in 0..s.chars.len() {
+                if i != ci {
+                    s.add_mod(i, Mod::owned(HEX_ATKP, ModKind::Stat, Owner::Char(ci as u8), st::ATKP, false, false, -1), -1);
+                    s.add_mod(i, Mod::owned(HEX_EM, ModKind::Stat, Owner::Char(ci as u8), st::EM, false, false, -1), -1);
+                }
+            }
         }
         if s.chars[ci].cons >= 6 {
             s.subscribe(EventKind::StateChange, Owner::Char(ci as u8));
@@ -258,10 +276,35 @@ impl Character for Char {
         }
     }
 
+    /// Hexerei: her own bonus while it lasts, and the active character's
+    /// (another's) while hers is active; C6's status doubles both.
+    fn mod_amount(s: &Sim, ci: usize, on: usize, m: &Mod, out: &mut Stats) -> bool {
+        let (stat, v) = if m.key == HEX_ATKP {
+            (st::ATKP, 0.225)
+        } else if m.key == HEX_EM {
+            (st::EM, 90.0)
+        } else {
+            return false;
+        };
+        if on != ci && (s.player.active as usize != on || !s.mod_active(ci, m.key)) {
+            return false;
+        }
+        let c6 = if s.chars[ci].cons >= 6 && s.mod_active(ci, C6_HEX) { 1.0 } else { 0.0 };
+        out[stat] += v * (1.0 + c6);
+        true
+    }
+
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
             // not on the player's own aura
-            Event::Reaction(r, ev) if !ev.on_player => a4(s, ci, r, ev),
+            Event::Reaction(r, ev) if !ev.on_player => {
+                if s.chars[ci].ascension >= 4 {
+                    a4(s, ci, r, ev);
+                }
+                if s.st::<State>(ci).hex {
+                    hex(s, ci, r);
+                }
+            }
             Event::StateChange(next) => {
                 if let Some(src) = WATCH.on_state(s, ci, next) {
                     s.st_mut::<State>(ci).watch_src = src;
@@ -355,6 +398,20 @@ fn a4(s: &mut Sim, ci: usize, r: Reaction, ev: &AttackEvent) {
     s.queue_attack_with_snap(atk, 0, 4);
 }
 
+/// Hexerei: an overload on an enemy while Oz is out gives her 22.5% ATK
+/// for 10 s, an electro-charged 90 EM.
+fn hex(s: &mut Sim, ci: usize, r: Reaction) {
+    let (key, stat) = match r {
+        Reaction::Overload => (HEX_ATKP, st::ATKP),
+        Reaction::ElectroCharged => (HEX_EM, st::EM),
+        _ => return,
+    };
+    if !s.mod_active(ci, OZ_ACTIVE) {
+        return;
+    }
+    s.add_mod(ci, Mod::owned(key, ModKind::Stat, Owner::Char(ci as u8), stat, false, true, -1), 600);
+}
+
 fn c6_wave(s: &mut Sim, ci: usize) {
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_FISCHL, Element::Electro, 25.0, 0.3);
     ai.abil = "Evernight Raven (C6)";
@@ -362,4 +419,7 @@ fn c6_wave(s: &mut Sim, ci: usize) {
     let atk = with_oz_snapshot(s, ci, ai);
     let travel = s.st::<State>(ci).oz_travel;
     s.queue_attack_with_snap(atk, 0, travel);
+    if s.st::<State>(ci).hex {
+        s.add_status(ci, C6_HEX, 600, true);
+    }
 }

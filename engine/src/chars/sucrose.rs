@@ -1,7 +1,7 @@
 //! Sucrose, from gcsim's internal/characters/sucrose: normal and charged
 //! attacks, her own dash frames, the skill, the burst with its absorbed
-//! element, A1, A4 and every constellation. Her Hexerei bonuses need a
-//! second Hexerei character, which is an error elsewhere. No plunges.
+//! element, A1, A4, every constellation and her Hexerei bonuses (with a
+//! second Hexerei character). No plunges.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::sucrose as g;
@@ -24,6 +24,8 @@ pub struct State {
     c4_count: i32,
     /// C6's element.
     c6: Option<Element>,
+    /// Her Hexerei bonuses are on: she is Hexerei with another in the team.
+    hex: bool,
 }
 
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
@@ -31,6 +33,8 @@ const BURST: ModKey = ModKey::new("sucroseburst");
 const A1: ModKey = ModKey::new("sucrose-a1");
 const A4: ModKey = ModKey::new("sucrose-a4");
 const C6: ModKey = ModKey::new("sucrose-c6");
+const HEX_SKILL: ModKey = ModKey::new("sucrose-hexerei-skill");
+const HEX_BURST: ModKey = ModKey::new("sucrose-hexerei-burst");
 
 const CB_A4: u16 = 1 << 0;
 const CB_PARTICLE: u16 = 1 << 1;
@@ -42,6 +46,7 @@ const TASK_ABSORB_CHECK: u8 = 1;
 
 impl Character for Char {
     const KEY: &'static str = "sucrose";
+    const HEXEREI: bool = true;
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
@@ -58,6 +63,7 @@ impl Character for Char {
         if s.chars[ci].ascension >= 1 {
             s.subscribe(EventKind::Reaction, Owner::Char(ci as u8));
         }
+        s.st_mut::<State>(ci).hex = s.chars[ci].hexerei && s.hexerei_count() >= 2;
     }
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
@@ -111,6 +117,12 @@ impl Character for Char {
         ai.pattern = s.circle_on_player(0.0, 5.0, 6.0);
         s.queue_attack(ai, CB_A4 | CB_PARTICLE, 0, 42);
         s.set_cd_with_delay(ci, Action::Skill, 900, 9);
+        // Hexerei: DMG for the party's attacks for 15 s
+        if s.st::<State>(ci).hex {
+            for i in 0..s.chars.len() {
+                s.add_mod(i, Mod::owned(HEX_SKILL, ModKind::Attack, Owner::Char(ci as u8), st::NONE, false, true, -1), 15 * 60);
+            }
+        }
         let t = &g::SKILL_FRAMES;
         ActInfo::new(Frames::Table(t), t[0], t[Action::Dash as usize], AnimState::Skill)
     }
@@ -140,6 +152,14 @@ impl Character for Char {
         s.add_task(Task::Char { c: ci as u8, id: TASK_ABSORB_CHECK, arg: 0 }, 136);
         s.set_cd_with_delay(ci, Action::Burst, 1200, 18);
         s.consume_energy(ci, 21);
+        // Hexerei: DMG for the Hexerei characters' attacks for 20 s
+        if s.st::<State>(ci).hex {
+            for i in 0..s.chars.len() {
+                if s.chars[i].hexerei {
+                    s.add_mod(i, Mod::owned(HEX_BURST, ModKind::Attack, Owner::Char(ci as u8), st::NONE, false, true, -1), 20 * 60);
+                }
+            }
+        }
         let t = &g::BURST_FRAMES;
         ActInfo::new(Frames::Table(t), t[0], t[Action::Dash as usize], AnimState::Burst)
     }
@@ -185,6 +205,15 @@ impl Character for Char {
         let Some(e) = st.c6 else { return false };
         out[e.dmg_stat()] += 0.20 + if s.chars[on].hexerei { 0.085714 } else { 0.0 };
         true
+    }
+
+    /// Hexerei: the skill's and the burst's DMG bonus, on normal, charged
+    /// and plunging attacks, skills and bursts.
+    fn attack_mod(_: &Sim, _: usize, _: usize, m: &Mod, ev: &mut AttackEvent) {
+        if !matches!(ev.info.tag, AttackTag::Normal | AttackTag::Extra | AttackTag::Plunge | AttackTag::ElementalArt | AttackTag::ElementalArtHold | AttackTag::ElementalBurst) {
+            return;
+        }
+        ev.stats[st::DMGP] += if m.key == HEX_SKILL { 0.0571428 } else { 0.0714285 };
     }
 
     fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, _: &AttackEvent) {
