@@ -1,0 +1,19 @@
+[package]
+name = "gse-wasm"
+version = "0.1.0"
+edition = "2024"
+license = "AGPL-3.0-or-later"
+description = "The engine as a WebAssembly module for Gscouter's workers and server"
+
+[lib]
+crate-type = ["cdylib"]
+path = "lib.rs"
+
+[dependencies]
+gse = { path = "../engine" }
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+opt-level = 3

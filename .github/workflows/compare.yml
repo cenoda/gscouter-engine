@@ -269,6 +269,9 @@ jobs:
         if: matrix.part == 0
         working-directory: engine
         run: cargo test --release
+      - name: WebAssembly module gives the engine's results
+        if: matrix.part == 0
+        run: wasm/parity.sh
       - name: Compare with gcsim
         working-directory: reference
         run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes -shard ${{ matrix.part }}/4 -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md

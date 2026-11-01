@@ -45,7 +45,8 @@ pub fn run_iterations(src: &str, warmup: f64, seed: i64, first: usize, count: us
     let parsed = gcsl::parse(src)?;
     let missing = check::unsupported(&parsed);
     if !missing.is_empty() {
-        return Err(format!("unsupported: {}", missing.join(", ")));
+        // each names itself as unsupported
+        return Err(missing.join("; "));
     }
     // A config without a duration runs until its action list ends.
     if parsed.duration > 0.0 && parsed.duration <= warmup {
@@ -63,6 +64,17 @@ pub fn run_iterations(src: &str, warmup: f64, seed: i64, first: usize, count: us
         out.push(summarize(&sim, &names));
     }
     Ok(out)
+}
+
+/// What the config needs that the engine does not implement, as `gse
+/// --check` lists it: empty when the engine can run it. A config that does
+/// not parse is an error.
+pub fn unsupported(src: &str) -> Result<Vec<String>, String> {
+    match gcsl::parse(src) {
+        Ok(p) => Ok(check::unsupported(&p)),
+        Err(e) if e.starts_with("unsupported: ") => Ok(vec![e]),
+        Err(e) => Err(e),
+    }
 }
 
 /// Gscouter's `summarize` of one fight.
@@ -149,6 +161,25 @@ pub fn to_json(its: &[Iteration]) -> String {
     o
 }
 
+/// A string as JSON.
+pub fn json_string(s: &str) -> String {
+    let mut o = String::with_capacity(s.len() + 2);
+    o.push('"');
+    for ch in s.chars() {
+        match ch {
+            '"' => o.push_str("\\\""),
+            '\\' => o.push_str("\\\\"),
+            '\n' => o.push_str("\\n"),
+            c if (c as u32) < 0x20 => {
+                let _ = write!(o, "\\u{:04x}", c as u32);
+            }
+            c => o.push(c),
+        }
+    }
+    o.push('"');
+    o
+}
+
 /// A number as JSON: Rust's shortest form, which reads back to the same
 /// f64. JSON has no NaN or infinity, and a fight gives neither; should one
 /// appear, it is written as 0 rather than as invalid JSON.
@@ -198,8 +229,10 @@ mod tests {
         let src = config("team-looped.txt");
         assert!(run_iterations(&src, 150.0, 1, 0, 0).is_err());
         assert!(run_iterations(&src, 450.0, 1, 0, 1).unwrap_err().contains("longer than warmup"));
-        let bad = src.replace("hutao char", "nosuchchar char");
-        assert!(run_iterations(&bad, 150.0, 1, 0, 1).is_err());
+        let bad = src.replace("hutao char", "xilonen char").replace("hutao add", "xilonen add");
+        assert_eq!(run_iterations(&bad, 150.0, 1, 0, 1).unwrap_err(), "unsupported: character xilonen");
+        assert_eq!(unsupported(&bad).unwrap(), ["unsupported: character xilonen"]);
+        assert!(unsupported(&src).unwrap().is_empty());
     }
 
     /// team-looped.txt's characters with other conditions and program.

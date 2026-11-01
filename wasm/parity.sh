@@ -1,0 +1,18 @@
+#!/bin/sh
+# Builds the WebAssembly module and checks that it gives, byte for byte, what
+# the engine gives natively (engine/examples/slice.rs) on the reference
+# configs. Run from the repository's root.
+set -eu
+rustup target add wasm32-unknown-unknown >/dev/null 2>&1 || true
+(cd wasm && cargo build --release --target wasm32-unknown-unknown)
+(cd engine && cargo build --release --example slice)
+wasm=wasm/target/wasm32-unknown-unknown/release/gse_wasm.wasm
+out=$(mktemp -d)
+for args in "team-looped.txt 150 1 0 100" "hutao-solo-looped.txt 150 7 40 60" "team-onepass.txt 0 1 0 100"; do
+  set -- $args
+  engine/target/release/examples/slice "configs/$1" "$2" "$3" "$4" "$5" > "$out/native.json"
+  node wasm/run.mjs "$wasm" "configs/$1" "$2" "$3" "$4" "$5" > "$out/wasm.json" 2>/dev/null
+  cmp "$out/native.json" "$out/wasm.json"
+  echo "$1: identical"
+done
+ls -l "$wasm"
