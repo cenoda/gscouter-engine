@@ -1,0 +1,3 @@
+# Thoma C2: the burst lasts 18 s, so Fiery Collapse fires 3 s longer.
+team yoimiya-xingqiu-yelan-thoma
+thoma char lvl=90/90 cons=2 talent=9,9,9;

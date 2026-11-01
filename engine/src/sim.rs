@@ -1198,6 +1198,7 @@ pub enum ShieldType {
     DionaSkill,
     BaizhuBurst,
     KiraraSkill,
+    ThomaSkill,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against

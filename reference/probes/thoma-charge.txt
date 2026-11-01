@@ -1,0 +1,4 @@
+# Thoma's charged attack after a normal attack, with C6's bonus on it (no library rotation charges with him).
+team yoimiya-xingqiu-yelan-thoma
+rotation- thoma skill, burst, attack;
+rotation+ thoma skill, burst, attack, charge;

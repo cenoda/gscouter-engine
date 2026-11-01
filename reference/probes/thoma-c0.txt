@@ -1,0 +1,3 @@
+# Thoma C0: skill CD 15 s, burst CD 20 s and 15 s long, no C4 energy and no C6 party bonus (every library build is C6).
+team yoimiya-xingqiu-yelan-thoma
+thoma char lvl=90/90 cons=0 talent=9,9,9;
