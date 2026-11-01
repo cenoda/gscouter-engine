@@ -268,7 +268,7 @@ impl Character for Char {
     }
 
     /// A broken shield heals and fires a Spiritvein.
-    fn shield_damaged(s: &mut Sim, ci: usize, _: ModKey, broken: bool) {
+    fn shield_damaged(s: &mut Sim, ci: usize, _: ModKey, _: f64, broken: bool) {
         if broken {
             remove_shield(s, ci);
         }
