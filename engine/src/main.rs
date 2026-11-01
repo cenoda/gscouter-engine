@@ -11,6 +11,11 @@
 //! that the engine does not implement, as {"unsupported": [...]}, without
 //! running it.
 
+// The modules are compiled into the command itself, not taken from the
+// library (`lib.rs`): through the library the same fights ran 0.4% more
+// instructions. What only the library uses is dead code here; the
+// library's build reports dead code.
+#![allow(dead_code)]
 mod chars;
 mod check;
 mod content;

@@ -351,6 +351,8 @@ go run ./compare -gscouter ../../Gscouter -teams <id> -only probes -dry-run -con
 
 WebAssembly: `cargo build --release --target wasm32-wasip1` and `GOOS=wasip1 GOARCH=wasm go build`, run with `node:wasi` (not remeasured in Phase 1).
 
+For Gscouter (Phase 4), the engine is also a library (`engine/src/lib.rs`): `api::run_iterations(config, warmup, seed, first, count)` runs iterations `first` to `first + count - 1` (seed `seed + i`) and reduces each fight as Gscouter's `score.RunIterations` does (`score.Iteration`: team DPS over the window and over its two halves, at gcsim's 0.5 s buckets, DPS by character, waits in the window by reason, frames, names); `api::to_json` writes them as Gscouter's JSON. A config with anything the engine lacks is an error naming it. The `gse` command compiles the modules into itself rather than through the library, which cost 0.4% more instructions; keeping the buckets costs 0.23% (valgrind, 20 iterations of `team-looped.txt`: 470.4 million before, 471.5 million after), with byte-identical output.
+
 ## License
 
 GNU AGPL v3 or later (`LICENSE`). The engine is ported from gcsim, which is under the AGPL v3 since 2026-09-19, so it keeps gcsim's license and copyright notice.

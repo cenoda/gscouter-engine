@@ -1184,6 +1184,10 @@ pub struct Sim {
     pub window_start: i32,
     pub total: f64,
     pub window_char: [f64; 4],
+    /// Team damage in the window by 0.5 s bucket from `window_start`
+    /// (gcsim's DamageBuckets, which Gscouter splits into the window's
+    /// halves).
+    pub window_buckets: Vec<f64>,
     /// Frames in the window that actions waited, by character and reason.
     pub waits: [[u32; N_FAILURES]; 4],
     /// gcsim's active failures: by character and action, the frame an
@@ -1281,6 +1285,7 @@ impl Sim {
             window_start: ((warmup * 60.0) as i32 / 30) * 30,
             total: 0.0,
             window_char: [0.0; 4],
+            window_buckets: Vec::with_capacity(((cfg.duration - warmup) * 2.0).max(0.0) as usize + 2),
             waits: [[0; N_FAILURES]; 4],
             wait_open: [[None; N_ACTIONS]; 4],
             abils: Default::default(),
@@ -3563,6 +3568,11 @@ impl Sim {
         let ci = ev.info.actor as usize;
         if self.f >= self.window_start && !ev.info.sim {
             self.window_char[ci] += ev.damage;
+            let b = ((self.f - self.window_start) / 30) as usize;
+            if b >= self.window_buckets.len() {
+                self.window_buckets.resize(b + 1, 0.0);
+            }
+            self.window_buckets[b] += ev.damage;
             let abils = &mut self.abils[ci];
             let name = ev.info.abil;
             match abils.iter_mut().find(|a| std::ptr::eq(a.0, name) || a.0 == name) {
