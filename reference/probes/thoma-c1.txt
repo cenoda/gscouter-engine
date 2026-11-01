@@ -1,3 +1,3 @@
-# Thoma C1: skill CD 12 s and burst CD 17 s, without C2's longer burst.
-team yoimiya-xingqiu-yelan-thoma
+# Thoma C1: skill CD 12 s and burst CD 17 s, without C2's longer burst, where he casts both as soon as they are ready (on yoimiya-xingqiu-yelan-thoma the cooldowns never bind, so C1 is C0's fight there).
+team thoma-chevreuse-fischl-bennett
 thoma char lvl=90/90 cons=1 talent=9,9,9;

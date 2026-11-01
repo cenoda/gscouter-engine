@@ -88,6 +88,8 @@ impl Character for Char {
             ai.hitlag_factor = 0.01;
             ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
             ai.def_halt = g::ATTACK_DEF_HALT[n][i];
+            // N1, N2: NewCircleHitOnTargetFanAngle(Player, {Y: off}, r, fan);
+            // N3, N4: NewBoxHitOnTarget(Player, {Y: off}, w, h)
             ai.pattern = if n >= 2 { s.box_on_player(0.0, oy, hb[0], hb[1]) } else { s.fan_on_player(0.0, oy, hb[0], g::ATTACK_FAN_ANGLES[n]) };
             s.queue_attack_at(ci, ai, 0, h);
         }
@@ -105,6 +107,7 @@ impl Character for Char {
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
         ai.deployable = true;
+        // NewCircleHit(Player, PrimaryTarget, nil, 0.8)
         ai.pattern = s.circle_on_target(0.8);
         s.queue_attack(ai, 0, g::CHARGE_HITMARK, g::CHARGE_HITMARK);
         let t = &g::CHARGE_FRAMES;
@@ -118,6 +121,7 @@ impl Character for Char {
         ai.hitlag_halt = 0.06 * 60.0;
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
+        // NewCircleHitOnTargetFanAngle(Player, {Y: 1}, 3, 270)
         ai.pattern = s.fan_on_player(0.0, 1.0, 3.0, 270.0);
         // the barrier's task, then the infusion's, both at 9 on the
         // fight's queue, the barrier's queued first
@@ -133,6 +137,7 @@ impl Character for Char {
         let lvl = s.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 50.0, g::BURST[lvl]);
         ai.abil = "Crimson Ooyoroi";
+        // NewCircleHitOnTarget(Player, nil, 4)
         ai.pattern = s.circle_on_player(0.0, 0.0, 4.0);
         s.queue_attack(ai, 0, g::BURST_HITMARK, g::BURST_HITMARK);
         let d = if s.chars[ci].cons >= 2 { 18 } else { 15 };
@@ -224,6 +229,7 @@ fn fiery_collapse(s: &mut Sim, ci: usize) {
     if s.chars[ci].ascension >= 1 {
         ai.flat_dmg = 0.022 * s.max_hp(ci);
     }
+    // NewBoxHitOnTarget(Player, nil, 4.5, 8)
     ai.pattern = s.box_on_player(0.0, 0.0, 4.5, 8.0);
     s.queue_attack(ai, CB_BURST_SHIELD, 0, 11);
     s.add_status(ci, BURST_ICD, 60, true);
