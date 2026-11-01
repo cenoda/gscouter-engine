@@ -1,0 +1,3 @@
+# Hexerei switched off on Fischl (param hexerei=0): one Hexerei character, no bonuses, and Sucrose's C6 without the Hexerei part on Fischl.
+team bennett-fischl-sucrose-nahida
+fischl char lvl=90/90 cons=6 talent=9,9,9 +params=[hexerei=0];

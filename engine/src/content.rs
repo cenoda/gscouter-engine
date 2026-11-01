@@ -122,6 +122,11 @@ pub trait Character {
     const KEY: &'static str;
     /// The highest constellation it implements; a higher one is an error.
     const MAX_CONS: i32 = 6;
+    /// gcsim makes it Hexerei (IsHexerei, in `profile::HEXEREI`) and its
+    /// Hexerei bonuses, which need two Hexerei characters in the team
+    /// (`Sim::hexerei_count`), are implemented. A Hexerei character
+    /// without them is an error in a team of two or more.
+    const HEXEREI: bool = false;
     type State;
     fn new_state(cs: &CharSetup) -> Self::State;
 
@@ -311,6 +316,10 @@ macro_rules! chars {
             pub fn max_cons(self) -> i32 {
                 use $crate::content::Character;
                 match self { $(CharKind::$kind => $m::Char::MAX_CONS),* }
+            }
+            pub fn hexerei(self) -> bool {
+                use $crate::content::Character;
+                match self { $(CharKind::$kind => $m::Char::HEXEREI),* }
             }
             pub fn new_state(self, cs: &$crate::sim::CharSetup) -> CharState {
                 use $crate::content::Character;
