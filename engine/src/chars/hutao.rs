@@ -283,6 +283,15 @@ fn particle_cb(s: &mut Sim, ci: usize) {
     s.queue_particle(count, Element::Pyro, s.particle_delay[ci]);
 }
 
+/// gcsim's enemy tag of Blood Blossom: the frame the current one started
+/// (0 before the first, or without Hu Tao).
+pub fn bb_tag(s: &Sim) -> i64 {
+    match s.chars.iter().position(|c| c.kind == CharKind::Hutao) {
+        Some(h) => s.st::<State>(h).bb_src.max(0) as i64,
+        None => 0,
+    }
+}
+
 fn apply_bb(s: &mut Sim, ci: usize) {
     if !s.enemy_status_active(BLOOD_BLOSSOM) {
         let f = s.f;

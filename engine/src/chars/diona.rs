@@ -5,6 +5,7 @@
 
 use crate::content::Character;
 use crate::gcsimdata::chars::diona as g;
+use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;
 
@@ -21,6 +22,9 @@ pub struct State {
     burst: Option<AttackEvent>,
     heal: f64,
     heal_bonus: f64,
+    /// gcsim's Tags["c6bonus-<key>"], by team slot: the frame C6's healing
+    /// bonus on that character last ends (0 when never given).
+    c6_bonus: [i32; 4],
 }
 
 const SHIELD: ModKey = ModKey::new("diona-shield");
@@ -178,10 +182,19 @@ impl Character for Char {
                     s.add_stat_mod(active, C6, st::EM, 200.0, 120, true);
                 } else {
                     s.add_mod(active, Mod::owned(C6_HEAL, ModKind::HealBonus, Owner::Char(ci as u8), st::NONE, false, true, -1), 120);
+                    let f = s.f;
+                    s.st_mut::<State>(ci).c6_bonus[active] = f + 120;
                 }
             }
             _ => unreachable!(),
         }
+    }
+
+    /// `.diona.tags.c6bonus-<key>`, the only tags gcsim's Diona sets.
+    fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {
+        let key = fields.get(1).filter(|_| fields[0] == "tags")?.strip_prefix("c6bonus-")?;
+        let slot = crate::gcsl::char_key(key).and_then(|k| s.index_of(k));
+        Some(Ok(Num::Int(slot.map_or(0, |i| s.st::<State>(ci).c6_bonus[i] as i64))))
     }
 
     fn mod_amount(_: &Sim, _: usize, _: usize, m: &Mod, out: &mut Stats) -> bool {

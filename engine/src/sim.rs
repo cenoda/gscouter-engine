@@ -4649,11 +4649,23 @@ impl Sim {
             "element" => {
                 need(3, "element")?;
                 self.target(&fields[1])?;
+                let a = &self.enemy.aura;
                 let d = match fields[2].as_str() {
-                    "pyro" => self.enemy.aura.get(AURA_PYRO),
-                    "hydro" => self.enemy.aura.get(AURA_HYDRO),
-                    "electro" => self.enemy.aura.get(AURA_ELECTRO),
-                    "cryo" | "dendro" | "quicken" | "frozen" | "geo" | "burning" => 0.0,
+                    // gcsim's evalElement: burning's own slot while
+                    // IsBurning, unfloored
+                    "burning" => {
+                        let burning = a.get(AURA_BURNING_FUEL) > ZERO_DUR && a.get(AURA_BURNING) > ZERO_DUR;
+                        return Ok(Num::Float(if burning { a.get(AURA_BURNING) } else { 0.0 }));
+                    }
+                    "pyro" => a.get(AURA_PYRO),
+                    "hydro" => a.get(AURA_HYDRO),
+                    "electro" => a.get(AURA_ELECTRO),
+                    "cryo" => a.get(AURA_CRYO),
+                    "dendro" => a.get(AURA_DENDRO),
+                    "quicken" => a.get(AURA_QUICKEN),
+                    "frozen" => a.get(AURA_FROZEN),
+                    // geo never attaches
+                    "geo" => 0.0,
                     e => return Err(format!("bad element condition: invalid element {e}")),
                 };
                 Ok(Num::Float(if d < ZERO_DUR { 0.0 } else { d }))
@@ -4676,7 +4688,12 @@ impl Sim {
                 // ported characters the engine keeps, or an error
                 match fields[2].as_str() {
                     crate::gcsimdata::chars::lisa::CONDUCTIVE_TAG => Ok(int(crate::chars::lisa::conductive(self))),
-                    t @ (crate::gcsimdata::chars::yelan::SKILL_MARKED_TAG | crate::gcsimdata::chars::lynette::SKILL_TAG | crate::gcsimdata::chars::hutao::BB_DEBUFF) => Err(format!("unsupported: enemy tag {t}")),
+                    // the frame the current Blood Blossom started
+                    crate::gcsimdata::chars::hutao::BB_DEBUFF => Ok(int(crate::chars::hutao::bb_tag(self))),
+                    // Yelan marks and unmarks in two tasks of the same
+                    // frame, so no condition sees the mark
+                    crate::gcsimdata::chars::yelan::SKILL_MARKED_TAG => Ok(int(0)),
+                    t @ crate::gcsimdata::chars::lynette::SKILL_TAG => Err(format!("unsupported: enemy tag {t}")),
                     _ => Ok(int(0)),
                 }
             }
@@ -4765,12 +4782,14 @@ impl Sim {
                         let f = self.f as f64;
                         Ok(b(self.infusion[ci].is_some_and(|i| i.key.name == fields[2] && !(i.expiry < f && i.expiry > -1.0))))
                     }
-                    // the character's tags (0 when unset); those ported
-                    // characters set are not kept
+                    // the character's tags (0 when unset): those ported
+                    // characters set on others (a character's own tags
+                    // are its condition's, such as Yae Miko's totems,
+                    // Zhongli's and Diona's)
                     "tags" => {
                         need(3, &what)?;
                         match fields[2].as_str() {
-                            t @ (crate::gcsimdata::chars::yaemiko::YAE_TOTEM_COUNT | crate::gcsimdata::chars::shenhe::QUILL_KEY) => Err(format!("unsupported: character tag {t}")),
+                            crate::gcsimdata::chars::shenhe::QUILL_KEY => Ok(int(crate::chars::shenhe::quill_tag(self, ci))),
                             crate::gcsimdata::chars::xilonen::C4KEY => Ok(int(crate::chars::xilonen::c4_tag(self, ci))),
                             _ => Ok(int(0)),
                         }

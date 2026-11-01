@@ -139,6 +139,7 @@ impl Character for Char {
         let shielded = || Some(Ok(Num::Int(s.st::<State>(ci).shielded as i64)));
         match (fields[0].as_str(), fields.get(1).map(|f| f.as_str())) {
             ("shielded", _) | ("tags", Some("shielded")) => shielded(),
+            ("tags", Some("a1")) => Some(Ok(Num::Int(s.st::<State>(ci).a1 as i64))),
             _ => None,
         }
     }

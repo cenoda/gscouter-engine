@@ -291,3 +291,12 @@ fn c4_consume(s: &mut Sim, ci: usize) -> f64 {
     s.delete_mod(ci, C4);
     bonus
 }
+
+/// gcsim's Tags["shenhe-quill"] on the character in slot `on`: the quills
+/// it has left (0 without Shenhe).
+pub fn quill_tag(s: &Sim, on: usize) -> i64 {
+    match s.chars.iter().position(|c| c.kind == CharKind::Shenhe) {
+        Some(sh) => s.st::<State>(sh).quills[on] as i64,
+        None => 0,
+    }
+}
