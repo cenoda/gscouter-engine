@@ -1,0 +1,4 @@
+# Xilonen C0 with a dash, a second dash and a jump out of it in Nightsoul's Blessing: 5, 5 and 20 points used and a third dash after the dash lockout, which spends the last points and ends the blessing, so her attacks are normal attacks (no library rotation dashes or jumps with her).
+team gaming-furina-bennett-xilonen
+rotation- xilonen skill, attack:2;
+rotation+ xilonen skill, dash, dash, jump, dash, attack:2;

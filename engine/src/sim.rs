@@ -346,9 +346,25 @@ pub struct AttackInfo {
     /// flat damage to it.
     pub catalyzed: Option<Reaction>,
     pub pattern: Pattern,
+    /// gcsim's UseDef: the damage scales with DEF, not ATK.
+    pub use_def: bool,
+    /// gcsim's AdditionalTags, as `add_tag` bits.
+    pub add_tags: u8,
+}
+
+/// gcsim's additional attack tags (AttackInfo.AdditionalTags), as bits.
+pub mod add_tag {
+    /// AttackTagNightsoul: Nightsoul-aligned damage.
+    pub const NIGHTSOUL: u8 = 1 << 0;
 }
 
 impl AttackInfo {
+    /// Whether it carries an additional tag (gcsim's
+    /// slices.Contains(AdditionalTags, tag)).
+    #[inline]
+    pub fn has_tag(&self, tag: u8) -> bool {
+        self.add_tags & tag != 0
+    }
     pub fn new(actor: usize, tag: AttackTag, icd_tag: IcdTag, icd_group: IcdGroup, element: Element, durability: f64, mult: f64) -> Self {
         AttackInfo {
             actor: actor as u8,
@@ -373,6 +389,8 @@ impl AttackInfo {
             sim: false,
             catalyzed: None,
             pattern: Pattern::Unknown,
+            use_def: false,
+            add_tags: 0,
         }
     }
 }
@@ -447,6 +465,10 @@ pub enum Task {
     ShieldTrack,
     /// Geo resonance's check of the active character's shield.
     GeoRes { src: i32 },
+    /// The end of a timed Nightsoul's Blessing of the character in slot c,
+    /// set at src, with its callback (`nightsoul::CB_EXIT` or the
+    /// character's task id).
+    NightsoulExit { c: u8, src: i32, cb: u8 },
 }
 
 // ---------------------------------------------------------------- actions
@@ -592,6 +614,9 @@ pub struct Char {
     /// gcsim's IsHexerei: a Hexerei character, unless its hexerei param
     /// is 0.
     pub hexerei: bool,
+    /// Its Nightsoul state (gcsim's nightsoul.State), for the characters
+    /// that have one.
+    pub ns: crate::nightsoul::Nightsoul,
 }
 
 impl Char {
@@ -1172,6 +1197,8 @@ pub struct Sim {
     pub statuses: Vec<(ModKey, i32)>,
     /// gcsim's Flags.Custom: values the whole fight shares.
     pub flags: Vec<(ModKey, f64)>,
+    /// The Nightsoul Burst's ICD, by the team's Natlan characters.
+    pub nightsoul_burst_icd: i32,
     /// Flat damage EnemyHit subscribers add to the hit.
     pub hit_flat: f64,
     /// CRIT Rate an EnemyHit subscriber adds to the hit and the CRIT DMG it
@@ -1274,6 +1301,7 @@ impl Sim {
             infusion: [None; 4],
             statuses: Vec::new(),
             flags: Vec::new(),
+            nightsoul_burst_icd: 0,
             hit_flat: 0.0,
             hit_crit: None,
             na_icd: 0,
@@ -1348,6 +1376,7 @@ impl Sim {
             dash_jump,
             state: cs.kind.new_state(cs),
             hexerei: crate::profile::HEXEREI.contains(&crate::gcsl::char_name(cs.key)) && !cs.params.iter().any(|(k, v)| k == "hexerei" && *v == 0),
+            ns: crate::nightsoul::Nightsoul::new(),
         }
     }
 
@@ -1417,6 +1446,8 @@ impl Sim {
                 crate::sets::dispatch::post_init(self.chars[i].sets[si].kind, self, i, si);
             }
         }
+        // the Nightsoul Burst needs the characters set up
+        self.nightsoul_burst_setup();
         for i in 0..n {
             let (hp, ratio) = (self.starts[i].0, self.starts[i].1);
             match (hp > 0.0, ratio > 0.0) {
@@ -1482,6 +1513,8 @@ impl Sim {
                     crate::sets::dispatch::event(kind, self, c as usize, si as usize, &e)
                 }
                 Owner::Core => self.core_event(&e),
+                Owner::NightsoulBurst => self.nightsoul_burst_event(&e),
+                Owner::NightsoulExtend(c) => self.ns_extend_event(c as usize),
             }
         }
     }
@@ -1582,7 +1615,7 @@ impl Sim {
                 let kind = self.chars[o as usize].sets[si as usize].kind;
                 crate::sets::dispatch::mod_amount(kind, self, o as usize, si as usize, ci, m, out)
             }
-            Amount::Owner(Owner::Core) => false,
+            Amount::Owner(Owner::Core | Owner::NightsoulBurst | Owner::NightsoulExtend(_)) => false,
         }
     }
 
@@ -1918,6 +1951,7 @@ impl Sim {
                 self.shield_bonus();
             }
             Task::GeoRes { src } => self.geo_res_update(src),
+            Task::NightsoulExit { c, src, cb } => self.ns_exit_timer(c as usize, src, cb),
             Task::PlayerIcdResetDmg { i } => {
                 let s = &mut self.player_icd[i as usize];
                 s.dmg_count = 0;
@@ -2099,6 +2133,7 @@ impl Sim {
                 Amount::Fixed => ev.stats[m.affected] += m.value,
                 // cryo resonance: CRIT Rate against an enemy with cryo or
                 // frozen
+                Amount::Owner(Owner::NightsoulBurst | Owner::NightsoulExtend(_)) => {}
                 Amount::Owner(Owner::Core) => {
                     let a = &self.enemy.aura;
                     if m.key == CRYO_RESONANCE && (a.get(AURA_CRYO) > ZERO_DUR || a.get(AURA_FROZEN) > ZERO_DUR) {
@@ -3484,7 +3519,7 @@ impl Sim {
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
         // reaction damage takes no DMG bonus
         let dmg_bonus = if ev.info.tag.is_reaction() { 0.0 } else { ele_per + s[st::DMGP] };
-        let a = total_atk(s);
+        let a = if ev.info.use_def { total_def(s) } else { total_atk(s) };
         let base = ev.info.mult * a * (1.0 + 0.0) + ev.info.flat_dmg;
         let mut damage = base * (1.0 + dmg_bonus);
         s[st::CR] = s[st::CR].clamp(0.0, 1.0);
@@ -3806,7 +3841,9 @@ impl Sim {
 
     pub fn abil_stam_cost(&self, ci: usize, a: Action) -> f64 {
         let c = &self.chars[ci];
+        let own = crate::chars::dispatch::action_stam(c.kind, self, ci, a);
         let base = match a {
+            _ if own.is_some() => own.unwrap(),
             Action::Charge => match crate::chars::dispatch::charge_stam(c.kind, self, ci) {
                 Some(x) => x,
                 None => match c.class {
@@ -3954,6 +3991,9 @@ impl Sim {
         }
         if let Some(a) = self.player.anim.as_ref().filter(|a| a.time > a.anim_len as f64).copied() {
             self.on_removed(&a, AnimState::Idle);
+            // gcsim's AnimationHandler.Tick emits the change to idle while
+            // the action is still current
+            self.on_state_change(AnimState::Idle);
             self.player.anim = None;
             self.player.state = AnimState::Idle;
             self.player.state_start = self.f;
@@ -4122,6 +4162,8 @@ impl Sim {
                 chars::dispatch::charge(kind, self, ci, p)
             }
             Action::Dash => {
+                self.emit(Event::Dash);
+                chars::dispatch::template_action(kind, self, ci, a);
                 let info = self.char_dash(ci);
                 chars::dispatch::dash_info(kind, self, ci, info)
             }
@@ -4133,10 +4175,19 @@ impl Sim {
                 self.emit(Event::Burst);
                 chars::dispatch::burst(kind, self, ci, p)
             }
-            Action::Attack => chars::dispatch::attack(kind, self, ci, p),
+            Action::Attack => {
+                self.emit(Event::Attack);
+                chars::dispatch::attack(kind, self, ci, p)
+            }
             Action::Aim => chars::dispatch::aim(kind, self, ci, p),
-            Action::HighPlunge => chars::dispatch::high_plunge(kind, self, ci, p),
-            Action::LowPlunge => chars::dispatch::low_plunge(kind, self, ci, p),
+            Action::HighPlunge => {
+                self.emit(Event::Plunge);
+                chars::dispatch::high_plunge(kind, self, ci, p)
+            }
+            Action::LowPlunge => {
+                self.emit(Event::Plunge);
+                chars::dispatch::low_plunge(kind, self, ci, p)
+            }
             Action::Swap => {
                 if self.player.swap_cd > 0 {
                     self.player.swap_cd = 0;
@@ -4147,7 +4198,10 @@ impl Sim {
                 x.pausable = false;
                 x
             }
-            Action::Jump => self.char_jump(ci),
+            Action::Jump => {
+                chars::dispatch::template_action(kind, self, ci, a);
+                self.char_jump(ci)
+            }
             Action::Walk => {
                 let f = p.get("f").unwrap_or(1) as i32;
                 ActInfo::new(Frames::Const(f), f, f, AnimState::Walk)
@@ -4455,6 +4509,7 @@ impl Sim {
                         need(3, &what)?;
                         match fields[2].as_str() {
                             t @ (crate::gcsimdata::chars::yaemiko::YAE_TOTEM_COUNT | crate::gcsimdata::chars::shenhe::QUILL_KEY) => Err(format!("unsupported: character tag {t}")),
+                            crate::gcsimdata::chars::xilonen::C4KEY => Ok(int(crate::chars::xilonen::c4_tag(self, ci))),
                             _ => Ok(int(0)),
                         }
                     }

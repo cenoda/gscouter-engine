@@ -1,0 +1,5 @@
+# Xilonen C1: Nightsoul's Blessing lasts 45% longer and uses 30% fewer points: after the dashes and the jump points remain, so her attacks are Blade Rollers.
+team gaming-furina-bennett-xilonen
+xilonen char lvl=90/90 cons=1 talent=9,9,9;
+rotation- xilonen skill, attack:2;
+rotation+ xilonen skill, dash, dash, jump, dash, attack:2;

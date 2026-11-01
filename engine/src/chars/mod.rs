@@ -37,4 +37,5 @@ crate::chars! {
     Baizhu => baizhu,
     Neuvillette => neuvillette,
     Kirara => kirara,
+    Xilonen => xilonen,
 }

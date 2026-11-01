@@ -24,6 +24,13 @@ pub enum Owner {
     Set(u8, u8),
     /// The fight itself (energy from normal attacks).
     Core,
+    /// gcsim's setupNightsoulBurst: its OnEnemyDamage subscription, made
+    /// after every Init when a Natlan character is on the team.
+    NightsoulBurst,
+    /// gcsim's "ns-extend-state-<character>" OnStateChange subscription of
+    /// the character in this slot: its Nightsoul's Blessing waits for the
+    /// end of an action before it expires.
+    NightsoulExtend(u8),
 }
 
 /// The events of gcsim's event handler that the engine emits.
@@ -45,8 +52,14 @@ pub enum EventKind {
     Shielded,
     ShieldBreak,
     ConstructSpawned,
+    Attack,
+    Dash,
+    Plunge,
+    NightsoulBurst,
+    NightsoulGenerate,
+    NightsoulConsume,
 }
-pub const N_EVENTS: usize = 15;
+pub const N_EVENTS: usize = 21;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -86,6 +99,18 @@ pub enum Event<'a> {
     ShieldBreak(&'a crate::sim::Shield),
     /// OnConstructSpawned.
     ConstructSpawned,
+    /// OnAttack, before the normal attack runs.
+    Attack,
+    /// OnDash, before the dash runs.
+    Dash,
+    /// OnPlunge, before a low or high plunge runs.
+    Plunge,
+    /// OnNightsoulBurst, with the attack that triggered it.
+    NightsoulBurst(&'a AttackEvent),
+    /// OnNightsoulGenerate: the character and the points it gained.
+    NightsoulGenerate { on: usize, amount: f64 },
+    /// OnNightsoulConsume: the character and the points it used.
+    NightsoulConsume { on: usize, amount: f64 },
 }
 
 impl Event<'_> {
@@ -106,6 +131,12 @@ impl Event<'_> {
             Event::ParticleReceived => EventKind::ParticleReceived,
             Event::EnergyBurst { .. } => EventKind::EnergyBurst,
             Event::EnemyHit(_) => EventKind::EnemyHit,
+            Event::Attack => EventKind::Attack,
+            Event::Dash => EventKind::Dash,
+            Event::Plunge => EventKind::Plunge,
+            Event::NightsoulBurst(_) => EventKind::NightsoulBurst,
+            Event::NightsoulGenerate { .. } => EventKind::NightsoulGenerate,
+            Event::NightsoulConsume { .. } => EventKind::NightsoulConsume,
         }
     }
 }
@@ -215,6 +246,14 @@ pub trait Character {
     fn shield_bonus(_s: &Sim, _ci: usize, _key: ModKey) -> (f64, bool) {
         (0.0, false)
     }
+    /// Its ActionStam, when it is not the template's (gcsim's override of
+    /// it): the stamina an action costs before percentage mods.
+    fn action_stam(_s: &Sim, _ci: usize, _a: Action) -> Option<f64> {
+        None
+    }
+    /// Its own part of a dash or jump (gcsim's override of Dash or Jump),
+    /// run before the template's.
+    fn template_action(_s: &mut Sim, _ci: usize, _a: Action) {}
 }
 
 /// gcsim's template NextQueueItemIsValid: swords and polearms charge
@@ -369,6 +408,9 @@ macro_rules! chars {
             pub fn dash_info(k: CharKind, s: &mut Sim, ci: usize, info: ActInfo) -> ActInfo { match k { $(CharKind::$kind => $m::Char::dash_info(s, ci, info)),* } }
             pub fn shield_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_expired(s, ci, key)),* } }
             pub fn shield_bonus(k: CharKind, s: &Sim, ci: usize, key: ModKey) -> (f64, bool) { match k { $(CharKind::$kind => $m::Char::shield_bonus(s, ci, key)),* } }
+            #[inline]
+            pub fn action_stam(k: CharKind, s: &Sim, ci: usize, a: Action) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::action_stam(s, ci, a)),* } }
+            pub fn template_action(k: CharKind, s: &mut Sim, ci: usize, a: Action) { match k { $(CharKind::$kind => $m::Char::template_action(s, ci, a)),* } }
         }
     };
 }
