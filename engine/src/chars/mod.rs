@@ -36,4 +36,5 @@ crate::chars! {
     Alhaitham => alhaitham,
     Baizhu => baizhu,
     Neuvillette => neuvillette,
+    Kirara => kirara,
 }

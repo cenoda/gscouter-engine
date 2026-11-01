@@ -1,0 +1,3 @@
+# Kirara C2: co-op only, nothing in gcsim; the same fight as C1.
+team neuvillette-xiangling-bennett-kirara
+kirara char lvl=90/90 cons=2 talent=9,9,9;
