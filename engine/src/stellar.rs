@@ -188,36 +188,11 @@ impl Sim {
         }
     }
 
-    /// gcsim's calcDirectReaction, for direct Stellar-Conduct DMG: no DMG
-    /// bonus; the multiplier of the attacker's stacks tag, the EM bonus of
-    /// special reactions and its reaction bonuses, then flat damage, DEF,
-    /// RES, the damage group and elevation, and the crit last.
-    pub(crate) fn calc_direct(&mut self, ev: &mut AttackEvent, grp: f64, base_bonus: f64) -> (f64, bool) {
-        let actor = ev.info.actor as usize;
-        let s = &ev.stats;
-        let a = if ev.info.use_def { total_def(s) } else { total_atk(s) };
-        let mut damage = ev.info.mult * a * (1.0 + base_bonus);
-        damage *= MULT[self.stellar.tags[actor] as usize];
-        let em = s[st::EM];
-        let em_bonus = (6.0 * em) / (2000.0 + em);
-        let react_bonus = self.react_bonus(actor, &ev.info);
-        damage *= 1.0 + em_bonus + react_bonus;
-        damage += ev.info.flat_dmg;
-        let (res, defadj) = self.enemy_resist_def(ev.info.element);
-        let defadj = defadj.min(0.9);
-        let defmod = (ev.char_lvl + 100) as f64 / ((ev.char_lvl + 100) as f64 + (self.enemy.level + 100) as f64 * (1.0 + defadj) * (1.0 - ev.info.ignore_def.min(1.0)));
-        damage *= defmod;
-        damage *= resmod(res);
-        damage *= grp;
-        damage *= 1.0 + ev.elevation as f64 / 100.0;
-        let s = &mut ev.stats;
-        s[st::CR] = s[st::CR].clamp(0.0, 1.0);
-        let mut crit = false;
-        if self.rng.float64() <= s[st::CR] {
-            damage *= 1.0 + s[st::CD];
-            crit = true;
-        }
-        (damage, crit)
+    /// The multiplier of direct Stellar-Conduct DMG in gcsim's
+    /// calcDirectReaction (`Sim::calc_direct`): by the attacker's Polestar
+    /// Field stacks tag.
+    pub(crate) fn stellar_conduct_mult(&self, actor: usize) -> f64 {
+        MULT[self.stellar.tags[actor] as usize]
     }
 }
 

@@ -41,6 +41,7 @@ crate::chars! {
     Xilonen => xilonen,
     Xianyun => xianyun,
     Sandrone => sandrone,
+    Ineffa => ineffa,
 }
 
 /// The characters whose modules have been checked against gcsim for a

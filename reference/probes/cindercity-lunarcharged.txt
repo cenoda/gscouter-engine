@@ -1,0 +1,3 @@
+# Ineffa with Cinder City 4: Lunar-Charged gives the party electro and hydro DMG bonus.
+team neuvillette-furina-kaedeharakazuha-ineffa
+ineffa add set="scrolloftheheroofcindercity" count=4;

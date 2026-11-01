@@ -38,6 +38,7 @@ const BURST: ModKey = ModKey::new(g::BURST_KEY);
 const A1: ModKey = ModKey::new(g::A1_BUFF_KEY);
 const A4: ModKey = ModKey::new(g::A4_BUFF_KEY);
 const C2: ModKey = ModKey::new("nahida-c2");
+const C2_LUNAR_BLOOM: ModKey = ModKey::new("nahida-c2-lunarbloom");
 const C4: ModKey = ModKey::new("nahida-c4");
 const C6_ACTIVE: ModKey = ModKey::new(g::C6_ACTIVE_KEY);
 const C6_ICD: ModKey = ModKey::new(g::C6_ICD_KEY);
@@ -86,6 +87,11 @@ impl Character for Char {
         }
         if s.chars[ci].cons >= 2 {
             s.subscribe(EventKind::EnemyHit, o);
+            // C2: direct Lunar-Bloom on the marked enemy, CRIT Rate +10%
+            // and CRIT DMG +20%
+            for i in 0..s.chars.len() {
+                s.chars[i].mods.push(Mod::owned(C2_LUNAR_BLOOM, ModKind::Attack, o, st::NONE, false, false, -1));
+            }
         }
     }
 
@@ -230,6 +236,13 @@ impl Character for Char {
 
     /// The burst's pyro bonus and A4, on Tri-Karma Purification.
     fn attack_mod(s: &Sim, ci: usize, _: usize, m: &Mod, ev: &mut AttackEvent) {
+        if m.key == C2_LUNAR_BLOOM {
+            if ev.info.tag == AttackTag::DirectLunarBloom && s.enemy_status_active(MARK) {
+                ev.stats[st::CR] += 0.1;
+                ev.stats[st::CD] += 0.2;
+            }
+            return;
+        }
         let st = s.st::<State>(ci);
         if m.key == BURST {
             if ev.info.abil == g::TRI_KARMA_ABIL {
@@ -262,8 +275,8 @@ impl Character for Char {
             // C2: burning, bloom, hyperbloom and burgeon damage on the marked
             // enemy crits at 20% for 100% (gcsim adds the rate to the
             // reaction's, which is 0). Nilou's Bountiful Core is on gcsim's
-            // list but not ported. C2's Lunar-Bloom crit is unreachable: the
-            // engine stops on Lunar-Bloom (`check_lunar_bloom`).
+            // list but not ported. (C2's direct Lunar-Bloom crit is an
+            // attack mod, C2_LUNAR_BLOOM.)
             Event::EnemyHit(ev) => {
                 if matches!(ev.info.tag, AttackTag::BurningDamage | AttackTag::Bloom | AttackTag::Hyperbloom | AttackTag::Burgeon) && s.enemy_status_active(MARK) {
                     s.hit_crit = Some((0.2, 1.0));

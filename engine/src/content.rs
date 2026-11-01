@@ -60,8 +60,9 @@ pub enum EventKind {
     NightsoulGenerate,
     NightsoulConsume,
     ApplyAttack,
+    SpecialReactionAttack,
 }
-pub const N_EVENTS: usize = 23;
+pub const N_EVENTS: usize = 24;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -119,6 +120,11 @@ pub enum Event<'a> {
     NightsoulConsume { on: usize, amount: f64 },
     /// OnApplyAttack: an attack is applied, before it reaches any target.
     ApplyAttack(&'a AttackEvent),
+    /// OnSpecialReactionAttack: a character's contribution to a lunar
+    /// reaction, snapshot and not yet computed. Subscribers change it in
+    /// `Sim::special_atk` (gcsim's subscribers change the AttackEvent they
+    /// are handed); the event holds it as it was before the first of them.
+    SpecialReactionAttack(&'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -147,6 +153,7 @@ impl Event<'_> {
             Event::NightsoulGenerate { .. } => EventKind::NightsoulGenerate,
             Event::NightsoulConsume { .. } => EventKind::NightsoulConsume,
             Event::ApplyAttack(_) => EventKind::ApplyAttack,
+            Event::SpecialReactionAttack(_) => EventKind::SpecialReactionAttack,
         }
     }
 }
@@ -162,6 +169,9 @@ pub trait Character {
     /// (`Sim::hexerei_count`), are implemented. A Hexerei character
     /// without them is an error in a team of two or more.
     const HEXEREI: bool = false;
+    /// gcsim's Moonsign, which its NewChar sets (1 for a Moonsign
+    /// character): two or more in the team give Ascendant Gleam.
+    const MOONSIGN: i32 = 0;
     type State;
     fn new_state(cs: &CharSetup) -> Self::State;
 
@@ -363,6 +373,10 @@ macro_rules! chars {
             pub fn hexerei(self) -> bool {
                 use $crate::content::Character;
                 match self { $(CharKind::$kind => $m::Char::HEXEREI),* }
+            }
+            pub fn moonsign(self) -> i32 {
+                use $crate::content::Character;
+                match self { $(CharKind::$kind => $m::Char::MOONSIGN),* }
             }
             pub fn new_state(self, cs: &$crate::sim::CharSetup) -> CharState {
                 use $crate::content::Character;

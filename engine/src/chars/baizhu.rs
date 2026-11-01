@@ -6,8 +6,8 @@
 //! As gcsim writes them: the Gossamer Sprite's party heal scales with the
 //! burst's talent level while C2's heal scales with the skill's; the
 //! sprite's next hit draws one random number (RandomEnemyWithinArea on the
-//! one enemy); A4's bonus also covers direct lunar bloom, which the engine
-//! does not have (lunar reactions are an error elsewhere).
+//! one enemy); A4's bonus also covers direct Lunar-Bloom (+0.7%), which
+//! nothing ported deals.
 //!
 //! A Seamless Shield that expires or breaks heals the active character and
 //! fires a Spiritvein; one replaced by the next while up fires a Spiritvein
@@ -235,8 +235,8 @@ impl Character for Char {
     }
 
     /// A4: per 1,000 of her max HP up to 50,000, burning, bloom, hyperbloom
-    /// and burgeon +2%, aggravate and spread +0.8%. Those are every reaction
-    /// in the engine it names; gcsim's direct lunar bloom is not one.
+    /// and burgeon +2%, aggravate and spread +0.8%, direct Lunar-Bloom
+    /// +0.7%.
     fn react_bonus(s: &Sim, ci: usize, _: usize, _: &Mod, info: &AttackInfo) -> f64 {
         let limit = (s.max_hp(ci) / 1000.0).min(50.0);
         if matches!(info.catalyzed, Some(Reaction::Aggravate) | Some(Reaction::Spread)) {
@@ -244,6 +244,7 @@ impl Character for Char {
         }
         match info.tag {
             AttackTag::Bloom | AttackTag::Hyperbloom | AttackTag::Burgeon | AttackTag::BurningDamage => limit * 0.02,
+            AttackTag::DirectLunarBloom => limit * 0.007,
             _ => 0.0,
         }
     }

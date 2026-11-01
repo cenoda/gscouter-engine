@@ -1,0 +1,4 @@
+# Ineffa's normal attacks 2 and 3 (boxes) and her charged attack, which no library rotation uses.
+team neuvillette-furina-kaedeharakazuha-ineffa
+rotation-   ineffa skill, attack;
+rotation+   ineffa skill, attack:3, charge;

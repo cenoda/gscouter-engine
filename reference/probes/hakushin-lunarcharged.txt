@@ -1,0 +1,3 @@
+# Neuvillette with Hakushin Ring R5: his Lunar-Charged on field gives electro and hydro members their DMG bonus.
+team neuvillette-furina-sucrose-ineffa
+neuvillette add weapon="hakushinring" refine=5 lvl=90/90;

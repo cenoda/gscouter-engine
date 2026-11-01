@@ -189,6 +189,16 @@ pub enum AttackTag {
     /// gcsim's AttackTagDirectStellarConduct: an ability's own hit counted
     /// as Stellar-Conduct DMG (gcsim's IsDirect), which Radiance makes.
     DirectStellarConduct,
+    /// gcsim's AttackTagReactionLunarCharge and
+    /// AttackTagReactionLunarCrystallize: the reactions' own damage, the sum
+    /// of their contributions.
+    ReactionLunarCharge,
+    ReactionLunarCrystallize,
+    /// gcsim's direct lunar damage (AttackTagDirectLunar*): an ability's
+    /// damage counted as a lunar reaction, by calcDirectReaction.
+    DirectLunarCharged,
+    DirectLunarBloom,
+    DirectLunarCrystallize,
 }
 
 impl AttackTag {
@@ -210,13 +220,22 @@ impl AttackTag {
                 | AttackTag::Burgeon
                 | AttackTag::Hyperbloom
                 | AttackTag::DirectStellarConduct
+                | AttackTag::ReactionLunarCharge
+                | AttackTag::ReactionLunarCrystallize
+                | AttackTag::DirectLunarCharged
+                | AttackTag::DirectLunarBloom
+                | AttackTag::DirectLunarCrystallize
         )
     }
     /// gcsim's IsDirect: direct lunar and Stellar damage (the engine has
     /// Stellar-Conduct's), which takes attack mods and its own formula.
     #[inline]
     pub fn is_direct(self) -> bool {
-        self == AttackTag::DirectStellarConduct
+        matches!(self, AttackTag::DirectStellarConduct | AttackTag::DirectLunarCharged | AttackTag::DirectLunarBloom | AttackTag::DirectLunarCrystallize)
+    }
+    /// gcsim's IsLunar: lunar reaction damage, direct or not.
+    pub fn is_lunar(self) -> bool {
+        matches!(self, AttackTag::ReactionLunarCharge | AttackTag::ReactionLunarCrystallize | AttackTag::DirectLunarCharged | AttackTag::DirectLunarBloom | AttackTag::DirectLunarCrystallize)
     }
 }
 
@@ -258,6 +277,10 @@ pub enum Reaction {
     Hyperbloom,
     Burgeon,
     Burning,
+    /// gcsim's OnLunarCharged, OnLunarBloom and OnLunarCrystallize.
+    LunarCharged,
+    LunarBloom,
+    LunarCrystallize,
     /// Not an elemental reaction to gcsim, but among its reaction events.
     Shatter,
     /// gcsim's OnStellarConduct: superconduct while a Stellar character is
@@ -290,6 +313,9 @@ impl Reaction {
             Reaction::Hyperbloom => &[Element::Dendro, Element::Electro],
             Reaction::Burgeon => &[Element::Dendro, Element::Pyro],
             Reaction::Burning => &[Element::Dendro, Element::Pyro],
+            Reaction::LunarCharged => &[Element::Electro, Element::Hydro],
+            Reaction::LunarBloom => &[Element::Dendro, Element::Hydro],
+            Reaction::LunarCrystallize => &[Element::Geo, Element::Hydro],
             Reaction::Shatter => &[],
             Reaction::StellarConduct => &[Element::Electro, Element::Cryo],
         }

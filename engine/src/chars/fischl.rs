@@ -384,7 +384,7 @@ fn with_oz_snapshot(s: &Sim, ci: usize, ai: AttackInfo) -> AttackEvent {
 /// A4: an electro reaction by the active character while Oz is out calls
 /// down Thundering Retribution, with Oz's snapshot.
 fn a4(s: &mut Sim, ci: usize, r: Reaction, ev: &AttackEvent) {
-    if !matches!(r, Reaction::Overload | Reaction::ElectroCharged | Reaction::Superconduct | Reaction::StellarConduct | Reaction::SwirlElectro | Reaction::CrystallizeElectro | Reaction::Hyperbloom | Reaction::Quicken | Reaction::Aggravate) {
+    if !matches!(r, Reaction::Overload | Reaction::ElectroCharged | Reaction::LunarCharged | Reaction::Superconduct | Reaction::StellarConduct | Reaction::SwirlElectro | Reaction::CrystallizeElectro | Reaction::Hyperbloom | Reaction::Quicken | Reaction::Aggravate) {
         return;
     }
     let active = s.player.active as usize;
@@ -400,11 +400,11 @@ fn a4(s: &mut Sim, ci: usize, r: Reaction, ev: &AttackEvent) {
 }
 
 /// Hexerei: an overload on an enemy while Oz is out gives her 22.5% ATK
-/// for 10 s, an electro-charged 90 EM.
+/// for 10 s, an electro-charged or a Lunar-Charged 90 EM.
 fn hex(s: &mut Sim, ci: usize, r: Reaction) {
     let (key, stat) = match r {
         Reaction::Overload => (HEX_ATKP, st::ATKP),
-        Reaction::ElectroCharged => (HEX_EM, st::EM),
+        Reaction::ElectroCharged | Reaction::LunarCharged => (HEX_EM, st::EM),
         _ => return,
     };
     if !s.mod_active(ci, OZ_ACTIVE) {

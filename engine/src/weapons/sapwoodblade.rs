@@ -1,6 +1,6 @@
 //! Sapwood Blade, from gcsim's internal/weapons/sword/sapwoodblade: a
 //! dendro reaction by the wielder (burning, quicken, aggravate, spread,
-//! bloom, hyperbloom, burgeon) drops a leaf, once every 20 s, which the
+//! bloom, Lunar-Bloom, hyperbloom, burgeon) drops a leaf, once every 20 s, which the
 //! active character picks up `pickup_delay` frames later for EM (none
 //! without the param).
 
@@ -29,7 +29,7 @@ impl WeaponImpl for Weapon {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         let Event::Reaction(r, ev) = *e else { return };
-        if !matches!(r, Reaction::Burning | Reaction::Quicken | Reaction::Aggravate | Reaction::Spread | Reaction::Bloom | Reaction::Hyperbloom | Reaction::Burgeon) {
+        if !matches!(r, Reaction::Burning | Reaction::Quicken | Reaction::Aggravate | Reaction::Spread | Reaction::Bloom | Reaction::LunarBloom | Reaction::Hyperbloom | Reaction::Burgeon) {
             return;
         }
         if ev.info.actor as usize != ci || s.mod_active(ci, ICD) {
