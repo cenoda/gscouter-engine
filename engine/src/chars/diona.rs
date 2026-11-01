@@ -1,7 +1,7 @@
-//! Diona, from gcsim's internal/characters/diona: normal attacks, the
-//! skill's paws and their shield (pressed or held), the burst's field with
-//! its heals, A1 and every constellation (C4 only speeds up aimed shots,
-//! which are not ported). gcsim does not implement A4.
+//! Diona, from gcsim's internal/characters/diona: normal attacks, aimed
+//! shots, the skill's paws and their shield (pressed or held), the burst's
+//! field with its heals, A1 and every constellation (C4 speeds up fully
+//! charged aimed shots in the field). gcsim does not implement A4.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::diona as g;
@@ -65,11 +65,45 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, _: &Params) -> Option<String> {
+    fn unsupported(a: Action, p: &Params) -> Option<String> {
         match a {
-            Action::Attack | Action::Skill | Action::Burst => None,
+            // gcsim's Aimed rejects any other hold (an error there too)
+            Action::Aim if !matches!(p.get("hold"), None | Some(0) | Some(1)) => Some("aim[hold]".into()),
+            Action::Attack | Action::Skill | Action::Burst | Action::Aim => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
+    }
+
+    /// Aimed shots; C4 speeds up the fully charged one while the player
+    /// is in the burst's field.
+    fn aim(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        let hold = p.get("hold").unwrap_or(1) as usize;
+        let travel = p.get("travel").map_or(10, |t| t as i32);
+        let lvl = s.talent(ci, 0);
+        let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_EXTRA_ATTACK, icd::GROUP_DEFAULT, Element::Cryo, 25.0, g::FULLAIM[lvl]);
+        ai.abil = "Fully-Charged Aimed Shot";
+        ai.deployable = true;
+        ai.hitlag_factor = 0.01;
+        // its hitlag applies on weak spot hits only (HitlagOnHeadshotOnly)
+        if p.get("weakspot") == Some(1) {
+            ai.weak_point = true;
+            ai.hitlag_halt = 0.12 * 60.0;
+        }
+        if hold < 1 {
+            ai.abil = "Aimed Shot";
+            ai.element = Element::Physical;
+            ai.mult = g::AIM[lvl];
+        }
+        let c4 = s.chars[ci].cons >= 4 && s.core_status(BURST.name) > 0 && in_field(s) && hold == 1;
+        let (table, hitmark) = if c4 {
+            ai.abil = "Fully-Charged Aimed Shot (C4)";
+            (&g::AIMED_C4_FRAMES, g::AIMED_C4_HITMARK)
+        } else {
+            (&g::AIMED_FRAMES[hold], g::AIMED_HITMARKS[hold])
+        };
+        ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
+        s.queue_attack(ai, 0, hitmark, hitmark + travel);
+        ActInfo::new(Frames::Table(table), table[0], hitmark, AnimState::Aim)
     }
 
     fn attack(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
