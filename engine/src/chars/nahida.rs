@@ -1,7 +1,7 @@
 //! Nahida, from gcsim's internal/characters/nahida: normal and charged
 //! attacks, the skill pressed or held with its Seeds of Skandha and
 //! Tri-Karma Purification, the burst's Shrine of Maya with its pyro,
-//! electro and hydro bonuses, A1 and A4. No constellations.
+//! electro and hydro bonuses, A1 and A4, and constellations 1 to 6.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::nahida as g;
@@ -26,6 +26,8 @@ pub struct State {
     /// A4's DMG bonus and CRIT Rate to Tri-Karma, taken every 0.5 s.
     a4_dmg: f64,
     a4_cr: f64,
+    /// C6's Karmic Oblivion used since the burst.
+    c6_count: i32,
 }
 
 const MARK: ModKey = ModKey::new(g::SKILL_MARK_KEY);
@@ -35,9 +37,14 @@ const WITHIN_BURST: ModKey = ModKey::new(g::WITHIN_BURST_KEY);
 const BURST: ModKey = ModKey::new(g::BURST_KEY);
 const A1: ModKey = ModKey::new(g::A1_BUFF_KEY);
 const A4: ModKey = ModKey::new(g::A4_BUFF_KEY);
+const C2: ModKey = ModKey::new("nahida-c2");
+const C4: ModKey = ModKey::new("nahida-c4");
+const C6_ACTIVE: ModKey = ModKey::new(g::C6_ACTIVE_KEY);
+const C6_ICD: ModKey = ModKey::new(g::C6_ICD_KEY);
 
 const CB_MARK: u16 = 1 << 0;
 const CB_PARTICLE: u16 = 1 << 1;
+const CB_C6: u16 = 1 << 2;
 
 const TASK_INTERVAL: u8 = 0;
 const TASK_A4: u8 = 1;
@@ -47,7 +54,6 @@ const TASK_BURST_TICK: u8 = 3;
 
 impl Character for Char {
     const KEY: &'static str = "nahida";
-    const MAX_CONS: i32 = 0;
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
@@ -59,7 +65,9 @@ impl Character for Char {
         s.subscribe(EventKind::EnemyDamage, o);
         s.subscribe(EventKind::Reaction, o);
         update_interval(s, ci);
-        let count = |e: Element| s.chars.iter().filter(|c| c.element == e).count().min(2);
+        // C1: the burst counts one more pyro, electro and hydro character
+        let c1 = usize::from(s.chars[ci].cons >= 1);
+        let count = |e: Element| (s.chars.iter().filter(|c| c.element == e).count() + c1).min(2);
         let (pyro, electro, hydro) = (count(Element::Pyro), count(Element::Electro), count(Element::Hydro));
         let lvl = s.talent(ci, 2);
         let st = s.st_mut::<State>(ci);
@@ -72,6 +80,12 @@ impl Character for Char {
         if s.chars[ci].ascension >= 4 {
             s.chars[ci].mods.push(Mod::owned(A4, ModKind::Attack, o, st::NONE, false, false, -1));
             a4_tick(s, ci);
+        }
+        if s.chars[ci].cons >= 4 {
+            s.chars[ci].mods.push(Mod::owned(C4, ModKind::Stat, o, st::EM, false, false, -1));
+        }
+        if s.chars[ci].cons >= 2 {
+            s.subscribe(EventKind::EnemyHit, o);
         }
     }
 
@@ -89,7 +103,7 @@ impl Character for Char {
         ai.abil = NORMAL_NAMES[n];
         // a box on the target
         let h = g::ATTACK_HITMARKS[n];
-        s.queue_attack(ai, 0, h, h);
+        s.queue_attack(ai, c6_cb(s, ci), h, h);
         let atkspd = s.stat(ci, st::ATKSPD);
         let table = &g::ATTACK_FRAMES[n];
         let info = ActInfo::new(Frames::Attack { table, atkspd }, table[0], table[Action::Swap as usize], AnimState::Normal);
@@ -104,7 +118,7 @@ impl Character for Char {
         let windup = if s.current_state() == AnimState::Normal { 10 } else { 0 };
         // a 6 by 6 box 3 short of the target
         let h = g::CHARGE_HITMARK - windup;
-        s.queue_attack(ai, 0, h, h);
+        s.queue_attack(ai, c6_cb(s, ci), h, h);
         let t = &g::CHARGE_FRAMES;
         ActInfo::new(Frames::Char { id: 0, arg: windup as i16 }, t[0] - windup, t[Action::Dash as usize] - windup, AnimState::Charge)
     }
@@ -169,6 +183,12 @@ impl Character for Char {
                     s.add_task(Task::Char { c: ci as u8, id: TASK_BURST_TICK, arg: f }, i);
                     i += 30;
                 }
+                // C6 lasts 10 s from here, with its count and ICD reset
+                if s.chars[ci].cons >= 6 {
+                    s.add_status(ci, C6_ACTIVE, 600, true);
+                    s.st_mut::<State>(ci).c6_count = 0;
+                    s.delete_mod(ci, C6_ICD);
+                }
             }
             TASK_BURST_TICK => {
                 // the player stands in the Shrine of Maya
@@ -189,8 +209,18 @@ impl Character for Char {
         }
     }
 
-    /// A1: EM to the active character in the field.
-    fn mod_amount(s: &Sim, ci: usize, on: usize, _: &Mod, out: &mut Stats) -> bool {
+    /// A1: EM to the active character in the field. C4: EM by the
+    /// enemies marked within 30 of the player.
+    fn mod_amount(s: &Sim, ci: usize, on: usize, m: &Mod, out: &mut Stats) -> bool {
+        if m.key == C4 {
+            // the one enemy, its center in a circle of radius 30 on the player
+            if !s.enemy_alive || !s.enemy_status_active(MARK) || s.target_dist * s.target_dist > 30.0 * 30.0 {
+                return false;
+            }
+            // 80 + 20 per enemy, for the engine's one enemy
+            out[st::EM] += 80.0 + 20.0 * 1.0;
+            return true;
+        }
         if s.player.active as usize != on {
             return false;
         }
@@ -222,15 +252,35 @@ impl Character for Char {
             s.add_status(ci, PARTICLE_ICD, 7 * 60, true);
             s.queue_particle(3.0, Element::Dendro, s.particle_delay[ci]);
         }
+        if cbs & CB_C6 != 0 {
+            c6_hit(s, ci);
+        }
     }
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
+            // C2: burning, bloom, hyperbloom and burgeon damage on the marked
+            // enemy crits at 20% for 100% (gcsim adds the rate to the
+            // reaction's, which is 0). Nilou's Bountiful Core is on gcsim's
+            // list but not ported. C2's Lunar-Bloom crit is unreachable: the
+            // engine stops on Lunar-Bloom (`check_lunar_bloom`).
+            Event::EnemyHit(ev) => {
+                if matches!(ev.info.tag, AttackTag::BurningDamage | AttackTag::Bloom | AttackTag::Hyperbloom | AttackTag::Burgeon) && s.enemy_status_active(MARK) {
+                    s.hit_crit = Some((0.2, 1.0));
+                }
+            }
             // bloom, hyperbloom and burgeon damage
             Event::EnemyDamage(ev) if matches!(ev.info.tag, AttackTag::Bloom | AttackTag::Hyperbloom | AttackTag::Burgeon) => tri_karma(s, ci),
             // any reaction on the enemy (hyperbloom and burgeon are on the
             // dendro core)
-            Event::Reaction(r, ev) if !matches!(r, Reaction::Hyperbloom | Reaction::Burgeon) && !ev.on_player => tri_karma(s, ci),
+            Event::Reaction(r, ev) if !matches!(r, Reaction::Hyperbloom | Reaction::Burgeon) && !ev.on_player => {
+                tri_karma(s, ci);
+                // C2: DEF -30% for 8 s on the marked enemy, on quicken,
+                // aggravate and spread
+                if s.chars[ci].cons >= 2 && matches!(r, Reaction::Quicken | Reaction::Aggravate | Reaction::Spread) && s.enemy_status_active(MARK) {
+                    s.enemy_add_def(C2, -0.3, 480);
+                }
+            }
             _ => {}
         }
     }
@@ -249,6 +299,27 @@ fn tri_karma(s: &mut Sim, ci: usize) {
     let mut ev = s.snapshot_event(ai, CB_PARTICLE);
     ev.info.flat_dmg = ev.stats[st::EM] * g::TRI_KARMA_EM[lvl];
     s.queue_attack_with_snap(ev, CB_PARTICLE, 3);
+}
+
+/// The C6 callback for normal and charged attacks (makeC6CB).
+fn c6_cb(s: &Sim, ci: usize) -> u16 {
+    if s.chars[ci].cons >= 6 { CB_C6 } else { 0 }
+}
+
+/// C6: a normal or charged attack hitting the marked enemy within 10 s of
+/// the burst uses Karmic Oblivion on it, once per 0.2 s, 6 times at most.
+fn c6_hit(s: &mut Sim, ci: usize) {
+    if !s.enemy_status_active(MARK) || s.st::<State>(ci).c6_count >= 6 || !s.mod_active(ci, C6_ACTIVE) || s.mod_active(ci, C6_ICD) {
+        return;
+    }
+    s.add_status(ci, C6_ICD, 12, true);
+    let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NAHIDA_C6, icd::GROUP_DEFAULT, Element::Dendro, 25.0, 2.0);
+    ai.abil = "Tri-Karma Purification: Karmic Oblivion";
+    ai.pattern = Pattern::Single;
+    let mut ev = s.snapshot_event(ai, 0);
+    ev.info.flat_dmg = ev.stats[st::EM] * 4.0;
+    s.queue_attack_with_snap(ev, 0, 1);
+    s.st_mut::<State>(ci).c6_count += 1;
 }
 
 /// updateTriKarmaInterval: every second, the interval with the burst's
