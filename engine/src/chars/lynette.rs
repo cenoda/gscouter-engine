@@ -3,8 +3,8 @@
 //! burst's Bogglecat Box (a gadget that absorbs cryo, pyro, hydro or
 //! electro from an attack that reaches it or, every 0.3 s, from what is
 //! around it, then fires Vivid Shots of that element), A1, A4 and every
-//! constellation (gcsim leaves C1 out: it pulls enemies). No plunges or
-//! held skill.
+//! constellation (gcsim leaves C1 out: it pulls enemies), and the held
+//! skill. No plunges.
 
 use crate::content::Character;
 use crate::gcsimdata::chars::lynette as g;
@@ -41,6 +41,9 @@ const TASK_DRAIN: u8 = 3;
 const TASK_SPAWN: u8 = 4;
 const TASK_VIVID: u8 = 5;
 
+// arg: the hold's duration
+const FR_HOLD: u8 = 0;
+
 const BOX: u8 = 0;
 /// The Box, 1.8 in front of the player, of radius 1.
 const BOX_Y: f64 = 1.8;
@@ -63,9 +66,8 @@ impl Character for Char {
         }
     }
 
-    fn unsupported(a: Action, p: &Params) -> Option<String> {
+    fn unsupported(a: Action, _: &Params) -> Option<String> {
         match a {
-            Action::Skill if p.get("hold").is_some_and(|h| h > 0) => Some("skill hold".into()),
             Action::Attack | Action::Charge | Action::Skill | Action::Burst => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
@@ -96,12 +98,30 @@ impl Character for Char {
         ActInfo::new(Frames::Table(t), t[0], g::CHARGE_HITMARKS[g::CHARGE_HITMARKS.len() - 1], AnimState::Charge)
     }
 
-    fn skill(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+    /// Pressed, or held for `hold` (1 to 150) frames beyond the shortest
+    /// hold. gcsim's held skill also starts Shadowsign, but never applies
+    /// it (its applyShadowsign's function is never called), so the enemy's
+    /// shadowsign tag stays 0.
+    fn skill(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
+        let hold = p.get("hold").unwrap_or(0);
+        if hold > 0 {
+            let dur = hold.min(150) as i32 + 34;
+            s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_SKILL, arg: 1 }, dur + g::SKILL_HOLD_END_HITMARK);
+            s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_C6, arg: 0 }, dur + g::SKILL_HOLD_END_C6_START);
+            s.set_cd_with_delay(ci, Action::Skill, g::SKILL_CD, dur + g::SKILL_HOLD_END_CD_START);
+            let t = &g::SKILL_HOLD_END_FRAMES;
+            return ActInfo::new(Frames::Char { id: FR_HOLD, arg: dur as i16 }, dur + t[0], dur + t[Action::Swap as usize], AnimState::Skill);
+        }
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_SKILL, arg: 0 }, g::SKILL_PRESS_HITMARK);
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_C6, arg: 0 }, g::SKILL_PRESS_C6_START);
         s.set_cd_with_delay(ci, Action::Skill, g::SKILL_CD, g::SKILL_PRESS_CD_START);
         let t = &g::SKILL_PRESS_FRAMES;
         ActInfo::new(Frames::Table(t), t[0], t[Action::Swap as usize], AnimState::Skill)
+    }
+
+    fn frames(id: u8, arg: i16, next: Action) -> i32 {
+        debug_assert_eq!(id, FR_HOLD);
+        arg as i32 + g::SKILL_HOLD_END_FRAMES[next as usize]
     }
 
     fn burst(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
@@ -145,7 +165,9 @@ impl Character for Char {
                 ai.abil = g::SKILL_ABIL;
                 ai.hitlag_factor = 0.01;
                 ai.def_halt = true;
-                ai.pattern = s.box_on_player(0.0, -0.5, 1.8, 4.5);
+                // arg 1: the held skill's end
+                let held = arg == 1;
+                ai.pattern = s.box_on_player(0.0, -0.5, 1.8, if held { 5.0 } else { 4.5 });
                 s.queue_attack(ai, CB_PARTICLE | CB_HEAL, 0, 0);
                 // Surging Blade, once in 10 s
                 if !s.mod_active(ci, ALIGNED_ICD) {
@@ -155,7 +177,7 @@ impl Character for Char {
                     ai.hitlag_factor = 0.01;
                     ai.def_halt = true;
                     ai.pattern = s.box_on_player(0.0, -0.3, 1.2, 4.5);
-                    let h = g::SKILL_PRESS_ALIGNED_HITMARK - g::SKILL_PRESS_HITMARK;
+                    let h = if held { g::SKILL_HOLD_END_ALIGNED_HITMARK - g::SKILL_HOLD_END_HITMARK } else { g::SKILL_PRESS_ALIGNED_HITMARK - g::SKILL_PRESS_HITMARK };
                     s.queue_attack(ai, 0, h, h);
                 }
             }

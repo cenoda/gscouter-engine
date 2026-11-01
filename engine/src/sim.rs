@@ -4696,7 +4696,9 @@ impl Sim {
                     // Yelan marks and unmarks in two tasks of the same
                     // frame, so no condition sees the mark
                     crate::gcsimdata::chars::yelan::SKILL_MARKED_TAG => Ok(int(0)),
-                    t @ crate::gcsimdata::chars::lynette::SKILL_TAG => Err(format!("unsupported: enemy tag {t}")),
+                    // gcsim's held skill never calls the function that
+                    // sets it (see `chars::lynette`)
+                    crate::gcsimdata::chars::lynette::SKILL_TAG => Ok(int(0)),
                     _ => Ok(int(0)),
                 }
             }
