@@ -1,0 +1,4 @@
+# Lynette's held skill, held 60 frames beyond the shortest hold (no library rotation holds her skill).
+team bennett-lynette-xiangling-xingqiu
+rotation- lynette skill, attack:3, charge, attack:3;
+rotation+ lynette skill[hold=60], attack:3, charge, attack:3;

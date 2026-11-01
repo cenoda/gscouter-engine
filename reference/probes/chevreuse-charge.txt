@@ -1,0 +1,4 @@
+# Chevreuse's charged attack after a normal attack (no library rotation charges with her).
+team bennett-chevreuse-fischl-lisa
+rotation- chevreuse burst, skill[hold=1]:3;
+rotation+ chevreuse burst, skill[hold=1]:3, attack, charge;

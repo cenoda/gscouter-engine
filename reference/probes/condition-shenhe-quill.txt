@@ -1,0 +1,5 @@
+# Shenhe's quills left on a character, read by a condition (.kazuha.tags.shenhe-quill), gating a wait.
+team neuvillette-furina-kaedeharakazuha-shenhe
+rotation- kazuha skill, high_plunge;
+rotation+ if .kazuha.tags.shenhe-quill > 3 { wait(40); }
+rotation+ kazuha skill, high_plunge;

@@ -1,0 +1,4 @@
+# Yoimiya's aimed shots: three Kindling Arrows at hold 4, a fully charged shot on a weak spot and a physical aimed shot (no library rotation aims with her).
+team bennett-nahida-yoimiya-xingqiu
+rotation- yoimiya skill, attack:5, dash, attack:5, dash, attack:5, dash, attack:5;
+rotation+ yoimiya aim[hold=4], skill, attack:5, dash, attack:5, dash, attack:5, dash, attack:5, aim[weakspot=1], aim[hold=0];

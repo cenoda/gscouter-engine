@@ -1,0 +1,5 @@
+# The quicken aura read by a condition (.element.t0.quicken), gating a wait.
+team alhaitham-nahida-xingqiu-kukishinobu
+rotation- nahida skill, attack;
+rotation+ if .element.t0.quicken > 0 { wait(40); }
+rotation+ nahida skill, attack;

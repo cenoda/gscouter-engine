@@ -1,0 +1,5 @@
+# Diona's aimed shots below C4: fully charged shots in her field take the ordinary frames (no library rotation aims with her).
+team gaming-diona-rosaria-bennett
+diona char lvl=90/90 cons=3 talent=9,9,9;
+rotation- diona skill[hold=1], burst;
+rotation+ diona skill[hold=1], burst, aim, aim;

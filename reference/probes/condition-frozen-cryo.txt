@@ -1,0 +1,6 @@
+# The frozen and cryo auras read by conditions (.element.t0.frozen, .element.t0.cryo), each gating a wait.
+team furina-xingqiu-rosaria-escoffier
+rotation- rosaria attack, skill;
+rotation+ if .element.t0.frozen > 0 { wait(40); }
+rotation+ rosaria attack, skill;
+rotation+ if .element.t0.cryo > 0 { wait(40); }

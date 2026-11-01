@@ -1,0 +1,5 @@
+# Tags ported content sets, read by conditions: the frame Hu Tao's current Blood Blossom started (.tags.t0.blood-blossom) gating a wait.
+team furina-sucrose-hutao-yelan
+rotation- yelan skill, attack;
+rotation+ if f() - .tags.t0.blood-blossom < 600 { wait(40); }
+rotation+ yelan skill, attack;
