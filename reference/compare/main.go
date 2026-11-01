@@ -43,7 +43,9 @@
 // unchecked, so the probes (probes/*.txt) put it on one: each names a
 // library team and the lines that replace those of its build, and is
 // compared like a variant of it. A probe's team need not be supported, only
-// its probe build: weapons and sets the engine lacks can be replaced.
+// its probe build: weapons and sets the engine lacks can be replaced. A
+// probe can also replace lines of the team's rotation (parseProbe), to
+// reach actions no library rotation uses.
 //
 // gcsim's results depend only on the config and the seeds, and the cache
 // keeps them, so -gcsim-only runs gcsim alone on the builds selected, for
@@ -103,7 +105,8 @@ var (
 	workers     = flag.Int("j", runtime.NumCPU(), "workers")
 	jsonOut     = flag.String("json", "", "write the results as JSON to this file")
 	mdOut       = flag.String("md", "", "also write the report to this file")
-	probesDir   = flag.String("probes", "probes", "directory of probes: library builds with a weapon, set or character line changed")
+	probesDir   = flag.String("probes", "probes", "directory of probes: library builds with lines replaced, and rotations with hunks replaced")
+	configsOut  = flag.String("configs", "", "also write the config of each build selected to this directory, as <team>-<build>.txt (with -dry-run, without comparing)")
 	cacheDir    = flag.String("cache", harness.DefaultCacheDir(), "directory of stored gcsim results, by config and chunk of seeds; empty for none")
 	deadline    = flag.Duration("deadline", 0, "after this long, start no more builds and grow none further; builds not started are reported as deferred (0: no limit)")
 	gcsimOnly   = flag.Bool("gcsim-only", false, "run only gcsim, into the cache, on the selected builds, whether the engine supports their teams or not (build-space builds need the engine to assemble and check them)")
@@ -531,7 +534,11 @@ func main() {
 				if err := os.WriteFile(path, []byte(pr.apply(string(base))), 0o644); err != nil {
 					fail(err)
 				}
-				cfg, err := dump(gscouter, id, path)
+				dir, err := pr.teamDir(tmp, id)
+				if err != nil {
+					fail(err)
+				}
+				cfg, err := dumpDir(gscouter, dir, path)
 				if err != nil {
 					dumpErr(pr.v, err)
 					continue
@@ -539,6 +546,15 @@ func main() {
 				jobs = append(jobs, job{v: pr.v, cfg: cfg})
 			}
 			for _, j := range jobs {
+				if *configsOut != "" && j.err == nil {
+					if err := os.MkdirAll(*configsOut, 0o755); err != nil {
+						fail(err)
+					}
+					name := id + "-" + strings.NewReplacer(":", "-", "=", "-", "/", "-").Replace(j.v.Name) + ".txt"
+					if err := os.WriteFile(filepath.Join(*configsOut, name), []byte(j.cfg), 0o644); err != nil {
+						fail(err)
+					}
+				}
 				if *dryRun {
 					if j.err != nil {
 						fmt.Fprintf(os.Stderr, "%s / %s (%v)\n", id, j.v.Name, j.err)
@@ -745,7 +761,12 @@ func parallel(n, workers int, f func(i int)) {
 // dump is the looped config Gscouter assembles for the team, with its
 // library build or the build file given.
 func dump(gscouter, id, build string) (string, error) {
-	dir := filepath.Join("teams", id)
+	return dumpDir(gscouter, filepath.Join("teams", id), build)
+}
+
+// dumpDir is dump with the team directory given, relative to Gscouter's
+// directory or absolute.
+func dumpDir(gscouter, dir, build string) (string, error) {
 	if build == "" {
 		build = filepath.Join(dir, "build.txt")
 	}
@@ -1303,19 +1324,25 @@ func waitStr(w map[string]float64) string {
 	return fmt.Sprintf("%.2f (%s)", total, strings.Join(parts, ", "))
 }
 
-// A probe replaces lines of a team's library build.
+// A probe replaces lines of a team's library build, and hunks of its
+// rotation.
 type probe struct {
 	v     variant
 	team  string
 	lines []string
+	hunks []hunk
+}
+
+// A hunk replaces consecutive lines of a team's rotation.gcsl: the lines
+// in old, compared without leading and trailing space, must occur exactly
+// once in the rotation, and new takes their place.
+type hunk struct {
+	old, new []string
 }
 
 var probeLine = regexp.MustCompile(`^\s*(\S+)\s+(char|add\s+weapon|add\s+set|add\s+stats)\b`)
 
-// probesFor reads the probes of a team. A probe file is comments (#), a
-// line "team <id>", and build lines: a character's char or weapon line
-// replaces its own, and its set or stats lines replace all of its set or
-// stats lines.
+// probesFor reads the probes of a team (see parseProbe).
 func probesFor(id string) []probe {
 	ents, err := os.ReadDir(*probesDir)
 	if err != nil {
@@ -1333,28 +1360,67 @@ func probesFor(id string) []probe {
 		if err != nil {
 			fail(err)
 		}
-		pr := probe{v: variant{Name: "probe:" + strings.TrimSuffix(e.Name(), ".txt")}}
-		for _, l := range strings.Split(string(b), "\n") {
-			t := strings.TrimSpace(l)
-			switch {
-			case t == "":
-			case strings.HasPrefix(t, "#"):
-				if pr.v.Desc == "" {
-					pr.v.Desc = strings.TrimSpace(strings.TrimPrefix(t, "#"))
-				}
-			case strings.HasPrefix(t, "team "):
-				pr.team = strings.TrimSpace(strings.TrimPrefix(t, "team "))
-			case probeLine.MatchString(t):
-				pr.lines = append(pr.lines, t)
-			default:
-				fail(fmt.Errorf("probe %s: cannot read %q", e.Name(), t))
-			}
+		pr, err := parseProbe(strings.TrimSuffix(e.Name(), ".txt"), string(b))
+		if err != nil {
+			fail(err)
 		}
 		if pr.team == id {
 			out = append(out, pr)
 		}
 	}
 	return out
+}
+
+// parseProbe reads a probe file: comments (#; the first is its
+// description), a line "team <id>", build lines and rotation lines. A
+// character's char or weapon line replaces its own, and its set or stats
+// lines replace all of its set or stats lines. "rotation- <line>" lines
+// followed by "rotation+ <line>" lines make a hunk of the rotation: the
+// "-" lines must match consecutive lines of the team's rotation.gcsl
+// exactly once (leading and trailing space aside), and the "+" lines
+// replace them, indented as the first of them. A hunk may have no "+"
+// lines (it deletes), not no "-" lines. Hunks apply in order, each to
+// the rotation as the ones before it left it.
+func parseProbe(name, text string) (probe, error) {
+	pr := probe{v: variant{Name: "probe:" + name}}
+	inNew := false
+	for _, l := range strings.Split(text, "\n") {
+		t := strings.TrimSpace(l)
+		switch {
+		case t == "":
+		case strings.HasPrefix(t, "#"):
+			if pr.v.Desc == "" {
+				pr.v.Desc = strings.TrimSpace(strings.TrimPrefix(t, "#"))
+			}
+		case strings.HasPrefix(t, "team "):
+			pr.team = strings.TrimSpace(strings.TrimPrefix(t, "team "))
+		case t == "rotation-" || strings.HasPrefix(t, "rotation- "):
+			if len(pr.hunks) == 0 || inNew {
+				pr.hunks = append(pr.hunks, hunk{})
+				inNew = false
+			}
+			h := &pr.hunks[len(pr.hunks)-1]
+			h.old = append(h.old, strings.TrimSpace(strings.TrimPrefix(t, "rotation-")))
+		case t == "rotation+" || strings.HasPrefix(t, "rotation+ "):
+			if len(pr.hunks) == 0 {
+				return pr, fmt.Errorf("probe %s: %q has no rotation- line before it to replace", name, t)
+			}
+			h := &pr.hunks[len(pr.hunks)-1]
+			h.new = append(h.new, strings.TrimSpace(strings.TrimPrefix(t, "rotation+")))
+			inNew = true
+		case probeLine.MatchString(t):
+			pr.lines = append(pr.lines, t)
+		default:
+			return pr, fmt.Errorf("probe %s: cannot read %q", name, t)
+		}
+	}
+	if pr.team == "" {
+		return pr, fmt.Errorf("probe %s: no team line", name)
+	}
+	if len(pr.lines) == 0 && len(pr.hunks) == 0 {
+		return pr, fmt.Errorf("probe %s: changes nothing", name)
+	}
+	return pr, nil
 }
 
 func lineKey(l string) (string, bool) {
@@ -1390,6 +1456,72 @@ func (pr probe) apply(build string) string {
 		}
 	}
 	return strings.Join(out, "\n")
+}
+
+// applyRotation applies the probe's hunks to a rotation. A hunk that
+// matches nowhere, or in more than one place, is an error: the probe
+// would otherwise compare a rotation other than the one it means.
+func (pr probe) applyRotation(rot string) (string, error) {
+	lines := strings.Split(rot, "\n")
+	for i, h := range pr.hunks {
+		var at []int
+		for s := 0; s+len(h.old) <= len(lines); s++ {
+			ok := true
+			for j, o := range h.old {
+				if strings.TrimSpace(lines[s+j]) != o {
+					ok = false
+					break
+				}
+			}
+			if ok {
+				at = append(at, s)
+			}
+		}
+		if len(at) != 1 {
+			return "", fmt.Errorf("probe %s: rotation hunk %d (%q) matches %d places in the rotation, not one", pr.v.Name, i+1, strings.Join(h.old, " / "), len(at))
+		}
+		s := at[0]
+		l := lines[s]
+		indent := l[:len(l)-len(strings.TrimLeft(l, " \t"))]
+		var repl []string
+		for _, n := range h.new {
+			repl = append(repl, indent+n)
+		}
+		lines = slices.Concat(lines[:s], repl, lines[s+len(h.old):])
+	}
+	return strings.Join(lines, "\n"), nil
+}
+
+// teamDir is the team directory a probe dumps from: the library's, or,
+// when the probe changes the rotation, a copy of it in tmp with the
+// probe's rotation.gcsl.
+func (pr probe) teamDir(tmp, id string) (string, error) {
+	dir := filepath.Join(*gscouterDir, "teams", id)
+	if len(pr.hunks) == 0 {
+		return filepath.Join("teams", id), nil
+	}
+	rot, err := os.ReadFile(filepath.Join(dir, "rotation.gcsl"))
+	if err != nil {
+		return "", err
+	}
+	out, err := pr.applyRotation(string(rot))
+	if err != nil {
+		return "", err
+	}
+	cp, err := filepath.Abs(filepath.Join(tmp, id+"-"+strings.ReplaceAll(pr.v.Name, ":", "-")+"-team"))
+	if err != nil {
+		return "", err
+	}
+	if err := os.RemoveAll(cp); err != nil {
+		return "", err
+	}
+	if err := os.CopyFS(cp, os.DirFS(dir)); err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(filepath.Join(cp, "rotation.gcsl"), []byte(out), 0o644); err != nil {
+		return "", err
+	}
+	return cp, nil
 }
 
 // product reads a stat value, which gcsim lets be a product (0.0496*6).

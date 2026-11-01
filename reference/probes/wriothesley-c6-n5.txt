@@ -1,0 +1,18 @@
+# Wriothesley C6 with five-hit combos: C1 to C6 together, with C1's fifth-hit Rebuke (no library rotation does attack:5 with him).
+# Build lines replace the library build's; "rotation-" lines, then
+# "rotation+" lines, replace those consecutive lines of the team's
+# rotation.gcsl, which must match exactly once (see README, "Running").
+team wriothesley-diona-kaedeharakazuha-shenhe
+wrio char lvl=90/90 cons=6 talent=9,9,9;
+rotation- wrio skill,
+rotation- attack:3, charge, jump,
+rotation- attack:3, charge, jump,
+rotation- attack:3, charge, jump,
+rotation- attack:3, charge, jump,
+rotation- attack:3, charge, jump;
+rotation+ wrio skill,
+rotation+ attack:5, charge, jump,
+rotation+ attack:5, charge, jump,
+rotation+ attack:5, charge, jump,
+rotation+ attack:5, charge, jump,
+rotation+ attack:5, charge, jump;

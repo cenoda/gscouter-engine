@@ -1,0 +1,10 @@
+# Zhongli C1 (two steles) with two pressed skills before the burst, and a charged attack (no library rotation presses his skill twice or uses his charged attack).
+# Build lines replace the library build's; "rotation-" lines, then
+# "rotation+" lines, replace those consecutive lines of the team's
+# rotation.gcsl, which must match exactly once (see README, "Running").
+team yoimiya-bennett-xiangling-zhongli
+zhongli char lvl=90/90 cons=1 talent=9,9,9;
+rotation- zhongli burst, skill[hold=1], dash;
+rotation+ zhongli skill, attack:3, skill, burst, skill[hold=1], dash;
+rotation- zhongli attack:2, skill[hold=1], dash;
+rotation+ zhongli attack, charge, skill[hold=1], dash;

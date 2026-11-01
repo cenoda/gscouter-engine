@@ -1,0 +1,8 @@
+# Zhongli C6 (C1 to C6 together) with a charged attack (no library rotation uses his charged attack).
+# Build lines replace the library build's; "rotation-" lines, then
+# "rotation+" lines, replace those consecutive lines of the team's
+# rotation.gcsl, which must match exactly once (see README, "Running").
+team yoimiya-bennett-xiangling-zhongli
+zhongli char lvl=90/90 cons=6 talent=9,9,9;
+rotation- zhongli attack:2, skill[hold=1], dash;
+rotation+ zhongli attack, charge, skill[hold=1], dash;
