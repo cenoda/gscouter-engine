@@ -1103,6 +1103,9 @@ pub struct Sim {
     pub flags: Vec<(ModKey, f64)>,
     /// Flat damage EnemyHit subscribers add to the hit.
     pub hit_flat: f64,
+    /// CRIT Rate an EnemyHit subscriber adds to the hit and the CRIT DMG it
+    /// sets (Nahida's C2 on reaction damage).
+    pub hit_crit: Option<(f64, f64)>,
     // normal attack energy
     pub na_icd: i32,
     pub na_chance: [f64; 4],
@@ -1200,6 +1203,7 @@ impl Sim {
             statuses: Vec::new(),
             flags: Vec::new(),
             hit_flat: 0.0,
+            hit_crit: None,
             na_icd: 0,
             na_chance: [0.0; 4],
             window_start: ((warmup * 60.0) as i32 / 30) * 30,
@@ -2045,8 +2049,13 @@ impl Sim {
         if grp > 0.0 {
             if !self.subs[EventKind::EnemyHit as usize].is_empty() {
                 self.hit_flat = 0.0;
+                self.hit_crit = None;
                 self.emit(Event::EnemyHit(&ev));
                 ev.info.flat_dmg += self.hit_flat;
+                if let Some((cr, cd)) = self.hit_crit {
+                    ev.stats[st::CR] += cr;
+                    ev.stats[st::CD] = cd;
+                }
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }

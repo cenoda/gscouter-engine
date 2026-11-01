@@ -75,7 +75,8 @@ pub enum Event<'a> {
     /// OnEnergyBurst: a character's burst drained amount of its energy.
     EnergyBurst { on: usize, amount: f64 },
     /// OnEnemyHit, before attack mods: a subscriber adds flat damage to
-    /// the hit through `Sim::hit_flat`.
+    /// the hit through `Sim::hit_flat`, and changes its crit through
+    /// `Sim::hit_crit`.
     EnemyHit(&'a AttackEvent),
     /// OnPlayerHit: the active character was hit.
     PlayerHit { on: usize },
