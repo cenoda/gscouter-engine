@@ -1,0 +1,7 @@
+# Chiori's low plunge after a held skill, which triggers A1's Tailoring (no library rotation holds her skill or plunges).
+# Build lines replace the library build's; "rotation-" lines, then
+# "rotation+" lines, replace those consecutive lines of the team's
+# rotation.gcsl, which must match exactly once (see README, "Running").
+team zhongli-chiori-bennett-fischl
+rotation- chiori skill:2;
+rotation+ chiori skill[hold=1], low_plunge, attack:3;
