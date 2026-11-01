@@ -36,4 +36,5 @@ crate::weapons! {
     HakushinRing => hakushin,
     SacrificialJade => sacrificialjade,
     PrototypeAmber => prototypeamber,
+    FinaleOfTheDeep => finaleofthedeep,
 }

@@ -372,7 +372,7 @@ impl Character for Char {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
-            Event::Heal { caller, target, on, amount, overheal } => {
+            Event::Heal { caller, target, on, amount, overheal, .. } => {
                 if s.chars[ci].ascension >= 1 {
                     a1(s, ci, caller, target, overheal);
                 }

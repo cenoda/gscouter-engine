@@ -44,11 +44,12 @@ impl SetImpl for Set {
 
     fn event(s: &mut Sim, ci: usize, si: usize, e: &Event) {
         match *e {
-            Event::Heal { caller, amount, .. } => {
+            // gcsim reads the heal before the Bond of Life took its part
+            Event::Heal { caller, before_debt, .. } => {
                 if caller != ci {
                     return;
                 }
-                let stacks = (s.flag(HEAL_STACKS) + amount).min(15000.0);
+                let stacks = (s.flag(HEAL_STACKS) + before_debt).min(15000.0);
                 s.set_flag(HEAL_STACKS, stacks);
                 if s.core_status("yearning-effect") == 0 {
                     s.add_core_status(YEARNING, 6 * 60);

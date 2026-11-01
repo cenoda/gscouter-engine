@@ -576,6 +576,8 @@ pub struct Char {
     pub energy: f64,
     pub energy_max: f64,
     pub hp_ratio: f64,
+    /// gcsim's currentHPDebt: the Bond of Life, kept in [0, 2 * max HP].
+    pub hp_debt: f64,
     pub normal_counter: i32,
     pub normal_hit_num: i32,
     pub mods: Vec<Mod>,
@@ -1335,6 +1337,7 @@ impl Sim {
             energy: energy_max,
             energy_max,
             hp_ratio: 1.0,
+            hp_debt: 0.0,
             normal_counter: 0,
             normal_hit_num,
             mods: Vec::with_capacity(24),
@@ -1692,7 +1695,7 @@ impl Sim {
 
     /// gcsim's Player.Heal: target None heals the whole party, src is HP
     /// (or a fraction of each healed character's max HP when percent),
-    /// bonus the healer's. There is no HP debt.
+    /// bonus the healer's.
     pub fn heal_info(&mut self, caller: usize, target: Option<usize>, percent: bool, src: f64, bonus: f64) {
         match target {
             Some(t) => self.heal_one(caller, target, t, percent, src, bonus),
@@ -1704,13 +1707,56 @@ impl Sim {
         }
     }
 
+    /// gcsim's Character.Heal and ReceiveHeal: the heal first pays the
+    /// Bond of Life (OnHPDebt, before the HP changes), and what is left of
+    /// it heals.
     fn heal_one(&mut self, caller: usize, target: Option<usize>, on: usize, percent: bool, src: f64, bonus: f64) {
         let hp = if percent { self.max_hp(on) * src } else { src };
-        let heal = hp * (1.0 + self.heal_bonus(on) + bonus);
+        let heal_amt = hp * (1.0 + self.heal_bonus(on) + bonus);
         let prev = self.current_hp(on);
+        let heal = (heal_amt - self.chars[on].hp_debt).max(0.0);
+        self.modify_hp_debt(on, -heal_amt);
         self.modify_hp(on, heal);
         let overheal = (prev + heal - self.max_hp(on)).max(0.0);
-        self.emit(Event::Heal { caller, target, on, amount: heal, overheal });
+        self.emit(Event::Heal { caller, target, on, amount: heal, overheal, before_debt: heal_amt });
+    }
+
+    /// gcsim's ModifyHPDebtByAmount: changes the Bond of Life by amt,
+    /// clamped to [0, 2 * max HP], and emits OnHPDebt with how much it
+    /// went down (also when that is 0, as long as amt is not).
+    pub fn modify_hp_debt(&mut self, on: usize, amt: f64) {
+        if amt == 0.0 {
+            return;
+        }
+        let prev = self.chars[on].hp_debt;
+        let mut d = prev + amt;
+        if d < 0.0 {
+            d = 0.0;
+        } else {
+            let cap = self.max_hp(on) * 2.0;
+            if d > cap {
+                d = cap;
+            }
+        }
+        self.chars[on].hp_debt = d;
+        self.emit(Event::HpDebt { on, change: prev - d });
+    }
+
+    /// gcsim's ModifyHPDebtByRatio: a Bond of Life of r times max HP.
+    pub fn modify_hp_debt_ratio(&mut self, on: usize, r: f64) {
+        let amt = r * self.max_hp(on);
+        self.modify_hp_debt(on, amt);
+    }
+
+    /// gcsim's CurrentHPDebt.
+    #[inline]
+    pub fn hp_debt(&self, ci: usize) -> f64 {
+        self.chars[ci].hp_debt
+    }
+
+    /// gcsim's CurrentHPDebtRatio.
+    pub fn hp_debt_ratio(&self, ci: usize) -> f64 {
+        self.chars[ci].hp_debt / self.max_hp(ci)
     }
 
     /// A heal of src HP by caller on one character.
@@ -4463,7 +4509,8 @@ impl Sim {
                         let s = crate::types::st::by_name(&fields[2]).ok_or(format!("invalid stat key {} in character stat condition", fields[2]))?;
                         Ok(Num::Float(self.stat(ci, s)))
                     }
-                    "bol" | "bolratio" => Ok(Num::Float(0.0)),
+                    "bol" => Ok(Num::Float(self.hp_debt(ci))),
+                    "bolratio" => Ok(Num::Float(self.hp_debt_ratio(ci))),
                     "sets" => {
                         need(3, &what)?;
                         let k = set_key(&fields[2]).ok_or(format!("invalid set key {} in character set condition", fields[2]))?;

@@ -1,0 +1,3 @@
+# Bennett with Finale of the Deep R1 (library builds are R5): the Bond of Life his skill grants, cleared by heals, under and at the flat ATK cap.
+team bennett-furina-fischl-yelan
+bennett add weapon="finaleofthedeep" refine=1 lvl=90/90;

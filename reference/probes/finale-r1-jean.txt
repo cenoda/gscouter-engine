@@ -1,0 +1,3 @@
+# Jean with Finale of the Deep R1 (library builds are R5): her own heals clear the Bond of Life her skill grants.
+team jean-furina-yelan-candace
+jean add weapon="finaleofthedeep" refine=1 lvl=90/90;

@@ -45,8 +45,9 @@ pub enum EventKind {
     Shielded,
     ShieldBreak,
     ConstructSpawned,
+    HpDebt,
 }
-pub const N_EVENTS: usize = 15;
+pub const N_EVENTS: usize = 16;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -65,8 +66,12 @@ pub enum Event<'a> {
     Reaction(Reaction, &'a AttackEvent),
     /// OnHeal, once for each character healed: the healer, the heal's
     /// target (None for the whole party), the character healed, the HP it
-    /// gained and the overheal.
-    Heal { caller: usize, target: Option<usize>, on: usize, amount: f64, overheal: f64 },
+    /// gained (after paying its Bond of Life), the overheal, and the heal
+    /// before the Bond of Life took its part (gcsim's amount_before_debt).
+    Heal { caller: usize, target: Option<usize>, on: usize, amount: f64, overheal: f64, before_debt: f64 },
+    /// OnHPDebt: a character's Bond of Life changed; `change` is how much
+    /// it went down (negative when it grew).
+    HpDebt { on: usize, change: f64 },
     /// OnPlayerHPDrain: the character drained, the HP it lost, and whether
     /// it came from outside the party (gcsim's DrainInfo.External).
     Drain { on: usize, amount: f64, external: bool },
@@ -103,6 +108,7 @@ impl Event<'_> {
             Event::Shielded(_) => EventKind::Shielded,
             Event::ShieldBreak(_) => EventKind::ShieldBreak,
             Event::ConstructSpawned => EventKind::ConstructSpawned,
+            Event::HpDebt { .. } => EventKind::HpDebt,
             Event::ParticleReceived => EventKind::ParticleReceived,
             Event::EnergyBurst { .. } => EventKind::EnergyBurst,
             Event::EnemyHit(_) => EventKind::EnemyHit,
