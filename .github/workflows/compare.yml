@@ -67,6 +67,14 @@
 # chunks, as for the other jobs. A shard job that fails or stops at its
 # deadline leaves its seeds to the rerun job's gcsim.
 #
+# A manual run with "release" set to true runs every kind of build at one
+# commit: the library builds and probes, every variant part, every
+# build-space part and every page part. Its manifest job then builds the
+# WebAssembly module (wasm/) and writes the teams Gscouter may run on it
+# (reference/manifest: a team is verified when every build of every kind
+# that the engine runs passes), uploaded with the module as the artifact
+# "engine-release". Dispatch it on main.
+#
 # A run on a branch saves its chunks in that branch's cache, which main
 # cannot read. A manual run on main with "import_run" set to that run's id
 # adds the run's chunk artifacts (kept a day) to main's cache, and runs
@@ -108,6 +116,9 @@ on:
       rerun_shards:
         description: 'Jobs to split each rerun build''s gcsim between, over seeds [0, rerun_max_iter), before its compare; 1 for none. Builds times shards at most 256.'
         default: "1"
+      release:
+        description: 'true runs every kind of build at this commit and writes the manifest of verified teams with the WebAssembly module (artifact engine-release). Dispatch on main.'
+        default: "false"
       import_run:
         description: 'A run id of this workflow, on any branch, whose gcsim chunks (artifacts gcsim-new-*, kept a day) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
@@ -144,6 +155,7 @@ jobs:
           INPUT: ${{ inputs.parts }}
           BS_INPUT: ${{ inputs.buildspace }}
           PG_INPUT: ${{ inputs.pages }}
+          RELEASE: ${{ inputs.release }}
           WARM: ${{ inputs.warm }}
           IMPORT: ${{ inputs.import_run }}
           RERUN: ${{ inputs.rerun }}
@@ -229,6 +241,14 @@ jobs:
             exit 0
           fi
           echo "warm_parts=[]" >> "$GITHUB_OUTPUT"
+          RELEASE=$(printf %s "$RELEASE" | tr -d "[:space:]")
+          if [ "$EVENT" = workflow_dispatch ] && [ "$RELEASE" = true ]; then
+            echo "parts=[$(seq -s, 0 $(( PARTS - 1 )))]" >> "$GITHUB_OUTPUT"
+            echo "bs_parts=[$(seq -s, 0 $(( BS_PARTS - 1 )))]" >> "$GITHUB_OUTPUT"
+            echo "pg_parts=[$(seq -s, 0 $(( PG_PARTS - 1 )))]" >> "$GITHUB_OUTPUT"
+            echo "library=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [ "$EVENT" = schedule ]; then
             day=$(( $(date -u +%s) / 86400 ))
             first=$(( (day % (PARTS / PER_DAY)) * PER_DAY ))
@@ -715,6 +735,37 @@ jobs:
           path: ${{ runner.temp }}/gcsim-new
           if-no-files-found: ignore
           retention-days: 1
+
+  # the release's manifest: the verified teams and the module they hold for
+  manifest:
+    needs: [library, variants, buildspace, pages]
+    if: always() && !cancelled() && github.event_name == 'workflow_dispatch' && inputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go.mod
+          cache-dependency-path: reference/go.sum
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Build the WebAssembly module
+        working-directory: wasm
+        run: cargo build --release --target wasm32-unknown-unknown
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: compare-*
+          path: reports
+      - name: Write the manifest
+        run: |
+          mkdir -p release
+          cp wasm/target/wasm32-unknown-unknown/release/gse_wasm.wasm release/
+          cd reference && go run ./manifest -wasm ../release/gse_wasm.wasm -commit "$GITHUB_SHA" -out ../release/manifest.json ../reports/compare-*/compare.json | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: engine-release
+          path: release
 
   cache:
     needs: [library, variants, buildspace, pages, warm, rerun-gcsim, rerun]
