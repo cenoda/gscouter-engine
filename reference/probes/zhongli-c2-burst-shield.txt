@@ -1,0 +1,10 @@
+# Zhongli C2 with every held skill pressed instead, so that each burst is cast with no Jade Shield up and C2's shield is the only one (library rotations hold the skill, so a shield is up or follows at once).
+# Build lines replace the library build's; "rotation-" lines, then
+# "rotation+" lines, replace those consecutive lines of the team's
+# rotation.gcsl, which must match exactly once (see README, "Running").
+team yoimiya-bennett-xiangling-zhongli
+zhongli char lvl=90/90 cons=2 talent=9,9,9;
+rotation- zhongli burst, skill[hold=1], dash;
+rotation+ zhongli burst, skill, dash;
+rotation- zhongli attack:2, skill[hold=1], dash;
+rotation+ zhongli attack:2, skill, dash;
