@@ -1,0 +1,3 @@
+# Kirara C4: Steed of Skanda from her own normal attacks while her shield is up (pressed skill).
+team kaedeharakazuha-yaemiko-fischl-kirara
+kirara char lvl=90/90 cons=4 talent=9,9,9;
