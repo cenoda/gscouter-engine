@@ -1,0 +1,3 @@
+# Citlali C2: EM +125 for her and +250 for the active member while she shields or is in her blessing, and A1's RES shred doubled, on frozen.
+team neuvillette-furina-citlali-escoffier
+citlali char lvl=90/90 cons=2 talent=9,9,9;

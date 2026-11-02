@@ -1,0 +1,3 @@
+# Citlali C6: the skill turns her points into stacks, Opal Fire at any points, the others' pyro and hydro DMG and her own DMG by the stacks (with melt).
+team yoimiya-rosaria-citlali-bennett
+citlali char lvl=90/90 cons=6 talent=9,9,9;

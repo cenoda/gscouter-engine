@@ -1,0 +1,7 @@
+# Citlali's charged attack (travel 20) and normal attacks with travel, and her conditions in a rotation (no library rotation charges with her or reads them).
+team yoimiya-rosaria-citlali-bennett
+rotation- citlali skill, burst;
+rotation+ citlali skill, burst, charge[travel=20], attack[travel=5];
+rotation+ if .citlali.opal-fire && .citlali.nightsoul.points > 10 && .citlali.stellar-blade == 0 && .citlali.c6-stacks == 0 {
+rotation+   citlali charge;
+rotation+ }
