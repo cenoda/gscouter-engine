@@ -3,6 +3,8 @@
 
 /// Shared by the Favonius weapons.
 pub mod favonius;
+/// Shared by Mouun's Moon, Wavebreaker's Fin and Akuoumaru.
+pub mod wavebreaker;
 
 crate::weapons! {
     StaffOfHoma => staffofhoma,
@@ -59,4 +61,16 @@ crate::weapons! {
     IronSting => ironsting,
     MoonweaversDawn => moonweaversdawn,
     SacrificialBow => sacrificialbow,
+    MouunsMoon => mouunsmoon,
+    WavebreakersFin => wavebreakersfin,
+    Akuoumaru => akuoumaru,
+    ToukabouShigure => toukaboushigure,
+    CrescentPike => crescentpike,
+    DialoguesOfTheDesertSages => dialoguesofthedesertsages,
+    KagotsurubeIsshin => kagotsurubeisshin,
+    SplendorOfTranquilWaters => splendoroftranquilwaters,
+    Moonpiercer => moonpiercer,
+    BalladOfTheBoundlessBlue => balladoftheboundlessblue,
+    SequenceOfSolitude => sequenceofsolitude,
+    TomeOfTheEternalFlow => tomeoftheeternalflow,
 }

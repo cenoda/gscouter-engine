@@ -1,0 +1,3 @@
+# Hu Tao with Crescent Pike R5.
+team hutao-yelan-bennett-xingqiu
+hutao add weapon="crescentpike" refine=5 lvl=90/90;

@@ -1,0 +1,3 @@
+# Chevreuse with Dialogues of the Desert Sages R1.
+team arlecchino-fischl-yaemiko-chevreuse
+chevreuse add weapon="dialoguesofthedesertsages" refine=1 lvl=90/90;

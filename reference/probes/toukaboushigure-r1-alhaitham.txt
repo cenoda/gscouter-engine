@@ -1,0 +1,3 @@
+# Alhaitham with Toukabou Shigure R1.
+team raidenshogun-kaedeharakazuha-fischl-alhaitham
+alhaitham add weapon="toukaboushigure" refine=1 lvl=90/90;

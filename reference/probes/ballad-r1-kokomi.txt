@@ -1,0 +1,3 @@
+# Kokomi with Ballad of the Boundless Blue R1.
+team kukishinobu-sangonomiyakokomi-nahida-furina
+kokomi add weapon="balladoftheboundlessblue" refine=1 lvl=90/90;

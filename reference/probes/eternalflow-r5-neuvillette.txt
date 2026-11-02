@@ -1,0 +1,3 @@
+# Neuvillette with Tome of the Eternal Flow R5.
+team neuvillette-furina-citlali-shenhe
+neuvillette add weapon="tomeoftheeternalflow" refine=5 lvl=90/90;
