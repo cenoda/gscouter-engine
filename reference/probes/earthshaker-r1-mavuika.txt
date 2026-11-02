@@ -1,0 +1,3 @@
+# Mavuika with Earth Shaker R1.
+team yoimiya-emilie-fischl-mavuika
+mav add weapon="earthshaker" refine=1 lvl=90/90;

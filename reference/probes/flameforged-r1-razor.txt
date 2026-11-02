@@ -1,0 +1,3 @@
+# Razor with Flame-Forged Insight R1.
+team razor-nahida-xingqiu-diona
+razor add weapon="flameforgedinsight" refine=1 lvl=90/90;

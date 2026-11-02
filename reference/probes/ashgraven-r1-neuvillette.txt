@@ -1,0 +1,3 @@
+# Neuvillette with Ash-Graven Drinking Horn R1.
+team neuvillette-rosaria-shenhe-kaedeharakazuha
+neuvillette add weapon="ashgravendrinkinghorn" refine=1 lvl=90/90;

@@ -1,0 +1,3 @@
+# Clorinde with Skyward Blade R5.
+team clorinde-furina-xilonen-chiori
+clorinde add weapon="skywardblade" refine=5 lvl=90/90;

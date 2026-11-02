@@ -1,0 +1,3 @@
+# Emilie with Lumidouce Elegy R5.
+team emilie-furina-mavuika-bennett
+emilie add weapon="lumidouceelegy" refine=5 lvl=90/90;

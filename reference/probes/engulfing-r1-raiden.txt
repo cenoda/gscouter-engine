@@ -1,0 +1,3 @@
+# Raiden with Engulfing Lightning R1.
+team raidenshogun-bennett-kaedeharakazuha-yelan
+raidenshogun add weapon="engulfinglightning" refine=1 lvl=90/90;

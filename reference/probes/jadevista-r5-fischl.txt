@@ -1,0 +1,3 @@
+# Fischl with Jade Vista R5.
+team arlecchino-fischl-mona-bennett
+fischl add weapon="jadevista" refine=5 lvl=90/90;
