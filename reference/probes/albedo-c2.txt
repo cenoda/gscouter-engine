@@ -1,0 +1,3 @@
+# Albedo C2: blossoms give Fatal Reckoning stacks, which the burst spends for flat damage from his DEF.
+team albedo-bennett-xiangling-rosaria
+albedo char lvl=90/90 cons=2 talent=9,9,9;

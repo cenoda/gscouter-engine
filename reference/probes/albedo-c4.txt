@@ -1,0 +1,3 @@
+# Albedo C4: plunging DMG +30% for the active character in the field (checked every 0.3 s; this team does not plunge).
+team albedo-bennett-xiangling-rosaria
+albedo char lvl=90/90 cons=4 talent=9,9,9;

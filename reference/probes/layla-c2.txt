@@ -1,0 +1,3 @@
+# Layla C2: each Shooting Star restores 1 energy.
+team layla-kaedeharakazuha-bennett-xiangling
+layla char lvl=90/90 cons=2 talent=9,9,9;

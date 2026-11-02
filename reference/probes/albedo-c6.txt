@@ -1,0 +1,3 @@
+# Albedo C6: DMG +17% for the active character in the field with a crystallize shield.
+team albedo-bennett-xiangling-rosaria
+albedo char lvl=90/90 cons=6 talent=9,9,9;

@@ -1309,6 +1309,7 @@ pub enum ShieldType {
     ThomaSkill,
     IneffaSkill,
     CitlaliSkill,
+    LaylaSkill,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -3639,6 +3640,15 @@ impl Sim {
         }
     }
 
+    /// A shield's Expires set in place (gcsim's shield kept, not added
+    /// again: no OnShielded).
+    pub fn set_shield_expiry(&mut self, typ: ShieldType, expiry: i32) {
+        if let Some(sh) = self.shields.iter_mut().find(|x| x.typ == typ) {
+            sh.expiry = expiry;
+            self.update_next_expiry();
+        }
+    }
+
     fn update_next_expiry(&mut self) {
         let shields = self.shields.iter().map(|s| s.expiry).filter(|&e| e >= 0).min().unwrap_or(i32::MAX);
         let shards = self.shards.first().map_or(i32::MAX, |sh| sh.expiry);
@@ -3724,7 +3734,7 @@ impl Sim {
         while k < self.shields.len() {
             if self.shields[k].expiry == f {
                 let sh = self.shields.remove(k);
-                if matches!(sh.typ, ShieldType::ZhongliJadeShield | ShieldType::BaizhuBurst) {
+                if matches!(sh.typ, ShieldType::ZhongliJadeShield | ShieldType::BaizhuBurst | ShieldType::LaylaSkill) {
                     crate::chars::dispatch::shield_expired(self.chars[sh.owner as usize].kind, self, sh.owner as usize, sh.key);
                 }
                 expired.push(sh);

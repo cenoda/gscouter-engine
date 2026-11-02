@@ -56,6 +56,8 @@ crate::chars! {
     KujouSara => sara,
     Navia => navia,
     Clorinde => clorinde,
+    Albedo => albedo,
+    Layla => layla,
 }
 
 /// The characters whose modules have been checked against gcsim for a
