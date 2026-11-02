@@ -1,0 +1,4 @@
+# Arlecchino's charged attack cancelled early (absorbing the directive) and dashed out of, and a charge from idle without its normal-attack windup.
+team arlecchino-bennett-citlali-xilonen
+rotation-   arlecchino skill;
+rotation+   arlecchino skill, charge, charge[early_cancel=1], dash;

@@ -2135,6 +2135,12 @@ impl Sim {
     fn heal_one(&mut self, caller: usize, target: Option<usize>, on: usize, percent: bool, src: f64, bonus: f64) {
         let hp = if percent { self.max_hp(on) * src } else { src };
         let heal_amt = hp * (1.0 + self.heal_bonus(on) + bonus);
+        // a character's own ReceiveHeal can refuse it (Arlecchino): no HP
+        // and no Bond of Life paid, and OnHeal with nothing received
+        if !crate::chars::dispatch::receives_heal(self.chars[on].kind, self, on, caller) {
+            self.emit(Event::Heal { caller, target, on, amount: 0.0, overheal: 0.0, before_debt: heal_amt });
+            return;
+        }
         let prev = self.current_hp(on);
         let heal = (heal_amt - self.chars[on].hp_debt).max(0.0);
         self.modify_hp_debt(on, -heal_amt);
@@ -2241,6 +2247,11 @@ impl Sim {
 
     pub fn delete_mod(&mut self, ci: usize, key: ModKey) {
         self.chars[ci].mods.retain(|m| m.key != key);
+    }
+
+    /// gcsim's DeleteStatus on the enemy.
+    pub fn enemy_delete_status(&mut self, key: ModKey) {
+        self.enemy.mods.retain(|m| m.key != key);
     }
 
     pub fn enemy_status_active(&self, key: ModKey) -> bool {
@@ -4410,6 +4421,7 @@ impl Sim {
                 self.enemy_alive = false;
                 ev.damage = actual;
                 killed = true;
+                self.emit(Event::TargetDied(&ev));
             }
         }
         // an attack that did not react attaches its element

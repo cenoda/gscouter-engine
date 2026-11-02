@@ -62,8 +62,9 @@ pub enum EventKind {
     ApplyAttack,
     SpecialReactionAttack,
     DendroCore,
+    TargetDied,
 }
-pub const N_EVENTS: usize = 25;
+pub const N_EVENTS: usize = 26;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -128,6 +129,9 @@ pub enum Event<'a> {
     SpecialReactionAttack(&'a AttackEvent),
     /// OnDendroCore: a dendro core appeared, with its gadget key.
     DendroCore { key: u32 },
+    /// OnTargetDied: the enemy died (damage mode), with the attack that
+    /// killed it.
+    TargetDied(&'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -158,6 +162,7 @@ impl Event<'_> {
             Event::ApplyAttack(_) => EventKind::ApplyAttack,
             Event::SpecialReactionAttack(_) => EventKind::SpecialReactionAttack,
             Event::DendroCore { .. } => EventKind::DendroCore,
+            Event::TargetDied(_) => EventKind::TargetDied,
         }
     }
 }
@@ -298,6 +303,11 @@ pub trait Character {
     /// Its own part of a dash or jump (gcsim's override of Dash or Jump),
     /// run before the template's.
     fn template_action(_s: &mut Sim, _ci: usize, _a: Action) {}
+    /// Its ReceiveHeal, when it refuses heals: whether a heal by `caller`
+    /// heals it (and pays its Bond of Life).
+    fn receives_heal(_s: &Sim, _ci: usize, _caller: usize) -> bool {
+        true
+    }
 }
 
 /// gcsim's template NextQueueItemIsValid: swords and polearms charge
@@ -466,6 +476,7 @@ macro_rules! chars {
             pub fn own_dash(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_dash(s, ci, p)),* } }
             pub fn own_jump(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_jump(s, ci, p)),* } }
             pub fn template_action(k: CharKind, s: &mut Sim, ci: usize, a: Action) { match k { $(CharKind::$kind => $m::Char::template_action(s, ci, a)),* } }
+            pub fn receives_heal(k: CharKind, s: &Sim, ci: usize, caller: usize) -> bool { match k { $(CharKind::$kind => $m::Char::receives_heal(s, ci, caller)),* } }
         }
     };
 }

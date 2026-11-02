@@ -1,0 +1,8 @@
+# Arlecchino C1: Masque's flat damage +100% of ATK by her Bond of Life, with her burst when it is ready.
+team arlecchino-bennett-citlali-xilonen
+arle char lvl=90/90 cons=1 talent=9,9,9;
+rotation-   arlecchino skill;
+rotation+   arlecchino skill;
+rotation+   if .arlecchino.energy >= 60 {
+rotation+     arlecchino burst;
+rotation+   }
