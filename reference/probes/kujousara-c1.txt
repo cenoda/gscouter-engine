@@ -1,0 +1,3 @@
+# Kujou Sara C1: the skill's cooldown -1 s on buffs and burst hits; the library builds are C6.
+team kaedeharakazuha-kujousara-yaemiko-nahida
+sara char lvl=90/90 cons=1 talent=9,9,9;

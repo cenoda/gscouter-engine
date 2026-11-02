@@ -1,0 +1,3 @@
+# Kujou Sara C4: 6 Stormcluster lines; the library builds are C6.
+team kaedeharakazuha-kujousara-yaemiko-nahida
+sara char lvl=90/90 cons=4 talent=9,9,9;

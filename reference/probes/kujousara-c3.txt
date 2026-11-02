@@ -1,0 +1,3 @@
+# Kujou Sara C3: burst talent +3; the library builds are C6.
+team kaedeharakazuha-kujousara-yaemiko-nahida
+sara char lvl=90/90 cons=3 talent=9,9,9;

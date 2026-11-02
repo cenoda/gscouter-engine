@@ -1,0 +1,3 @@
+# Kujou Sara C2: the skill's own ambush; the library builds are C6.
+team kaedeharakazuha-kujousara-yaemiko-nahida
+sara char lvl=90/90 cons=2 talent=9,9,9;

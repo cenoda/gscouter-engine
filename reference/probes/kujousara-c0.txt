@@ -1,0 +1,3 @@
+# Kujou Sara C0: no constellation (no C2 ambush, 4 Stormcluster lines, no C6 CRIT); the library builds are C6.
+team kaedeharakazuha-kujousara-yaemiko-nahida
+sara char lvl=90/90 cons=0 talent=9,9,9;

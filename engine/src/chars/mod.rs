@@ -51,6 +51,7 @@ crate::chars! {
     Mavuika => mavuika,
     Arlecchino => arlecchino,
     Skirk => skirk,
+    KujouSara => sara,
 }
 
 /// The characters whose modules have been checked against gcsim for a
