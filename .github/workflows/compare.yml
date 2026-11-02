@@ -125,6 +125,9 @@ on:
       import_run:
         description: 'A run id of this workflow, on any branch, whose gcsim chunks (artifacts gcsim-new-*, kept a day) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
+      import_release:
+        description: 'A release tag of this repository whose gcsim-cache-*.tar.gz assets (gcsim run outside CI, reference/warm-host.sh) to add to this branch''s cache; runs nothing else. Dispatch on main.'
+        default: ""
 
 env:
   GSCOUTER_COMMIT: 9dfe65d914be5e4edca8b52e06795046de04d7e6
@@ -161,6 +164,7 @@ jobs:
           RELEASE: ${{ inputs.release }}
           WARM: ${{ inputs.warm }}
           IMPORT: ${{ inputs.import_run }}
+          IMPORT_RELEASE: ${{ inputs.import_release }}
           RERUN: ${{ inputs.rerun }}
           RERUN_MAX: ${{ inputs.rerun_max_iter }}
           RERUN_SHARDS: ${{ inputs.rerun_shards }}
@@ -220,8 +224,12 @@ jobs:
           fi
           echo "rerun=[]" >> "$GITHUB_OUTPUT"
           echo "rerun_shards=[]" >> "$GITHUB_OUTPUT"
-          if [ "$EVENT" = workflow_dispatch ] && [ -n "$IMPORT" ]; then
-            [[ $IMPORT =~ ^[0-9]+$ ]] || { echo "import_run: want a run id, got $IMPORT"; exit 1; }
+          IMPORT_RELEASE=$(printf %s "$IMPORT_RELEASE" | tr -d "[:space:]")
+          if [ "$EVENT" = workflow_dispatch ] && [ -n "$IMPORT_RELEASE" ]; then
+            [[ $IMPORT_RELEASE =~ ^[A-Za-z0-9._-]+$ ]] || { echo "import_release: want a tag, got $IMPORT_RELEASE"; exit 1; }
+          fi
+          if [ "$EVENT" = workflow_dispatch ] && { [ -n "$IMPORT" ] || [ -n "$IMPORT_RELEASE" ]; }; then
+            [ -z "$IMPORT" ] || [[ $IMPORT =~ ^[0-9]+$ ]] || { echo "import_run: want a run id, got $IMPORT"; exit 1; }
             # only the cache job runs, and takes that run's chunks
             echo "library=false" >> "$GITHUB_OUTPUT"
             echo "parts=[]" >> "$GITHUB_OUTPUT"
@@ -802,6 +810,17 @@ jobs:
           path: ${{ runner.temp }}/gcsim-new
           run-id: ${{ inputs.import_run }}
           github-token: ${{ github.token }}
+      # chunks gcsim made outside CI (input import_release): the release's
+      # gcsim-cache-*.tar.gz assets, each a tree of the cache's files
+      - name: Download the release's chunks
+        if: inputs.import_release != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.import_release }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/release" "$RUNNER_TEMP/gcsim-new"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern 'gcsim-cache-*.tar.gz' --dir "$RUNNER_TEMP/release"
+          for f in "$RUNNER_TEMP"/release/*.tar.gz; do tar -xzf "$f" -C "$RUNNER_TEMP/gcsim-new"; done
       - id: new
         run: echo "chunks=$(find "$RUNNER_TEMP/gcsim-new" -type f 2>/dev/null | wc -l)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
