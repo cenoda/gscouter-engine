@@ -1649,12 +1649,13 @@ impl Sim {
             wait_open: [[None; N_ACTIONS]; 4],
             abils: Default::default(),
         };
-        s.setup();
+        // AddCharacter sets the starting energy before any Init reads it
         for (i, c) in cfg.chars.iter().enumerate() {
             if c.start_energy >= 0.0 {
                 s.chars[i].energy = c.start_energy.min(s.chars[i].energy_max);
             }
         }
+        s.setup();
         // initialize advances one frame before the first action
         s.done = s.next_frame() || s.error.is_some();
         s
