@@ -18,4 +18,5 @@ crate::sets! {
     GildedDreams => gildeddreams,
     FlowerOfParadiseLost => flowerofparadiselost,
     ThunderingFury => thunderingfury,
+    OceanHuedClam => oceanhuedclam,
 }
