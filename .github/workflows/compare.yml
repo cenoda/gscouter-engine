@@ -124,7 +124,7 @@ on:
         default: ""
 
 env:
-  GSCOUTER_COMMIT: 14e187fab1fb0695f527347f419aad977e27a92c
+  GSCOUTER_COMMIT: 9dfe65d914be5e4edca8b52e06795046de04d7e6
   PARTS: 40
   PER_DAY: 8
   BS_PARTS: 80
