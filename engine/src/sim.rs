@@ -650,6 +650,10 @@ pub enum Frames {
     AttackLive { table: &'static FrameTable, minus: i32 },
     /// The character's own frames function, with an argument.
     Char { id: u8, arg: i16 },
+    /// The character's own frames function that reads the fight as it is
+    /// evaluated (gcsim's closures over the character's state, such as
+    /// Chasca's skillNextFrames), with an argument.
+    CharDyn { id: u8, arg: i16 },
     Dash { len: i32, jump: i32 },
     Const(i32),
     /// An airborne jump: the plunges after `low` and `high` frames,
@@ -4894,11 +4898,18 @@ impl Sim {
     // ------------------------------------------------------------ frames
 
     fn frames_of(&self, a: &ActInfo, next: Action) -> i32 {
-        match a.frames {
+        self.eval_frames(a.char as usize, a.frames, next)
+    }
+
+    /// The frames before `next` of an action of character `ci` with these
+    /// frames.
+    pub fn eval_frames(&self, ci: usize, frames: Frames, next: Action) -> i32 {
+        match frames {
             Frames::Table(t) => t[next as usize],
             Frames::Attack { table, atkspd } => atk_spd_adjust(table[next as usize], atkspd),
-            Frames::AttackLive { table, minus } => atk_spd_adjust(table[next as usize], self.stat(a.char as usize, st::ATKSPD)) - minus,
-            Frames::Char { id, arg } => crate::chars::dispatch::frames(self.chars[a.char as usize].kind, id, arg, next),
+            Frames::AttackLive { table, minus } => atk_spd_adjust(table[next as usize], self.stat(ci, st::ATKSPD)) - minus,
+            Frames::Char { id, arg } => crate::chars::dispatch::frames(self.chars[ci].kind, id, arg, next),
+            Frames::CharDyn { id, arg } => crate::chars::dispatch::frames_dyn(self.chars[ci].kind, self, ci, id, arg, next),
             Frames::Dash { len, jump } => {
                 if next == Action::Jump {
                     jump
@@ -5114,6 +5125,12 @@ impl Sim {
         }
         let active = self.player.active as usize;
         if a == Action::Swap {
+            // gcsim asks the active character's ActionReady first (only
+            // Chasca refuses a swap there)
+            if let Some(why) = self.action_failure(active, a, p) {
+                self.wait_failed(active, a, why);
+                return false;
+            }
             if active == c {
                 return true;
             }

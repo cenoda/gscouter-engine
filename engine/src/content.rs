@@ -245,6 +245,11 @@ pub trait Character {
     fn frames(_id: u8, _arg: i16, _next: Action) -> i32 {
         unreachable!()
     }
+    /// The frames of an action of its whose ActInfo has Frames::CharDyn,
+    /// read from the fight as they are evaluated.
+    fn frames_dyn(_s: &Sim, _ci: usize, _id: u8, _arg: i16, _next: Action) -> i32 {
+        unreachable!()
+    }
     /// An action of its with OnRemoved::Char ends, for the next state.
     fn on_removed(_s: &mut Sim, _ci: usize, _id: u8, _next: AnimState) {}
     /// The stamina of a charged attack, when it is not the class's.
@@ -458,6 +463,8 @@ macro_rules! chars {
             pub fn event(k: CharKind, s: &mut Sim, ci: usize, e: &Event) { match k { $(CharKind::$kind => $m::Char::event(s, ci, e)),* } }
             #[inline]
             pub fn frames(k: CharKind, id: u8, arg: i16, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames(id, arg, next)),* } }
+            #[inline]
+            pub fn frames_dyn(k: CharKind, s: &Sim, ci: usize, id: u8, arg: i16, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames_dyn(s, ci, id, arg, next)),* } }
             #[inline]
             pub fn on_removed(k: CharKind, s: &mut Sim, ci: usize, id: u8, next: AnimState) { match k { $(CharKind::$kind => $m::Char::on_removed(s, ci, id, next)),* } }
             #[inline]

@@ -54,6 +54,7 @@ crate::chars! {
     Faruzan => faruzan,
     Kokomi => kokomi,
     KujouSara => sara,
+    Chasca => chasca,
 }
 
 /// The characters whose modules have been checked against gcsim for a
