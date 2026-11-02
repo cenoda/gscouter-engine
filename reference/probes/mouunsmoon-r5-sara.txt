@@ -1,0 +1,3 @@
+# Kujou Sara with Mouun's Moon R5.
+team raidenshogun-kujousara-chevreuse-bennett
+sara add weapon="mouunsmoon" refine=5 lvl=90/90;

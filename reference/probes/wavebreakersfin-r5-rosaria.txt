@@ -1,0 +1,3 @@
+# Rosaria with Wavebreaker's Fin R5.
+team ganyu-kaedeharakazuha-shenhe-rosaria
+rosaria add weapon="wavebreakersfin" refine=5 lvl=90/90;

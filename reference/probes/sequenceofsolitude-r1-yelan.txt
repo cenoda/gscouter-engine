@@ -1,0 +1,3 @@
+# Yelan with Sequence of Solitude R1.
+team neuvillette-furina-yelan-xilonen
+yelan add weapon="sequenceofsolitude" refine=1 lvl=90/90;

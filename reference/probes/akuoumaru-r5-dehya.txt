@@ -1,0 +1,3 @@
+# Dehya with Akuoumaru R5.
+team kaedeharakazuha-bennett-rosaria-dehya
+dehya add weapon="akuoumaru" refine=5 lvl=90/90;

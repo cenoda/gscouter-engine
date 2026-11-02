@@ -1,0 +1,3 @@
+# Hu Tao with Crescent Pike R1: normal and charged hits after particles.
+team hutao-yelan-bennett-xingqiu
+hutao add weapon="crescentpike" refine=1 lvl=90/90;

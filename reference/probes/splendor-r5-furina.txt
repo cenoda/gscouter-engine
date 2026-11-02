@@ -1,0 +1,3 @@
+# Furina with Splendor of Tranquil Waters R5.
+team raidenshogun-nahida-furina-yelan
+furina add weapon="splendoroftranquilwaters" refine=5 lvl=90/90;
