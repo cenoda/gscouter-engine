@@ -53,6 +53,7 @@ crate::chars! {
     Skirk => skirk,
     Faruzan => faruzan,
     Kokomi => kokomi,
+    KujouSara => sara,
 }
 
 /// The characters whose modules have been checked against gcsim for a

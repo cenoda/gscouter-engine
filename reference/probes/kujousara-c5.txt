@@ -1,0 +1,3 @@
+# Kujou Sara C5: skill talent +3; the library builds are C6.
+team kaedeharakazuha-kujousara-yaemiko-nahida
+sara char lvl=90/90 cons=5 talent=9,9,9;
