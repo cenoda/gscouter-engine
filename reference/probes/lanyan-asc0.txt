@@ -1,0 +1,3 @@
+# Lan Yan at level 20 (ascension 0) and C6: no absorbed element (A1), no flat damage from EM (A4).
+team lanyan-faruzan-furina-bennett
+lanyan char lvl=20/20 cons=6 talent=9,9,9;

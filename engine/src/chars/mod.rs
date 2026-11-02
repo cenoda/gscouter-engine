@@ -65,6 +65,7 @@ crate::chars! {
     Layla => layla,
     Durin => durin,
     Ayato => ayato,
+    Lanyan => lanyan,
 }
 
 /// The characters whose modules have been checked against gcsim for a

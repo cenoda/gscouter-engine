@@ -1313,6 +1313,7 @@ pub enum ShieldType {
     IneffaSkill,
     CitlaliSkill,
     LaylaSkill,
+    LanyanShield,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
