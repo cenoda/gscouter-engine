@@ -116,10 +116,16 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             _ => errs.push(format!("unsupported: param {name} {k}")),
         }
     }
-    // Sacrificial Jade reads only stacks; any other weapon param is an error
-    if matches!(weapon, Some(WeaponKind::SacrificialJade)) {
+    // Sacrificial Jade reads only stacks and Ultimate Overlord's Mega Magic
+    // Sword only melusines; any other param of theirs is an error
+    let known: &[&str] = match weapon {
+        Some(WeaponKind::SacrificialJade) => &["stacks"],
+        Some(WeaponKind::UltimateOverlordsMegaMagicSword) => &["melusines"],
+        _ => &[],
+    };
+    if matches!(weapon, Some(WeaponKind::SacrificialJade | WeaponKind::UltimateOverlordsMegaMagicSword)) {
         for (k, _) in &p.weapon.params {
-            if k != "stacks" {
+            if !known.contains(&k.as_str()) {
                 errs.push(format!("unsupported: param {wname} {k}"));
             }
         }
