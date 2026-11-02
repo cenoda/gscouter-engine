@@ -1,0 +1,3 @@
+# Beidou C4: her normal attacks add an electro hit for 10 s after she is hit.
+team bennett-beidou-lisa-xingqiu
+beidou char lvl=90/90 cons=4 talent=9,9,9;

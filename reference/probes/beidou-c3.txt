@@ -1,0 +1,3 @@
+# Beidou C3: skill talent level +3.
+team bennett-beidou-lisa-xingqiu
+beidou char lvl=90/90 cons=3 talent=9,9,9;

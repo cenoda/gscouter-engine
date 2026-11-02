@@ -1,0 +1,4 @@
+# Beidou's skill without a counter (counter 0: radius 6, 2 particles, no A4).
+team bennett-beidou-lisa-xingqiu
+rotation- beidou skill[counter=2], burst;
+rotation+ beidou skill, burst;

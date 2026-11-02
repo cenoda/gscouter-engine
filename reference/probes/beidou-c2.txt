@@ -1,0 +1,3 @@
+# Beidou C2: the bounce chains further (no other enemy to reach here).
+team bennett-beidou-lisa-xingqiu
+beidou char lvl=90/90 cons=2 talent=9,9,9;
