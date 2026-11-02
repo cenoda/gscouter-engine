@@ -1,0 +1,4 @@
+# Chiori with Nighttime Whispers 2 and Husk of Opulent Dreams 2.
+team klee-chiori-xilonen-furina
+chiori add set="nighttimewhispersintheechoingwoods" count=2;
+chiori add set="huskofopulentdreams" count=2;

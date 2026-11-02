@@ -716,6 +716,8 @@ impl Body {
 pub struct SetSlot {
     pub kind: SetKind,
     pub count: i32,
+    /// gcsim's SetParams for this set.
+    pub params: Vec<(String, i64)>,
     pub state: SetState,
 }
 
@@ -1202,8 +1204,8 @@ pub struct CharSetup {
     pub talents: [i32; 3],
     pub weapon: WeaponKind,
     pub refine: i32,
-    /// The sets worn with two pieces or more.
-    pub sets: Vec<(SetKind, i32)>,
+    /// The sets worn with two pieces or more, with their +params.
+    pub sets: Vec<(SetKind, i32, Vec<(String, i64)>)>,
     /// gcsim's start_hp, start_hp% and start_energy params; -1 when unset.
     pub start_hp: f64,
     pub start_hp_ratio: f64,
@@ -1636,7 +1638,7 @@ impl Sim {
             weapon_state: cs.weapon.new_state(),
             refine: cs.refine,
             weapon_params: cs.weapon_params.clone(),
-            sets: cs.sets.iter().map(|&(kind, count)| SetSlot { kind, count, state: kind.new_state() }).collect(),
+            sets: cs.sets.iter().map(|(kind, count, params)| SetSlot { kind: *kind, count: *count, params: params.clone(), state: kind.new_state() }).collect(),
             energy: energy_max,
             energy_max,
             hp_ratio: 1.0,
@@ -3287,6 +3289,8 @@ impl Sim {
     /// would replace hydro crystallize (TryAddLCr, its Moondrift constructs
     /// and Moondrift Harmony); nothing the engine implements enables it.
     /// `Sim::lunar_attack` computes its hits as it does Lunar-Charged's.
+    /// Nighttime Whispers' Moondrift part assumes there are no Moondrifts:
+    /// port it with them.
     fn check_lunar_crystallize(&mut self) {
         if self.flag(LUNAR_CRYSTALLIZE) != 0.0 {
             self.unsupported("lunar-crystallize");

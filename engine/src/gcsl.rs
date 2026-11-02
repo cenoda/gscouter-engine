@@ -661,6 +661,9 @@ pub struct CharProfile {
     pub params: Vec<(String, i64)>,
     pub weapon: WeaponProfile,
     pub sets: Vec<(u16, i32)>,
+    /// Each set's +params (gcsim's SetParams; a later line's replace an
+    /// earlier's). Only Husk of Opulent Dreams reads one.
+    pub set_params: Vec<(u16, Vec<(String, i64)>)>,
     pub stats: Stats,
 }
 
@@ -862,6 +865,7 @@ impl Parser {
             params: Vec::new(),
             weapon: WeaponProfile::default(),
             sets: Vec::new(),
+            set_params: Vec::new(),
             stats: [0.0; N_STATS],
         });
     }
@@ -972,7 +976,12 @@ impl Parser {
                 Tok::Eof => return Err("unexpected end of line while parsing character add set".into()),
                 Tok::Count => count = Self::int(&self.seq(&[Tok::Assign, Tok::Number])?)? as i32,
                 Tok::Plus => {
-                    self.plus_params()?;
+                    let p = self.plus_params()?;
+                    let c = self.cur();
+                    match c.set_params.iter_mut().find(|s| s.0 == key) {
+                        Some(s) => s.1 = p,
+                        None => c.set_params.push((key, p)),
+                    }
                 }
                 Tok::TerminateLine => {
                     let c = self.cur();

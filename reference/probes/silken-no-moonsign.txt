@@ -1,0 +1,3 @@
+# Zhongli with Silken Moon's Serenade 4 on a team without Moonsign: no 4-piece.
+team hutao-xingqiu-zhongli-yelan
+zhongli add set="silkenmoonsserenade" count=4;

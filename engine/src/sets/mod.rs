@@ -23,4 +23,9 @@ crate::sets! {
     UnfinishedReverie => unfinishedreverie,
     LongNightsOath => longnightsoath,
     ObsidianCodex => obsidiancodex,
+    BlizzardStrayer => blizzardstrayer,
+    HuskOfOpulentDreams => huskofopulentdreams,
+    NighttimeWhispers => nighttimewhispersintheechoingwoods,
+    SilkenMoonsSerenade => silkenmoonsserenade,
+    CelestialGift => celestialgift,
 }

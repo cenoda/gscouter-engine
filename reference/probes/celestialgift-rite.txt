@@ -1,0 +1,4 @@
+# Fischl and Sucrose with Celestial Gift 4 under Hexerei: Secret Rite.
+team fischl-yelan-xingqiu-sucrose
+fischl add set="celestialgift" count=4;
+sucrose add set="celestialgift" count=4;

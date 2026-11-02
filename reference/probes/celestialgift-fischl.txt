@@ -1,0 +1,3 @@
+# Fischl (Hexerei, no Secret Rite) with Celestial Gift 4.
+team bennett-furina-fischl-yelan
+fischl add set="celestialgift" count=4;
