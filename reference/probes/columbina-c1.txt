@@ -1,0 +1,3 @@
+# Columbina C1 on Lunar-Charged: a Gravity Interference on her skill (once every 15 s), 6 energy to the active character on each, and her elevation of lunar DMG.
+team neuvillette-columbina-sucrose-fischl
+columbina char lvl=90/90 cons=1 talent=9,9,9;

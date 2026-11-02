@@ -1,0 +1,3 @@
+# Columbina C2 on Lunar-Crystallize: the DEF buff on the active character.
+team navia-furina-columbina-xilonen
+columbina char lvl=90/90 cons=2 talent=9,9,9;

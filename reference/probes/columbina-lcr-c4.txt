@@ -1,0 +1,3 @@
+# Columbina C4 on Lunar-Crystallize: its flat damage.
+team navia-furina-columbina-xilonen
+columbina char lvl=90/90 cons=4 talent=9,9,9;

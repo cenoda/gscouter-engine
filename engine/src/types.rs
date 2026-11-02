@@ -245,6 +245,14 @@ impl AttackTag {
     pub fn is_stellar(self) -> bool {
         matches!(self, AttackTag::DirectStellarConduct)
     }
+    /// gcsim's IsLunarDirect.
+    pub fn is_lunar_direct(self) -> bool {
+        matches!(self, AttackTag::DirectLunarCharged | AttackTag::DirectLunarBloom | AttackTag::DirectLunarCrystallize)
+    }
+    /// gcsim's IsLunarReact.
+    pub fn is_lunar_react(self) -> bool {
+        matches!(self, AttackTag::ReactionLunarCharge | AttackTag::ReactionLunarCrystallize)
+    }
     /// gcsim's IsLunar: lunar reaction damage, direct or not.
     pub fn is_lunar(self) -> bool {
         matches!(self, AttackTag::ReactionLunarCharge | AttackTag::ReactionLunarCrystallize | AttackTag::DirectLunarCharged | AttackTag::DirectLunarBloom | AttackTag::DirectLunarCrystallize)

@@ -69,6 +69,7 @@ crate::chars! {
     Beidou => beidou,
     Ayato => ayato,
     Lanyan => lanyan,
+    Columbina => columbina,
 }
 
 /// The characters whose modules have been checked against gcsim for a
