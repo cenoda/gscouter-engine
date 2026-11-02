@@ -553,6 +553,9 @@ pub struct AttackEvent {
     /// The reaction it causes is on the player (ReactWithSelf), not the
     /// enemy: subscribers that check for an enemy target skip it.
     pub on_player: bool,
+    /// The reaction it causes is on a gadget (Guoba's pyro window swirled),
+    /// not the enemy: subscribers that check for an enemy target skip it.
+    pub on_gadget: bool,
     /// gcsim's Info.Elevation, in hundredths: a factor on the damage after
     /// the damage group. The hit hooks (`own_hit`) set it, as gcsim's do
     /// (the ones gcsim gives are whole hundredths; a byte here takes no
@@ -564,8 +567,14 @@ pub struct AttackEvent {
 }
 
 impl AttackEvent {
+    /// The reaction it causes is on the enemy (gcsim's args[0] is an
+    /// *enemy.Enemy), not the player's aura or a gadget's.
+    #[inline]
+    pub fn on_enemy(&self) -> bool {
+        !self.on_player && !self.on_gadget
+    }
     pub fn new(info: AttackInfo, callbacks: u16) -> Self {
-        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false, on_player: false, elevation: 0, lc_consume: false }
+        AttackEvent { info, stats: [0.0; N_STATS], char_lvl: 0, snap_f: 0, callbacks, reacted: false, damage: 0.0, crit: false, on_player: false, on_gadget: false, elevation: 0, lc_consume: false }
     }
 }
 
@@ -1404,6 +1413,9 @@ pub struct Sim {
     pub anemo_res: bool,
     /// Swirl's GCD on the player's own aura, by slot.
     pub player_swirl_gcd: [i32; N_AURAS],
+    /// Guoba's swirl GCD (its own Reactable's swirlPyroGCD): the gadget's
+    /// key and the frame it ends.
+    pub guoba_swirl_gcd: (u32, i32),
     /// Subscribers to each event, in the order gcsim subscribes them.
     pub subs: [Vec<Owner>; N_EVENTS],
     /// Constructs (gcsim's Constructs) and shields, by owner.
@@ -1564,6 +1576,7 @@ impl Sim {
             dendro_res: false,
             anemo_res: false,
             player_swirl_gcd: [-1; N_AURAS],
+            guoba_swirl_gcd: (u32::MAX, -1),
             subs: Default::default(),
             constructs: Vec::with_capacity(4),
             gadgets: Vec::with_capacity(4),
@@ -3461,13 +3474,21 @@ impl Sim {
     /// one added on the way is reached too (the loop reads the length each
     /// time), so the loop follows keys.
     fn hit_gadgets(&mut self, ev: &AttackEvent) {
-        // gcsim's Guoba swirls its pyro window when Sucrose's skill (or
-        // Faruzan's, not ported) reaches it: not ported either
+        // gcsim's Guoba swirls its pyro window when Sucrose's skill
+        // reaches it (guoba.go's Attack)
         if ev.info.tag == AttackTag::ElementalArt && self.chars[ev.info.actor as usize].kind == crate::chars::CharKind::Sucrose {
-            let guoba = self.gadgets.iter().any(|g| g.owner != CORE && self.chars[g.owner as usize].kind == crate::chars::CharKind::Xiangling && g.aura.contains(Element::Pyro) && ev.info.pattern.hits_circle(g.x, g.y, g.r) != Some(false));
-            if guoba {
-                self.unsupported("sucrose skill swirling guoba");
-                return;
+            let guoba = self.gadgets.iter().position(|g| g.owner != CORE && self.chars[g.owner as usize].kind == crate::chars::CharKind::Xiangling && g.aura.get(AURA_PYRO) > ZERO_DUR);
+            if let Some(k) = guoba {
+                let g = self.gadgets[k];
+                match ev.info.pattern.hits_circle(g.x, g.y, g.r) {
+                    Some(true) => self.guoba_swirl(k, ev),
+                    Some(false) => {}
+                    None => {
+                        let who = crate::gcsl::char_name(self.chars[ev.info.actor as usize].key);
+                        self.unsupported(&format!("hit pattern {who} {}", ev.info.abil));
+                        return;
+                    }
+                }
             }
         }
         let cores_react = ev.info.durability >= ZERO_DUR && matches!(ev.info.element, Element::Electro | Element::Pyro);
@@ -4245,6 +4266,47 @@ impl Sim {
         }
         if m == AURA_FROZEN {
             self.check_freeze();
+        }
+    }
+
+    /// gcsim's Guoba (panda.Attack) taking a skill that swirls: the attack
+    /// at 50 durability swirls its pyro window, set to the window's full
+    /// durability for the reaction and restored after it (gcsim's "cheat").
+    /// The swirl is on Guoba: OnSwirlPyro with Guoba as the target, Guoba's
+    /// own 0.1 s GCD, and the aoe of radius 5 around Guoba 5 frames later
+    /// (its self hit lands on Guoba, which takes no damage).
+    fn guoba_swirl(&mut self, k: usize, orig: &AttackEvent) {
+        let mut ev = *orig;
+        ev.info.durability = 50.0;
+        ev.on_gadget = true;
+        let g = self.gadgets[k];
+        let saved = g.aura;
+        let a = &mut self.gadgets[k].aura;
+        a.dur[AURA_PYRO] = [0.0; 4];
+        a.dur[AURA_PYRO][0] = crate::gcsimdata::chars::xiangling::INFUSE_DURABILITY as f64;
+        a.decay[AURA_PYRO] = 0.0;
+        a.live |= 1 << AURA_PYRO;
+        // TrySwirlPyro
+        let dur = ev.info.durability;
+        let rd = self.gadgets[k].aura.reduce(AURA_PYRO, dur, 0.5);
+        let aoe_dur = if rd < dur { 1.25 * (0.5 * rd - 1.0) + 25.0 } else { 1.25 * (dur - 1.0) + 25.0 };
+        ev.info.durability -= rd;
+        ev.reacted = true;
+        self.emit(Event::Reaction(Reaction::SwirlPyro, &ev));
+        let gcd = if self.guoba_swirl_gcd.0 == g.key { self.guoba_swirl_gcd.1 } else { -1 };
+        if gcd == -1 || self.f >= gcd {
+            self.guoba_swirl_gcd = (g.key, self.f + 6);
+            let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::SwirlPyro, icd::TAG_SWIRL_PYRO, icd::GROUP_REACTION_A, Element::Pyro, aoe_dur, 0.0);
+            ai.abil = "swirl-pyro (aoe)";
+            ai.ignore_def = 1.0;
+            ai.pattern = Pattern::Circle { x: g.x, y: g.y, r: 5.0 };
+            let mut atk = self.reaction_attack(ai);
+            atk.info.flat_dmg *= 0.6;
+            self.queue_attack_with_snap(atk, 0, 1 + 4);
+        }
+        // the window as it was
+        if let Some(k) = self.gadgets.iter().position(|x| x.key == g.key) {
+            self.gadgets[k].aura = saved;
         }
     }
 

@@ -1,0 +1,6 @@
+# Sucrose's skill reaching Guoba's pyro window: Guoba swirls it (gcsim's guoba.go Attack), the swirl on Guoba with its aoe around it.
+team bennett-sucrose-xiangling-xingqiu
+rotation- xiangling attack, burst, attack, skill, dash;
+rotation+ xiangling attack, burst, attack, skill;
+rotation+ wait(60);
+rotation+ sucrose skill;

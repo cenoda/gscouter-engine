@@ -50,7 +50,7 @@ impl SetImpl for Set {
         let Event::Reaction(r, ev) = *e else { return };
         // every reaction the engine emits, so that a new one must be placed
         let counts = match r {
-            Reaction::Overload | Reaction::ElectroCharged | Reaction::LunarCharged | Reaction::Superconduct | Reaction::StellarConduct | Reaction::Quicken | Reaction::Aggravate => !ev.on_player,
+            Reaction::Overload | Reaction::ElectroCharged | Reaction::LunarCharged | Reaction::Superconduct | Reaction::StellarConduct | Reaction::Quicken | Reaction::Aggravate => ev.on_enemy(),
             Reaction::Hyperbloom => true,
             Reaction::Vaporize
             | Reaction::Melt

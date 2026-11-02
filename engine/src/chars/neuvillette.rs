@@ -315,7 +315,7 @@ impl Character for Char {
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
             Event::Reaction(r, ev) => {
-                if ev.on_player {
+                if !ev.on_enemy() {
                     return;
                 }
                 let k = match r {

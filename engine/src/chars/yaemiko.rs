@@ -390,7 +390,7 @@ impl Character for Char {
     /// 10 s.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
-            Event::Reaction(Reaction::Superconduct | Reaction::StellarConduct, ev) if !ev.on_player => {
+            Event::Reaction(Reaction::Superconduct | Reaction::StellarConduct, ev) if ev.on_enemy() => {
                 s.add_status(ci, REVELATION, 8 * 60, true);
                 if s.chars[ci].cons >= 1 && ev.info.actor as usize == ci {
                     c1_buffs(s, ci);
