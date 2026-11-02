@@ -50,6 +50,8 @@ crate::chars! {
     Citlali => citlali,
     Mavuika => mavuika,
     Arlecchino => arlecchino,
+    Faruzan => faruzan,
+    Kokomi => kokomi,
 }
 
 /// The characters whose modules have been checked against gcsim for a

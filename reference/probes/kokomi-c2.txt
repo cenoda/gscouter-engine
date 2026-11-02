@@ -1,0 +1,9 @@
+# Kokomi C2: more healing on members at half HP or less (no damage changes; the healing reaches HP-dependent content), with C1's hit as in kokomi-c1.
+team sangonomiyakokomi-fischl-nahida-raidenshogun
+kokomi char lvl=90/90 cons=2 talent=9,9,9;
+rotation- attack:2, charge;
+rotation-
+rotation- for let i = 0; i < 3; i = i + 1 {
+rotation+ attack:3, charge;
+rotation+
+rotation+ for let i = 0; i < 3; i = i + 1 {

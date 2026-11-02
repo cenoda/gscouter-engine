@@ -1,0 +1,3 @@
+# Kokomi C4: ATK SPD and energy from normal attacks in the Garment (the library builds are C0).
+team sangonomiyakokomi-fischl-nahida-raidenshogun
+kokomi char lvl=90/90 cons=4 talent=9,9,9;

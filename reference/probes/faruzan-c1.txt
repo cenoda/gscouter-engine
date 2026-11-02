@@ -1,0 +1,3 @@
+# Faruzan C1: two Hurricane Arrows per skill (the library builds are C6).
+team kaedeharakazuha-faruzan-bennett-furina
+faruzan char lvl=90/90 cons=1 talent=9,9,9;

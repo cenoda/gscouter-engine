@@ -1,0 +1,3 @@
+# Faruzan C0: one Hurricane Arrow per skill, no extra vortex or CRIT DMG (the library builds are C6).
+team kaedeharakazuha-faruzan-bennett-furina
+faruzan char lvl=90/90 cons=0 talent=9,9,9;

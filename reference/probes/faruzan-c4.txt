@@ -1,0 +1,3 @@
+# Faruzan C4: the vortex's energy (the library builds are C6).
+team kaedeharakazuha-faruzan-bennett-furina
+faruzan char lvl=90/90 cons=4 talent=9,9,9;

@@ -1,0 +1,4 @@
+# Faruzan's physical aimed shot (which spends a Hurricane Arrow in Manifest Gale) and a fully charged shot on a weak spot.
+team kaedeharakazuha-faruzan-bennett-furina
+rotation- faruzan skill, burst, aim;
+rotation+ faruzan skill, burst, aim[hold=0], aim[weakspot=1];
