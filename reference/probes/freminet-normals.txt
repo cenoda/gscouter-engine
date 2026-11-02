@@ -1,0 +1,4 @@
+# Freminet's four normal attacks outside Pers Time (the third's box, the fourth), before his skill.
+team freminet-furina-fischl-bennett
+rotation- freminet skill, burst,
+rotation+ freminet attack:4, skill, burst,

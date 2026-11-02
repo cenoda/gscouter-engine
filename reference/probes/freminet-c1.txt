@@ -1,0 +1,3 @@
+# Freminet C1: Shattering Pressure CRIT Rate +15%; the library builds are all C6.
+team freminet-furina-fischl-bennett
+freminet char lvl=90/90 cons=1 talent=9,9,9;

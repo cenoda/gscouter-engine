@@ -1,0 +1,4 @@
+# Freminet's normal attack at four Pressure stacks, which detonates instead of attacking.
+team freminet-furina-fischl-bennett
+rotation- attack:2, skill;
+rotation+ attack:2, attack;

@@ -1,0 +1,4 @@
+# Freminet's skill without his burst: one Pressure stack a normal attack, Shattering Pressure at levels 1 to 3 (cryo and physical), A1, and the 10 s cooldown.
+team freminet-furina-fischl-bennett
+rotation- freminet skill, burst,
+rotation+ freminet skill,
