@@ -28,7 +28,7 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
 - What blocks the most library teams is the census in `compare`'s report. Use it to pick what to port next, but measure progress also by the share of real players' builds the engine runs and has verified. Systems (Phase 2) and content both go in parallel branches under the conditions below, merged and compared again together.
 - gcsim behaviour already matched on purpose; keep it matched:
   - Order of work within a frame.
-  - Mod expiry: a mod counts in stat sums while its expiry is `> F`, and reads as active while `>= F`.
+  - Mod expiry: a mod counts in stat sums while its expiry is `> F`, and reads as active while `>= F`, unless gcsim has dropped it: the snapshot's `Stats()`, `ApplyAttackMods` (not for reaction damage), `ReactBonus` and `HealBonus` delete the mods of their kind whose expiry is `<= F`, so a mod at its expiry frame is inactive once one of them ran on that frame (`Char::pruned`; Raiden's eye is read so). `Stat`, `SelectStat`, `TotalAtk` and `TotalDef` drop nothing.
   - Hitlag extends mods and queues.
   - Gauges are kept per source character.
   - In damage mode, a kill returns before the element attaches.

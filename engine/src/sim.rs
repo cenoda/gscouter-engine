@@ -79,6 +79,20 @@ pub enum ModKind {
     ReactBonus,
 }
 
+impl ModKind {
+    /// The slot of `Char::pruned` for the kinds gcsim's aggregators prune.
+    #[inline]
+    pub fn prune_slot(self) -> Option<usize> {
+        match self {
+            ModKind::Stat => Some(0),
+            ModKind::Attack => Some(1),
+            ModKind::ReactBonus => Some(2),
+            ModKind::HealBonus => Some(3),
+            _ => None,
+        }
+    }
+}
+
 /// What a stat or attack mod adds: a fixed amount of one stat, or what
 /// its owner computes.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -751,9 +765,31 @@ pub struct Char {
     pub ns: crate::nightsoul::Nightsoul,
     /// gcsim's Moonsign: 1 for a Moonsign character.
     pub moonsign: i32,
+    /// The last frame each of gcsim's pruning aggregators ran for this
+    /// character, by `ModKind::prune_slot` (-1 for never): Stats() for the
+    /// snapshot, ApplyAttackMods, ReactBonus and HealBonus drop the mods of
+    /// their kind whose expiry is <= F, so a mod is gone once one of them ran
+    /// on or after its expiry, and StatusIsActive no longer finds it.
+    pub pruned: [std::cell::Cell<i32>; 4],
 }
 
 impl Char {
+    /// Whether gcsim has dropped the mod: a pruning aggregator of its kind
+    /// ran on or after its expiry.
+    #[inline]
+    pub fn gone(&self, m: &Mod) -> bool {
+        let e = m.expiry();
+        e != -1 && m.kind.prune_slot().is_some_and(|k| self.pruned[k].get() >= e)
+    }
+
+    /// One of gcsim's pruning aggregators of this kind runs at frame f.
+    #[inline]
+    pub fn mark_pruned(&self, kind: ModKind, f: i32) {
+        if let Some(k) = kind.prune_slot() {
+            self.pruned[k].set(f);
+        }
+    }
+
     /// A weapon param, 0 when unset as in gcsim.
     pub fn weapon_param(&self, k: &str) -> i64 {
         self.weapon_params.iter().find(|p| p.0 == k).map_or(0, |p| p.1)
@@ -1586,6 +1622,7 @@ impl Sim {
             energy: energy_max,
             energy_max,
             hp_ratio: 1.0,
+            pruned: [std::cell::Cell::new(-1), std::cell::Cell::new(-1), std::cell::Cell::new(-1), std::cell::Cell::new(-1)],
             hp_debt: 0.0,
             normal_counter: 0,
             normal_hit_num,
@@ -1939,7 +1976,17 @@ impl Sim {
         }
     }
 
-    /// gcsim's Stats(): base stats plus every stat mod in effect.
+    /// gcsim's Stats() itself, which drops the expired stat mods (the
+    /// snapshot, and the characters that call it).
+    pub fn stats_pruning(&self, ci: usize) -> Stats {
+        let s = self.stats(ci);
+        self.chars[ci].mark_pruned(ModKind::Stat, self.f);
+        s
+    }
+
+    /// gcsim's Stats(): base stats plus every stat mod in effect (without
+    /// its dropping of expired mods; gcsim's TotalAtk, TotalDef and Stat
+    /// read the same sums and drop nothing).
     pub fn stats(&self, ci: usize) -> Stats {
         let c = &self.chars[ci];
         let mut s = c.base;
@@ -2012,6 +2059,7 @@ impl Sim {
 
     /// gcsim's ReactBonus: a character's bonus to a reaction it causes.
     pub fn react_bonus(&self, ci: usize, info: &AttackInfo) -> f64 {
+        self.chars[ci].mark_pruned(ModKind::ReactBonus, self.f);
         let mut amt = 0.0;
         for m in &self.chars[ci].mods {
             if m.kind != ModKind::ReactBonus || !m.applies(self.f) {
@@ -2033,6 +2081,7 @@ impl Sim {
 
     /// gcsim's HealBonus: the incoming healing bonus of a character.
     pub fn heal_bonus(&self, ci: usize) -> f64 {
+        self.chars[ci].mark_pruned(ModKind::HealBonus, self.f);
         let mut amt = 0.0;
         for m in &self.chars[ci].mods {
             if m.kind == ModKind::HealBonus && m.applies(self.f) {
@@ -2130,7 +2179,14 @@ impl Sim {
     pub fn add_mod(&mut self, ci: usize, mut m: Mod, dur: i32) {
         m.expiry_base = if dur < 0 { -1 } else { self.f + dur };
         m.extension = 0;
-        mod_add(&mut self.chars[ci].mods, m);
+        let c = &mut self.chars[ci];
+        // gcsim appends a mod whose old one it has dropped
+        if let Some(i) = mod_find(&c.mods, m.key) {
+            if c.gone(&c.mods[i]) {
+                c.mods.remove(i);
+            }
+        }
+        mod_add(&mut c.mods, m);
     }
 
     /// A stat mod of a fixed amount for dur frames.
@@ -2142,19 +2198,22 @@ impl Sim {
         self.add_mod(ci, Mod::new(key, ModKind::Status, st::NONE, false, hitlag, -1), dur);
     }
 
+    /// gcsim's StatusIsActive (FindCheckExpiry): active on its last frame,
+    /// unless an aggregator of its kind dropped it then.
     pub fn mod_active(&self, ci: usize, key: ModKey) -> bool {
-        match mod_find(&self.chars[ci].mods, key) {
-            Some(i) => self.chars[ci].mods[i].active(self.f),
+        let c = &self.chars[ci];
+        match mod_find(&c.mods, key) {
+            Some(i) => c.mods[i].active(self.f) && !c.gone(&c.mods[i]),
             None => false,
         }
     }
 
     pub fn extend_mod(&mut self, ci: usize, key: ModKey, ext: i32) {
         let f = self.f;
-        let mods = &mut self.chars[ci].mods;
-        if let Some(i) = mod_find(mods, key) {
-            if mods[i].active(f) {
-                mods[i].extend(ext);
+        let c = &mut self.chars[ci];
+        if let Some(i) = mod_find(&c.mods, key) {
+            if c.mods[i].active(f) && !c.gone(&c.mods[i]) {
+                c.mods[i].extend(ext);
             }
         }
     }
@@ -2385,7 +2444,7 @@ impl Sim {
     /// A character's Snapshot of an attack.
     pub fn make_snapshot(&self, info: &mut AttackInfo) -> (Stats, i32) {
         let ci = info.actor as usize;
-        let stats = self.stats(ci);
+        let stats = self.stats_pruning(ci);
         if !info.ignore_infusion {
             if let Some(e) = self.infused(ci, info.tag) {
                 info.element = e;
@@ -2511,6 +2570,7 @@ impl Sim {
 
     fn apply_attack_mods(&mut self, ci: usize, ev: &mut AttackEvent) {
         let f = self.f;
+        self.chars[ci].mark_pruned(ModKind::Attack, f);
         for k in 0..self.chars[ci].mods.len() {
             let m = self.chars[ci].mods[k];
             if m.kind != ModKind::Attack || !m.applies(f) {
@@ -3424,6 +3484,11 @@ impl Sim {
         if left > 0.0 {
             self.modify_hp(active, -left);
             self.emit(Event::Drain { on: active, amount: left, external: true });
+        }
+        // gcsim then runs the attacker's ApplyAttackMods (for its log), which
+        // drops expired attack mods unless the hit is reaction damage
+        if !ev.info.sim && (!ev.info.tag.is_reaction() || ev.info.tag.is_direct()) {
+            self.chars[ev.info.actor as usize].mark_pruned(ModKind::Attack, self.f);
         }
     }
 
@@ -5364,3 +5429,87 @@ impl Params {
 #[cfg(test)]
 #[path = "pattern_tests.rs"]
 mod pattern_tests;
+
+#[cfg(test)]
+mod prune_tests {
+    use super::*;
+
+    const SRC: &str = "options iteration=1 duration=10 swap_delay=12;
+target lvl=100 resist=0.1 radius=2 pos=0,2.4;
+raiden char lvl=90/90 cons=0 talent=9,9,9;
+raiden add weapon=\"dragonsbane\" refine=3 lvl=90/90;
+raiden add set=\"fopl\" count=5;
+raiden add stats hp=4780 atk=311 em=187 cr=0.3;
+bennett char lvl=90/90 cons=6 talent=9,9,9;
+bennett add weapon=\"favoniussword\" refine=3 lvl=90/90;
+bennett add set=\"noblesseoblige\" count=4;
+bennett add stats hp=4780 atk=311 er=0.5;
+active raiden;
+raiden attack;
+";
+    const EYE: ModKey = ModKey::new("raiden-e");
+
+    fn sim() -> Sim {
+        let parsed = crate::gcsl::parse(SRC).unwrap();
+        let cfg = crate::profile::config(&parsed).unwrap();
+        let mut s = Sim::new(&cfg, 1, 0.0);
+        s.f = 100;
+        s
+    }
+
+    fn live_slots(s: &Sim) -> usize {
+        s.slots.len() - s.free.len()
+    }
+
+    /// Raiden's normal attack at frame F, damage applied, with the eye on
+    /// her expiring at F; with `mods_ran` her ApplyAttackMods has run for
+    /// it (as gcsim does for every hit but reaction damage).
+    fn eye_strikes(mods_ran: bool) -> bool {
+        let mut s = sim();
+        let f = s.f;
+        s.chars[0].mods.push(Mod::owned(EYE, ModKind::Attack, Owner::Char(0), st::NONE, false, true, f));
+        let mut info = AttackInfo::new(0, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, 1.0);
+        info.pattern = s.circle_on_target(1.0);
+        let mut ev = AttackEvent::new(info, 0);
+        ev.damage = 100.0;
+        assert!(s.mod_active(0, EYE));
+        if mods_ran {
+            s.apply_attack_mods(0, &mut ev);
+        }
+        let before = live_slots(&s);
+        s.emit(Event::EnemyDamage(&ev));
+        live_slots(&s) > before
+    }
+
+    #[test]
+    fn raiden_eye_at_its_expiry() {
+        // the mod is still active on its last frame...
+        assert!(eye_strikes(false));
+        // ...unless the attacker's attack mods ran on that frame, which
+        // drop it in gcsim, so the eye does not strike
+        assert!(!eye_strikes(true));
+    }
+
+    #[test]
+    fn dropped_mods() {
+        let mut s = sim();
+        let f = s.f;
+        let key = ModKey::new("test-stat");
+        s.add_stat_mod(0, key, st::ATKP, 0.2, 0, false);
+        assert_eq!(s.chars[0].mods.iter().find(|m| m.key == key).unwrap().expiry(), f);
+        // Stat() and SelectStat drop nothing; the snapshot's Stats() does
+        let _ = s.stat(0, st::ATKP);
+        assert!(s.mod_active(0, key));
+        let _ = s.stats_pruning(0);
+        assert!(!s.mod_active(0, key));
+        // only stat mods: a status at its expiry stays active
+        let st_key = ModKey::new("test-status");
+        s.add_status(0, st_key, 0, false);
+        let _ = s.stats_pruning(0);
+        assert!(s.mod_active(0, st_key));
+        // added again, it goes to the end, as gcsim appends it
+        s.add_stat_mod(0, key, st::ATKP, 0.2, 60, false);
+        assert_eq!(s.chars[0].mods.last().unwrap().key, key);
+        assert!(s.mod_active(0, key));
+    }
+}

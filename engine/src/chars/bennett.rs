@@ -155,7 +155,8 @@ impl Character for Char {
         // the field ticks from 0 s to 12 s, on the player when it is in
         // the area (IsWithinArea); the cooldown keeps one field at a time
         s.st_mut::<State>(ci).field = Some(ai.pattern);
-        s.st_mut::<State>(ci).heal_bonus = s.stats(ci)[st::HEAL];
+        // c.Stats(), which drops expired stat mods
+        s.st_mut::<State>(ci).heal_bonus = s.stats_pruning(ci)[st::HEAL];
         s.add_task(Task::Char { c: ci as u8, id: TASK_FIELD, arg: 1 }, g::BURST_START_FRAME);
         for i in (60..=12 * 60).step_by(60) {
             s.add_task(Task::Char { c: ci as u8, id: TASK_FIELD, arg: 0 }, i + g::BURST_START_FRAME);
