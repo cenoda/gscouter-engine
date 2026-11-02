@@ -173,6 +173,9 @@ pub enum AttackTag {
     ElementalArtHold,
     ElementalBurst,
     Weapon,
+    /// gcsim's AttackTagNoneStat: damage that ignores the attacker's stats
+    /// (Ocean-Hued Clam's foam). gcsim's IsReaction counts it.
+    NoneStat,
     // gcsim's tags past AttackTagNoneStat: reaction damage
     OverloadDamage,
     ECDamage,
@@ -202,12 +205,13 @@ pub enum AttackTag {
 }
 
 impl AttackTag {
-    /// gcsim's IsReaction: every tag past AttackTagNoneStat, direct
+    /// gcsim's IsReaction: AttackTagNoneStat and every tag past it, direct
     /// reaction damage included.
     pub fn is_reaction(self) -> bool {
         matches!(
             self,
-            AttackTag::OverloadDamage
+            AttackTag::NoneStat
+                | AttackTag::OverloadDamage
                 | AttackTag::ECDamage
                 | AttackTag::SwirlPyro
                 | AttackTag::SwirlHydro

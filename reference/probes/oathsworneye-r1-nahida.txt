@@ -1,0 +1,3 @@
+# Nahida with Oathsworn Eye R1, Xianyun's at R5.
+team baizhu-furina-yelan-nahida
+nahida add weapon="oathsworneye" refine=1 lvl=90/90;

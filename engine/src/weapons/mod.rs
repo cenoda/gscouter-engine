@@ -37,4 +37,5 @@ crate::weapons! {
     SacrificialJade => sacrificialjade,
     PrototypeAmber => prototypeamber,
     FinaleOfTheDeep => finaleofthedeep,
+    OathswornEye => oathsworneye,
 }

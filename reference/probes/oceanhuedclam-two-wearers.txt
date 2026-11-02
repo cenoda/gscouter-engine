@@ -1,0 +1,3 @@
+# Baizhu and Furina with Ocean-Hued Clam 4: one foam at a time, shared.
+team baizhu-furina-yelan-nahida
+furina add set="oceanhuedclam" count=4;

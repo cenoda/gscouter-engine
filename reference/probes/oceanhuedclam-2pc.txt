@@ -1,0 +1,4 @@
+# Baizhu with Ocean-Hued Clam 2 and Tenacity of the Millelith 2: no foam.
+team baizhu-furina-yelan-nahida
+baizhu add set="oceanhuedclam" count=2;
+baizhu add set="tenacityofthemillelith" count=2;
