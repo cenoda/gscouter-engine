@@ -5429,10 +5429,12 @@ impl Sim {
                 need(4, "debuff")?;
                 self.target(&fields[2])?;
                 let f = self.f;
-                let active = |kind: ModKind| self.enemy.mods.iter().any(|m| m.kind == kind && m.key.name == fields[3] && m.active(f));
+                // gcsim's ResistModIsActive and DefModIsActive are its
+                // modIsActive: any of the enemy's mods with the key, of any
+                // kind (Nahida's mark, a status, reads as active)
+                let active = || self.enemy.mods.iter().any(|m| m.key.name == fields[3] && m.active(f));
                 match fields[1].as_str() {
-                    "res" => Ok(b(active(ModKind::Resist))),
-                    "def" => Ok(b(active(ModKind::Def))),
+                    "res" | "def" => Ok(b(active())),
                     t => Err(format!("bad debuff condition: invalid type {t}")),
                 }
             }
