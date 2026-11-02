@@ -26,6 +26,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"sort"
 	"strings"
@@ -40,6 +41,18 @@ type result struct {
 	Build   *struct {
 		Axis string `json:"axis"`
 	} `json:"build"`
+	Iter    int      `json:"iterations"`
+	Metrics []metric `json:"metrics"`
+}
+
+// metric is one DPS of a build, team or character: Diff is
+// (gse - gcsim) / gcsim, DiffSE its standard error.
+type metric struct {
+	Name   string  `json:"name"`
+	Gcsim  float64 `json:"gcsim"`
+	Gse    float64 `json:"gse"`
+	Diff   float64 `json:"diff"`
+	DiffSE float64 `json:"diff_se"`
 }
 
 type report struct {
@@ -79,6 +92,78 @@ type Team struct {
 	// Unsupported lists the page configs and build-space builds the
 	// engine cannot run, with what each lacks.
 	Unsupported []string `json:"unsupported,omitempty"`
+	// Scores are the library build's and the one-pass page config's
+	// DPS on both engines, for the owner, who approves each team that
+	// moves to the engine.
+	Scores []Score `json:"scores,omitempty"`
+}
+
+// Score is one build's team DPS on gcsim and the engine, with the 95%
+// half-width of their difference, and the character whose DPS differs
+// most.
+type Score struct {
+	Build      string  `json:"build"`
+	Iterations int     `json:"iterations"`
+	Gcsim      float64 `json:"gcsim"`
+	Gse        float64 `json:"gse"`
+	Diff       float64 `json:"diff"`
+	Half95     float64 `json:"half95"`
+	WorstChar  string  `json:"worst_char,omitempty"`
+	WorstDiff  float64 `json:"worst_diff,omitempty"`
+}
+
+// scoreOf reads a result's team metric and its worst character.
+func scoreOf(r result) (Score, bool) {
+	s := Score{Build: r.Variant, Iterations: r.Iter}
+	found := false
+	for _, m := range r.Metrics {
+		if m.Name == "team" {
+			s.Gcsim, s.Gse, s.Diff, s.Half95 = m.Gcsim, m.Gse, m.Diff, 1.96*m.DiffSE
+			found = true
+		} else if s.WorstChar == "" || math.Abs(m.Diff) > math.Abs(s.WorstDiff) {
+			s.WorstChar, s.WorstDiff = m.Name, m.Diff
+		}
+	}
+	return s, found
+}
+
+// approvalTable is the Markdown the owner answers: each verified team's
+// scores on both engines. A team moves to the engine only with the
+// owner's yes for it (CLAUDE.md), recorded in Gscouter's approved list.
+func approvalTable(m *Manifest) string {
+	var ids []string
+	for id, t := range m.Teams {
+		if t.Verified {
+			ids = append(ids, id)
+		}
+	}
+	sort.Strings(ids)
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Teams to approve\n\nEngine %s (module %s), Gscouter %s: %d of %d supported teams verified. Each verified team's library build (the score a result page starts from) and its one-pass page config, gcsim against the engine; ±95%% is the half-width of the difference's interval. A team moves to the engine only with the owner's yes.\n\n", short(m.Engine.Commit), short(m.Engine.WasmSHA256), short(m.Gscouter), m.Verified, m.Supported)
+	b.WriteString("| Team | Build | Iterations | gcsim | engine | Difference | ±95% | Character most apart | Builds passed |\n|---|---|---|---|---|---|---|---|---|\n")
+	for _, id := range ids {
+		t := m.Teams[id]
+		passed := fmt.Sprintf("library %s, variants %s, build space %s, pages %s", t.Builds["library"], t.Builds["variants"], t.Builds["buildspace"], t.Builds["pages"])
+		for i, s := range t.Scores {
+			name, info := id, passed
+			if i > 0 {
+				name, info = "", ""
+			}
+			worst := ""
+			if s.WorstChar != "" {
+				worst = fmt.Sprintf("%s %+.2f%%", s.WorstChar, 100*s.WorstDiff)
+			}
+			fmt.Fprintf(&b, "| %s | %s | %d | %.1f | %.1f | %+.2f%% | %.2f%% | %s | %s |\n", name, s.Build, s.Iterations, s.Gcsim, s.Gse, 100*s.Diff, 100*s.Half95, worst, info)
+		}
+	}
+	return b.String()
+}
+
+func short(s string) string {
+	if len(s) > 12 {
+		return s[:12]
+	}
+	return s
 }
 
 // kinds are compare's kinds of build, each needed for a verdict.
@@ -102,6 +187,7 @@ func main() {
 	wasm := flag.String("wasm", "", "the WebAssembly module built at the commit")
 	commit := flag.String("commit", "", "the engine's commit")
 	out := flag.String("out", "manifest.json", "file to write")
+	approval := flag.String("approval", "", "also write the owner's approval table (Markdown) to this file")
 	flag.Parse()
 	m, err := build(*wasm, *commit, flag.Args())
 	if err == nil {
@@ -109,6 +195,9 @@ func main() {
 		if b, err = json.MarshalIndent(m, "", "  "); err == nil {
 			err = os.WriteFile(*out, append(b, '\n'), 0o644)
 		}
+	}
+	if err == nil && *approval != "" {
+		err = os.WriteFile(*approval, []byte(approvalTable(m)), 0o644)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "manifest:", err)
@@ -183,6 +272,11 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		}
 		for _, v := range order {
 			r := last[v]
+			if v == "library" || v == "page:once" {
+				if s, ok := scoreOf(r); ok {
+					t.Scores = append(t.Scores, s)
+				}
+			}
 			k := kindOf(r)
 			if k == "probes" {
 				continue // probes check content, not this team
@@ -212,6 +306,7 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 			}
 		}
 		sort.Strings(t.Unsupported)
+		sort.SliceStable(t.Scores, func(i, j int) bool { return t.Scores[i].Build == "library" && t.Scores[j].Build != "library" })
 		t.Verified = len(t.Why) == 0
 		if t.Verified {
 			m.Verified++

@@ -761,7 +761,8 @@ jobs:
         run: |
           mkdir -p release
           cp wasm/target/wasm32-unknown-unknown/release/gse_wasm.wasm release/
-          cd reference && go run ./manifest -wasm ../release/gse_wasm.wasm -commit "$GITHUB_SHA" -out ../release/manifest.json ../reports/compare-*/compare.json | tee -a "$GITHUB_STEP_SUMMARY"
+          cd reference && go run ./manifest -wasm ../release/gse_wasm.wasm -commit "$GITHUB_SHA" -out ../release/manifest.json -approval ../release/approval.md ../reports/compare-*/compare.json | tee -a "$GITHUB_STEP_SUMMARY"
+          cat ../release/approval.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: engine-release
