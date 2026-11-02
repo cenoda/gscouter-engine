@@ -353,7 +353,7 @@ type Drift struct {
 func driftOf(rs []Result) *Drift {
 	var xs []float64
 	for _, r := range rs {
-		if len(r.Metrics) == 0 || r.Metrics[0].Name != "team" || math.IsInf(r.Metrics[0].Diff, 0) || math.IsNaN(r.Metrics[0].Diff) {
+		if r.Verdict == "idle" || len(r.Metrics) == 0 || r.Metrics[0].Name != "team" || math.IsInf(r.Metrics[0].Diff, 0) || math.IsNaN(r.Metrics[0].Diff) {
 			continue
 		}
 		xs = append(xs, r.Metrics[0].Diff)
@@ -772,7 +772,7 @@ func main() {
 	rep.BuildSpace = buildSpaceSummary(rep.Results)
 	rep.Drift = driftOf(rep.Results)
 	for _, r := range rep.Results {
-		if r.Verdict != "pass" && r.Verdict != "both-error" && r.Verdict != "unsupported" && r.Verdict != "dry-run" && r.Verdict != "deferred" {
+		if r.Verdict != "pass" && r.Verdict != "both-error" && r.Verdict != "idle" && r.Verdict != "unsupported" && r.Verdict != "dry-run" && r.Verdict != "deferred" {
 			rep.Pass = false
 		}
 	}
@@ -1006,6 +1006,19 @@ func runGse(gse, path string, n int, seed int64, warmup float64) (*harness.Outpu
 	return &res, nil
 }
 
+// idleDPS is team DPS below which a build does nothing worth scoring:
+// real teams deal thousands. A build with both engines' team DPS below it
+// is "idle" (counted as passing, listed in its own section of the report,
+// and kept unverified by the manifest): its rotation does nothing in the
+// scored window in either engine (Skirk-led library rotations that never
+// clear First_Rot_Nuke wait the whole window for a burst), and comparing
+// noise around zero fails at random.
+const idleDPS = 10
+
+func idle(g, r *harness.Output) bool {
+	return g.Team.Mean < idleDPS && r.Team.Mean < idleDPS
+}
+
 // zeroDPS is DPS too small to be anything but floating-point residue:
 // gcsim can leave 1e-12 for a character whose every hit in the window does
 // no damage, where the engine sums an exact 0, and the relative difference
@@ -1131,6 +1144,12 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 	for err == nil {
 		res.Metrics = metrics(g, r)
 		res.Verdict = overall(res.Metrics)
+		// a rotation that does nothing in the scored window in either
+		// engine has only noise around zero to compare
+		if idle(g, r) {
+			res.Verdict = "idle"
+			break
+		}
 		if res.Verdict == "pass" {
 			break
 		}
@@ -1784,7 +1803,7 @@ func markdown(rep *Report) string {
 		passed, notRun, deferred := 0, 0, 0
 		for _, r := range rep.Results {
 			switch {
-			case r.Verdict == "pass" || r.Verdict == "both-error":
+			case r.Verdict == "pass" || r.Verdict == "both-error" || r.Verdict == "idle":
 				passed++
 			case r.Verdict == "deferred":
 				deferred++
@@ -1811,6 +1830,19 @@ func markdown(rep *Report) string {
 		w(". Builds run %d iterations, and up to %d when they fail or are inconclusive there. Characters below %.0f%% of gcsim's team DPS are shown, not judged (minor). DPS over the window from %.0f s.\n\n", rep.Iter, rep.MaxIter, 100*rep.Share, rep.Warmup)
 		if d := rep.Drift; d != nil {
 			w("Drift: the team's difference averages %+.3f%% ± %.3f%% (95%%) over the %d builds compared.\n\n", 100*d.Mean, 100*z*d.SE, d.Builds)
+		}
+		var idles []string
+		for _, r := range rep.Results {
+			if r.Verdict == "idle" {
+				idles = append(idles, fmt.Sprintf("%s / %s (gcsim %.1f, gse %.1f)", r.Team, r.Variant, r.Metrics[0].Gcsim, r.Metrics[0].Gse))
+			}
+		}
+		if len(idles) > 0 {
+			w("### Idle\n\nTeam DPS below %d in both engines: the rotation does nothing in the scored window in either engine; fix it in Gscouter's library. Counted as passing, out of the drift, and unverified in the manifest.\n\n", idleDPS)
+			for _, s := range idles {
+				w("- %s\n", s)
+			}
+			w("\n")
 		}
 		w("| Team | Build | Iterations | Verdict | Who | gcsim | gse | Difference | ±95%% |\n|---|---|---|---|---|---|---|---|---|\n")
 		for _, r := range rep.Results {
