@@ -1,0 +1,8 @@
+# Arlecchino C2: the directive starts at level 2, and absorbing it gives Balemoon Bloodfire, with her burst when it is ready.
+team arlecchino-bennett-citlali-xilonen
+arle char lvl=90/90 cons=2 talent=9,9,9;
+rotation-   arlecchino skill;
+rotation+   arlecchino skill;
+rotation+   if .arlecchino.energy >= 60 {
+rotation+     arlecchino burst;
+rotation+   }

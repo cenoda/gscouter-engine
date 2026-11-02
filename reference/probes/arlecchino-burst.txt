@@ -1,0 +1,7 @@
+# Arlecchino's burst after her skill: it absorbs the directive into her Bond of Life, resets the skill and heals her (no library rotation bursts with her; the library builds are C0).
+team arlecchino-bennett-citlali-xilonen
+rotation-   arlecchino skill;
+rotation+   arlecchino skill;
+rotation+   if .arlecchino.energy >= 60 {
+rotation+     arlecchino burst;
+rotation+   }
