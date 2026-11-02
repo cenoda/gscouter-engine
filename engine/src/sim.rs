@@ -1269,6 +1269,7 @@ pub enum ShieldType {
     KiraraSkill,
     ThomaSkill,
     IneffaSkill,
+    CitlaliSkill,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
