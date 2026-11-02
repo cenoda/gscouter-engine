@@ -99,7 +99,6 @@ impl Character for Char {
             let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_EXTRA_ATTACK, icd::GROUP_DEFAULT, Element::Hydro, 25.0, 0.0);
             ai.abil = "Breakthrough Barb";
             ai.flat_dmg = g::BARB[lvl] * s.max_hp(ci) * 1.56;
-            ai.pattern = s.circle_on_target(4.0);
             for i in 0..g::ATTACK[n].len() {
                 let st = s.st_mut::<State>(ci);
                 st.c6_count += 1;
