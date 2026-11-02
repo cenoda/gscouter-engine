@@ -376,6 +376,11 @@ pub trait SetImpl {
         0.0
     }
     fn event(_s: &mut Sim, _ci: usize, _si: usize, _e: &Event) {}
+    /// A shield strength mod of the set's: its amount, and whether it is
+    /// done (as gcsim's AddShieldBonusMod returns).
+    fn shield_bonus(_s: &Sim, _ci: usize, _si: usize, _key: ModKey) -> (f64, bool) {
+        (0.0, true)
+    }
 }
 
 /// Access to one implementation's state inside the generated state enum.
@@ -613,6 +618,7 @@ macro_rules! sets {
             #[inline]
             pub fn attack_mod(k: SetKind, s: &Sim, ci: usize, si: usize, on: usize, m: &Mod, ev: &mut AttackEvent) { match k { $(SetKind::$kind => $m::Set::attack_mod(s, ci, si, on, m, ev)),* } }
             pub fn react_bonus(k: SetKind, s: &Sim, ci: usize, si: usize, on: usize, m: &Mod, info: &AttackInfo) -> f64 { match k { $(SetKind::$kind => $m::Set::react_bonus(s, ci, si, on, m, info)),* } }
+            pub fn shield_bonus(k: SetKind, s: &Sim, ci: usize, si: usize, key: ModKey) -> (f64, bool) { match k { $(SetKind::$kind => $m::Set::shield_bonus(s, ci, si, key)),* } }
             #[inline]
             pub fn event(k: SetKind, s: &mut Sim, ci: usize, si: usize, e: &Event) { match k { $(SetKind::$kind => $m::Set::event(s, ci, si, e)),* } }
         }

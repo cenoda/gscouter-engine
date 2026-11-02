@@ -1,0 +1,3 @@
+# Chiori with Retracing Bolide 4 under Zhongli's shield.
+team furina-zhongli-chiori-bennett
+chiori add set="retracingbolide" count=4;

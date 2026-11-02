@@ -1,0 +1,3 @@
+# Ineffa with Aubade of Morningstar and Moon 4 on a Lunar-Charged team.
+team gaming-furina-ineffa-bennett
+ineffa add set="aubadeofmorningstarandmoon" count=4;

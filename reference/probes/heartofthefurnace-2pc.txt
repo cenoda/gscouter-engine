@@ -1,0 +1,3 @@
+# Bennett with Heart of the Furnace 4 (no Stellar damage: its 2-piece) and nothing else.
+team bennett-furina-fischl-yelan
+bennett add set="heartofthefurnace" count=4;

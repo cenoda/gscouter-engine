@@ -3696,6 +3696,10 @@ impl Sim {
             let keep = if m.expiry > f || m.expiry == -1 {
                 let (a, done) = match m.owner {
                     Owner::Char(o) => crate::chars::dispatch::shield_bonus(self.chars[o as usize].kind, self, o as usize, m.key),
+                    Owner::Set(o, si) => {
+                        let kind = self.chars[o as usize].sets[si as usize].kind;
+                        crate::sets::dispatch::shield_bonus(kind, self, o as usize, si as usize, m.key)
+                    }
                     _ => (0.15, true), // geo resonance
                 };
                 amt += a;

@@ -240,6 +240,11 @@ impl AttackTag {
     pub fn is_direct(self) -> bool {
         matches!(self, AttackTag::DirectStellarConduct | AttackTag::DirectLunarCharged | AttackTag::DirectLunarBloom | AttackTag::DirectLunarCrystallize)
     }
+    /// gcsim's IsStellar: of its Stellar tags the engine has only direct
+    /// Stellar-Conduct (Stellar Swirl is an error).
+    pub fn is_stellar(self) -> bool {
+        matches!(self, AttackTag::DirectStellarConduct)
+    }
     /// gcsim's IsLunar: lunar reaction damage, direct or not.
     pub fn is_lunar(self) -> bool {
         matches!(self, AttackTag::ReactionLunarCharge | AttackTag::ReactionLunarCrystallize | AttackTag::DirectLunarCharged | AttackTag::DirectLunarBloom | AttackTag::DirectLunarCrystallize)
