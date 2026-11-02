@@ -1,0 +1,4 @@
+# Charlotte's pressed skill (Snappy Silhouette marks, 3 particles) and a charged attack right after it (its windup of 8), in her rotation that holds the skill.
+team charlotte-xiangling-furina-bennett
+rotation- charlotte skill[hold=1],
+rotation+ charlotte skill, charge, skill[hold=1],

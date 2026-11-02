@@ -70,6 +70,7 @@ crate::chars! {
     Ayato => ayato,
     Lanyan => lanyan,
     Columbina => columbina,
+    Charlotte => charlotte,
 }
 
 /// The characters whose modules have been checked against gcsim for a
