@@ -1,0 +1,3 @@
+# Nahida with Magic Guide R1.
+team kaedeharakazuha-nahida-fischl-xianyun
+nahida add weapon="magicguide" refine=1 lvl=90/90;

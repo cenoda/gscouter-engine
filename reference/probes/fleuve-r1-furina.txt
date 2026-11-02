@@ -1,0 +1,3 @@
+# Furina with Fleuve Cendre Ferryman R1.
+team alhaitham-furina-yelan-kukishinobu
+furina add weapon="fleuvecendreferryman" refine=1 lvl=90/90;

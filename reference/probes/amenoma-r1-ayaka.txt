@@ -1,0 +1,3 @@
+# Ayaka with Amenoma Kageuchi R1.
+team ganyu-diona-kamisatoayaka-kaedeharakazuha
+ayaka add weapon="amenomakageuchi" refine=1 lvl=90/90;

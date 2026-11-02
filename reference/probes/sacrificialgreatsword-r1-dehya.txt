@@ -1,0 +1,3 @@
+# Dehya with Sacrificial Greatsword R1.
+team arlecchino-yaemiko-chevreuse-dehya
+dehya add weapon="sacrificialgreatsword" refine=1 lvl=90/90;

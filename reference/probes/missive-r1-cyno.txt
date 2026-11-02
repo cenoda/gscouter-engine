@@ -1,0 +1,3 @@
+# Cyno with Missive Windspear R1.
+team cyno-furina-ororon-escoffier
+cyno add weapon="missivewindspear" refine=1 lvl=90/90;

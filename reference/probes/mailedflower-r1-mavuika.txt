@@ -1,0 +1,3 @@
+# Mavuika with Mailed Flower R1.
+team chasca-yelan-ororon-mavuika
+mavuika add weapon="mailedflower" refine=1 lvl=90/90;

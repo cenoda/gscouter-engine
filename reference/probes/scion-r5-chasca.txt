@@ -1,0 +1,3 @@
+# Chasca with Scion of the Blazing Sun R5.
+team chasca-bennett-mavuika-xiangling
+chasca add weapon="scionoftheblazingsun" refine=5 lvl=90/90;

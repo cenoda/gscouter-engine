@@ -1,0 +1,3 @@
+# Dehya with Rainslasher R1.
+team dehya-bennett-furina-jean
+dehya add weapon="rainslasher" refine=1 lvl=90/90;
