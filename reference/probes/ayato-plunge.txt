@@ -1,0 +1,8 @@
+# Ayato's low and high plunges from jumps in Xianyun's burst, before his skill (none in Kyouka's state; the library rotation does not plunge with him).
+team kamisatoayato-furina-fischl-xianyun
+rotation- ayato skill, attack:16, burst;
+rotation+ ayato jump;
+rotation+ if .airborne { ayato low_plunge[collision=1]; }
+rotation+ ayato jump;
+rotation+ if .airborne { ayato high_plunge; }
+rotation+ ayato skill, attack:16, burst;

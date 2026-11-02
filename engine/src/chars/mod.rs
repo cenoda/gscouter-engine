@@ -67,6 +67,7 @@ crate::chars! {
     Nicole => nicole,
     Chongyun => chongyun,
     Beidou => beidou,
+    Ayato => ayato,
 }
 
 /// The characters whose modules have been checked against gcsim for a

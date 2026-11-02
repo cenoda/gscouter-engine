@@ -1,0 +1,3 @@
+# Ayato C2: five Namisen stacks and HP +50% with three or more.
+team kamisatoayato-furina-rosaria-escoffier
+ayato char lvl=90/90 cons=2 talent=9,9,9;

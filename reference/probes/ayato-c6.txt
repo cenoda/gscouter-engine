@@ -1,0 +1,3 @@
+# Ayato C6: two extra strikes on the first Shunsuiken hit after Kyouka (with C1 to C5).
+team kamisatoayato-furina-rosaria-escoffier
+ayato char lvl=90/90 cons=6 talent=9,9,9;
