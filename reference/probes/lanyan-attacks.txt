@@ -1,0 +1,4 @@
+# Lan Yan's full normal string, charged attack and a held skill.
+team lanyan-faruzan-furina-bennett
+rotation- lanyan attack;
+rotation+ lanyan attack:4, charge, skill[hold=30], attack;

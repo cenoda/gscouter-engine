@@ -1,0 +1,3 @@
+# Lan Yan C4: EM for the party after her burst.
+team lanyan-faruzan-furina-bennett
+lanyan char lvl=90/90 cons=4 talent=9,9,9;

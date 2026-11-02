@@ -68,6 +68,7 @@ crate::chars! {
     Chongyun => chongyun,
     Beidou => beidou,
     Ayato => ayato,
+    Lanyan => lanyan,
 }
 
 /// The characters whose modules have been checked against gcsim for a

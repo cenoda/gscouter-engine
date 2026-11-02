@@ -1319,6 +1319,7 @@ pub enum ShieldType {
     NicoleSkill,
     BeidouThunderShield,
     BeidouC1,
+    LanyanShield,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
