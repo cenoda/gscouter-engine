@@ -13,8 +13,8 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
 - Verification is at Gscouter's accuracy, not finer (owner, 2026-11-02): the site scores 50 iterations (about 0.7% standard error), so `compare` runs 4,000 iterations per build, up to 32,000 when a build fails or is inconclusive there, and decides an interval still across the bound by its estimate. Variants, build space and pages run a sample per team (`-sample 4` in CI). Errors that add up over a team's items show in its team DPS; errors the whole engine shares show in the drift (the mean difference over every build compared, in each report and in `approval.md`), which must stay within ±0.2%. Do not spend runner time on differences below the site's noise.
 - Anything the engine lacks is an error that names it (`gse --check`). The engine never silently does something different.
 - A change that should not move scores must keep them to the last digit. At 1,000 iterations:
-  - `configs/team-looped.txt` gives 72,266.73.
-  - `configs/hutao-solo-looped.txt` gives 24,607.03.
+  - `configs/team-looped.txt` gives 72,247.45.
+  - `configs/hutao-solo-looped.txt` gives 24,589.24.
   - The same seed must give the same result, so keep the order of random draws.
 - Speed is the point of the engine. Keep the hot path free of allocation and dynamic dispatch, and measure. Native, one thread, 500 iterations of `team-looped.txt` takes about 1.47 s.
 - Write documents, comments and commit messages in English. Talk to the owner in Korean.

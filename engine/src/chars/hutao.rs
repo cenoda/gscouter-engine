@@ -221,7 +221,12 @@ impl Character for Char {
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_A1, arg: 0 }, 540 + g::SKILL_START);
         let drain = 0.30 * s.current_hp(ci);
         s.drain(ci, drain);
-        // the 0 dmg attack at skillStart changes nothing here
+        // the 0 dmg attack at skillStart: it breaks freeze and Mona's
+        // bubble, and reaches what reads hits (Mona's C1)
+        let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 0.0, 0.0);
+        ai.abil = "Paramita (0 dmg)";
+        ai.pattern = s.circle_on_player(0.0, 0.0, 3.0);
+        s.queue_attack(ai, 0, g::SKILL_START, g::SKILL_START);
         s.set_cd_with_delay(ci, Action::Skill, 960, 14);
         ActInfo::new(Frames::Table(&g::SKILL_FRAMES), g::SKILL_FRAMES[0], g::SKILL_FRAMES[Action::Burst as usize], AnimState::Skill)
     }
