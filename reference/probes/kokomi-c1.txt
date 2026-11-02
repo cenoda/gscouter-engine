@@ -1,0 +1,9 @@
+# Kokomi C1: the third normal attack's extra hydro hit in the Ceremonial Garment (the library builds are C0, and their rotation never reaches her third normal attack, so the last string of the first burst is a full one).
+team sangonomiyakokomi-fischl-nahida-raidenshogun
+kokomi char lvl=90/90 cons=1 talent=9,9,9;
+rotation- attack:2, charge;
+rotation-
+rotation- for let i = 0; i < 3; i = i + 1 {
+rotation+ attack:3, charge;
+rotation+
+rotation+ for let i = 0; i < 3; i = i + 1 {

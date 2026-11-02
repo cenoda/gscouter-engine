@@ -3496,9 +3496,14 @@ impl Sim {
     /// one added on the way is reached too (the loop reads the length each
     /// time), so the loop follows keys.
     fn hit_gadgets(&mut self, ev: &AttackEvent) {
-        // gcsim's Guoba swirls its pyro window when Sucrose's skill
-        // reaches it (guoba.go's Attack)
-        if ev.info.tag == AttackTag::ElementalArt && self.chars[ev.info.actor as usize].kind == crate::chars::CharKind::Sucrose {
+        // gcsim's Guoba swirls its pyro window when Sucrose's skill or
+        // Faruzan's Pressurized Collapse reaches it (guoba.go's Attack)
+        let swirler = match self.chars[ev.info.actor as usize].kind {
+            crate::chars::CharKind::Sucrose => true,
+            crate::chars::CharKind::Faruzan => ev.info.abil == crate::gcsimdata::chars::faruzan::VORTEX_ABIL_NAME,
+            _ => false,
+        };
+        if ev.info.tag == AttackTag::ElementalArt && swirler {
             let guoba = self.gadgets.iter().position(|g| g.owner != CORE && self.chars[g.owner as usize].kind == crate::chars::CharKind::Xiangling && g.aura.get(AURA_PYRO) > ZERO_DUR);
             if let Some(k) = guoba {
                 let g = self.gadgets[k];

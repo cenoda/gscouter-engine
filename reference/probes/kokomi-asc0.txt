@@ -1,0 +1,3 @@
+# Kokomi at level 20 (ascension 0): no Bake-Kurage refresh from her burst (A1), no flat damage from her Healing Bonus (A4).
+team sangonomiyakokomi-fischl-nahida-raidenshogun
+kokomi char lvl=20/20 cons=0 talent=9,9,9;

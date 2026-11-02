@@ -1,0 +1,3 @@
+# Faruzan C2: the polyhedron 6 s longer (the library builds are C6).
+team kaedeharakazuha-faruzan-bennett-furina
+faruzan char lvl=90/90 cons=2 talent=9,9,9;

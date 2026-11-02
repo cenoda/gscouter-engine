@@ -1,0 +1,3 @@
+# Faruzan at level 20 (ascension 0) and C6: no faster Hurricane Arrow and no shred from its vortex (A1), no flat damage on buffed anemo hits (A4).
+team kaedeharakazuha-faruzan-bennett-furina
+faruzan char lvl=20/20 cons=6 talent=9,9,9;
