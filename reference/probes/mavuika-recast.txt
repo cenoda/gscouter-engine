@@ -1,0 +1,4 @@
+# Mavuika's skill recast (skill[recast=1]), from the rings to Flamestrider and back, with Flamestrider's normal attack between (no library rotation the engine runs recasts).
+team mavuika-xilonen-bennett-zhongli
+rotation- mavuika skill, attack;
+rotation+ mavuika skill, attack, skill[recast=1], attack, skill[recast=1], attack;

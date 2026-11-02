@@ -493,8 +493,16 @@ impl<'s> Eval<'s> {
                 {
                     return err("player must use low_plunge or high_plunge while airborne".into());
                 }
-                if ci != self.sim.player.active as usize && !self.sim.queue_action(ci, Action::Swap, &Params::default()) {
-                    return Err(Stop::Terminated);
+                if ci != self.sim.player.active as usize {
+                    // gcsim asks the active character whether the swap may
+                    // come next, as for any queued action
+                    let active = self.sim.player.active as usize;
+                    if let Some(why) = crate::chars::dispatch::invalid(self.sim.chars[active].kind, self.sim, active, Action::Swap, &Params::default()) {
+                        return err(format!("{}: {why}", char_name(self.sim.chars[active].key)));
+                    }
+                    if !self.sim.queue_action(ci, Action::Swap, &Params::default()) {
+                        return Err(Stop::Terminated);
+                    }
                 }
                 if let Some(why) = crate::chars::dispatch::invalid(self.sim.chars[ci].kind, self.sim, ci, action, &params) {
                     return err(format!("{}: {why}", char_name(key)));

@@ -22,4 +22,5 @@ crate::sets! {
     FragmentOfHarmonicWhimsy => fragmentofharmonicwhimsy,
     UnfinishedReverie => unfinishedreverie,
     LongNightsOath => longnightsoath,
+    ObsidianCodex => obsidiancodex,
 }

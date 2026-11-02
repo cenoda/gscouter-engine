@@ -393,7 +393,7 @@ fn a1_nightsoul_attack(s: &mut Sim, ci: usize, ev: &AttackEvent) {
     }
     // gcsim reads the attack's position (Pattern.Shape.Pos())
     let pos = match ev.info.pattern {
-        Pattern::Single => (0.0, 0.0),
+        Pattern::Single | Pattern::Gadget { .. } => (0.0, 0.0),
         Pattern::Circle { x, y, .. } | Pattern::Fan { x, y, .. } | Pattern::FanDir { x, y, .. } | Pattern::Box { x, y, .. } => (x, y),
         Pattern::Unknown => {
             let who = crate::gcsl::char_name(s.chars[ev.info.actor as usize].key);

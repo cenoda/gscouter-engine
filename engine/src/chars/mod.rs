@@ -46,6 +46,7 @@ crate::chars! {
     Ororon => ororon,
     Cyno => cyno,
     Citlali => citlali,
+    Mavuika => mavuika,
 }
 
 /// The characters whose modules have been checked against gcsim for a

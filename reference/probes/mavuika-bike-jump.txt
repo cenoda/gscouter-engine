@@ -1,0 +1,4 @@
+# Mavuika's Flamestrider jump out of a walk, and the low plunge it allows on the ground, in her burst.
+team mavuika-xilonen-bennett-zhongli
+rotation- mavuika burst;
+rotation+ mavuika burst, walk, jump, low_plunge, attack;

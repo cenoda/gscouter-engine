@@ -1,0 +1,3 @@
+# Obsidian Codex at two pieces on Mavuika (library builds wear four).
+team mavuika-xilonen-bennett-zhongli
+mavuika add set="obsidiancodex" count=2;
