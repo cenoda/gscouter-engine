@@ -224,6 +224,9 @@ pub enum Pattern {
     /// gcsim's rectangle facing (dx, dy): w wide, from its spawn (x, y)
     /// to h ahead.
     Box { x: f64, y: f64, w: f64, h: f64, dx: f64, dy: f64 },
+    /// One gadget, by its key (gcsim's NewSingleTargetHit on a gadget):
+    /// never the enemy.
+    Gadget { key: u32 },
 }
 
 impl Pattern {
@@ -239,7 +242,7 @@ impl Pattern {
     pub fn hits_circle(self, cx: f64, cy: f64, r: f64) -> Option<bool> {
         match self {
             Pattern::Unknown => None,
-            Pattern::Single => Some(false),
+            Pattern::Single | Pattern::Gadget { .. } => Some(false),
             Pattern::Circle { x, y, r: pr } => Some((cx - x) * (cx - x) + (cy - y) * (cy - y) <= (pr + r) * (pr + r)),
             Pattern::Fan { x, y, r: pr, fan, .. } if fan <= 0.0 || fan >= 360.0 => Some((cx - x) * (cx - x) + (cy - y) * (cy - y) <= (pr + r) * (pr + r)),
             Pattern::Fan { x, y, r: pr, fan, dx, dy } if (dx, dy) != DEFAULT_DIR => Some(fan_dir_hits_circle(x, y, pr, fan, dx, dy, cx, cy, r)),
@@ -283,11 +286,21 @@ impl Pattern {
         }
     }
 
+    /// Whether it reaches a gadget, taken as a circle of radius r on it;
+    /// a single-gadget hit reaches only its own.
+    #[inline]
+    pub fn hits_gadget(self, g: &Gadget, r: f64) -> Option<bool> {
+        match self {
+            Pattern::Gadget { key } => Some(key == g.key),
+            _ => self.hits_circle(g.x, g.y, r),
+        }
+    }
+
     /// Whether the point (px, py) is inside it (gcsim's PointInShape, what
     /// IsWithinArea asks of a target's center); None when unknown.
     pub fn contains_point(self, px: f64, py: f64) -> Option<bool> {
         match self {
-            Pattern::Unknown | Pattern::Single => None,
+            Pattern::Unknown | Pattern::Single | Pattern::Gadget { .. } => None,
             Pattern::Circle { x, y, r } => Some(sub_mag2(x, y, px, py) <= r * r),
             Pattern::Fan { x, y, r, fan, dx, dy } | Pattern::FanDir { x, y, r, fan, dx, dy } => {
                 let range = sub_mag2(x, y, px, py) <= r * r;
@@ -3345,6 +3358,11 @@ impl Sim {
         }
         let f = self.f;
         self.push_gadget(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true, key: 0 });
+        // OnDendroCore, with the core just added
+        if !self.subs[EventKind::DendroCore as usize].is_empty() {
+            let key = self.gadget_key - 1;
+            self.emit(Event::DendroCore { key });
+        }
     }
 
     /// A core expired or was killed: its bloom 1 frame later, a circle of
@@ -3419,7 +3437,7 @@ impl Sim {
             let g = self.gadgets[k];
             if g.owner == CORE {
                 if cores_react {
-                    match ev.info.pattern.hits_circle(g.x, g.y, 2.0) {
+                    match ev.info.pattern.hits_gadget(&g, 2.0) {
                         None => {
                             let who = crate::gcsl::char_name(self.chars[ev.info.actor as usize].key);
                             self.unsupported(&format!("hit pattern {who} {}", ev.info.abil));
@@ -3430,7 +3448,7 @@ impl Sim {
                     }
                 }
             } else if g.takes_hits {
-                let lands = ev.info.pattern.hits_circle(g.x, g.y, g.r);
+                let lands = ev.info.pattern.hits_gadget(&g, g.r);
                 crate::chars::dispatch::gadget_hit(self.chars[g.owner as usize].kind, self, g.owner as usize, g.id, ev, lands);
             }
             // on to the next slot, wherever the hooks left it
@@ -5017,9 +5035,14 @@ impl Sim {
             }
             Action::Dash => {
                 self.emit(Event::Dash);
-                chars::dispatch::template_action(kind, self, ci, a);
-                let info = self.char_dash(ci);
-                chars::dispatch::dash_info(kind, self, ci, info)
+                match chars::dispatch::own_dash(kind, self, ci, p) {
+                    Some(info) => info,
+                    None => {
+                        chars::dispatch::template_action(kind, self, ci, a);
+                        let info = self.char_dash(ci);
+                        chars::dispatch::dash_info(kind, self, ci, info)
+                    }
+                }
             }
             Action::Skill => {
                 self.emit(Event::Skill);
@@ -5056,10 +5079,13 @@ impl Sim {
                 x.pausable = false;
                 x
             }
-            Action::Jump => {
-                chars::dispatch::template_action(kind, self, ci, a);
-                self.char_jump(ci)
-            }
+            Action::Jump => match chars::dispatch::own_jump(kind, self, ci, p) {
+                Some(info) => info,
+                None => {
+                    chars::dispatch::template_action(kind, self, ci, a);
+                    self.char_jump(ci)
+                }
+            },
             Action::Walk => {
                 let f = p.get("f").unwrap_or(1) as i32;
                 ActInfo::new(Frames::Const(f), f, f, AnimState::Walk)
@@ -5077,6 +5103,15 @@ impl Sim {
 
     /// The template character's Dash.
     fn char_dash(&mut self, ci: usize) -> ActInfo {
+        self.apply_dash_cd();
+        let (len, jump) = (self.chars[ci].dash_len, self.chars[ci].dash_jump);
+        self.add_task(Task::DashStam { c: ci as u8 }, len - 1);
+        ActInfo::new(Frames::Dash { len, jump }, len, jump, AnimState::Dash)
+    }
+
+    /// gcsim's ApplyDashCD: the dash's cooldown, locked out when it was
+    /// still on cooldown.
+    pub fn apply_dash_cd(&mut self) {
         let f = self.f;
         if self.player.dash_cd_exp > f {
             self.player.dash_lockout = true;
@@ -5085,9 +5120,6 @@ impl Sim {
             self.player.dash_lockout = false;
             self.player.dash_cd_exp = f + 48;
         }
-        let (len, jump) = (self.chars[ci].dash_len, self.chars[ci].dash_jump);
-        self.add_task(Task::DashStam { c: ci as u8 }, len - 1);
-        ActInfo::new(Frames::Dash { len, jump }, len, jump, AnimState::Dash)
     }
 
     /// The template character's Jump: airborne with Xianyun's buff, or the

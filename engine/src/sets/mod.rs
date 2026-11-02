@@ -19,4 +19,5 @@ crate::sets! {
     FlowerOfParadiseLost => flowerofparadiselost,
     ThunderingFury => thunderingfury,
     OceanHuedClam => oceanhuedclam,
+    ObsidianCodex => obsidiancodex,
 }

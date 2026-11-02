@@ -61,8 +61,9 @@ pub enum EventKind {
     NightsoulConsume,
     ApplyAttack,
     SpecialReactionAttack,
+    DendroCore,
 }
-pub const N_EVENTS: usize = 24;
+pub const N_EVENTS: usize = 25;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -125,6 +126,8 @@ pub enum Event<'a> {
     /// `Sim::special_atk` (gcsim's subscribers change the AttackEvent they
     /// are handed); the event holds it as it was before the first of them.
     SpecialReactionAttack(&'a AttackEvent),
+    /// OnDendroCore: a dendro core appeared, with its gadget key.
+    DendroCore { key: u32 },
 }
 
 impl Event<'_> {
@@ -154,6 +157,7 @@ impl Event<'_> {
             Event::NightsoulConsume { .. } => EventKind::NightsoulConsume,
             Event::ApplyAttack(_) => EventKind::ApplyAttack,
             Event::SpecialReactionAttack(_) => EventKind::SpecialReactionAttack,
+            Event::DendroCore { .. } => EventKind::DendroCore,
         }
     }
 }
@@ -279,6 +283,16 @@ pub trait Character {
     /// Its AnimationStartDelay for gcsim's AnimationDelayKey `key`, when
     /// it is not the fixed one in its data.
     fn start_delay(_s: &Sim, _ci: usize, _key: usize) -> Option<i32> {
+        None
+    }
+    /// Its own Dash, when it replaces the template's entirely (gcsim's
+    /// override of Dash that does not call the template's): None for the
+    /// template's.
+    fn own_dash(_s: &mut Sim, _ci: usize, _p: &Params) -> Option<ActInfo> {
+        None
+    }
+    /// Its own Jump, when it replaces the template's entirely.
+    fn own_jump(_s: &mut Sim, _ci: usize, _p: &Params) -> Option<ActInfo> {
         None
     }
     /// Its own part of a dash or jump (gcsim's override of Dash or Jump),
@@ -449,6 +463,8 @@ macro_rules! chars {
             #[inline]
             pub fn action_stam(k: CharKind, s: &Sim, ci: usize, a: Action) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::action_stam(s, ci, a)),* } }
             pub fn start_delay(k: CharKind, s: &Sim, ci: usize, key: usize) -> Option<i32> { match k { $(CharKind::$kind => $m::Char::start_delay(s, ci, key)),* } }
+            pub fn own_dash(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_dash(s, ci, p)),* } }
+            pub fn own_jump(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_jump(s, ci, p)),* } }
             pub fn template_action(k: CharKind, s: &mut Sim, ci: usize, a: Action) { match k { $(CharKind::$kind => $m::Char::template_action(s, ci, a)),* } }
         }
     };
