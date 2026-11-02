@@ -1,0 +1,4 @@
+# Bennett with Fragment of Harmonic Whimsy 2 and Crimson Witch 2.
+team bennett-furina-fischl-yelan
+bennett add set="fragmentofharmonicwhimsy" count=2;
+bennett add set="crimsonwitchofflames" count=2;

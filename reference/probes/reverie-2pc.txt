@@ -1,0 +1,4 @@
+# Rosaria with Unfinished Reverie 2 and Noblesse Oblige 2.
+team rosaria-furina-nahida-bennett
+rosaria add set="unfinishedreverie" count=2;
+rosaria add set="noblesseoblige" count=2;

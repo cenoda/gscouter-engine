@@ -1,0 +1,3 @@
+# Rosaria with Unfinished Reverie 4 on a team that never burns: the stacks run down.
+team klee-furina-rosaria-xianyun
+rosaria add set="unfinishedreverie" count=4;
