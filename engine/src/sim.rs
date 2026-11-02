@@ -175,6 +175,11 @@ pub const PYRO_RESONANCE: ModKey = ModKey::new("pyro-res");
 pub const HYDRO_RESONANCE: ModKey = ModKey::new("hydro-res-hpp");
 pub const CRYO_RESONANCE: ModKey = ModKey::new("cryo-res");
 const LUNAR_BLOOM: ModKey = ModKey::new("lunarbloom-enabled");
+/// gcsim's MaxVerdantDew (Moonridge Dew has the same cap).
+const MAX_DEW: i32 = 3;
+/// gcsim's verdantDewEndFrame and maxPartialDew.
+const VERDANT_DEW_END: i32 = 149;
+const MAX_PARTIAL_DEW: f64 = 146.0;
 const LUNAR_CRYSTALLIZE: ModKey = ModKey::new("lunarcrystallize-enabled");
 /// gcsim's LunarChargeEnableKey, which content that enables Lunar-Charged
 /// sets (`Sim::enable_lunar_charge`).
@@ -624,6 +629,8 @@ pub enum Task {
     /// The shield stats collector's ShieldBonus at the end of the frame
     /// a player is hit.
     ShieldTrack,
+    /// Player.OnLunarBloom's task: Verdant Dew builds up until `at`.
+    DewExpiry { at: i32 },
     /// Geo resonance's check of the active character's shield.
     GeoRes { src: i32 },
     /// The end of a timed Nightsoul's Blessing of the character in slot c,
@@ -1158,6 +1165,14 @@ pub struct LastAction {
 
 pub struct Player {
     pub active: u8,
+    /// Verdant Dew and Moonridge Dew (gcsim's verdantDew, moonridgeDew),
+    /// each at most 3.
+    pub verdant_dew: i32,
+    pub moonridge_dew: i32,
+    /// gcsim's partialDewCount and verdantDewExpiryFrame: Verdant Dew
+    /// builds up until that frame after a Lunar-Bloom.
+    pub partial_dew: f64,
+    pub dew_expiry: i32,
     pub stam: f64,
     pub last_stam_use: i32,
     pub swap_cd: i32,
@@ -1558,6 +1573,10 @@ impl Sim {
                 active: cfg.active as u8,
                 stam: 240.0,
                 last_stam_use: 0,
+                verdant_dew: 0,
+                moonridge_dew: 0,
+                partial_dew: 0.0,
+                dew_expiry: 0,
                 swap_cd: 0,
                 dash_cd_exp: 0,
                 dash_lockout: false,
@@ -2487,6 +2506,7 @@ impl Sim {
                 }
             }
             Task::SpawnShard { actor, ele } => self.spawn_shard(actor as usize, ele),
+            Task::DewExpiry { at } => self.player.dew_expiry = at,
             Task::ShieldTrack => {
                 self.shield_bonus();
             }
@@ -3394,19 +3414,61 @@ impl Sim {
         let avail = a.get(AURA_QUICKEN);
         let consumed = a.reduce(AURA_HYDRO, avail, 2.0);
         a.reduce_mod(AURA_QUICKEN, consumed);
-        self.check_lunar_bloom();
+        let kind = self.bloom_kind();
         let ev = self.slots[slot as usize];
         self.add_task(Task::SpawnCore { slot }, 30);
-        self.emit(Event::Reaction(Reaction::Bloom, &ev));
+        self.emit(Event::Reaction(kind, &ev));
     }
 
-    /// Lunar-Bloom (gcsim's Flags.Custom "lunarbloom-enabled") would replace
-    /// bloom's event with OnLunarBloom and add Verdant Dew
-    /// (Player.OnLunarBloom); nothing the engine implements enables it.
-    fn check_lunar_bloom(&mut self) {
-        if self.flag(LUNAR_BLOOM) != 0.0 {
-            self.unsupported("lunar-bloom");
+    /// Lunar-Bloom (gcsim's Flags.Custom "lunarbloom-enabled"): a bloom
+    /// still makes its core, but is OnLunarBloom instead of OnBloom, and
+    /// Verdant Dew builds up for 149 frames from the next one
+    /// (Player.OnLunarBloom). Returns the reaction to emit.
+    fn bloom_kind(&mut self) -> Reaction {
+        if self.flag(LUNAR_BLOOM) == 0.0 {
+            return Reaction::Bloom;
         }
+        self.add_task(Task::DewExpiry { at: self.f + VERDANT_DEW_END }, 1);
+        Reaction::LunarBloom
+    }
+
+    /// gcsim's verdantDewGen: a dew every 146 frames of build-up. No
+    /// content the engine has changes the rate (AddVerdantDewRateMod).
+    fn verdant_dew_gen(&mut self) {
+        self.player.partial_dew += 1.0;
+        if self.player.partial_dew >= MAX_PARTIAL_DEW {
+            self.add_verdant_dew();
+            self.player.partial_dew = 0.0;
+        }
+    }
+
+    /// gcsim's AddVerdantDew.
+    pub fn add_verdant_dew(&mut self) {
+        if self.player.verdant_dew < MAX_DEW {
+            self.player.verdant_dew += 1;
+        }
+    }
+
+    /// gcsim's AddMoonridgeDew.
+    pub fn add_moonridge_dew(&mut self) {
+        if self.player.moonridge_dew < MAX_DEW {
+            self.player.moonridge_dew += 1;
+        }
+    }
+
+    /// gcsim's Dew: Verdant and Moonridge Dew together.
+    pub fn dew(&self) -> i32 {
+        self.player.verdant_dew + self.player.moonridge_dew
+    }
+
+    /// gcsim's ConsumeDew: Verdant Dew first, then Moonridge Dew.
+    pub fn consume_dew(&mut self, amt: i32) -> i32 {
+        let p = &mut self.player;
+        let v = amt.min(p.verdant_dew);
+        p.verdant_dew -= v;
+        let m = (amt - v).min(p.moonridge_dew);
+        p.moonridge_dew -= m;
+        v + m
     }
 
     /// Lunar-Crystallize (gcsim's Flags.Custom "lunarcrystallize-enabled")
@@ -3448,10 +3510,10 @@ impl Sim {
         };
         ev.info.durability = (dur - consumed).max(0.0);
         ev.reacted = true;
-        self.check_lunar_bloom();
+        let kind = self.bloom_kind();
         let slot = self.alloc(*ev);
         self.add_task(Task::SpawnCore { slot }, 30);
-        self.emit(Event::Reaction(Reaction::Bloom, ev));
+        self.emit(Event::Reaction(kind, ev));
     }
 
     /// dendrocore.New: a core at a random point 0.5 beyond the enemy's
@@ -5140,6 +5202,10 @@ impl Sim {
             self.tick_shields();
         }
         self.anim_tick();
+        // verdantDewTick, after the animation
+        if self.player.verdant_dew < MAX_DEW && self.player.dew_expiry >= f {
+            self.verdant_dew_gen();
+        }
         for i in 0..self.chars.len() {
             let c = &mut self.chars[i];
             if c.frozen > 0 {
@@ -5481,7 +5547,9 @@ impl Sim {
                 need(2, "status")?;
                 Ok(int(self.core_status(&fields[1]) as i64))
             }
-            "dew" | "verdant-dew" | "moonridge-dew" => Ok(int(0)),
+            "dew" => Ok(int(self.dew() as i64)),
+            "verdant-dew" => Ok(int(self.player.verdant_dew as i64)),
+            "moonridge-dew" => Ok(int(self.player.moonridge_dew as i64)),
             "action" => {
                 need(2, "action")?;
                 action_key(&fields[1]).map(|a| int(a as i64)).ok_or(format!("bad action condition: invalid action {}", fields[1]))
