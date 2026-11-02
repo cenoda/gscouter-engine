@@ -644,6 +644,10 @@ pub enum Task {
 pub enum Frames {
     Table(&'static FrameTable),
     Attack { table: &'static FrameTable, atkspd: f64 },
+    /// A normal attack's frames with the acting character's ATK SPD read
+    /// when the frames are asked for (a gcsim frames function that calls
+    /// Stat(AtkSpd) itself), less `minus`.
+    AttackLive { table: &'static FrameTable, minus: i32 },
     /// The character's own frames function, with an argument.
     Char { id: u8, arg: i16 },
     Dash { len: i32, jump: i32 },
@@ -760,6 +764,9 @@ pub struct Char {
     pub body: Body,
     /// The constellations that raise normal attack, skill and burst by 3.
     pub talent_cons: [i32; 3],
+    /// Levels added to its skill talent by another member (gcsim's
+    /// SkirkPassive tag).
+    pub skill_talent_bonus: i32,
     /// AnimationStartDelay by gcsim's AnimationDelayKey.
     pub anim_delay: [i32; 3],
     pub weapon: WeaponKind,
@@ -1670,6 +1677,7 @@ impl Sim {
             mods: Vec::with_capacity(24),
             frozen: 0,
             time_passed: 0,
+            skill_talent_bonus: 0,
             queue: Queue::new(),
             cd: [Cooldown { available: 1, ..Default::default() }; 3],
             skill_cd_twin: false,
@@ -1790,7 +1798,10 @@ impl Sim {
     pub fn talent(&self, ci: usize, i: usize) -> usize {
         let c = &self.chars[ci];
         let con = c.talent_cons[i];
-        let add = if con > 0 && c.cons >= con { 3 } else { 0 };
+        let mut add = if con > 0 && c.cons >= con { 3 } else { 0 };
+        if i == 1 {
+            add += c.skill_talent_bonus;
+        }
         (c.talents[i] - 1 + add) as usize
     }
 
@@ -4881,6 +4892,7 @@ impl Sim {
         match a.frames {
             Frames::Table(t) => t[next as usize],
             Frames::Attack { table, atkspd } => atk_spd_adjust(table[next as usize], atkspd),
+            Frames::AttackLive { table, minus } => atk_spd_adjust(table[next as usize], self.stat(a.char as usize, st::ATKSPD)) - minus,
             Frames::Char { id, arg } => crate::chars::dispatch::frames(self.chars[a.char as usize].kind, id, arg, next),
             Frames::Dash { len, jump } => {
                 if next == Action::Jump {
