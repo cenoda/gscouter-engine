@@ -1,0 +1,4 @@
+# Dehya's burst cut short by a dash and a jump in the dash's window, which turns into the kick (no library rotation does it).
+team dehya-bennett-xiangling-emilie
+rotation- dehya burst, attack:10;
+rotation+ dehya burst, attack:4, dash, jump, attack:3;

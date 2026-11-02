@@ -1,0 +1,3 @@
+# Razor C4: the press skill lowers the enemy's DEF by 15% for 7 s.
+team razor-xingqiu-xiangling-bennett
+razor char lvl=90/90 cons=4 talent=9,9,9;

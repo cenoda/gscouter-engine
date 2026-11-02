@@ -1,0 +1,4 @@
+# Razor's hold skill (no library rotation the engine runs holds it): its own hitmark and cooldown, 4 particles, and the sigils it turns into energy.
+team razor-xingqiu-xiangling-bennett
+rotation- attack:3, skill;
+rotation+ attack:3, skill[hold=1];

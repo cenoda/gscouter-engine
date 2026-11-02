@@ -650,6 +650,9 @@ pub enum Frames {
     AttackLive { table: &'static FrameTable, minus: i32 },
     /// The character's own frames function, with an argument.
     Char { id: u8, arg: i16 },
+    /// The character's own frames function reading the sim when the
+    /// frames are asked for (`Character::frames_live`).
+    CharLive { id: u8, arg: i16 },
     Dash { len: i32, jump: i32 },
     Const(i32),
     /// An airborne jump: the plunges after `low` and `high` frames,
@@ -1409,6 +1412,8 @@ pub struct Sim {
     /// The holder of gcsim's "utility-dash" stamina mod (dash stamina
     /// -20% while it lives), if any.
     pub utility_dash: Option<u8>,
+    /// The characters subscribed to OnPlayerPreHPDrain, in order.
+    pub pre_drain_subs: Vec<u8>,
     /// Diona's A1: stamina -10% while her shield is up.
     pub diona_a1: bool,
     /// Electro resonance, with the frame of its last particle (0 before
@@ -1578,6 +1583,7 @@ impl Sim {
             enemy_alive: true,
             no_more_actions: false,
             utility_dash: None,
+            pre_drain_subs: Vec::new(),
             diona_a1: false,
             electro_res: None,
             dendro_res: false,
@@ -2226,8 +2232,32 @@ impl Sim {
 
     /// gcsim's Player.Drain: the character loses amount HP.
     pub fn drain(&mut self, on: usize, amount: f64) {
+        self.drain_info(on, amount, false, "");
+    }
+
+    /// gcsim's Player.Drain with its DrainInfo: OnPlayerPreHPDrain may
+    /// change the amount, then the character loses it (OnPlayerHPDrain).
+    /// Returns the amount lost.
+    pub fn drain_info(&mut self, on: usize, mut amount: f64, external: bool, abil: &'static str) -> f64 {
+        for i in 0..self.pre_drain_subs.len() {
+            let c = self.pre_drain_subs[i] as usize;
+            amount = crate::chars::dispatch::pre_drain(self.chars[c].kind, self, c, on, amount, external, abil);
+        }
         self.modify_hp(on, -amount);
-        self.emit(Event::Drain { on, amount, external: false });
+        self.emit(Event::Drain { on, amount, external });
+        amount
+    }
+
+    /// OnPlayerHit on character `on` (the active character when the player
+    /// is hit; Dehya's Redmane's Blood names her), with gcsim's shield
+    /// stats collector, which subscribes to it.
+    pub fn player_hit_event(&mut self, on: usize) {
+        self.emit(Event::PlayerHit { on });
+        // the shield stats collector looks at the shields at the end of
+        // the frame (its ShieldBonus drops the mods that are done)
+        if !self.shield_bonus_mods.is_empty() {
+            self.add_task(Task::ShieldTrack, 0);
+        }
     }
 
     // ------------------------------------------------------------ mods
@@ -3568,12 +3598,7 @@ impl Sim {
     /// the player, and it does not count as damage.
     fn player_hit(&mut self, mut ev: AttackEvent) {
         let active = self.player.active as usize;
-        self.emit(Event::PlayerHit { on: active });
-        // the shield stats collector looks at the shields at the end of
-        // the frame (its ShieldBonus drops the mods that are done)
-        if !self.shield_bonus_mods.is_empty() {
-            self.add_task(Task::ShieldTrack, 0);
-        }
+        self.player_hit_event(active);
         let s = &mut ev.stats;
         let st_ele = ev.info.element.dmg_stat();
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
@@ -3595,8 +3620,7 @@ impl Sim {
         }
         let left = self.shields_on_damage(active, active, damage, ev.info.element);
         if left > 0.0 {
-            self.modify_hp(active, -left);
-            self.emit(Event::Drain { on: active, amount: left, external: true });
+            self.drain_info(active, left, true, ev.info.abil);
         }
         // gcsim then runs the attacker's ApplyAttackMods (for its log), which
         // drops expired attack mods unless the hit is reaction damage
@@ -3660,7 +3684,7 @@ impl Sim {
 
     /// gcsim's Shields.OnDamage: every shield on the character hit takes
     /// the damage; the least left over goes through.
-    fn shields_on_damage(&mut self, ci: usize, active: usize, dmg: f64, ele: Element) -> f64 {
+    pub fn shields_on_damage(&mut self, ci: usize, active: usize, dmg: f64, ele: Element) -> f64 {
         if self.shields.is_empty() {
             return dmg;
         }
@@ -4899,6 +4923,7 @@ impl Sim {
             Frames::Attack { table, atkspd } => atk_spd_adjust(table[next as usize], atkspd),
             Frames::AttackLive { table, minus } => atk_spd_adjust(table[next as usize], self.stat(a.char as usize, st::ATKSPD)) - minus,
             Frames::Char { id, arg } => crate::chars::dispatch::frames(self.chars[a.char as usize].kind, id, arg, next),
+            Frames::CharLive { id, arg } => crate::chars::dispatch::frames_live(self.chars[a.char as usize].kind, self, a.char as usize, id, arg, next),
             Frames::Dash { len, jump } => {
                 if next == Action::Jump {
                     jump

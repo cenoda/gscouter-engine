@@ -1,0 +1,3 @@
+# Dehya C2: the recast field lasts 6 s longer, and the field's next coordinated attack deals 50% more after the active character is hit in it.
+team dehya-bennett-xiangling-emilie
+dehya char lvl=90/90 cons=2 talent=9,9,9;

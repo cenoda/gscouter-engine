@@ -1,0 +1,4 @@
+# Dehya's burst ended by a plain jump: no kick, and the field she picked up is put back at once.
+team dehya-bennett-xiangling-emilie
+rotation- dehya burst, attack:10;
+rotation+ dehya burst, attack:4, jump, attack:3;

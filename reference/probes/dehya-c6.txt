@@ -1,0 +1,3 @@
+# Dehya C6: the burst's CRIT Rate +10%, and a punch's crit raises its CRIT DMG by 15% and lengthens it by 0.5 s, up to four times.
+team dehya-bennett-xiangling-emilie
+dehya char lvl=90/90 cons=6 talent=9,9,9;

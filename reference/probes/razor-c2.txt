@@ -1,0 +1,3 @@
+# Razor C2: built in, but its CRIT Rate needs an enemy below 30% HP, which Gscouter's never is; this checks it stays off.
+team razor-xingqiu-xiangling-bennett
+razor char lvl=90/90 cons=2 talent=9,9,9;

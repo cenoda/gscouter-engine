@@ -1,0 +1,3 @@
+# Razor C6 with Hexerei switched off (param hexerei=0) beside Fischl: one sigil per press and Lupus Fulguris, no Surge of Lightning, no flat damage on the Wolf Within, no CRIT buff.
+team razor-nahida-fischl-bennett
+razor char lvl=90/90 cons=6 talent=9,9,9 +params=[hexerei=0];
