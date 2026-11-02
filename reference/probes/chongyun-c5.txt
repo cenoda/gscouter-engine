@@ -1,0 +1,3 @@
+# Chongyun C5: burst talent level +3.
+team gaming-chongyun-rosaria-bennett
+chongyun char lvl=90/90 cons=5 talent=9,9,9;

@@ -1,0 +1,5 @@
+# Chongyun C1 with four normal attacks after his skill: three cryo blades after the fourth hit.
+team gaming-chongyun-rosaria-bennett
+chongyun char lvl=90/90 cons=1 talent=9,9,9;
+rotation- chongyun burst, skill;
+rotation+ chongyun burst, skill, attack:4;

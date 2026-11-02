@@ -77,6 +77,9 @@ pub enum ModKind {
     HealBonus,
     /// gcsim's ReactBonusMod: its owner's react_bonus.
     ReactBonus,
+    /// gcsim's CooldownMod: its amount in `value`, on the skill and the
+    /// burst (Chongyun's C2, the only one besides anemo resonance's).
+    Cooldown,
 }
 
 impl ModKind {
@@ -1313,6 +1316,8 @@ pub enum ShieldType {
     IneffaSkill,
     CitlaliSkill,
     LaylaSkill,
+    BeidouThunderShield,
+    BeidouC1,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -4748,8 +4753,21 @@ impl Sim {
     }
 
     pub fn set_cd(&mut self, ci: usize, a: Action, dur: i32) {
-        // CDReduction: anemo resonance is the only cooldown mod
-        let dur = if self.anemo_res { (dur as f64 * (1.0 - 0.05)) as i32 } else { dur };
+        // CDReduction: anemo resonance's mod (added at setup, so first),
+        // then the character's cooldown mods in effect, in their order
+        let mut cd = 1.0;
+        if self.anemo_res {
+            cd += -0.05;
+        }
+        if matches!(a, Action::Skill | Action::Burst) {
+            let f = self.f;
+            for m in &self.chars[ci].mods {
+                if m.kind == ModKind::Cooldown && (m.expiry() == -1 || m.expiry() > f) {
+                    cd += m.value;
+                }
+            }
+        }
+        let dur = if cd == 1.0 { dur } else { (dur as f64 * cd) as i32 };
         let cd = &mut self.chars[ci].cd[Char::cd_index(a)];
         cd.queue[cd.len] = dur;
         cd.len += 1;

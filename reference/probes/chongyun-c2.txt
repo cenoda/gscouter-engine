@@ -1,0 +1,3 @@
+# Chongyun C2: skill and burst cooldowns 15% shorter for characters infused by his field.
+team gaming-chongyun-rosaria-bennett
+chongyun char lvl=90/90 cons=2 talent=9,9,9;

@@ -1,0 +1,3 @@
+# Chongyun C4: 2 energy on hitting a cryo-affected enemy, once every 2 s, while on field.
+team gaming-chongyun-rosaria-bennett
+chongyun char lvl=90/90 cons=4 talent=9,9,9;

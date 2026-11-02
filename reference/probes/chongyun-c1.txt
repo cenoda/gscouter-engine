@@ -1,0 +1,3 @@
+# Chongyun C1 (its blades need a fourth normal attack, which this rotation does not reach; see chongyun-c1-normals).
+team gaming-chongyun-rosaria-bennett
+chongyun char lvl=90/90 cons=1 talent=9,9,9;
