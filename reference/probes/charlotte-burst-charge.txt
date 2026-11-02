@@ -1,0 +1,4 @@
+# Charlotte's charged attack right after her burst (its windup of 3).
+team charlotte-xiangling-furina-bennett
+rotation- charlotte burst, attack;
+rotation+ charlotte burst, charge;

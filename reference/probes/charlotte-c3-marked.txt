@@ -1,0 +1,5 @@
+# Charlotte C3 with the rotation of the C4 probe (a pressed skill before the burst), the baseline C4 adds to.
+team charlotte-xiangling-furina-bennett
+charlotte char lvl=90/90 cons=3 talent=9,9,9;
+rotation- charlotte burst, attack;
+rotation+ charlotte skill, burst, attack;

@@ -1,0 +1,3 @@
+# Charlotte C2: ATK +10% per enemy her skill hits, up to 3.
+team charlotte-xiangling-furina-bennett
+charlotte char lvl=90/90 cons=2 talent=9,9,9;

@@ -1,0 +1,5 @@
+# Charlotte C4: the burst's hits on marked enemies DMG +10% and 2 energy, 5 in 20 s; her rotation's burst comes before her skill marks the enemy, so here a pressed skill marks it first.
+team charlotte-xiangling-furina-bennett
+charlotte char lvl=90/90 cons=4 talent=9,9,9;
+rotation- charlotte burst, attack;
+rotation+ charlotte skill, burst, attack;

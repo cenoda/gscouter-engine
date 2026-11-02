@@ -1,0 +1,4 @@
+# Charlotte's low plunge from Xianyun's jump, with and without its collision; the library's rotation plunges high.
+team charlotte-jean-bennett-xianyun
+rotation- charlotte high_plunge[collision=rand()>0.5];
+rotation+ charlotte low_plunge[collision=rand()>0.5];

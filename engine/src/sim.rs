@@ -1477,6 +1477,9 @@ pub struct Sim {
     pub hit_ignore_def: f64,
     /// BaseDmgBonus EnemyHit subscribers add to the hit.
     pub hit_base_bonus: f64,
+    /// DMG% EnemyHit subscribers add to the hit's snapshot (Charlotte's
+    /// C4).
+    pub hit_dmgp: f64,
     /// A factor EnemyHit subscribers put on the hit's Mult (Mona's Hexerei
     /// C6 doubles her charged attack's).
     pub hit_mult: f64,
@@ -1623,6 +1626,7 @@ impl Sim {
             hit_flat: 0.0,
             hit_ignore_def: 0.0,
             hit_base_bonus: 0.0,
+            hit_dmgp: 0.0,
             hit_mult: 1.0,
             stellar: Default::default(),
             hit_crit: None,
@@ -2733,13 +2737,15 @@ impl Sim {
                 // a subscriber can apply an attack inside the emit (an
                 // attack queued with no delay, as Escoffier's C6 with
                 // travel 0): keep the outer hit's accumulators
-                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def);
+                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp);
                 self.hit_flat = 0.0;
                 self.hit_ignore_def = 0.0;
                 self.hit_crit = None;
                 self.hit_base_bonus = 0.0;
                 self.hit_mult = 1.0;
+                self.hit_dmgp = 0.0;
                 self.emit(Event::EnemyHit(&ev));
+                ev.stats[st::DMGP] += self.hit_dmgp;
                 ev.info.flat_dmg += self.hit_flat;
                 ev.info.ignore_def += self.hit_ignore_def;
                 base_bonus = self.hit_base_bonus;
@@ -2750,7 +2756,7 @@ impl Sim {
                 if self.hit_mult != 1.0 {
                     ev.info.mult *= self.hit_mult;
                 }
-                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def) = outer;
+                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp) = outer;
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }
