@@ -1,0 +1,3 @@
+# Ayaka C1: cryo normal and charged hits cut her skill's cooldown half the time (the library builds are C0).
+team kamisatoayaka-furina-rosaria-escoffier
+ayaka char lvl=90/90 cons=1 talent=9,9,9;

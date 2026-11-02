@@ -1,0 +1,3 @@
+# Ayaka at level 20 (ascension 0): no normal and charged attack bonus after her skill (A1), no stamina and Cryo DMG Bonus from her dash (A4).
+team kamisatoayaka-furina-rosaria-escoffier
+ayaka char lvl=20/20 cons=0 talent=9,9,9;

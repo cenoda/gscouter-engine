@@ -59,6 +59,8 @@ crate::chars! {
     Razor => razor,
     Dehya => dehya,
     Chasca => chasca,
+    Ganyu => ganyu,
+    Ayaka => ayaka,
 }
 
 /// The characters whose modules have been checked against gcsim for a

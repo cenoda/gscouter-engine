@@ -1,0 +1,3 @@
+# Ganyu at level 20 (ascension 0): no CRIT Rate on later Frostflake Arrows (A1), no Cryo DMG Bonus in Celestial Shower (A4).
+team ganyu-furina-escoffier-rosaria
+ganyu char lvl=20/20 cons=0 talent=9,9,9;
