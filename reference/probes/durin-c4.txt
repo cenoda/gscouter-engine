@@ -1,0 +1,3 @@
+# Durin C4: burst DMG +40%, and a C1 stack kept 30% of the time (a draw from the fight's generator).
+team durin-rosaria-sucrose-bennett
+durin char lvl=90/90 cons=4 talent=9,10,9;

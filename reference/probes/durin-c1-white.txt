@@ -1,0 +1,5 @@
+# Durin C1 in the white form: Confirmation of Purity (the skill recast) before the white burst, whose stacks add 60% of his ATK to the active member's hits.
+team durin-rosaria-sucrose-bennett
+durin char lvl=90/90 cons=1 talent=9,10,9;
+rotation- durin skill, attack;
+rotation+ durin skill:2;

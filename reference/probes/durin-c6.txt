@@ -1,0 +1,3 @@
+# Durin C6 (black form): the burst ignores 70% of DEF.
+team durin-rosaria-sucrose-bennett
+durin char lvl=90/90 cons=6 talent=9,10,9;

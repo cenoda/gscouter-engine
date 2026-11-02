@@ -1,0 +1,5 @@
+# Durin's charged attack (gcsim tags it a normal attack) and normal attacks in his rotation.
+team durin-rosaria-sucrose-bennett
+rotation- rosaria burst;
+rotation+ rosaria burst;
+rotation+ durin attack:3, charge;
