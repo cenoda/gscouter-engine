@@ -574,7 +574,7 @@ impl Character for Char {
     /// cannon, all of it) is elevated by 20%.
     fn own_hit(s: &Sim, ci: usize, ev: &mut AttackEvent) {
         if s.chars[ci].cons >= 6 && ev.info.tag == AttackTag::DirectStellarConduct {
-            ev.elevation += (g::C6_ELEV * 100.0).round() as u8;
+            ev.elevation += (g::C6_ELEV * 1000.0).round() as u16;
         }
     }
 
