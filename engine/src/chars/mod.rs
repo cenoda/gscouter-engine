@@ -64,6 +64,7 @@ crate::chars! {
     Albedo => albedo,
     Layla => layla,
     Durin => durin,
+    Nicole => nicole,
 }
 
 /// The characters whose modules have been checked against gcsim for a

@@ -1,0 +1,3 @@
+# Nicole C1: the active member's hits send Arcane Projection: Unity (600% of their ATK, once every 6 s); the library builds are C0 but eight.
+team yoimiya-yelan-fischl-nicole
+nicole char lvl=90/90 cons=1 talent=9,9,9;

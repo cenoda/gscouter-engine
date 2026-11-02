@@ -1,0 +1,7 @@
+# Nicole's burst with Sucrose active: the projections at Sucrose's hitbox (gcsim's projectionHitbox), anemo.
+team gaming-citlali-sucrose-nicole
+rotation- nicole skill, attack;
+rotation+ nicole skill, attack;
+rotation+ if .nicole.burst.ready {
+rotation+   nicole burst;
+rotation+ }

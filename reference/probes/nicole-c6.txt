@@ -1,0 +1,3 @@
+# Nicole C6: Guidance of Theosis stays on swap, her own upgrade upgrades the others, and upgraded hits ignore 40% DEF (the new OnEnemyHit DEF-ignore accumulator).
+team yoimiya-yelan-fischl-nicole
+nicole char lvl=90/90 cons=6 talent=9,9,9;

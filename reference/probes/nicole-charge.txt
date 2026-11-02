@@ -1,0 +1,4 @@
+# Nicole's charged attack (its windup shortens the frames, not the hitmark) and a normal attack after it.
+team yoimiya-yelan-fischl-nicole
+rotation- nicole attack:2, skill;
+rotation+ nicole attack:2, charge, attack, skill;
