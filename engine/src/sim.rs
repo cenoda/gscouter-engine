@@ -559,11 +559,12 @@ pub struct AttackEvent {
     /// The reaction it causes is on a gadget (Guoba's pyro window swirled),
     /// not the enemy: subscribers that check for an enemy target skip it.
     pub on_gadget: bool,
-    /// gcsim's Info.Elevation, in hundredths: a factor on the damage after
-    /// the damage group. The hit hooks (`own_hit`) set it, as gcsim's do
-    /// (the ones gcsim gives are whole hundredths; a byte here takes no
-    /// room, where an f64 in AttackInfo slowed every attack).
-    pub elevation: u8,
+    /// gcsim's Info.Elevation, in thousandths: a factor on the damage
+    /// after the damage group. The hit hooks (`own_hit`) set it, as gcsim's
+    /// do (the ones gcsim gives are whole thousandths, Columbina's 0.015
+    /// the finest; an integer here, where an f64 in AttackInfo slowed every
+    /// attack).
+    pub elevation: u16,
     /// gcsim's reduceLCAuraCB: a Lunar-Charged hit that takes 10 off the
     /// enemy's electro and hydro when it lands.
     pub lc_consume: bool,
@@ -4107,7 +4108,7 @@ impl Sim {
             let lvl = self.chars[ci].level;
             // gcsim's CalcSpecialReactionDmg
             let base = crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
-            let mut dmg = (mult * (1.0 + (6.0 * em) / (2000.0 + em) + react) * base * (1.0 + base_bonus) + ev.info.flat_dmg) * (1.0 + ev.elevation as f64 / 100.0);
+            let mut dmg = (mult * (1.0 + (6.0 * em) / (2000.0 + em) + react) * base * (1.0 + base_bonus) + ev.info.flat_dmg) * (1.0 + ev.elevation as f64 / 1000.0);
             let mut crit = false;
             if self.rng.float64() <= cr {
                 dmg *= 1.0 + cd;
@@ -4542,7 +4543,7 @@ impl Sim {
             damage *= ev.info.amp_mult * (1.0 + em_bonus + react_bonus);
         }
         damage *= grp;
-        damage *= 1.0 + ev.elevation as f64 / 100.0;
+        damage *= 1.0 + ev.elevation as f64 / 1000.0;
         (damage, crit)
     }
 
@@ -4574,7 +4575,7 @@ impl Sim {
         damage *= defmod;
         damage *= crate::stellar::resmod(res);
         damage *= grp;
-        damage *= 1.0 + ev.elevation as f64 / 100.0;
+        damage *= 1.0 + ev.elevation as f64 / 1000.0;
         let s = &mut ev.stats;
         s[st::CR] = s[st::CR].clamp(0.0, 1.0);
         let mut crit = false;
