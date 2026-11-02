@@ -1,0 +1,3 @@
+# Lisa with Etherlight Spindlelute R1.
+team lisa-chevreuse-fischl-xiangling
+lisa add weapon="etherlightspindlelute" refine=1 lvl=90/90;

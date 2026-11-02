@@ -1,0 +1,3 @@
+# Diluc with Ultimate Overlord's Mega Magic Sword R1 (6 Melusines, the default).
+team diluc-furina-yelan-xilonen
+diluc add weapon="ultimateoverlordsmegamagicsword" refine=1 lvl=90/90;

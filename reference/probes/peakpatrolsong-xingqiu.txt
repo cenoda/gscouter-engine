@@ -1,0 +1,3 @@
+# Xingqiu with Peak Patrol Song R1 on his normal attacks.
+team candace-xingqiu-kaedeharakazuha-bennett
+xq add weapon="peakpatrolsong" refine=1 lvl=90/90;
