@@ -105,12 +105,14 @@ impl Character for Char {
                 if st.c6_count >= 5 {
                     s.delete_core_status(C6_STATUS);
                 }
+                ai.pattern = s.circle_on_target(4.0);
                 s.queue_attack(ai, 0, g::ATTACK_HITMARKS[n][i], g::ATTACK_HITMARKS[n][i] + travel);
             }
         } else {
             for (i, mult) in g::ATTACK[n].iter().enumerate() {
                 let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 25.0, mult[lvl]);
                 ai.abil = NORMAL_NAMES[n];
+                ai.pattern = s.box_on_target(0.0, -0.5, 0.1, 1.0);
                 s.queue_attack(ai, 0, g::ATTACK_HITMARKS[n][i], g::ATTACK_HITMARKS[n][i] + travel);
             }
         }
@@ -175,6 +177,7 @@ impl Character for Char {
         ai.hitlag_halt = 0.05 * 60.0;
         ai.hitlag_factor = 0.05;
         ai.deployable = true;
+        ai.pattern = s.circle_on_player(-1.5, -1.7, 6.0);
         s.queue_attack(ai, 0, g::BURST_HITMARK, g::BURST_HITMARK);
         s.add_task(Task::Char { c: ci as u8, id: TASK_BURST_STATUS, arg: 0 }, g::BURST_HITMARK);
         if s.chars[ci].cons >= 6 {
@@ -247,6 +250,7 @@ fn skill_hit(s: &mut Sim, ci: usize) {
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Hydro, 25.0, 0.0);
         ai.abil = "Lingering Lifeline";
         ai.flat_dmg = s.st::<State>(ci).skill_flat;
+        ai.pattern = Pattern::Single;
         s.queue_attack(ai, CB_PARTICLE | CB_SKILL, 1, 1);
     }
     let count = s.st::<State>(ci).c4_count;
@@ -290,6 +294,7 @@ fn throw(s: &mut Sim, ci: usize) {
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_YELAN_BURST, icd::GROUP_YELAN_BURST, Element::Hydro, 25.0, 0.0);
     ai.abil = "Exquisite Throw";
     ai.flat_dmg = g::BURST_DICE[lvl] * hp;
+    ai.pattern = s.circle_on_target(0.5);
     let ev = s.snapshot_event(ai, 0);
     for i in 0..3 {
         s.queue_attack_with_snap(ev, 0, g::BURST_TRAVEL + i * 6);
