@@ -4,7 +4,9 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
 
 ## Rules
 
-- Do not modify Gscouter or the gcsim fork. Clone them, read them and run them; all work and pushes go to this repo.
+- Do not modify the gcsim fork. Clone it, read it and run it.
+- Gscouter may be changed for Phase 4 (putting the engine into it), on its own `claude/...` branches, never pushed to its `main` without the owner (allowed by the owner on 2026-11-02). Follow Gscouter's own `CLAUDE.md` there. Everything else goes to this repo.
+- A team moves to the engine only with the owner's answer for that team. Moving changes its score (within 1% of gcsim, not bit for bit), so before a team runs on the engine in Gscouter, show the owner its gcsim and engine scores and wait for a yes; a team without one stays on gcsim, whatever the manifest says. Keep the approved teams in a list in Gscouter that the code reads, with the date of each answer.
 - The reference is Gscouter's fork of gcsim at the commit Gscouter pins. `reference/go.mod` fixes it (`cenoda/gcsim@eb21884`). Port from that source, not from memory of gcsim.
 - Scope: the engine scores a player's showcase build (any constellation, weapon and refinement, set, talent levels, stats) on a library team's rotation. Library builds are test data, not the scope; `docs/roadmap.md` §2 says what done means.
 - Accuracy bar: team and per-character DPS within 1% of gcsim, decided by `reference/compare`, never loosened. Report waits beside the DPS.
