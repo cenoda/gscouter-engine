@@ -19,4 +19,9 @@ crate::sets! {
     FlowerOfParadiseLost => flowerofparadiselost,
     ThunderingFury => thunderingfury,
     OceanHuedClam => oceanhuedclam,
+    BlizzardStrayer => blizzardstrayer,
+    HuskOfOpulentDreams => huskofopulentdreams,
+    NighttimeWhispers => nighttimewhispersintheechoingwoods,
+    SilkenMoonsSerenade => silkenmoonsserenade,
+    CelestialGift => celestialgift,
 }

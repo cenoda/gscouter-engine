@@ -90,7 +90,10 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             continue;
         }
         match SetKind::from_name(s) {
-            Some(kind) => sets.push((kind, *count)),
+            Some(kind) => {
+                let params = p.set_params.iter().find(|s| s.0 == *k).map_or_else(Vec::new, |s| s.1.clone());
+                sets.push((kind, *count, params));
+            }
             None => errs.push(format!("unsupported: set {s}")),
         }
     }
@@ -197,9 +200,9 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
     }
     // gcsim's Hexerei bonuses need two Hexerei characters: each Hexerei
     // character's own bonuses must then be implemented (Character::HEXEREI).
-    // A character the engine lacks is an error of its own, and so are the
-    // weapons and sets that read Hexerei (none is implemented yet; each
-    // must read `Sim::hexerei_count` when it is).
+    // A character the engine lacks is an error of its own. Weapons and sets
+    // that read Hexerei read `Sim::hexerei_count` and `Char::hexerei`
+    // (Celestial Gift).
     let is_hexerei = |c: &&CharProfile| HEXEREI.contains(&char_name(c.key)) && !c.params.iter().any(|(k, v)| k == "hexerei" && *v == 0);
     if p.chars.iter().filter(is_hexerei).count() >= 2 {
         for c in p.chars.iter().filter(is_hexerei) {

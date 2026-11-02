@@ -1,0 +1,4 @@
+# Furina with Silken Moon's Serenade 2 and Golden Troupe 2.
+team gaming-furina-ineffa-bennett
+furina add set="silkenmoonsserenade" count=2;
+furina add set="goldentroupe" count=2;

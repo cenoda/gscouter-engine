@@ -1,0 +1,4 @@
+# Wriothesley with Blizzard Strayer 2 and Noblesse Oblige 2.
+team wriothesley-furina-xianyun-shenhe
+wrio add set="blizzardstrayer" count=2;
+wrio add set="noblesseoblige" count=2;

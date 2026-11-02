@@ -1,0 +1,3 @@
+# Chiori with Nighttime Whispers in the Echoing Woods 4, beside Klee for crystallize.
+team klee-chiori-xilonen-furina
+chiori add set="nighttimewhispersintheechoingwoods" count=4;

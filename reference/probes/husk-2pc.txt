@@ -1,0 +1,4 @@
+# Chiori with Husk of Opulent Dreams 2 and Tenacity of the Millelith 2.
+team klee-chiori-xilonen-furina
+chiori add set="huskofopulentdreams" count=2;
+chiori add set="tenacityofthemillelith" count=2;
