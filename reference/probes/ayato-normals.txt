@@ -1,0 +1,4 @@
+# Ayato's normal and charged attacks outside Kyouka, and an illusion that explodes 2 s in.
+team kamisatoayato-furina-rosaria-escoffier
+rotation- ayato skill, attack:10;
+rotation+ ayato attack:5, attack:2, charge, skill[illusion_delay=120], attack:10;

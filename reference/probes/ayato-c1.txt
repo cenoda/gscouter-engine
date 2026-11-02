@@ -1,0 +1,3 @@
+# Ayato C1: nothing outside damage mode (its bonus reads the enemy's HP); the library builds are C0.
+team kamisatoayato-furina-rosaria-escoffier
+ayato char lvl=90/90 cons=1 talent=9,9,9;

@@ -1,0 +1,3 @@
+# Ayato C4: the party's ATK SPD after his burst.
+team kamisatoayato-furina-rosaria-escoffier
+ayato char lvl=90/90 cons=4 talent=9,9,9;

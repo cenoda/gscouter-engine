@@ -1,0 +1,4 @@
+# Heart of Depth 2 and Nymph's Dream 2 on Ayato (the library builds carry four pieces).
+team kamisatoayato-furina-rosaria-escoffier
+ayato add set="heartofdepth" count=2;
+ayato add set="nymphsdream" count=2;
