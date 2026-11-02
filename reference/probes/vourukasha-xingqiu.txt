@@ -1,0 +1,3 @@
+# Xingqiu with Vourukasha's Glow 4, drained by Furina.
+team hutao-furina-yelan-xingqiu
+xingqiu add set="vourukashasglow" count=4;

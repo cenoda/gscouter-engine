@@ -1,0 +1,3 @@
+# Ineffa with Night of the Sky's Unveiling 4 on a Lunar-Charged team.
+team gaming-furina-ineffa-bennett
+ineffa add set="nightoftheskysunveiling" count=4;

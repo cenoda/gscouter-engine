@@ -1,0 +1,3 @@
+# Rosaria with Pale Flame 4.
+team rosaria-furina-nahida-bennett
+rosaria add set="paleflame" count=4;

@@ -1,0 +1,3 @@
+# Lisa with Desert Pavilion Chronicle 4: charged attacks, then normal attack speed.
+team lisa-chevreuse-fischl-xiangling
+lisa add set="desertpavilionchronicle" count=4;

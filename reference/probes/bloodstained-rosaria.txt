@@ -1,0 +1,4 @@
+# Rosaria with Bloodstained Chivalry 2 and Pale Flame 2.
+team rosaria-furina-nahida-bennett
+rosaria add set="bloodstainedchivalry" count=2;
+rosaria add set="paleflame" count=2;

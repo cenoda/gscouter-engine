@@ -1,0 +1,3 @@
+# Bennett with Maiden Beloved 4.
+team bennett-furina-fischl-yelan
+bennett add set="maidenbeloved" count=4;

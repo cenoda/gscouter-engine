@@ -1,0 +1,3 @@
+# Fischl (Hexerei) with A Day Carved From Rising Winds 4.
+team fischl-yelan-xingqiu-sucrose
+fischl add set="adaycarvedfromrisingwinds" count=4;

@@ -1,0 +1,3 @@
+# Lisa (catalyst) with Wanderer's Troupe 4 on her charged attacks.
+team lisa-chevreuse-fischl-xiangling
+lisa add set="wandererstroupe" count=4;

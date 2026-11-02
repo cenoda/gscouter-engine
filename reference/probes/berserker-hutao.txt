@@ -1,0 +1,3 @@
+# Hu Tao with Berserker 4, below 70% HP.
+team hutao-furina-yelan-xingqiu
+hutao add set="berserker" count=4;

@@ -1,0 +1,3 @@
+# Bennett with The Exile 4.
+team bennett-furina-fischl-yelan
+bennett add set="theexile" count=4;

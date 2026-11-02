@@ -1,0 +1,3 @@
+# Fischl with Disenchantment in Deep Shadow 4 beside Diona: superconduct.
+team cyno-nahida-fischl-diona
+fischl add set="disenchantmentindeepshadow" count=4;
