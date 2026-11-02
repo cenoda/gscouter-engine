@@ -751,6 +751,10 @@ pub struct Char {
     pub time_passed: i32,
     pub queue: Queue<Task>,
     pub cd: [Cooldown; 3],
+    /// The skill's cooldown is also the low plunge's (Cyno's override of
+    /// ReduceActionCooldown and ResetActionCooldown, for Mortuary Rite):
+    /// reducing or resetting one does both.
+    pub skill_cd_twin: bool,
     pub remaining_dash_cd: i32,
     pub dash_lockout: bool,
     pub dash_len: i32,
@@ -1631,6 +1635,7 @@ impl Sim {
             time_passed: 0,
             queue: Queue::new(),
             cd: [Cooldown { available: 1, ..Default::default() }; 3],
+            skill_cd_twin: false,
             remaining_dash_cd: 0,
             dash_lockout: false,
             dash_len,
@@ -4578,9 +4583,23 @@ impl Sim {
         cd.started + cd.queue[0] - self.f
     }
 
-    /// gcsim's ResetActionCooldown.
     /// gcsim's ReduceActionCooldown.
     pub fn reduce_cd(&mut self, ci: usize, a: Action, v: i32) {
+        self.reduce_cd_one(ci, a, v);
+        if a == Action::Skill && self.chars[ci].skill_cd_twin {
+            self.reduce_cd_one(ci, Action::LowPlunge, v);
+        }
+    }
+
+    /// gcsim's ResetActionCooldown.
+    pub fn reset_cd(&mut self, ci: usize, a: Action) {
+        self.reset_cd_one(ci, a);
+        if a == Action::Skill && self.chars[ci].skill_cd_twin {
+            self.reset_cd_one(ci, Action::LowPlunge);
+        }
+    }
+
+    fn reduce_cd_one(&mut self, ci: usize, a: Action, v: i32) {
         let f = self.f;
         let cd = &mut self.chars[ci].cd[Char::cd_index(a)];
         if cd.available == 1 + cd.max_extra {
@@ -4588,14 +4607,14 @@ impl Sim {
         }
         let remain = cd.started + cd.queue[0] - f;
         if v >= remain {
-            self.reset_cd(ci, a);
+            self.reset_cd_one(ci, a);
             return;
         }
         cd.queue[0] = remain - v;
         self.start_cd_worker(ci, a);
     }
 
-    pub fn reset_cd(&mut self, ci: usize, a: Action) {
+    fn reset_cd_one(&mut self, ci: usize, a: Action) {
         let f = self.f;
         let cd = &mut self.chars[ci].cd[Char::cd_index(a)];
         if cd.available == 1 + cd.max_extra {
@@ -4821,7 +4840,8 @@ impl Sim {
 
     /// The active character's AnimationStartDelay for a key.
     pub fn start_delay(&self, key: usize) -> i32 {
-        self.chars[self.player.active as usize].anim_delay[key]
+        let ci = self.player.active as usize;
+        crate::chars::dispatch::start_delay(self.chars[ci].kind, self, ci, key).unwrap_or(self.chars[ci].anim_delay[key])
     }
 
     fn on_state_change(&mut self, next: AnimState) {
