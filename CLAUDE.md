@@ -60,7 +60,7 @@ A Rust port of gcsim, written only for Gscouter (https://github.com/cenoda/Gscou
   - At the start of a port, dispatch `compare.yml` on `main` with `warm` set to the teams the port will unblock (from the census in `compare`'s report, which lists the teams one or two items from support), so that gcsim runs while the port is written and the push runs only the engine.
   - After pushing, start the next item while CI runs, under these conditions, and come back to a branch when its run fails or stays inconclusive:
     - Every branch starts from `main`, never from a branch not yet verified.
-    - At most five branches are unverified at once, so a misreading of gcsim repeats in at most five ports before a verdict shows it.
+    - At most seven branches are unverified at once (five until the owner raised it on 2026-11-02), so a misreading of gcsim repeats in at most seven ports before a verdict shows it. A branch may carry several ports (two or three characters, or a wave of weapons) to use a slot well.
     - Every branch keeps the two scores above to the last digit before it is pushed, so a break in the core shows at once.
     - A system that changes an existing hook's signature or the order of work within a frame (events, tasks, the frame loop) goes alone: no other system runs beside it, and it is merged before the next one starts. Systems that only add hooks, events or state may run side by side.
     - A branch is merged into `main` as soon as its CI passes, one at a time, without waiting for the owner; the others are brought up to the new `main` before their own merge. The merge is compared again (gcsim is cached by then), and a branch counts as done only when that run passes too.
