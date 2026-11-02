@@ -1,0 +1,3 @@
+# Columbina C2: Gravity 34% faster, max HP +40% on each Gravity Interference, and with Moonsign 2 or more an ATK buff on the active character.
+team neuvillette-columbina-sucrose-fischl
+columbina char lvl=90/90 cons=2 talent=9,9,9;

@@ -1,0 +1,3 @@
+# Columbina C6 on Lunar-Crystallize: CRIT DMG on geo and hydro, and on Lunar-Crystallize contributions.
+team navia-furina-columbina-xilonen
+columbina char lvl=90/90 cons=6 talent=9,9,9;

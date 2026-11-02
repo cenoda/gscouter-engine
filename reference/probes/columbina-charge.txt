@@ -1,0 +1,4 @@
+# Columbina's charged attack (no dew in this team: the plain one, and its stamina).
+team neuvillette-columbina-sucrose-fischl
+rotation- columbina skill, burst;
+rotation+ columbina skill, burst, charge;

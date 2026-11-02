@@ -491,6 +491,8 @@ pub struct AttackInfo {
     pub pattern: Pattern,
     /// gcsim's UseDef: the damage scales with DEF, not ATK.
     pub use_def: bool,
+    /// gcsim's UseHP: the damage scales with max HP (checked first).
+    pub use_hp: bool,
     /// gcsim's AdditionalTags, as `add_tag` bits.
     pub add_tags: u8,
     /// gcsim's HitWeakPoint: it always crits, without a random draw.
@@ -543,6 +545,7 @@ impl AttackInfo {
             catalyzed: None,
             pattern: Pattern::Unknown,
             use_def: false,
+            use_hp: false,
             add_tags: 0,
             weak_point: false,
             no_impulse: false,
@@ -1345,6 +1348,7 @@ pub enum ShieldType {
     IneffaSkill,
     CitlaliSkill,
     LaylaSkill,
+    ColumbinaC1,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -1499,6 +1503,9 @@ pub struct Sim {
     pub statuses: Vec<(ModKey, i32)>,
     /// gcsim's Flags.Custom: values the whole fight shares.
     pub flags: Vec<(ModKey, f64)>,
+    /// Columbina's elevation of direct lunar DMG, in thousandths (0 without
+    /// her constellations).
+    pub lunar_direct_elevation: u16,
     /// The Nightsoul Burst's ICD, by the team's Natlan characters.
     pub nightsoul_burst_icd: i32,
     /// Flat damage EnemyHit subscribers add to the hit.
@@ -1655,6 +1662,7 @@ impl Sim {
             infusion: [None; 4],
             statuses: Vec::new(),
             flags: Vec::new(),
+            lunar_direct_elevation: 0,
             nightsoul_burst_icd: 0,
             hit_flat: 0.0,
             hit_base_bonus: 0.0,
@@ -2441,6 +2449,26 @@ impl Sim {
         self.flags.iter().find(|f| f.0 == key).map_or(0.0, |f| f.1)
     }
 
+    /// gcsim's delete of Flags.Custom[key].
+    pub fn delete_flag(&mut self, key: ModKey) {
+        self.flags.retain(|f| f.0 != key);
+    }
+
+    /// Lunar-Bloom and Lunar-Crystallize for the fight (gcsim's
+    /// LunarBloomEnableKey and LunarCrystallizeEnableKey).
+    pub fn enable_lunar_bloom_crystallize(&mut self) {
+        self.set_flag(LUNAR_BLOOM, 1.0);
+        self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
+    }
+
+    /// gcsim's LcExtraHitOverride (Lunar-Crystallize's shares the key).
+    pub fn set_lunar_extra_hit(&mut self, chance: Option<f64>) {
+        match chance {
+            Some(c) => self.set_flag(LC_EXTRA_HIT, c),
+            None => self.delete_flag(LC_EXTRA_HIT),
+        }
+    }
+
     pub fn set_flag(&mut self, key: ModKey, v: f64) {
         match self.flags.iter_mut().find(|f| f.0 == key) {
             Some(f) => f.1 = v,
@@ -2639,6 +2667,11 @@ impl Sim {
         if !self.subs[EventKind::ApplyAttack as usize].is_empty() {
             let ev = self.slots[slot as usize];
             self.emit(Event::ApplyAttack(&ev));
+        }
+        // Columbina's constellations elevate direct lunar DMG (her
+        // OnApplyAttack subscription)
+        if self.lunar_direct_elevation != 0 && self.slots[slot as usize].info.tag.is_lunar_direct() {
+            self.slots[slot as usize].elevation += self.lunar_direct_elevation;
         }
         // one enemy, hit while it lives when the attack's area reaches it
         // (AttackWillLand)
@@ -4661,7 +4694,7 @@ impl Sim {
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
         // reaction damage takes no DMG bonus
         let dmg_bonus = if ev.info.tag.is_reaction() { 0.0 } else { ele_per + s[st::DMGP] };
-        let a = if ev.info.use_def { total_def(s) } else { total_atk(s) };
+        let a = if ev.info.use_hp { max_hp(s) } else if ev.info.use_def { total_def(s) } else { total_atk(s) };
         let base = ev.info.mult * a * (1.0 + base_bonus) + ev.info.flat_dmg;
         let mut damage = base * (1.0 + dmg_bonus);
         s[st::CR] = s[st::CR].clamp(0.0, 1.0);
@@ -4702,7 +4735,7 @@ impl Sim {
     fn calc_direct(&mut self, ev: &mut AttackEvent, grp: f64, base_bonus: f64) -> (f64, bool) {
         let actor = ev.info.actor as usize;
         let s = &ev.stats;
-        let a = if ev.info.use_def { total_def(s) } else { total_atk(s) };
+        let a = if ev.info.use_hp { max_hp(s) } else if ev.info.use_def { total_def(s) } else { total_atk(s) };
         let mut damage = ev.info.mult * a * (1.0 + base_bonus);
         damage *= match ev.info.tag {
             AttackTag::DirectLunarCharged => 3.0,
