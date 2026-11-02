@@ -308,6 +308,13 @@ pub trait Character {
     fn receives_heal(_s: &Sim, _ci: usize, _caller: usize) -> bool {
         true
     }
+    /// Its ReceiveHeal, when it changes what a heal does: Some(the HP it
+    /// received) when it handled the heal of `amount` by `caller` itself
+    /// (Clorinde's Night Watch turns it into Bond of Life), None for the
+    /// template's.
+    fn receive_heal(_s: &mut Sim, _ci: usize, _caller: usize, _amount: f64) -> Option<f64> {
+        None
+    }
 }
 
 /// gcsim's template NextQueueItemIsValid: swords and polearms charge
@@ -477,6 +484,7 @@ macro_rules! chars {
             pub fn own_jump(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_jump(s, ci, p)),* } }
             pub fn template_action(k: CharKind, s: &mut Sim, ci: usize, a: Action) { match k { $(CharKind::$kind => $m::Char::template_action(s, ci, a)),* } }
             pub fn receives_heal(k: CharKind, s: &Sim, ci: usize, caller: usize) -> bool { match k { $(CharKind::$kind => $m::Char::receives_heal(s, ci, caller)),* } }
+            pub fn receive_heal(k: CharKind, s: &mut Sim, ci: usize, caller: usize, amount: f64) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::receive_heal(s, ci, caller, amount)),* } }
         }
     };
 }

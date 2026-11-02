@@ -1,0 +1,3 @@
+# Clorinde C2: A1's flat damage +30% of ATK a stack, up to 2,700; the library builds are C0.
+team clorinde-fischl-nahida-furina
+clorinde char lvl=90/90 cons=2 talent=9,9,9;

@@ -1,0 +1,3 @@
+# Clorinde C1: Nightwatch Shade on her electro normal attacks in Night Watch; the library builds are C0.
+team clorinde-fischl-nahida-furina
+clorinde char lvl=90/90 cons=1 talent=9,9,9;

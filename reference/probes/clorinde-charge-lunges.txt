@@ -1,0 +1,5 @@
+# Clorinde's charged attack after a normal attack, then Impale the Night at a Bond of Life below 100% and Swift Hunt shots from a fresh Night Watch (no library rotation charges or lunges below a full Bond).
+team clorinde-fischl-nahida-furina
+rotation- clorinde attack:3;
+rotation+ clorinde attack, charge;
+rotation+ clorinde skill, skill, attack, skill, attack:2;

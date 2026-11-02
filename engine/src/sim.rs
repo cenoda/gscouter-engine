@@ -2149,6 +2149,13 @@ impl Sim {
             self.emit(Event::Heal { caller, target, on, amount: 0.0, overheal: 0.0, before_debt: heal_amt });
             return;
         }
+        let prev_hp = self.current_hp(on);
+        if let Some(heal) = crate::chars::dispatch::receive_heal(self.chars[on].kind, self, on, caller, heal_amt) {
+            self.modify_hp(on, heal);
+            let overheal = (prev_hp + heal - self.max_hp(on)).max(0.0);
+            self.emit(Event::Heal { caller, target, on, amount: heal, overheal, before_debt: heal_amt });
+            return;
+        }
         let prev = self.current_hp(on);
         let heal = (heal_amt - self.chars[on].hp_debt).max(0.0);
         self.modify_hp_debt(on, -heal_amt);
