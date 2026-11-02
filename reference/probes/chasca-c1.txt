@@ -1,0 +1,3 @@
+# Chasca C1: the third bullet converts 33.3% more often, and a converted third converts the second; the library builds are C0.
+team chasca-citlali-furina-bennett
+chasca char lvl=90/90 cons=1 talent=9,9,9;

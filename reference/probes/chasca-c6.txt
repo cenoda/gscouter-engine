@@ -1,0 +1,5 @@
+# Chasca C6: a converted bullet loaded makes the next charge instant with CRIT DMG +120% (then it must load six); the library builds are C0.
+team chasca-citlali-furina-bennett
+chasca char lvl=90/90 cons=6 talent=9,9,9;
+rotation- chasca aim[bullets=4];
+rotation+ chasca aim;

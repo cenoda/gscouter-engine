@@ -1,0 +1,6 @@
+# Chasca: tap shots, dashes and short charges in the blessing, the skill pressed again to end it, the low plunge after it, normal attacks, aimed shots and the burst on the ground.
+team chasca-citlali-furina-bennett
+rotation- chasca aim:4;
+rotation+ chasca attack:3, dash, aim[bullets=3], attack, dash, aim:2;
+rotation+ chasca skill, low_plunge;
+rotation+ chasca attack:4, aim[hold=0], aim;

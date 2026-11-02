@@ -1,0 +1,6 @@
+# Chasca with Slingshot: her Nightsoul damage (the shells, A4's) does not count for its bonus, her aimed shots and normal attacks do.
+team chasca-citlali-furina-bennett
+chasca add weapon="slingshot" refine=5 lvl=90/90;
+rotation- chasca aim:4;
+rotation+ chasca aim:3;
+rotation+ chasca skill, attack:4, aim, aim[hold=0];

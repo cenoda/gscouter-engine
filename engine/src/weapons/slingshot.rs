@@ -1,6 +1,7 @@
-//! Slingshot, from gcsim's internal/weapons/bow/slingshot. Its exceptions
-//! for Tartaglia's melee and Chasca's Nightsoul shots are for characters the
-//! engine does not implement.
+//! Slingshot, from gcsim's internal/weapons/bow/slingshot. Its exception
+//! for Tartaglia's melee is for a character the engine does not implement;
+//! on Chasca, her Nightsoul damage (the skill's shells, A4's and C2's and
+//! C4's hits) does not count.
 
 use crate::content::WeaponImpl;
 use crate::sim::*;
@@ -26,6 +27,9 @@ impl WeaponImpl for Weapon {
     /// gain DMG; later ones lose 10%.
     fn attack_mod(s: &Sim, ci: usize, _: usize, _: &Mod, ev: &mut AttackEvent) {
         if !matches!(ev.info.tag, AttackTag::Normal | AttackTag::Extra) {
+            return;
+        }
+        if s.chars[ci].kind == crate::chars::CharKind::Chasca && ev.info.has_tag(add_tag::NIGHTSOUL) {
             return;
         }
         let travel = s.f - ev.snap_f;
