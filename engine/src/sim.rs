@@ -4875,6 +4875,11 @@ impl Sim {
         pct
     }
 
+    /// gcsim's RestoreStam.
+    pub fn restore_stam(&mut self, v: f64) {
+        self.player.stam = (self.player.stam + v).min(240.0);
+    }
+
     /// gcsim's UseStam.
     pub fn use_stam(&mut self, amt: f64) {
         self.player.stam = (self.player.stam - amt).max(0.0);

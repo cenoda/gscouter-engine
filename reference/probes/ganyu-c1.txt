@@ -1,0 +1,3 @@
+# Ganyu C1: Frostflake hits cut cryo RES and give 2 energy an arrow (the library builds are C0).
+team ganyu-furina-escoffier-rosaria
+ganyu char lvl=90/90 cons=1 talent=9,9,9;

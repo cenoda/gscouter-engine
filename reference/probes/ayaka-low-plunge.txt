@@ -1,0 +1,4 @@
+# Ayaka's low plunge with its collision hit, from Xianyun's jump (the library rotation uses the high plunge).
+team kamisatoayaka-furina-escoffier-xianyun
+rotation-     ayaka high_plunge[collision=rand()>0.5];
+rotation+     ayaka low_plunge[collision=1];

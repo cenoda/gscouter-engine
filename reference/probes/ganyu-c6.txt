@@ -1,0 +1,3 @@
+# Ganyu C6: the skill makes her next Frostflake Arrow instant (with C1 to C5).
+team ganyu-furina-escoffier-rosaria
+ganyu char lvl=90/90 cons=6 talent=9,9,9;

@@ -55,6 +55,8 @@ crate::chars! {
     Kokomi => kokomi,
     KujouSara => sara,
     Navia => navia,
+    Ganyu => ganyu,
+    Ayaka => ayaka,
 }
 
 /// The characters whose modules have been checked against gcsim for a

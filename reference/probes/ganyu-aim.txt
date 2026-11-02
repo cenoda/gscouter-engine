@@ -1,0 +1,4 @@
+# Ganyu's other shots: a charged shot (hold 1), physical aimed shots (hold 0) and normal attacks.
+team ganyu-furina-escoffier-rosaria
+rotation-   ganyu aim, skill, burst, aim:4;
+rotation+   ganyu aim[hold=1], skill, burst, aim[hold=0]:2, attack:6, aim:2;
