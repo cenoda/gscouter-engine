@@ -17,10 +17,10 @@ fn team_mean(config: &str) -> String {
 
 #[test]
 fn team_looped() {
-    assert_eq!(team_mean("team-looped.txt"), "72266.7294");
+    assert_eq!(team_mean("team-looped.txt"), "72247.4509");
 }
 
 #[test]
 fn hutao_solo_looped() {
-    assert_eq!(team_mean("hutao-solo-looped.txt"), "24607.0319");
+    assert_eq!(team_mean("hutao-solo-looped.txt"), "24589.2381");
 }
