@@ -781,6 +781,10 @@ pub struct Char {
     pub hp_debt: f64,
     pub normal_counter: i32,
     pub normal_hit_num: i32,
+    /// A second normal counter a character keeps beside the base one
+    /// (Clorinde's normalSCounter), reset with it as her
+    /// ResetNormalCounter does.
+    pub normal_s_counter: i32,
     pub mods: Vec<Mod>,
     pub frozen: i32,
     pub time_passed: i32,
@@ -1682,6 +1686,7 @@ impl Sim {
             hp_debt: 0.0,
             normal_counter: 0,
             normal_hit_num,
+            normal_s_counter: 0,
             mods: Vec::with_capacity(24),
             frozen: 0,
             time_passed: 0,
@@ -4904,6 +4909,7 @@ impl Sim {
         self.player.swap_cd = self.swap_icd;
         for c in &mut self.chars {
             c.normal_counter = 0;
+            c.normal_s_counter = 0;
         }
         self.emit(Event::Swap { prev, next: to });
         // the shield stats collector, last to subscribe
@@ -5251,6 +5257,7 @@ impl Sim {
         if a != Action::Attack {
             for c in &mut self.chars {
                 c.normal_counter = 0;
+                c.normal_s_counter = 0;
             }
         }
     }
