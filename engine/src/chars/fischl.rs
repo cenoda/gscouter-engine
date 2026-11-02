@@ -300,7 +300,7 @@ impl Character for Char {
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
             // not on the player's own aura
-            Event::Reaction(r, ev) if !ev.on_player => {
+            Event::Reaction(r, ev) if ev.on_enemy() => {
                 if s.chars[ci].ascension >= 4 {
                     a4(s, ci, r, ev);
                 }

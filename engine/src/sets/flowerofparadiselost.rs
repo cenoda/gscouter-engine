@@ -50,7 +50,7 @@ impl SetImpl for Set {
         let Event::Reaction(r, ev) = *e else { return };
         match r {
             // gcsim's OnBloom subscription skips targets other than enemies
-            Reaction::Bloom if !ev.on_player => {}
+            Reaction::Bloom if ev.on_enemy() => {}
             Reaction::Hyperbloom | Reaction::Burgeon | Reaction::LunarBloom => {}
             _ => return,
         }

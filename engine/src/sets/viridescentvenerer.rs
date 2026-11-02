@@ -54,7 +54,7 @@ impl SetImpl for Set {
     fn event(s: &mut Sim, ci: usize, _: usize, e: &Event) {
         let ele = match *e {
             // a swirl on the enemy (not the player's own aura)
-            Event::Reaction(r, ev) if ev.info.actor as usize == ci && !ev.on_player => match r {
+            Event::Reaction(r, ev) if ev.info.actor as usize == ci && ev.on_enemy() => match r {
                 Reaction::SwirlPyro => Element::Pyro,
                 Reaction::SwirlHydro => Element::Hydro,
                 Reaction::SwirlElectro => Element::Electro,

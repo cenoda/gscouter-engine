@@ -65,7 +65,7 @@ impl SetImpl for Set {
         }
         let Event::Reaction(r, ev) = *e else { return };
         // only reactions on an enemy (or, for burgeon and hyperbloom, a gadget)
-        if ev.on_player {
+        if !ev.on_enemy() {
             return;
         }
         let elements = r.elements();

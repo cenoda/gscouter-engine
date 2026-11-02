@@ -491,7 +491,7 @@ impl Character for Char {
 fn c4(s: &mut Sim, ci: usize, r: Reaction, ev: &AttackEvent) {
     match r {
         Reaction::Overload | Reaction::ElectroCharged | Reaction::LunarCharged | Reaction::Superconduct | Reaction::StellarConduct | Reaction::Quicken | Reaction::Aggravate | Reaction::SwirlElectro => {
-            if ev.on_player {
+            if !ev.on_enemy() {
                 return;
             }
         }

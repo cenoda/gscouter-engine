@@ -277,7 +277,7 @@ impl Character for Char {
             Reaction::SwirlCryo => (3, Element::Cryo),
             _ => return,
         };
-        if ev.on_player || ev.info.actor as usize != ci {
+        if !ev.on_enemy() || ev.info.actor as usize != ci {
             return;
         }
         let f = s.f;

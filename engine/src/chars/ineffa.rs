@@ -293,7 +293,7 @@ impl Character for Char {
                 }
             }
             // C4: 5 energy on each Lunar-Charged on an enemy
-            Event::Reaction(Reaction::LunarCharged, ev) if !ev.on_player => {
+            Event::Reaction(Reaction::LunarCharged, ev) if ev.on_enemy() => {
                 s.add_energy(ci, 5.0);
                 s.add_status(ci, C4_ICD, 4 * 60, true);
             }

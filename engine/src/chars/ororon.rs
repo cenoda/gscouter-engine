@@ -325,7 +325,7 @@ impl Character for Char {
                     a4_hit(s, ci, ev);
                 }
             }
-            Event::Reaction(Reaction::ElectroCharged | Reaction::LunarCharged, ev) => a1_nightsoul_attack(s, ci, ev),
+            Event::Reaction(Reaction::ElectroCharged | Reaction::LunarCharged, ev) if ev.on_enemy() => a1_nightsoul_attack(s, ci, ev),
             Event::EnemyDamage(ev) => {
                 if ev.info.actor as usize == ci || !ev.info.has_tag(add_tag::NIGHTSOUL) {
                     return;

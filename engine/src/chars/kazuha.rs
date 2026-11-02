@@ -314,7 +314,7 @@ impl Character for Char {
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         let Event::Reaction(r, ev) = *e else { return };
         // only swirls on an enemy
-        if ev.on_player {
+        if !ev.on_enemy() {
             return;
         }
         let (i, stat) = match r {

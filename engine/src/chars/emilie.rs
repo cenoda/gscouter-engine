@@ -312,7 +312,7 @@ impl Character for Char {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
-            Event::Reaction(Reaction::Burning, ev) if !ev.on_player => c1_scent(s, ci),
+            Event::Reaction(Reaction::Burning, ev) if ev.on_enemy() => c1_scent(s, ci),
             Event::EnemyDamage(ev) => {
                 if s.enemy_burning() && ev.info.element == Element::Dendro {
                     c1_scent(s, ci);

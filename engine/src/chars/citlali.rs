@@ -324,7 +324,7 @@ impl Character for Char {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
-            Event::Reaction(Reaction::Melt | Reaction::Frozen, ev) if !ev.on_player => a1(s, ci),
+            Event::Reaction(Reaction::Melt | Reaction::Frozen, ev) if ev.on_enemy() => a1(s, ci),
             Event::NightsoulBurst(_) => generate_points(s, ci, 4.0),
             // C1: another member's hit while active, with Stellar Blades
             // left, adds 200% of her EM
