@@ -24,6 +24,10 @@ pub struct State {
     oz_travel: i32,
     /// The frame of the burst whose Oz has not spawned yet, -1 once it has.
     burst_oz_spawn_src: i32,
+    /// The frame of the last burst, which its OnRemoved closure holds
+    /// (gcsim's burstShortOzFunc compares it, not the current src, so a
+    /// swap after Oz spawned spawns nothing).
+    burst_f: i32,
     watch_src: i32,
     /// Her Hexerei bonus is on: she is Hexerei with another in the team.
     hex: bool,
@@ -71,6 +75,7 @@ impl Character for Char {
             oz_active: false,
             oz_travel,
             burst_oz_spawn_src: 0,
+            burst_f: 0,
             watch_src: 0,
             hex: false,
         }
@@ -216,6 +221,7 @@ impl Character for Char {
         let st = s.st_mut::<State>(ci);
         st.oz_active = true;
         st.burst_oz_spawn_src = f;
+        st.burst_f = f;
         // Oz spawns at the end of the animation, or after a swap that cuts it
         s.add_task(Task::Char { c: ci as u8, id: TASK_BURST_OZ, arg: f }, g::BURST_FULL_OZ_SPAWN);
         let mut info = ActInfo::new(Frames::Table(&g::BURST_FRAMES), g::BURST_FRAMES[0], g::BURST_FRAMES[Action::Swap as usize], AnimState::Burst);
@@ -226,7 +232,7 @@ impl Character for Char {
     fn on_removed(s: &mut Sim, ci: usize, _: u8, next: AnimState) {
         if next == AnimState::Swap {
             // the swap's own delay comes first
-            let src = s.st::<State>(ci).burst_oz_spawn_src;
+            let src = s.st::<State>(ci).burst_f;
             let d = s.swap_delay;
             burst_oz_spawn(s, ci, src, g::BURST_SHORT_OZ_SPAWN + d, g::BURST_SHORT_OZ_FIRST_TICK + d);
         }
