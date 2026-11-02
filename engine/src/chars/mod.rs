@@ -47,6 +47,7 @@ crate::chars! {
     Cyno => cyno,
     Citlali => citlali,
     Mavuika => mavuika,
+    Skirk => skirk,
 }
 
 /// The characters whose modules have been checked against gcsim for a

@@ -1,0 +1,5 @@
+# Finale of the Deep Galleries at two pieces on Skirk, in the fixed loop.
+team skirk-xingqiu-candace-escoffier
+skirk add set="finaleofthedeepgalleries" count=2;
+rotation- let First_Rot_Nuke = true;
+rotation+ let First_Rot_Nuke = false;

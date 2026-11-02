@@ -2,6 +2,7 @@
 //! implementing `content::SetImpl`; a line here registers it.
 
 crate::sets! {
+    FinaleOfTheDeepGalleries => finaleofthedeepgalleries,
     Shimenawa => shimenawasreminiscence,
     Emblem => emblemofseveredfate,
     Tenacity => tenacityofthemillelith,

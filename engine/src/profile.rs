@@ -106,6 +106,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("start_hp", _) => start_hp = *v as f64,
             ("start_hp%", _) => start_hp_ratio = *v as f64,
             ("start_energy", _) => start_energy = *v as f64,
+            ("start_serpents_subtlety", Some(CharKind::Skirk)) => {}
             ("breakthrough", Some(CharKind::Yelan)) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             ("hexerei", Some(CharKind::Sucrose)) => {}

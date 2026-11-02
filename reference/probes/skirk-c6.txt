@@ -1,0 +1,5 @@
+# Skirk at C6 (C1's hits on absorbed rifts, C2, C4, C6's Havoc: Sever) in the fixed loop.
+team skirk-xingqiu-candace-escoffier
+skirk char lvl=90/90 cons=6 talent=9,9,9 +params=[start_serpents_subtlety=100];
+rotation- let First_Rot_Nuke = true;
+rotation+ let First_Rot_Nuke = false;

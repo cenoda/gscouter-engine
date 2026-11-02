@@ -1,0 +1,4 @@
+# Skirk's Seven-Phase Flash and Havoc: Extinction every loop: the library rotation sets First_Rot_Nuke and never clears it, so from its second loop Skirk waits for Havoc: Ruin with no Serpent's Subtlety and the window has no damage, in gcsim too.
+team skirk-xingqiu-candace-escoffier
+rotation- let First_Rot_Nuke = true;
+rotation+ let First_Rot_Nuke = false;

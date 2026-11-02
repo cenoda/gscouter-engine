@@ -1,0 +1,9 @@
+# Skirk's held skill (Serpent's Subtlety and the Void Rifts absorbed at once), then her physical attacks and charged attack, in the fixed loop.
+team skirk-xingqiu-candace-escoffier
+rotation- let First_Rot_Nuke = true;
+rotation+ let First_Rot_Nuke = false;
+rotation- } else {
+rotation-   skirk skill,
+rotation+ } else {
+rotation+   skirk skill[hold=60], attack:3, charge, dash;
+rotation+   skirk skill,
