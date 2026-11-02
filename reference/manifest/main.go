@@ -313,7 +313,7 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		}
 		for _, v := range order {
 			r := last[v]
-			if len(r.Metrics) > 0 && r.Metrics[0].Name == "team" && !math.IsInf(r.Metrics[0].Diff, 0) && !math.IsNaN(r.Metrics[0].Diff) {
+			if r.Verdict != "idle" && len(r.Metrics) > 0 && r.Metrics[0].Name == "team" && !math.IsInf(r.Metrics[0].Diff, 0) && !math.IsNaN(r.Metrics[0].Diff) {
 				diffs = append(diffs, r.Metrics[0].Diff)
 			}
 			if v == "library" || v == "page:once" {
@@ -329,6 +329,10 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 			case "pass":
 				total[k]++
 				pass[k]++
+			case "idle":
+				total[k]++
+				t.Why = append(t.Why, v+": idle (the rotation does nothing in the scored window in either engine; fix it in Gscouter's library)")
+				continue
 			case "unsupported":
 				if k == "pages" || k == "buildspace" {
 					t.Unsupported = append(t.Unsupported, v+": "+strings.TrimPrefix(r.Error, "unsupported: "))

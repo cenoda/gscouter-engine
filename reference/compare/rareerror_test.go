@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/cenoda/gscouter-engine/reference/harness"
+)
 
 func TestSameError(t *testing.T) {
 	g := "error encountered on mavuika executing skill: cannot recast E while not in nightsoul blessing"
@@ -24,5 +28,25 @@ func TestSameError(t *testing.T) {
 	}
 	if m := gseIteration.FindStringSubmatch("gse: exit status 1: iteration 6772: mavuika: x"); m == nil || m[1] != "6772" {
 		t.Errorf("gseIteration: %v", m)
+	}
+}
+
+func TestIdle(t *testing.T) {
+	out := func(team float64) *harness.Output { return &harness.Output{Team: harness.Stat{Mean: team}} }
+	cases := []struct {
+		g, r float64
+		want bool
+	}{
+		{1.3, 1.2, true},
+		{0, 0.3, true},
+		{9.9, 0, true},
+		{10, 0.5, false},
+		{0.5, 12, false},
+		{61000, 61010, false},
+	}
+	for _, c := range cases {
+		if got := idle(out(c.g), out(c.r)); got != c.want {
+			t.Errorf("idle(%v, %v) = %v, want %v", c.g, c.r, got, c.want)
+		}
 	}
 }
