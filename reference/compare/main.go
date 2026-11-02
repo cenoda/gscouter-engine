@@ -945,6 +945,48 @@ func (e *bothError) Error() string {
 	return fmt.Sprintf("both refuse: gcsim: %s; %s", first(e.gcsim), first(e.gse))
 }
 
+// rareError runs the engine on seeds 1 to -max-iter of a build on which
+// gcsim errored in the chunk from seed `from` (n seeds) and the engine did
+// not: a rotation can error in a small share of fights only (a condition
+// read the frame before the state it tests ends), and each engine draws
+// its own fights. If the engine errors with the same message in any of
+// them, the build is a both-error, with both messages and their seeds;
+// otherwise nil, and the build stays an error.
+func rareError(gse, path string, warm float64, gerr error, from, n int) *bothError {
+	_, rerr := runGse(gse, path, *maxIter, 1, warm)
+	if rerr == nil || errors.Is(rerr, errUnsupported) || !sameError(gerr.Error(), rerr.Error()) {
+		return nil
+	}
+	seed := "?"
+	if m := gseIteration.FindStringSubmatch(rerr.Error()); m != nil {
+		i, _ := strconv.Atoi(m[1])
+		seed = strconv.Itoa(1 + i)
+	}
+	return &bothError{
+		gcsim: fmt.Errorf("%v (in seeds %d to %d)", gerr, from, from+n-1),
+		gse:   fmt.Errorf("%v (seed %s, of seeds 1 to %d)", rerr, seed, *maxIter),
+	}
+}
+
+// gseIteration finds the fight an engine error happened in (gse's
+// "iteration i: ...", seed 1 + i from seed 1).
+var gseIteration = regexp.MustCompile(`iteration (\d+): `)
+
+// sameError compares a gcsim error with an engine error by their last
+// clause, the message itself: gcsim prefixes it with "error encountered on
+// <char> executing <action>: ", the engine with "iteration i: <char>: ".
+func sameError(gcsimErr, gseErr string) bool {
+	last := func(s string) string {
+		s, _, _ = strings.Cut(s, "\n")
+		if i := strings.LastIndex(s, ": "); i >= 0 {
+			s = s[i+2:]
+		}
+		return strings.TrimSpace(s)
+	}
+	g, r := last(gcsimErr), last(gseErr)
+	return g != "" && g == r
+}
+
 func runGse(gse, path string, n int, seed int64, warmup float64) (*harness.Output, error) {
 	var stderr bytes.Buffer
 	cmd := exec.Command(gse, path, strconv.Itoa(n), fmt.Sprint(warmup), strconv.Itoa(*workers), "--seed", strconv.FormatInt(seed, 10))
@@ -1059,6 +1101,12 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 			// agrees when the engine refuses it too
 			if _, gerr := runGse(gse, path, more, int64(1+n), v.warm()); gerr != nil && !errors.Is(gerr, errUnsupported) {
 				return &bothError{gcsim: err, gse: gerr}
+			}
+			// a rotation that errors in a few fights only (a race at
+			// one frame) agrees when the engine, run on seeds up to
+			// -max-iter, hits the same error in a fight of its own
+			if both := rareError(gse, path, v.warm(), err, 1+n, more); both != nil {
+				return both
 			}
 			return fmt.Errorf("gcsim: %w", err)
 		}
