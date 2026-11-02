@@ -1,0 +1,4 @@
+# Eula C0 on the C2 probe's rotation (a second hold waiting for the 10 s cooldown), the baseline C2 changes.
+team eula-raidenshogun-rosaria-bennett
+rotation- eula burst, walk, attack:4, skill[hold=1], walk[f=10], attack:4;
+rotation+ eula burst, walk, attack:4, skill[hold=1], walk[f=10], attack:4, skill[hold=1];

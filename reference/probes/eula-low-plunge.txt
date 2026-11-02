@@ -1,0 +1,4 @@
+# Eula's low plunge from Xianyun's jump; the library's rotation plunges high.
+team eula-rosaria-bennett-xianyun
+rotation- eula high_plunge[collision=rand()>0.5];
+rotation+ eula low_plunge[collision=rand()>0.5];

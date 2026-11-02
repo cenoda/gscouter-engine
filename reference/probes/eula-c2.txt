@@ -1,0 +1,5 @@
+# Eula C2: the held skill's cooldown 4 s, with a second hold right after the first; the library builds are C0 but one.
+team eula-raidenshogun-rosaria-bennett
+eula char lvl=90/90 cons=2 talent=9,9,9;
+rotation- eula burst, walk, attack:4, skill[hold=1], walk[f=10], attack:4;
+rotation+ eula burst, walk, attack:4, skill[hold=1], walk[f=10], attack:4, skill[hold=1];

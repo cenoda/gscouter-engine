@@ -1,0 +1,4 @@
+# Eula's fifth normal attack (its box and two hits), which her library rotations never reach.
+team eula-raidenshogun-rosaria-bennett
+rotation- eula burst, walk, attack:4, skill[hold=1], walk[f=10], attack:4;
+rotation+ eula burst, walk, attack:5, skill[hold=1], walk[f=10], attack:5;

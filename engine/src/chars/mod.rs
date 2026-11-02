@@ -72,6 +72,7 @@ crate::chars! {
     Columbina => columbina,
     Charlotte => charlotte,
     Xiao => xiao,
+    Eula => eula,
 }
 
 /// The characters whose modules have been checked against gcsim for a
