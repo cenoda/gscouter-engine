@@ -38,4 +38,5 @@ crate::weapons! {
     PrototypeAmber => prototypeamber,
     FinaleOfTheDeep => finaleofthedeep,
     OathswornEye => oathsworneye,
+    ChainBreaker => chainbreaker,
 }

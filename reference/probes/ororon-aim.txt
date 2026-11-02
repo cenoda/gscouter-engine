@@ -1,0 +1,4 @@
+# Ororon's aimed shots: a fully charged shot on a weak spot (a sure crit, with its headshot hitlag) before his skill, then a physical and a fully charged aimed shot after his burst (no library rotation aims with him).
+team raidenshogun-ororon-yelan-xingqiu
+rotation- ororon skill, attack, burst;
+rotation+ ororon aim[weakspot=1], skill, attack, burst, aim[hold=0], aim;
