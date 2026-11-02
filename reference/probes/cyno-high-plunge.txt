@@ -1,0 +1,4 @@
+# Cyno's high plunge from Xianyun's airborne state in Pactsworn Pathclearer (the library plunges low).
+team cyno-nahida-fischl-xianyun
+rotation- cyno low_plunge[collision=rand()>0.5], attack;
+rotation+ cyno high_plunge[collision=rand()>0.5], attack;

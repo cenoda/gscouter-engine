@@ -1,0 +1,5 @@
+# Cyno's physical plunges and normal attacks out of Pactsworn Pathclearer: no burst, and the revelation off so that his skill does not enter it.
+team cyno-nahida-fischl-xianyun
+cyno char lvl=90/90 cons=0 talent=9,9,9 +params=[revelation=0];
+rotation- cyno skill, burst, attack, skill;
+rotation+ cyno skill, attack:2;

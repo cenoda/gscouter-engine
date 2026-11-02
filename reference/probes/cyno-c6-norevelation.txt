@@ -1,0 +1,3 @@
+# Cyno C6 with the revelation switched off (param revelation=0): his skill no longer enters Pactsworn Pathclearer, no Together We Rise, and C6's bolts are never Stellar-Conduct.
+team cyno-fischl-nahida-zhongli
+cyno char lvl=90/90 cons=6 talent=9,9,9 +params=[revelation=0];

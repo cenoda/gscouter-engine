@@ -1,0 +1,4 @@
+# Cyno's charged attack out of Pactsworn Pathclearer, after a normal attack (no library rotation that the engine runs charges with him; in Pactsworn gcsim refuses it, as the combo there leaves the normal attack's counter at 0).
+team cyno-fischl-nahida-zhongli
+rotation- cyno skill, burst,
+rotation+ cyno attack, charge, skill, burst,

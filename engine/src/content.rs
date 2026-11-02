@@ -276,6 +276,11 @@ pub trait Character {
     fn action_stam(_s: &Sim, _ci: usize, _a: Action) -> Option<f64> {
         None
     }
+    /// Its AnimationStartDelay for gcsim's AnimationDelayKey `key`, when
+    /// it is not the fixed one in its data.
+    fn start_delay(_s: &Sim, _ci: usize, _key: usize) -> Option<i32> {
+        None
+    }
     /// Its own part of a dash or jump (gcsim's override of Dash or Jump),
     /// run before the template's.
     fn template_action(_s: &mut Sim, _ci: usize, _a: Action) {}
@@ -443,6 +448,7 @@ macro_rules! chars {
             pub fn shield_bonus(k: CharKind, s: &Sim, ci: usize, key: ModKey) -> (f64, bool) { match k { $(CharKind::$kind => $m::Char::shield_bonus(s, ci, key)),* } }
             #[inline]
             pub fn action_stam(k: CharKind, s: &Sim, ci: usize, a: Action) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::action_stam(s, ci, a)),* } }
+            pub fn start_delay(k: CharKind, s: &Sim, ci: usize, key: usize) -> Option<i32> { match k { $(CharKind::$kind => $m::Char::start_delay(s, ci, key)),* } }
             pub fn template_action(k: CharKind, s: &mut Sim, ci: usize, a: Action) { match k { $(CharKind::$kind => $m::Char::template_action(s, ci, a)),* } }
         }
     };

@@ -44,6 +44,7 @@ crate::chars! {
     Thoma => thoma,
     Ineffa => ineffa,
     Ororon => ororon,
+    Cyno => cyno,
 }
 
 /// The characters whose modules have been checked against gcsim for a
