@@ -184,6 +184,14 @@ const MAX_DEW: i32 = 3;
 const VERDANT_DEW_END: i32 = 149;
 const MAX_PARTIAL_DEW: f64 = 146.0;
 const LUNAR_CRYSTALLIZE: ModKey = ModKey::new("lunarcrystallize-enabled");
+/// Lunar-Crystallize's Moondrifts and Moondrift Harmony (gcsim's lcrDur,
+/// lcrTravel, lcrHitmarks, moondriftOffset).
+pub const MOONDRIFT: ModKey = ModKey::new("moondrift");
+const MOONDRIFT_HARMONY_ICD: ModKey = ModKey::new("moondrift-harmony-icd");
+const LCR_DUR: i32 = 9 * 60;
+const LCR_TRAVEL: i32 = 10;
+const LCR_HITMARKS: [i32; 3] = [13, 13 + 12, 13 + 12 + 12];
+const MOONDRIFT_OFFSET: [(f64, f64); 3] = [(0.0, 1.0), (0.866, -0.5), (-0.866, -0.5)];
 /// gcsim's LunarChargeEnableKey, which content that enables Lunar-Charged
 /// sets (`Sim::enable_lunar_charge`).
 pub const LUNAR_CHARGE: ModKey = ModKey::new("lunarcharge-enabled");
@@ -645,6 +653,8 @@ pub enum Task {
     /// A second Lunar-Charged hit (gcsim's LcExtraHitOverride), with the
     /// contributors of the first, as bits.
     LcHit { contrib: u8 },
+    /// A Lunar-Crystallize hit from Moondrift Harmony.
+    LcrHit { contrib: u8, owner: u8 },
     /// Ascendant Gleam's update of its bonus from character c's stats.
     GleamUpdate { c: u8, src: i32 },
 }
@@ -1270,6 +1280,12 @@ pub struct Construct {
     /// The frame it was made.
     pub src: i32,
     pub expiry: i32,
+    /// Its position and direction (x, y, dx, dy), when the engine knows
+    /// them.
+    pub pos: Option<[f64; 4]>,
+    /// gcsim's constructs list (true), which holds at most 3, or its
+    /// consNoLimit (false: Lunar-Crystallize's Moondrifts, no owner).
+    pub limited: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1522,6 +1538,10 @@ pub struct Sim {
     /// The frame the Lunar-Charged cloud's ticks started (gcsim's
     /// Flags.Custom[lcSrcKey]).
     lc_src: i32,
+    /// gcsim's lunarcrystallize-count (at most 6) and its contributors,
+    /// as bits.
+    lcr_count: i32,
+    lcr_contrib: u8,
     /// Ascendant Gleam (two Moonsign characters or more): its bonus to
     /// lunar reactions and the frame its updates started.
     pub gleam: Option<(f64, i32)>,
@@ -1657,6 +1677,8 @@ impl Sim {
             special_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0), 0),
             lunar_charge: false,
             lc_src: 0,
+            lcr_count: 0,
+            lcr_contrib: 0,
             gleam: None,
             na_icd: 0,
             na_chance: [0.0; 4],
@@ -2526,6 +2548,7 @@ impl Sim {
             Task::NightsoulExit { c, src, cb } => self.ns_exit_timer(c as usize, src, cb),
             Task::LcTick { src } => self.lc_tick(src),
             Task::LcHit { contrib } => self.lc_hit(contrib, false),
+            Task::LcrHit { contrib, owner } => self.lcr_hit(contrib, owner as usize),
             Task::GleamUpdate { c, src } => self.gleam_update(c as usize, src),
             Task::PlayerIcdResetDmg { i } => {
                 let s = &mut self.player_icd[i as usize];
@@ -2876,8 +2899,9 @@ impl Sim {
                 ] {
                     // pyro crystallizes off burning too, then checks it
                     let burning = m == AURA_PYRO && self.enemy.aura.get(AURA_BURNING) > ZERO_DUR;
-                    if m == AURA_HYDRO {
-                        self.check_lunar_crystallize();
+                    if m == AURA_HYDRO && self.flag(LUNAR_CRYSTALLIZE) != 0.0 {
+                        self.try_add_lcr(ev);
+                        continue;
                     }
                     if self.enemy.aura.get(m) > ZERO_DUR || burning {
                         self.try_crystallize(ev, m, r);
@@ -3485,16 +3509,75 @@ impl Sim {
         v + m
     }
 
-    /// Lunar-Crystallize (gcsim's Flags.Custom "lunarcrystallize-enabled")
-    /// would replace hydro crystallize (TryAddLCr, its Moondrift constructs
-    /// and Moondrift Harmony); nothing the engine implements enables it.
-    /// `Sim::lunar_attack` computes its hits as it does Lunar-Charged's.
-    /// Nighttime Whispers' Moondrift part assumes there are no Moondrifts:
-    /// port it with them.
-    fn check_lunar_crystallize(&mut self) {
-        if self.flag(LUNAR_CRYSTALLIZE) != 0.0 {
-            self.unsupported("lunar-crystallize");
+    /// gcsim's TryAddLCr: geo on hydro with Lunar-Crystallize (Flags.Custom
+    /// "lunarcrystallize-enabled") instead of hydro crystallize. The
+    /// attacker and every character with hydro on the enemy contribute;
+    /// three Moondrifts come while fewer are near the player, and with
+    /// three near, every third reaction is Moondrift Harmony: three
+    /// Lunar-Crystallize hits. No crystallize shard and no crystallize ICD.
+    fn try_add_lcr(&mut self, ev: &mut AttackEvent) {
+        if self.enemy.aura.get(AURA_HYDRO) <= ZERO_DUR || ev.info.durability < ZERO_DUR {
+            return;
         }
+        self.lcr_count = (self.lcr_count + 1).min(6);
+        // contributeToLCrWithAttack
+        self.lcr_contrib |= 1 << ev.info.actor;
+        for i in 0..self.chars.len() {
+            if self.enemy.aura.dur[AURA_HYDRO][i] > ZERO_DUR {
+                self.lcr_contrib |= 1 << i;
+            }
+        }
+        self.emit(Event::Reaction(Reaction::LunarCrystallize, ev));
+        let near = self.moondrifts_near(20.0);
+        if near < 3 {
+            // on the enemy, at fixed offsets along its direction
+            let (ex, ey) = self.enemy_pos;
+            for i in 0..3 - near {
+                let (ox, oy) = MOONDRIFT_OFFSET[i];
+                self.new_moondrift(ex + ox, ey + oy, DEFAULT_DIR);
+            }
+        } else if self.lcr_count >= 3 && self.core_status_key(MOONDRIFT_HARMONY_ICD) == 0 {
+            // Moondrift Harmony (OnMoondriftHarmony: no ported content
+            // subscribes)
+            self.lcr_count -= 3;
+            self.add_core_status(MOONDRIFT_HARMONY_ICD, LCR_HITMARKS[2]);
+            self.do_lcr_attack(ev.info.actor as usize);
+            // the Moondrifts near the player last 9 s from now
+            let (px, py) = self.player_pos;
+            let f = self.f;
+            for c in self.constructs.iter_mut() {
+                if let (false, Some(p)) = (c.limited, c.pos) {
+                    if ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() <= 20.0 {
+                        c.expiry = f + LCR_DUR;
+                    }
+                }
+            }
+        }
+        let consumed = self.enemy.aura.reduce(AURA_HYDRO, ev.info.durability, 0.5);
+        ev.info.durability = (ev.info.durability - consumed).max(0.0);
+        ev.reacted = true;
+    }
+
+    /// gcsim's DoLCrAttack: three hits from the contributors so far, each
+    /// with a second when content gives it a chance (the extra-hit flag is
+    /// Lunar-Charged's key, shared); the contributors start over.
+    fn do_lcr_attack(&mut self, owner: usize) {
+        let contrib = self.lcr_contrib;
+        for d in LCR_HITMARKS {
+            self.add_task(Task::LcrHit { contrib, owner: owner as u8 }, d);
+            if let Some(chance) = self.flags.iter().find(|f| f.0 == LC_EXTRA_HIT).map(|f| f.1) {
+                if self.rng.float64() < chance {
+                    self.add_task(Task::LcrHit { contrib, owner: owner as u8 }, d);
+                }
+            }
+        }
+        self.lcr_contrib = 0;
+    }
+
+    /// gcsim's doSingleLCrAttack: Lunar-Crystallize damage, 10 frames on.
+    fn lcr_hit(&mut self, contrib: u8, owner: usize) {
+        let Some(ev) = self.lunar_attack(contrib, AttackTag::ReactionLunarCrystallize, Element::Geo, "lunarcrystallize", 1.6, owner) else { return };
+        self.queue_attack_with_snap(ev, 0, LCR_TRAVEL);
     }
 
     /// gcsim's TryBloom: hydro on dendro, quicken or burning fuel, or
@@ -3905,13 +3988,14 @@ impl Sim {
     }
 
     /// updateGeoResonance: DMG +15% and geo shred for the active character
-    /// while shielded, checked on swaps, shields and every second.
+    /// while shielded or with a Moondrift within 16 of the player, checked
+    /// on swaps, shields and every second.
     fn geo_res_update(&mut self, src: i32) {
         if self.geo_res_src != src {
             return;
         }
         let active = self.player.active as usize;
-        let on = self.is_shielded(active);
+        let on = self.is_shielded(active) || self.moondrifts_near(16.0) > 0;
         self.set_flag(GEO_RESONANCE, if on { 1.0 } else { 0.0 });
         self.queue_char_task(active, Task::GeoRes { src }, 60);
     }
@@ -4254,17 +4338,31 @@ impl Sim {
     /// construct calls its owner's construct_expired (OnDestruct).
     pub fn new_construct(&mut self, c: Construct, refresh: bool) {
         if refresh {
-            if let Some(i) = self.constructs.iter().rposition(|x| x.owner == c.owner && x.key == c.key) {
+            if let Some(i) = self.constructs.iter().rposition(|x| x.limited && x.owner == c.owner && x.key == c.key) {
                 let old = self.constructs.remove(i);
                 crate::chars::dispatch::construct_expired(self.chars[old.owner as usize].kind, self, old.owner as usize, old.key);
             }
         }
         self.constructs.push(c);
-        while self.constructs.len() > 3 {
-            let old = self.constructs.remove(0);
+        while self.constructs.iter().filter(|x| x.limited).count() > 3 {
+            let i = self.constructs.iter().position(|x| x.limited).unwrap();
+            let old = self.constructs.remove(i);
             crate::chars::dispatch::construct_expired(self.chars[old.owner as usize].kind, self, old.owner as usize, old.key);
         }
         self.emit(Event::ConstructSpawned);
+    }
+
+    /// gcsim's NewNoLimitCons of a Moondrift (OnDestruct does nothing).
+    fn new_moondrift(&mut self, x: f64, y: f64, dir: (f64, f64)) {
+        let f = self.f;
+        self.constructs.push(Construct { owner: u8::MAX, key: MOONDRIFT, src: f, expiry: f + LCR_DUR, pos: Some([x, y, dir.0, dir.1]), limited: false });
+        self.emit(Event::ConstructSpawned);
+    }
+
+    /// The Moondrifts within `r` of the player (gcsim's Distance < r).
+    fn moondrifts_near(&self, r: f64) -> usize {
+        let (px, py) = self.player_pos;
+        self.constructs.iter().filter(|c| !c.limited && c.pos.is_some_and(|p| ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() < r)).count()
     }
 
     /// gcsim's Player.Exec of a swap from inside the fight (a character
@@ -5213,7 +5311,9 @@ impl Sim {
         while k < self.constructs.len() {
             if self.constructs[k].expiry == f {
                 let c = self.constructs.remove(k);
-                crate::chars::dispatch::construct_expired(self.chars[c.owner as usize].kind, self, c.owner as usize, c.key);
+                if c.limited {
+                    crate::chars::dispatch::construct_expired(self.chars[c.owner as usize].kind, self, c.owner as usize, c.key);
+                }
             } else {
                 k += 1;
             }

@@ -202,7 +202,7 @@ impl Character for Char {
         match id {
             TASK_CONSTRUCT => {
                 let f = s.f;
-                s.new_construct(Construct { owner: ci as u8, key: CONSTRUCT, src: f, expiry: f + 1800 }, true);
+                s.new_construct(Construct { owner: ci as u8, key: CONSTRUCT, src: f, expiry: f + 1800, pos: None, limited: true }, true);
                 let x = st_mut(s, ci);
                 x.last_construct = f;
                 x.skill_active = true;
