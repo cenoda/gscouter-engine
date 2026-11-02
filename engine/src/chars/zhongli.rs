@@ -260,7 +260,9 @@ fn new_stele(s: &mut Sim, ci: usize) {
     let f = s.f;
     let num = steles(s, ci).count() as i32;
     let refresh = num == s.st::<State>(ci).max_stele;
-    s.new_construct(Construct { owner: ci as u8, key: STELE, src: f, expiry: f + 1860 }, refresh);
+    let (x, y) = s.point_from_player(0.0, 3.0);
+    let (dx, dy) = s.player_dir;
+    s.new_construct(Construct { owner: ci as u8, key: STELE, src: f, expiry: f + 1860, pos: Some([x, y, dx, dy]), limited: true }, refresh);
     s.st_mut::<State>(ci).stele_count = steles(s, ci).count() as i32;
 
     let mut tick = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Geo, 25.0, g::SKILL_TICK[lvl]);
@@ -275,20 +277,40 @@ fn new_stele(s: &mut Sim, ci: usize) {
 }
 
 /// A stele's tick: its own hit, and one for each other construct (not a
-/// stele) near it, which is every one with no positions.
+/// stele) within 8 of it, in gcsim's order (its constructs list, then the
+/// Moondrifts). Constructs whose position the engine does not keep count
+/// as near, and their boxes reach where is not known.
 fn resonance(s: &mut Sim, ci: usize, src: i32) {
+    // gcsim's Has(src), which any construct of that key passes
     if !s.constructs.iter().any(|c| c.src == src) {
         return;
     }
-    let ev = s.st::<State>(ci).stele_snap;
-    let others = s.constructs.iter().filter(|c| !(c.owner as usize == ci && c.key == STELE)).count();
-    s.queue_attack_with_snap(ev, CB_PARTICLE, 0);
-    // the other constructs have no positions: where their boxes reach is
-    // not known
-    let mut res = ev;
-    res.info.pattern = Pattern::Unknown;
-    for _ in 0..others {
-        s.queue_attack_with_snap(res, CB_PARTICLE, 0);
+    let is_stele = |c: &Construct| c.limited && c.owner as usize == ci && c.key == STELE;
+    if let Some(stele) = s.constructs.iter().find(|c| is_stele(c) && c.src == src).copied() {
+        let ev = s.st::<State>(ci).stele_snap;
+        s.queue_attack_with_snap(ev, CB_PARTICLE, 0);
+        let [sx, sy, ..] = stele.pos.unwrap();
+        let mut hits: Vec<Pattern> = Vec::new();
+        for limited in [true, false] {
+            for c in s.constructs.iter().filter(|c| c.limited == limited && !is_stele(c)) {
+                match c.pos {
+                    Some([x, y, dx, dy]) => {
+                        if (x - sx).powi(2) + (y - sy).powi(2) > 64.0 {
+                            continue;
+                        }
+                        // an 8 by 8 box from 4 behind it, along its direction
+                        let (bx, by) = offset_point((x, y), (0.0, -4.0), (dx, dy));
+                        hits.push(Pattern::Box { x: bx, y: by, w: 8.0, h: 8.0, dx, dy });
+                    }
+                    None => hits.push(Pattern::Unknown),
+                }
+            }
+        }
+        for p in hits {
+            let mut res = ev;
+            res.info.pattern = p;
+            s.queue_attack_with_snap(res, CB_PARTICLE, 0);
+        }
     }
     s.add_task(Task::Char { c: ci as u8, id: TASK_RESONANCE, arg: src }, 120);
 }

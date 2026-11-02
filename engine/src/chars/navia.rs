@@ -4,10 +4,8 @@
 //! A1, A4, every constellation, the Xianyun plunges and the `shrapnel`
 //! condition. gcsim's package has no charged attack: it is an error, as
 //! in gcsim.
-//!
-//! Crystal Shrapnel also comes from Lunar-Crystallize in gcsim
-//! (OnLunarCrystallize), which the engine never triggers: it is an error
-//! (`Sim::check_lunar_crystallize`). Port that gain with it.
+//! Crystal Shrapnel comes from crystallize shields and, once a second,
+//! from Lunar-Crystallize on the enemy.
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
@@ -42,6 +40,7 @@ pub struct State {
 }
 
 const A1: ModKey = ModKey::new(g::A1_KEY);
+const LCR_SHRAPNEL_ICD: ModKey = ModKey::new("navia-lcr-shrapnel-icd");
 const A4: ModKey = ModKey::new("navia-a4");
 const ARKHE_ICD: ModKey = ModKey::new(g::ARKHE_ICD_KEY);
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
@@ -98,7 +97,9 @@ impl Character for Char {
             let n = s.chars.iter().filter(|c| matches!(c.element, Element::Pyro | Element::Electro | Element::Cryo | Element::Hydro)).count().min(2);
             s.chars[ci].mods.push(Mod::stat(A4, st::ATKP, 0.2 * n as f64, false, false, -1));
         }
-        // shrapnel from crystallize shields picked up (shrapnelInit)
+        // shrapnel from Lunar-Crystallize and from crystallize shields
+        // picked up (shrapnelInit)
+        s.subscribe(EventKind::Reaction, o);
         s.subscribe(EventKind::Shielded, o);
     }
 
@@ -304,13 +305,23 @@ impl Character for Char {
         }
     }
 
-    /// A crystallize shield picked up: a shrapnel, up to 6.
+    /// A crystallize shield picked up, or Lunar-Crystallize on the enemy
+    /// (once a second): a shrapnel, up to 6.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
-        if let Event::Shielded(sh) = *e {
-            if sh.typ == ShieldType::Crystallize {
+        match *e {
+            Event::Reaction(Reaction::LunarCrystallize, ev) if ev.on_enemy() => {
+                if s.mod_active(ci, LCR_SHRAPNEL_ICD) {
+                    return;
+                }
+                s.add_status(ci, LCR_SHRAPNEL_ICD, 60, true);
                 let st = s.st_mut::<State>(ci);
                 st.shrapnel = (st.shrapnel + 1).min(6);
             }
+            Event::Shielded(sh) if sh.typ == ShieldType::Crystallize => {
+                let st = s.st_mut::<State>(ci);
+                st.shrapnel = (st.shrapnel + 1).min(6);
+            }
+            _ => {}
         }
     }
 }
