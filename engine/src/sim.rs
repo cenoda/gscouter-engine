@@ -1355,6 +1355,9 @@ pub struct Shard {
     pub expiry: i32,
     pub earliest_pickup: i32,
     pub shield: Shield,
+    /// Where it lies: gcsim's random point at the enemy's radius + 0.5,
+    /// drawn only while `Sim::shard_positions` (0, 0 otherwise).
+    pub pos: (f64, f64),
 }
 
 pub struct Sim {
@@ -1438,6 +1441,10 @@ pub struct Sim {
     /// reaches them but pick_up_crystallize, so their order among the
     /// others does not matter.
     pub shards: Vec<Shard>,
+    /// Whether a character reads where shards lie (Navia pulls them in):
+    /// only then are their positions drawn, as gcsim always does, so that
+    /// other teams keep their random draws.
+    pub shard_positions: bool,
     pub shields: Vec<Shield>,
     pub shield_bonus_mods: Vec<ShieldBonusMod>,
     /// Geo resonance: the frame its ticker started, -1 without it.
@@ -1589,6 +1596,7 @@ impl Sim {
             gadgets: Vec::with_capacity(4),
             gadget_key: 0,
             shards: Vec::with_capacity(4),
+            shard_positions: false,
             shields: Vec::with_capacity(4),
             shield_bonus_mods: Vec::new(),
             geo_res_src: -1,
@@ -3715,8 +3723,8 @@ impl Sim {
 
     /// addCrystallizeShard's task: a shard with a crystallize shield from
     /// the character's level and EM now, at a random point beyond the
-    /// enemy (which nothing in the engine reads, so it is not drawn). A
-    /// fourth shard removes the oldest.
+    /// enemy (drawn only when a character reads it, see
+    /// `shard_positions`). A fourth shard removes the oldest.
     fn spawn_shard(&mut self, ci: usize, ele: Element) {
         let em = self.stats(ci)[st::EM];
         let lvl = (self.chars[ci].level - 1).clamp(0, 99) as usize;
@@ -3731,11 +3739,17 @@ impl Sim {
             expiry: -1,
             em_bonus: (40.0 / 9.0) * (em / (1400.0 + em)),
         };
+        let pos = if self.shard_positions {
+            let r = self.target_radius + 0.5;
+            self.random_point(self.enemy_pos.0, self.enemy_pos.1, r, r)
+        } else {
+            (0.0, 0.0)
+        };
         if self.shards.len() == 3 {
             let oldest = (0..3).min_by_key(|&i| self.shards[i].src).unwrap();
             self.shards.remove(oldest);
         }
-        self.shards.push(Shard { src: f, expiry: f + 15 * 60, earliest_pickup: f + 31, shield });
+        self.shards.push(Shard { src: f, expiry: f + 15 * 60, earliest_pickup: f + 31, shield, pos });
         self.update_next_expiry();
     }
 

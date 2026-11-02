@@ -1,0 +1,3 @@
+# Navia C2 (CRIT Rate per shrapnel, a Cannon Fire Support per shot) on a crystallize team.
+team navia-zhongli-bennett-xiangling
+navia char lvl=90/90 cons=2 talent=9,9,9;
