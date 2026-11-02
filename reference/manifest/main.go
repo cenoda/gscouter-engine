@@ -76,7 +76,21 @@ type Manifest struct {
 	// runs the library build of.
 	Verified  int `json:"verified"`
 	Supported int `json:"supported"`
+	// Drift is the mean of the team's difference to gcsim over every
+	// build compared, with its standard error: an error the whole engine
+	// shares a little of, which no build's verdict shows.
+	Drift Drift `json:"drift"`
 }
+
+type Drift struct {
+	Builds int     `json:"builds"`
+	Mean   float64 `json:"mean"`
+	SE     float64 `json:"se"`
+}
+
+// driftLimit is the drift above which approval.md warns: well below the
+// 1% bound, and far above what thousands of builds' noise leaves.
+const driftLimit = 0.002
 
 type Engine struct {
 	Commit     string `json:"commit"`
@@ -140,6 +154,13 @@ func approvalTable(m *Manifest) string {
 	sort.Strings(ids)
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Teams to approve\n\nEngine %s (module %s), Gscouter %s: %d of %d supported teams verified. Each verified team's library build (the score a result page starts from) and its one-pass page config, gcsim against the engine; ±95%% is the half-width of the difference's interval. A team moves to the engine only with the owner's yes.\n\n", short(m.Engine.Commit), short(m.Engine.WasmSHA256), short(m.Gscouter), m.Verified, m.Supported)
+	if d := m.Drift; d.Builds > 0 {
+		fmt.Fprintf(&b, "Drift: over the %d builds compared, the team's difference averages %+.3f%% ± %.3f%% (95%%).", d.Builds, 100*d.Mean, 196*d.SE)
+		if math.Abs(d.Mean) > driftLimit {
+			fmt.Fprintf(&b, " **Above %.1f%%: the engine as a whole leans; find why before approving.**", 100*driftLimit)
+		}
+		b.WriteString("\n\n")
+	}
 	b.WriteString("| Team | Build | Iterations | gcsim | engine | Difference | ±95% | Character most apart | Builds passed |\n|---|---|---|---|---|---|---|---|---|\n")
 	for _, id := range ids {
 		t := m.Teams[id]
@@ -157,6 +178,25 @@ func approvalTable(m *Manifest) string {
 		}
 	}
 	return b.String()
+}
+
+func driftOf(xs []float64) Drift {
+	d := Drift{Builds: len(xs)}
+	if len(xs) == 0 {
+		return d
+	}
+	for _, x := range xs {
+		d.Mean += x
+	}
+	d.Mean /= float64(len(xs))
+	if len(xs) > 1 {
+		v := 0.0
+		for _, x := range xs {
+			v += (x - d.Mean) * (x - d.Mean)
+		}
+		d.SE = math.Sqrt(v / float64(len(xs)-1) / float64(len(xs)))
+	}
+	return d
 }
 
 func short(s string) string {
@@ -256,6 +296,7 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		return nil, fmt.Errorf("no report ran %s: a manifest needs one complete run", strings.Join(missing, ", "))
 	}
 
+	var diffs []float64
 	for id := range supported {
 		m.Supported++
 		t := Team{Builds: map[string]string{}}
@@ -272,6 +313,9 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		}
 		for _, v := range order {
 			r := last[v]
+			if len(r.Metrics) > 0 && r.Metrics[0].Name == "team" && !math.IsInf(r.Metrics[0].Diff, 0) && !math.IsNaN(r.Metrics[0].Diff) {
+				diffs = append(diffs, r.Metrics[0].Diff)
+			}
 			if v == "library" || v == "page:once" {
 				if s, ok := scoreOf(r); ok {
 					t.Scores = append(t.Scores, s)
@@ -313,5 +357,6 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		}
 		m.Teams[id] = t
 	}
+	m.Drift = driftOf(diffs)
 	return m, nil
 }

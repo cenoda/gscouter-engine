@@ -3,9 +3,18 @@
 # commit; gcsim is fixed by reference/go.mod (Gscouter's fork,
 # cenoda/gcsim@eb21884, the same commit Gscouter's go.mod pins).
 #
+# compare decides at Gscouter's accuracy (the site scores 50 iterations,
+# about 0.7% of standard error): a build runs 4,000 iterations, and up to
+# 32,000 when it fails or is inconclusive there; an interval still across
+# the bound at 32,000 is decided by its estimate. The variants, build space
+# and pages run a sample of 4 builds of each kind per team (compare
+# -sample 4; a page's one-pass configs are always run), chosen by a hash so
+# that different teams draw different builds and every item is reached
+# across the library. Each report gives the drift, the mean difference
+# over its builds; the release's approval.md gives it over all of them.
+#
 # Every push compares the library builds and the probes, in four parallel
-# parts. The variants (builds with their stats moved) take about an hour
-# per team, so they run on a schedule: the teams are split into PARTS
+# parts. The variants (builds with their stats moved) run on a schedule: the teams are split into PARTS
 # parts, and each day runs PER_DAY of them, so every team's variants run
 # every PARTS / PER_DAY days. A manual run can name the parts to run, e.g.
 # "0-39" for all of them, or "library" for the push run.
@@ -27,10 +36,8 @@
 # Variant and build-space jobs pass compare -deadline, below the job's
 # time limit: past it compare starts no more builds and grows none further,
 # reports the builds it did not start as deferred, and the job still writes
-# its report and uploads gcsim's chunks. A team whose energy waits make it
-# heavy-tailed can grow to 512,000 iterations per build of gcsim (further
-# on seeds the cache already holds, with the engine alone; see "rerun"
-# below); the next run of the part finds those chunks in the cache.
+# its report and uploads gcsim's chunks; the next run of the part finds
+# those chunks in the cache.
 #
 # gcsim's results are cached by config and chunk of seeds (reference/
 # harness/cache.go), so a run computes only what no earlier run did. Each
@@ -49,13 +56,9 @@
 #
 # A manual run with "rerun" set to team/build pairs (as the report names
 # them) compares those builds again, one job each, up to "rerun_max_iter"
-# iterations (2,048,000 by default; compare -builds): builds whose DPS is
-# heavy-tailed under energy waits can stay inconclusive at 512,000. It runs
-# nothing else, and its gcsim chunks go to the cache as other jobs' do.
-# compare grows a build still inconclusive at -max-iter further on the
-# seeds the cache already holds for it, running only the engine there, so
-# a build cached past rerun_max_iter (or past 512,000 in the other jobs)
-# can go on without running gcsim again.
+# iterations (2,048,000 by default; compare -builds), for a build whose
+# settled verdict needs a closer look. It runs nothing else, and its gcsim
+# chunks go to the cache as other jobs' do.
 #
 # gcsim is most of a rerun's time, so "rerun_shards" (1 by default: as
 # above) splits it: with k > 1, each build's gcsim on seeds [0,
@@ -108,7 +111,7 @@ on:
         description: 'Team ids, comma-separated, whose gcsim runs to add to the cache (compare -gcsim-only); runs nothing else. Dispatch on main.'
         default: ""
       rerun:
-        description: 'Builds to compare again, one job each, as team/build pairs the report names (team/cons:xingqiu=C0), comma-separated; runs nothing else. For builds inconclusive at 512,000 iterations.'
+        description: 'Builds to compare again, one job each, as team/build pairs the report names (team/cons:xingqiu=C0), comma-separated; runs nothing else. For a build whose settled verdict needs a closer look.'
         default: ""
       rerun_max_iter:
         description: 'Most iterations for rerun builds'
@@ -378,7 +381,7 @@ jobs:
         run: cargo build --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only variants -deadline 280m -shard ${{ matrix.part }}/${{ env.PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only variants -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -437,7 +440,7 @@ jobs:
         run: cargo build --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only buildspace -deadline 280m -shard ${{ matrix.part }}/${{ env.BS_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only buildspace -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.BS_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -496,7 +499,7 @@ jobs:
         run: cargo build --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only pages -deadline 280m -shard ${{ matrix.part }}/${{ env.PG_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only pages -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.PG_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -711,7 +714,7 @@ jobs:
         env:
           WARM: ${{ needs.plan.outputs.warm }}
           SHARDS: ${{ strategy.job-total }}
-        run: go run ./compare -gscouter ../gscouter -gcsim-only -teams "$WARM" -only library,variants,probes -shard ${{ matrix.part }}/$SHARDS -cache "$GCSIM_CACHE" -json ../warm.json -md ../warm.md
+        run: go run ./compare -gscouter ../gscouter -gcsim-only -teams "$WARM" -only library,variants,probes -sample 4 -shard ${{ matrix.part }}/$SHARDS -cache "$GCSIM_CACHE" -json ../warm.json -md ../warm.md
       - name: Summary
         if: always()
         run: test -f warm.md && cat warm.md >> "$GITHUB_STEP_SUMMARY" || true

@@ -11,14 +11,23 @@
 //
 // Team and character DPS pass when the 95% confidence interval of the
 // difference lies within ±1% of gcsim, fail when it lies outside, and are
-// inconclusive otherwise. Iterations start at -iter, grow until each
-// engine's standard error is at most -target-se of the mean, and grow
-// further, up to -max-iter, while any verdict is inconclusive: each step
-// by the factor at which the inconclusive intervals would clear the bound,
-// from twice to four times. A build still inconclusive at -max-iter grows
-// on, in the same steps, as far as gcsim's cache holds the config's seeds
-// (whole chunks from seed 1): gcsim is never run past -max-iter, so those
-// steps run only the engine.
+// inconclusive otherwise. A character below -char-share of gcsim's team
+// DPS is reported but not judged: what it does reaches the team's DPS,
+// and its own share is too small for Gscouter's score to show. The
+// accuracy wanted is Gscouter's: the site scores 50 iterations, whose
+// standard error is about 0.7%, so a build runs -iter iterations (4,000:
+// about 0.1% on the team's difference), and a build that fails or is
+// inconclusive there grows, by twice to four times a step, to -max-iter
+// (32,000), since a team whose energy waits spiral is heavy-tailed. A
+// verdict still inconclusive at -max-iter is decided by its estimate
+// (-settle): pass inside the bound, fail outside it. A port's systematic
+// error shows as a difference far above that noise; small ones that add up
+// over a team's items show in its team DPS, and small ones the whole
+// engine shares show in the report's drift, the mean difference over every
+// build compared. -target-se, when set, also grows a build until each
+// engine's standard error reaches it; -settle=false keeps an inconclusive
+// verdict and grows it further on the seeds gcsim's cache holds, running
+// only the engine.
 //
 // Teams the engine cannot run are counted as "unsupported: <what>", and the
 // census of what blocks how many teams measures the port's progress.
@@ -65,6 +74,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"hash/fnv"
 	"math"
 	"os"
 	"os/exec"
@@ -98,9 +108,12 @@ var (
 	bsWeapons   = flag.Int("buildspace-weapons", 2, "build space: other weapons of the class per member, chosen by a hash of team, member and weapon (0: every one the engine has)")
 	dryRun      = flag.Bool("dry-run", false, "list the builds that would be compared, and compare none")
 	shardFlag   = flag.String("shard", "", "k/n: compare only the k-th of n parts of the teams that have builds to compare (k from 0); the census still covers every team")
-	iter0       = flag.Int("iter", 1000, "iterations of the first batch")
-	maxIter     = flag.Int("max-iter", 512000, "most iterations gcsim runs to for a build; a build still inconclusive there grows further on the seeds gcsim's cache already holds for its config (whole chunks from seed 1), running only the engine")
-	targetSE    = flag.Float64("target-se", 0.003, "standard error, relative to the mean, each engine must reach")
+	iter0       = flag.Int("iter", 4000, "iterations of the first batch")
+	maxIter     = flag.Int("max-iter", 32000, "most iterations gcsim runs to for a build that fails or is inconclusive at -iter; with -settle=false, a build still inconclusive there grows further on the seeds gcsim's cache already holds for its config (whole chunks from seed 1), running only the engine")
+	targetSE    = flag.Float64("target-se", 0, "standard error, relative to the mean, each engine must reach (0: none)")
+	settle      = flag.Bool("settle", true, "decide a verdict still inconclusive at -max-iter by its estimate: pass inside the bound, fail outside it")
+	charShare   = flag.Float64("char-share", 0.10, "characters below this share of gcsim's team DPS are reported, not judged")
+	sampleN     = flag.Int("sample", 0, "variants, build space and pages: run at most this many builds of each kind per team, chosen by a hash of team and build (0: every one); the page's one-pass configs are always run, and builds the engine cannot run are all reported")
 	warmup      = flag.Float64("warmup", 150, "seconds of the looped fight excluded from the window")
 	workers     = flag.Int("j", runtime.NumCPU(), "workers")
 	jsonOut     = flag.String("json", "", "write the results as JSON to this file")
@@ -174,6 +187,11 @@ type Metric struct {
 	Diff    float64 `json:"diff"`
 	DiffSE  float64 `json:"diff_se"`
 	Verdict string  `json:"verdict"`
+	// Minor is a character below -char-share of the team's DPS: its
+	// verdict is reported, not counted.
+	Minor bool `json:"minor,omitempty"`
+	// Settled is a verdict decided by its estimate at -max-iter.
+	Settled bool `json:"settled,omitempty"`
 }
 
 type Wait struct {
@@ -233,11 +251,18 @@ type Census struct {
 }
 
 type Report struct {
-	Date     string    `json:"date"`
-	Gscouter string    `json:"gscouter_commit"`
-	Bound    float64   `json:"bound"`
-	TargetSE float64   `json:"target_se"`
-	Warmup   float64   `json:"warmup"`
+	Date     string  `json:"date"`
+	Gscouter string  `json:"gscouter_commit"`
+	Bound    float64 `json:"bound"`
+	TargetSE float64 `json:"target_se"`
+	Iter     int     `json:"iter"`
+	MaxIter  int     `json:"max_iter"`
+	Settle   bool    `json:"settle"`
+	Share    float64 `json:"char_share"`
+	Sample   int     `json:"sample,omitempty"`
+	Warmup   float64 `json:"warmup"`
+	// Drift is the mean of the team's difference over the builds compared.
+	Drift    *Drift    `json:"drift,omitempty"`
 	Variants []variant `json:"variants"`
 	Results  []Result  `json:"results"`
 	Census   Census    `json:"census"`
@@ -276,6 +301,79 @@ type job struct {
 	v   variant
 	cfg string
 	err error
+}
+
+// sample keeps at most n of the jobs that run, chosen by a hash of team
+// and build so that a team's choice is stable and different teams draw
+// different builds; a page's one-pass config is always kept, past n, and
+// a job that cannot run (an error, or what the engine lacks) is always
+// kept, so that it is reported. n <= 0 keeps every job.
+func sample(id string, jobs []job, n int) []job {
+	if n <= 0 {
+		return jobs
+	}
+	h := func(name string) uint64 {
+		f := fnv.New64a()
+		f.Write([]byte(id + "/" + name))
+		return f.Sum64()
+	}
+	var runs []int
+	keep := make([]bool, len(jobs))
+	for i, j := range jobs {
+		switch {
+		case j.err != nil, j.v.page && strings.HasSuffix(j.v.Name, ":once"):
+			keep[i] = true
+		default:
+			runs = append(runs, i)
+		}
+	}
+	sort.SliceStable(runs, func(a, b int) bool { return h(jobs[runs[a]].v.Name) < h(jobs[runs[b]].v.Name) })
+	for _, i := range runs[:min(n, len(runs))] {
+		keep[i] = true
+	}
+	var out []job
+	for i, j := range jobs {
+		if keep[i] {
+			out = append(out, j)
+		}
+	}
+	return out
+}
+
+// Drift is the mean of the team's difference to gcsim over the builds
+// compared, with its standard error: a port's error that every build
+// shares a little of, which no build's verdict shows.
+type Drift struct {
+	Builds int     `json:"builds"`
+	Mean   float64 `json:"mean"`
+	SE     float64 `json:"se"`
+}
+
+// driftOf is the drift over results that have a team difference.
+func driftOf(rs []Result) *Drift {
+	var xs []float64
+	for _, r := range rs {
+		if len(r.Metrics) == 0 || r.Metrics[0].Name != "team" || math.IsInf(r.Metrics[0].Diff, 0) || math.IsNaN(r.Metrics[0].Diff) {
+			continue
+		}
+		xs = append(xs, r.Metrics[0].Diff)
+	}
+	if len(xs) == 0 {
+		return nil
+	}
+	d := &Drift{Builds: len(xs)}
+	for _, x := range xs {
+		d.Mean += x
+	}
+	d.Mean /= float64(len(xs))
+	if len(xs) > 1 {
+		v := 0.0
+		for _, x := range xs {
+			v += (x - d.Mean) * (x - d.Mean)
+		}
+		d.SE = math.Sqrt(v / float64(len(xs)-1) / float64(len(xs)))
+	}
+	return d
 }
 
 // wanted is -builds: team, then build names. Empty for every build.
@@ -389,7 +487,7 @@ func main() {
 	if err != nil {
 		fail(err)
 	}
-	rep := &Report{Date: time.Now().UTC().Format(time.RFC3339), Gscouter: gitHead(*gscouterDir), Bound: bound, TargetSE: *targetSE, Warmup: *warmup, Only: slices.Sorted(mapsKeys(kinds)), Shard: *shardFlag}
+	rep := &Report{Date: time.Now().UTC().Format(time.RFC3339), Gscouter: gitHead(*gscouterDir), Bound: bound, TargetSE: *targetSE, Iter: *iter0, MaxIter: *maxIter, Settle: *settle, Share: *charShare, Sample: *sampleN, Warmup: *warmup, Only: slices.Sorted(mapsKeys(kinds)), Shard: *shardFlag}
 	if *deadline > 0 {
 		rep.Deadline = deadline.String()
 	}
@@ -469,6 +567,7 @@ func main() {
 				if err != nil {
 					fail(err)
 				}
+				start := len(jobs)
 				for _, v := range variants {
 					if !want(id, v.Name) {
 						continue
@@ -492,6 +591,7 @@ func main() {
 					}
 					jobs = append(jobs, job{v: v, cfg: cfg})
 				}
+				jobs = append(jobs[:start:start], sample(id, jobs[start:], *sampleN)...)
 			}
 			if supported && kinds["buildspace"] {
 				base, err := os.ReadFile(filepath.Join(*gscouterDir, "teams", id, "build.txt"))
@@ -510,6 +610,7 @@ func main() {
 				if err != nil {
 					fail(err)
 				}
+				start := len(jobs)
 				for _, bb := range builds {
 					if !want(id, bb.v.Name) {
 						continue
@@ -539,9 +640,10 @@ func main() {
 					}
 					jobs = append(jobs, job{v: bb.v, cfg: cfg})
 				}
+				jobs = append(jobs[:start:start], sample(id, jobs[start:], *sampleN)...)
 			}
 			if supported && kinds["pages"] {
-				jobs = append(jobs, pageJobs(pages, gse, tmp, id, configs[i])...)
+				jobs = append(jobs, sample(id, pageJobs(pages, gse, tmp, id, configs[i]), *sampleN)...)
 			}
 			for _, pr := range probes {
 				if !want(id, pr.v.Name) {
@@ -668,6 +770,7 @@ func main() {
 		rep.Census = census(statuses)
 	}
 	rep.BuildSpace = buildSpaceSummary(rep.Results)
+	rep.Drift = driftOf(rep.Results)
 	for _, r := range rep.Results {
 		if r.Verdict != "pass" && r.Verdict != "both-error" && r.Verdict != "unsupported" && r.Verdict != "dry-run" && r.Verdict != "deferred" {
 			rep.Pass = false
@@ -894,6 +997,9 @@ func metric(name string, g, r harness.Stat) Metric {
 // the target.
 func needed(outs ...*harness.Output) int {
 	n := 0
+	if *targetSE <= 0 {
+		return 0
+	}
 	for _, o := range outs {
 		stats := []harness.Stat{o.Team}
 		for _, s := range o.Chars {
@@ -919,7 +1025,7 @@ func needed(outs ...*harness.Output) int {
 func growth(ms []Metric) float64 {
 	g := 2.0
 	for _, m := range ms {
-		if m.Verdict != "inconclusive" {
+		if m.Verdict != "inconclusive" || m.Minor {
 			continue
 		}
 		gap := math.Abs(math.Abs(m.Diff) - bound)
@@ -977,11 +1083,29 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 	for err == nil {
 		res.Metrics = metrics(g, r)
 		res.Verdict = overall(res.Metrics)
+		if res.Verdict == "pass" {
+			break
+		}
+		// a failure at -iter grows once to -max-iter: a team whose
+		// energy waits spiral is heavy-tailed, and its first iterations
+		// can be far off
+		if res.Verdict == "fail" {
+			if n >= limit || pastDeadline() {
+				break
+			}
+			err = run(limit - n)
+			continue
+		}
 		// past -deadline an inconclusive build stays inconclusive
-		if res.Verdict != "inconclusive" || pastDeadline() {
+		if pastDeadline() {
 			break
 		}
 		if n >= limit {
+			if *settle {
+				res.Metrics = settled(res.Metrics)
+				res.Verdict = overall(res.Metrics)
+				break
+			}
 			if extended {
 				break
 			}
@@ -1228,7 +1352,25 @@ func metrics(g, r *harness.Output) []Metric {
 		if !ok {
 			rc = harness.Stat{}
 		}
-		ms = append(ms, metric(c, g.Chars[c], rc))
+		m := metric(c, g.Chars[c], rc)
+		m.Minor = g.Chars[c].Mean < *charShare*g.Team.Mean
+		ms = append(ms, m)
+	}
+	return ms
+}
+
+// settled decides each inconclusive verdict by its estimate: pass inside
+// the bound, fail outside it.
+func settled(ms []Metric) []Metric {
+	for i := range ms {
+		if ms[i].Verdict != "inconclusive" {
+			continue
+		}
+		ms[i].Settled = true
+		ms[i].Verdict = "pass"
+		if math.Abs(ms[i].Diff) > bound {
+			ms[i].Verdict = "fail"
+		}
 	}
 	return ms
 }
@@ -1236,6 +1378,9 @@ func metrics(g, r *harness.Output) []Metric {
 func overall(ms []Metric) string {
 	v := "pass"
 	for _, m := range ms {
+		if m.Minor {
+			continue
+		}
 		switch m.Verdict {
 		case "fail":
 			return "fail"
@@ -1611,7 +1756,14 @@ func markdown(rep *Report) string {
 			w(" %d build-space builds are not run: the engine cannot run them, or -dry-run (under \"Build space\").", notRun)
 		}
 		w("\n\n")
-		w("Bound ±%.0f%% of gcsim; a verdict is pass when the 95%% interval of the difference lies inside it, fail when it lies outside, inconclusive otherwise. DPS over the window from %.0f s.\n\n", 100*bound, rep.Warmup)
+		w("Bound ±%.0f%% of gcsim; a verdict is pass when the 95%% interval of the difference lies inside it, fail when it lies outside, inconclusive otherwise", 100*bound)
+		if rep.Settle {
+			w(", and an interval still across it at %d iterations is decided by its estimate (settled)", rep.MaxIter)
+		}
+		w(". Builds run %d iterations, and up to %d when they fail or are inconclusive there. Characters below %.0f%% of gcsim's team DPS are shown, not judged (minor). DPS over the window from %.0f s.\n\n", rep.Iter, rep.MaxIter, 100*rep.Share, rep.Warmup)
+		if d := rep.Drift; d != nil {
+			w("Drift: the team's difference averages %+.3f%% ± %.3f%% (95%%) over the %d builds compared.\n\n", 100*d.Mean, 100*z*d.SE, d.Builds)
+		}
 		w("| Team | Build | Iterations | Verdict | Who | gcsim | gse | Difference | ±95%% |\n|---|---|---|---|---|---|---|---|---|\n")
 		for _, r := range rep.Results {
 			if (r.Verdict == "unsupported" || r.Verdict == "dry-run") && r.Build != nil || r.Verdict == "deferred" {
@@ -1629,6 +1781,12 @@ func markdown(rep *Report) string {
 				mv := ""
 				if m.Verdict != "pass" {
 					mv = " (" + m.Verdict + ")"
+				}
+				if m.Settled {
+					mv += " (settled)"
+				}
+				if m.Minor {
+					mv += " (minor)"
 				}
 				w("| %s | %s | %s | %s | %s%s | %.1f ± %.1f | %.1f ± %.1f | %s | %.2f%% |\n", team, build, it, verdict, m.Name, mv, m.Gcsim, m.GcsimSE, m.Gse, m.GseSE, pct(m.Diff), 100*z*m.DiffSE)
 			}
