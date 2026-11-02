@@ -109,7 +109,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("start_serpents_subtlety", Some(CharKind::Skirk)) => {}
             ("breakthrough", Some(CharKind::Yelan)) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
-            ("hexerei", Some(CharKind::Sucrose | CharKind::Mona | CharKind::Razor)) => {}
+            ("hexerei", Some(CharKind::Sucrose | CharKind::Mona | CharKind::Razor | CharKind::Durin)) => {}
             ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno)) => {}
             // the character itself is unsupported
             (_, None) => {}

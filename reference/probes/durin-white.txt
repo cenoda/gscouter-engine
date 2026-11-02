@@ -1,0 +1,4 @@
+# Durin's white form at C0: Confirmation of Purity before the burst, As the Light Shifts and the Dragon of White Flame, and A1's resistance shred on pyro reactions while it lasts.
+team durin-rosaria-sucrose-bennett
+rotation- durin skill, attack;
+rotation+ durin skill:2;

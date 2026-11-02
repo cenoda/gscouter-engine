@@ -58,6 +58,7 @@ crate::chars! {
     Clorinde => clorinde,
     Razor => razor,
     Dehya => dehya,
+    Durin => durin,
 }
 
 /// The characters whose modules have been checked against gcsim for a

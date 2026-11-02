@@ -1,0 +1,3 @@
+# Durin C2: while his burst lasts, pyro reactions give every member +50% DMG of each element involved; the library builds are C0 but eight.
+team durin-rosaria-sucrose-bennett
+durin char lvl=90/90 cons=2 talent=9,10,9;

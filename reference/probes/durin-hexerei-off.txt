@@ -1,0 +1,3 @@
+# Durin with Hexerei switched off (param hexerei=0): A1 without the ×1.75 of two Hexerei members (Sucrose is the other).
+team durin-rosaria-sucrose-bennett
+durin char lvl=90/90 cons=0 talent=9,10,9 +params=[hexerei=0];

@@ -1,0 +1,5 @@
+# Durin C6 in the white form: the burst ignores 30% of DEF and its hits shred the enemy's DEF by 30%; A1's resistance shred on pyro reactions.
+team durin-rosaria-sucrose-bennett
+durin char lvl=90/90 cons=6 talent=9,10,9;
+rotation- durin skill, attack;
+rotation+ durin skill:2;
