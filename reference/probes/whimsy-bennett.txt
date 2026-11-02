@@ -1,0 +1,3 @@
+# Bennett (Finale of the Deep) with Fragment of Harmonic Whimsy 4: his Bond of Life rises and his heals clear it.
+team bennett-furina-fischl-yelan
+bennett add set="fragmentofharmonicwhimsy" count=4;

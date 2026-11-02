@@ -19,4 +19,7 @@ crate::sets! {
     FlowerOfParadiseLost => flowerofparadiselost,
     ThunderingFury => thunderingfury,
     OceanHuedClam => oceanhuedclam,
+    FragmentOfHarmonicWhimsy => fragmentofharmonicwhimsy,
+    UnfinishedReverie => unfinishedreverie,
+    LongNightsOath => longnightsoath,
 }
