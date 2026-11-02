@@ -1,0 +1,7 @@
+# Ororon's conditions: his Nightsoul's Blessing and points (.ororon.nightsoul.state, .points) and C2's tag (.ororon.tags.ororon-c2) gating waits.
+team raidenshogun-ororon-yelan-xingqiu
+rotation- ororon skill, attack, burst;
+rotation+ ororon skill, attack, burst;
+rotation+ if .ororon.nightsoul.state { wait(7); }
+rotation+ if .ororon.nightsoul.points >= 20 { wait(11); }
+rotation+ if .ororon.tags.ororon-c2 > 1 { wait(5); }

@@ -1,0 +1,3 @@
+# Ororon at level 20 (ascension 0) and C6: no A1 (no Nightsoul points, no Hypersense, so no C1 mark and no C6 Hypersense or ATK) and no A4 energy.
+team raidenshogun-ororon-yelan-xingqiu
+ororon char lvl=20/20 cons=6 talent=9,9,9;

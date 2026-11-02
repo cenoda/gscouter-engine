@@ -1,0 +1,3 @@
+# Ororon at level 60 (ascension 3) and C6: A1's Nightsoul points, Hypersense and blessing without A4's energy.
+team raidenshogun-ororon-yelan-xingqiu
+ororon char lvl=60/60 cons=6 talent=9,9,9;
