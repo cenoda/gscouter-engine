@@ -61,6 +61,8 @@ crate::chars! {
     Chasca => chasca,
     Ganyu => ganyu,
     Ayaka => ayaka,
+    Albedo => albedo,
+    Layla => layla,
 }
 
 /// The characters whose modules have been checked against gcsim for a

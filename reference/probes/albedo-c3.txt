@@ -1,0 +1,3 @@
+# Albedo C3: skill talent level +3.
+team albedo-bennett-xiangling-rosaria
+albedo char lvl=90/90 cons=3 talent=9,9,9;

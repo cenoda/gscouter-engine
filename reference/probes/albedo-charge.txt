@@ -1,0 +1,4 @@
+# Albedo's charged attack (gcsim tags its two hits as normal attacks), after a normal attack.
+team albedo-bennett-xiangling-rosaria
+rotation- albedo skill, attack;
+rotation+ albedo skill, attack, charge;

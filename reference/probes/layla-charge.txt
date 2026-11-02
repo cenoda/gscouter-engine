@@ -1,0 +1,4 @@
+# Layla's charged attack after a normal attack.
+team layla-kaedeharakazuha-bennett-xiangling
+rotation- layla skill, burst, attack;
+rotation+ layla skill, burst, attack, charge;
