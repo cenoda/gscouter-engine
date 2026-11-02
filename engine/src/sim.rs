@@ -1312,6 +1312,7 @@ pub enum ShieldType {
     ThomaSkill,
     IneffaSkill,
     CitlaliSkill,
+    NicoleSkill,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -1470,6 +1471,9 @@ pub struct Sim {
     pub nightsoul_burst_icd: i32,
     /// Flat damage EnemyHit subscribers add to the hit.
     pub hit_flat: f64,
+    /// DEF ignored added to the hit by OnEnemyHit subscribers (gcsim's
+    /// subscribers that raise atk.Info.IgnoreDefPercent, as Nicole's C6).
+    pub hit_ignore_def: f64,
     /// BaseDmgBonus EnemyHit subscribers add to the hit.
     pub hit_base_bonus: f64,
     /// A factor EnemyHit subscribers put on the hit's Mult (Mona's Hexerei
@@ -1616,6 +1620,7 @@ impl Sim {
             flags: Vec::new(),
             nightsoul_burst_icd: 0,
             hit_flat: 0.0,
+            hit_ignore_def: 0.0,
             hit_base_bonus: 0.0,
             hit_mult: 1.0,
             stellar: Default::default(),
@@ -2727,13 +2732,15 @@ impl Sim {
                 // a subscriber can apply an attack inside the emit (an
                 // attack queued with no delay, as Escoffier's C6 with
                 // travel 0): keep the outer hit's accumulators
-                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult);
+                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def);
                 self.hit_flat = 0.0;
+                self.hit_ignore_def = 0.0;
                 self.hit_crit = None;
                 self.hit_base_bonus = 0.0;
                 self.hit_mult = 1.0;
                 self.emit(Event::EnemyHit(&ev));
                 ev.info.flat_dmg += self.hit_flat;
+                ev.info.ignore_def += self.hit_ignore_def;
                 base_bonus = self.hit_base_bonus;
                 if let Some((cr, cd)) = self.hit_crit {
                     ev.stats[st::CR] += cr;
@@ -2742,7 +2749,7 @@ impl Sim {
                 if self.hit_mult != 1.0 {
                     ev.info.mult *= self.hit_mult;
                 }
-                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult) = outer;
+                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def) = outer;
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }

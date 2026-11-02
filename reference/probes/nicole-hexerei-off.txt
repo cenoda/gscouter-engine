@@ -1,0 +1,3 @@
+# Nicole with Hexerei switched off (param hexerei=0): Guidance of Theosis waits 3 s for Fischl too, and the projections lose the Hexerei flat damage.
+team yoimiya-yelan-fischl-nicole
+nicole char lvl=90/90 cons=0 talent=9,9,9 +params=[hexerei=0];

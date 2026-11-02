@@ -1,0 +1,3 @@
+# Nicole C3: skill talent +3 (Grace of Kenosis and the shield).
+team yoimiya-yelan-fischl-nicole
+nicole char lvl=90/90 cons=3 talent=9,9,9;
