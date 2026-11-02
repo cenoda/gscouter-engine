@@ -1,0 +1,4 @@
+# Razor's low plunge from Xianyun's jump (the library's rotation uses the high one).
+team razor-furina-bennett-xianyun
+rotation- razor high_plunge[collision=rand()>0.5];
+rotation+ razor low_plunge[collision=rand()>0.5];

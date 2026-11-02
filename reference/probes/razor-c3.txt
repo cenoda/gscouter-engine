@@ -1,0 +1,3 @@
+# Razor C3: burst talent level +3.
+team razor-xingqiu-xiangling-bennett
+razor char lvl=90/90 cons=3 talent=9,9,9;

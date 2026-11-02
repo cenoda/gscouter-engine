@@ -1,0 +1,4 @@
+# Dehya swapped out during her burst: it ends, and the field she picked up comes back 46 frames later.
+team dehya-bennett-xiangling-emilie
+rotation- dehya burst, attack:10;
+rotation+ dehya burst, attack:4;

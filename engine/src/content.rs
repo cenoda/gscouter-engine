@@ -303,6 +303,19 @@ pub trait Character {
     /// Its own part of a dash or jump (gcsim's override of Dash or Jump),
     /// run before the template's.
     fn template_action(_s: &mut Sim, _ci: usize, _a: Action) {}
+    /// Its OnPlayerPreHPDrain subscription (subscribed with
+    /// `Sim::pre_drain_subs`): the amount character `on` is about to lose
+    /// to a drain, which it may change. `external` and `abil` are gcsim's
+    /// DrainInfo's.
+    fn pre_drain(_s: &mut Sim, _ci: usize, _on: usize, amount: f64, _external: bool, _abil: &'static str) -> f64 {
+        amount
+    }
+    /// The frames of an action of its whose ActInfo has Frames::CharLive:
+    /// a gcsim frames function that reads the character's state when the
+    /// frames are asked for.
+    fn frames_live(_s: &Sim, _ci: usize, _id: u8, _arg: i16, _next: Action) -> i32 {
+        unreachable!()
+    }
     /// Its ReceiveHeal, when it refuses heals: whether a heal by `caller`
     /// heals it (and pays its Bond of Life).
     fn receives_heal(_s: &Sim, _ci: usize, _caller: usize) -> bool {
@@ -483,6 +496,8 @@ macro_rules! chars {
             pub fn own_dash(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_dash(s, ci, p)),* } }
             pub fn own_jump(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_jump(s, ci, p)),* } }
             pub fn template_action(k: CharKind, s: &mut Sim, ci: usize, a: Action) { match k { $(CharKind::$kind => $m::Char::template_action(s, ci, a)),* } }
+            pub fn pre_drain(k: CharKind, s: &mut Sim, ci: usize, on: usize, amount: f64, external: bool, abil: &'static str) -> f64 { match k { $(CharKind::$kind => $m::Char::pre_drain(s, ci, on, amount, external, abil)),* } }
+            pub fn frames_live(k: CharKind, s: &Sim, ci: usize, id: u8, arg: i16, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames_live(s, ci, id, arg, next)),* } }
             pub fn receives_heal(k: CharKind, s: &Sim, ci: usize, caller: usize) -> bool { match k { $(CharKind::$kind => $m::Char::receives_heal(s, ci, caller)),* } }
             pub fn receive_heal(k: CharKind, s: &mut Sim, ci: usize, caller: usize, amount: f64) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::receive_heal(s, ci, caller, amount)),* } }
         }

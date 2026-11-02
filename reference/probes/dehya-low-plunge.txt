@@ -1,0 +1,4 @@
+# Dehya's low plunge from Xianyun's jump (the library's rotation uses the high one).
+team dehya-furina-bennett-xianyun
+rotation- dehya high_plunge[collision=rand()>0.5];
+rotation+ dehya low_plunge[collision=rand()>0.5];

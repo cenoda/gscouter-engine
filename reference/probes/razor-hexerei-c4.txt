@@ -1,0 +1,3 @@
+# Razor C4, Hexerei beside Fischl: one sigil per press, so Surge of Lightning comes from the fourth sigil, without C6's lightning.
+team razor-nahida-fischl-bennett
+razor char lvl=90/90 cons=4 talent=9,9,9;

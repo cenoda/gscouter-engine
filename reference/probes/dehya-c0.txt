@@ -1,0 +1,3 @@
+# Dehya C0 (no C1 Max HP or flat damage), on the team whose build is C1.
+team dehya-bennett-xiangling-emilie
+dehya char lvl=90/90 cons=0 talent=9,9,9;
