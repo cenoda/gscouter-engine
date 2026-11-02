@@ -5,11 +5,10 @@
 //! constellation. gcsim has no plunges for her.
 //!
 //! Her Night Watch normal attacks keep their own counter (gcsim's
-//! normalSCounter). It is kept here in the character's normal counter: the
-//! skill that starts Night Watch resets the base counter, which then stays
-//! 0 until Night Watch ends, so the base counter is 0 wherever gcsim reads
-//! it while the Swift Hunt counter is in use (`State::s_mode`); every reset
-//! of the engine's counter resets both, as her ResetNormalCounter does.
+//! normalSCounter), `Char::normal_s_counter`, which every reset of the
+//! normal counter resets too, as her ResetNormalCounter does; the base
+//! counter stays as gcsim leaves it, for whatever reads it (Fischl's C6
+//! reads the active character's).
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::clorinde as g;
@@ -19,8 +18,6 @@ use crate::types::*;
 pub struct Char;
 
 pub struct State {
-    /// The normal counter holds the Swift Hunt counter.
-    s_mode: bool,
     /// gcsim's MultipleRefreshNoRemove: each stack's start frame.
     a1_stacks: [Option<i32>; 3],
     a4_stacks: [Option<i32>; 2],
@@ -75,7 +72,6 @@ impl Character for Char {
     fn new_state(_: &CharSetup) -> State {
         let shot = AttackInfo::new(0, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Electro, 25.0, 0.0);
         State {
-            s_mode: false,
             a1_stacks: [None; 3],
             a4_stacks: [None; 2],
             a1_percent: 0.0,
@@ -117,15 +113,6 @@ impl Character for Char {
         }
     }
 
-    /// The template's, reading her base normal counter (0 while the Swift
-    /// Hunt counter is in use).
-    fn invalid(s: &Sim, ci: usize, a: Action, _: &Params) -> Option<String> {
-        if a == Action::Charge && s.player.active as usize == ci && s.st::<State>(ci).s_mode {
-            return Some("need to use attack right before charge".into());
-        }
-        crate::content::template_invalid(s, a)
-    }
-
     /// In Night Watch the skill is always ready: Impale the Night.
     fn action_ready(s: &Sim, ci: usize, a: Action, _: &Params) -> Option<Option<Failure>> {
         (a == Action::Skill && s.mod_active(ci, STATE)).then_some(None)
@@ -146,11 +133,6 @@ impl Character for Char {
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
         if s.mod_active(ci, STATE) {
             return skill_attack(s, ci);
-        }
-        if s.st::<State>(ci).s_mode {
-            // the base counter, 0 since Night Watch began
-            s.st_mut::<State>(ci).s_mode = false;
-            s.chars[ci].normal_counter = 0;
         }
         let n = s.chars[ci].normal_counter as usize;
         let lvl = s.talent(ci, 0);
@@ -380,7 +362,7 @@ impl Character for Char {
         if fields[0] != "normal" {
             return None;
         }
-        let n = if s.mod_active(ci, STATE) || !s.st::<State>(ci).s_mode { s.chars[ci].normal_counter } else { 0 };
+        let n = if s.mod_active(ci, STATE) { s.chars[ci].normal_s_counter } else { s.chars[ci].normal_counter };
         Some(Ok(crate::gcsl::Num::Int(n as i64 + 1)))
     }
 }
@@ -417,7 +399,7 @@ fn add_stack(s: &mut Sim, ci: usize, a1: bool) {
 /// A Swift Hunt shot in Night Watch: piercing below a full Bond of Life
 /// (which it grows), a normal shot at 100% or more, with Surging Blade.
 fn skill_attack(s: &mut Sim, ci: usize) -> ActInfo {
-    let n = s.chars[ci].normal_counter as usize;
+    let n = s.chars[ci].normal_s_counter as usize;
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Electro, 25.0, g::SKILL_ENHANCED_NA[lvl]);
     ai.abil = PIERCING_NAMES[n];
@@ -436,10 +418,9 @@ fn skill_attack(s: &mut Sim, ci: usize) -> ActInfo {
     let st = s.st_mut::<State>(ci);
     st.shots[n] = ai;
     st.shot_bol[n] = gain_bol;
-    st.s_mode = true;
     s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_SHOT, arg: n as i32 }, g::SKILL_ATTACK_HITMARKS[n]);
     // AdvanceNormalIndex in Night Watch
-    s.chars[ci].normal_counter = ((n + 1) % g::SKILL_HIT_NUM as usize) as i32;
+    s.chars[ci].normal_s_counter = ((n + 1) % g::SKILL_HIT_NUM as usize) as i32;
     let atkspd = s.stat(ci, st::ATKSPD);
     let table = &g::SKILL_ATTACK_FRAMES[n];
     ActInfo::new(Frames::Attack { table, atkspd }, atk_spd_adjust(table[0], atkspd), atk_spd_adjust(g::SKILL_ATTACK_HITMARKS[n], atkspd), AnimState::Normal)
@@ -463,7 +444,7 @@ fn arkhe_attack(s: &mut Sim, ci: usize) {
 
 /// Impale the Night, by her Bond of Life.
 fn skill_dash(s: &mut Sim, ci: usize) -> ActInfo {
-    s.chars[ci].normal_counter = 0;
+    s.chars[ci].normal_s_counter = 0;
     let ratio = s.hp_debt_ratio(ci);
     let lvl = s.talent(ci, 1);
     let lunge = |mult: f64, abil: &'static str| {
