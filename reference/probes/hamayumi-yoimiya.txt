@@ -1,0 +1,3 @@
+# Yoimiya with Hamayumi R5 on her normal attacks.
+team yoimiya-bennett-zhongli-yelan
+yoimiya add weapon="hamayumi" refine=5 lvl=90/90;

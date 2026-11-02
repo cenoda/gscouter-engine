@@ -1,0 +1,6 @@
+# Fischl with Prototype Crescent R1, aiming at a weak spot in every rotation.
+team diluc-chevreuse-fischl-bennett
+fischl add weapon="prototypecrescent" refine=1 lvl=90/90;
+rotation- bennett skill, burst;
+rotation+ fischl aim[weakspot=1], aim[hold=0];
+rotation+ bennett skill, burst;
