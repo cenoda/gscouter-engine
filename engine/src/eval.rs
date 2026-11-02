@@ -31,6 +31,7 @@ enum Builtin {
     Acos,
     PickUpCrystallize,
     SetPlayerPos,
+    SetStartingVerdantDew,
     Unsupported(&'static str),
 }
 
@@ -52,7 +53,7 @@ const BUILTINS: &[(&str, Builtin)] = &[
     ("kill_target", Builtin::Unsupported("kill_target")),
     ("is_target_dead", Builtin::Unsupported("is_target_dead")),
     ("pick_up_crystallize", Builtin::PickUpCrystallize),
-    ("set_starting_verdant_dew", Builtin::Unsupported("set_starting_verdant_dew")),
+    ("set_starting_verdant_dew", Builtin::SetStartingVerdantDew),
     ("movement", Builtin::Movement),
     ("sin", Builtin::Sin),
     ("cos", Builtin::Cos),
@@ -510,6 +511,17 @@ impl<'s> Eval<'s> {
                 if !self.sim.queue_action(ci, action, &params) {
                     return Err(Stop::Terminated);
                 }
+                Ok(Value::Null)
+            }
+            Builtin::SetStartingVerdantDew => {
+                let f = self.num(args, line, env)?.i();
+                if !(0..=3).contains(&f) {
+                    return err(format!("invald value for set_starting_verdant_dew, expected integer between 0-3, got {f}"));
+                }
+                if self.sim.f > 1 {
+                    return err(format!("cannot call set_starting_verdant_dew after frame 1, got frame {}", self.sim.f));
+                }
+                self.sim.player.verdant_dew = f as i32;
                 Ok(Value::Null)
             }
             Builtin::SetSwapIcd => {

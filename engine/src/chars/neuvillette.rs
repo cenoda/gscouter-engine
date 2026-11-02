@@ -19,9 +19,8 @@
 //!
 //! A1 counts the reactions gcsim lists: bloom, hydro crystallize,
 //! electro-charged, frozen, hydro swirl and vaporize on the enemy, and
-//! Lunar-Bloom, Lunar-Charged and Lunar-Crystallize (Lunar-Bloom and
-//! Lunar-Crystallize are errors in the engine: nothing ported enables
-//! them). A4
+//! Lunar-Bloom, Lunar-Charged and Lunar-Crystallize (Lunar-Crystallize
+//! is an error in the engine: nothing ported enables it). A4
 //! starts at 0: gcsim computes it in Init, before the starting HP is set,
 //! from a ratio of 0, and then only on his drains and heals.
 
