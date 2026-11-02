@@ -173,6 +173,9 @@ pub enum AttackTag {
     ElementalArtHold,
     ElementalBurst,
     Weapon,
+    /// gcsim's AttackTagMonaBubbleBreak: Mona's bubble breaking when its
+    /// time is up.
+    MonaBubbleBreak,
     /// gcsim's AttackTagNoneStat: damage that ignores the attacker's stats
     /// (Ocean-Hued Clam's foam). gcsim's IsReaction counts it.
     NoneStat,

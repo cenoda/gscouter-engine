@@ -1,0 +1,3 @@
+# Mona C6 with Hexerei switched off (param hexerei=0): no Astral Glow, Omen refresh or Hexerei parts of C1, C2, C4 and C6.
+team nahida-mona-fischl-kukishinobu
+mona char lvl=90/90 cons=6 talent=9,9,9 +params=[hexerei=0];

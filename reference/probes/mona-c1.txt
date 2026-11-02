@@ -1,0 +1,3 @@
+# Mona C1: hydro reaction bonuses for the member who hits an Omen-marked enemy (160% off field, Hexerei), on a team with a second Hexerei member (Fischl), with dashes and charged attacks.
+team nahida-mona-fischl-kukishinobu
+mona char lvl=90/90 cons=1 talent=9,9,9;

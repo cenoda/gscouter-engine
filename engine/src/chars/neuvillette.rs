@@ -430,16 +430,7 @@ pub fn is_droplet(s: &Sim, gd: &Gadget) -> bool {
 
 /// gcsim's CalcRandomPointFromCenter around (cx, cy).
 fn random_point(s: &mut Sim, cx: f64, cy: f64, min: f64, max: f64) -> (f64, f64) {
-    loop {
-        let x = -1.0 + s.rng.float64() * 2.0;
-        let y = -1.0 + s.rng.float64() * 2.0;
-        if x * x + y * y <= 1.0 {
-            let r = (min * min + s.rng.float64() * (max * max - min * min)).sqrt();
-            let (x, y) = if x == 0.0 && y == 0.0 { (0.0, 1.0) } else { (x, y) };
-            let factor = r / (x * x + y * y).sqrt();
-            return (x * factor + cx, y * factor + cy);
-        }
-    }
+    s.random_point(cx, cy, min, max)
 }
 
 /// sourcewaterdroplet.New: a thirteenth removes the oldest (the first of

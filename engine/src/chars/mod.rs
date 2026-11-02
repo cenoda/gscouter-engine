@@ -44,6 +44,8 @@ crate::chars! {
     Thoma => thoma,
     Ineffa => ineffa,
     Ororon => ororon,
+    Mona => mona,
+    Emilie => emilie,
     Cyno => cyno,
     Citlali => citlali,
     Mavuika => mavuika,

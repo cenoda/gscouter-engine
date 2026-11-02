@@ -1,0 +1,5 @@
+# Emilie C2: dendro RES -30% on the enemy her skill, burst and A1 hit, with her skill, normal and charged attacks before her burst.
+team raidenshogun-emilie-fischl-bennett
+emilie char lvl=90/90 cons=2 talent=9,9,9;
+rotation- emilie burst;
+rotation+ emilie skill, attack:3, charge, burst;

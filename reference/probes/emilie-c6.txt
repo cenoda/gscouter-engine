@@ -1,0 +1,5 @@
+# Emilie C6: dendro normal and charged attacks with 300% ATK and their Scents after each case, with her skill, normal and charged attacks before her burst.
+team raidenshogun-emilie-fischl-bennett
+emilie char lvl=90/90 cons=6 talent=9,9,9;
+rotation- emilie burst;
+rotation+ emilie skill, attack:3, charge, burst;

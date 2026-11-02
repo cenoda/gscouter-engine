@@ -1,0 +1,5 @@
+# Emilie at level 20 (ascension 0) and C1: no A1 (Scents pile up at level 2) and no A4, and no C1 DMG bonus (it needs A1).
+team raidenshogun-emilie-fischl-bennett
+emilie char lvl=20/20 cons=1 talent=9,9,9;
+rotation- emilie burst;
+rotation+ emilie skill, attack:3, charge, burst;

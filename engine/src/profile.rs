@@ -108,7 +108,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("start_energy", _) => start_energy = *v as f64,
             ("breakthrough", Some(CharKind::Yelan)) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
-            ("hexerei", Some(CharKind::Sucrose)) => {}
+            ("hexerei", Some(CharKind::Sucrose | CharKind::Mona)) => {}
             ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno)) => {}
             // the character itself is unsupported
             (_, None) => {}

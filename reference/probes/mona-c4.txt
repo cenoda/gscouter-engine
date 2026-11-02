@@ -1,0 +1,3 @@
+# Mona C4: CRIT Rate (and CRIT DMG, Hexerei with Fischl) against a marked enemy, on a team with a second Hexerei member (Fischl), with dashes and charged attacks.
+team nahida-mona-fischl-kukishinobu
+mona char lvl=90/90 cons=4 talent=9,9,9;

@@ -1,0 +1,5 @@
+# Mona C6 with Hu Tao's vaporize: C1's vaporize bonus, C2's follow-up charged attacks, C4's CRIT Rate; and her held skill (the library taps it).
+team furina-mona-hutao-yelan
+mona char lvl=90/90 cons=6 talent=9,9,9;
+rotation- mona skill,attack,burst,attack;
+rotation+ mona skill[hold=1],attack,burst,attack:2,charge;

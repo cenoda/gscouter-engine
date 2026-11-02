@@ -1,0 +1,4 @@
+# Emilie's skill (the summon, the Lumidouce Case, the Spiritbreath Thorn), normal and charged attacks before her burst (the library only bursts with her).
+team raidenshogun-emilie-fischl-bennett
+rotation- emilie burst;
+rotation+ emilie skill, attack:3, charge, burst;

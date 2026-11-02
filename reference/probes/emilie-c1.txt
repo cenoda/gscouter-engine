@@ -1,0 +1,5 @@
+# Emilie C1: Scents from burning and dendro hits on burning enemies, and her skill's and A1's DMG +20%, with her skill, normal and charged attacks before her burst.
+team raidenshogun-emilie-fischl-bennett
+emilie char lvl=90/90 cons=1 talent=9,9,9;
+rotation- emilie burst;
+rotation+ emilie skill, attack:3, charge, burst;

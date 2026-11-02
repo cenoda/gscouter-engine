@@ -482,6 +482,9 @@ pub struct AttackInfo {
     pub add_tags: u8,
     /// gcsim's HitWeakPoint: it always crits, without a random draw.
     pub weak_point: bool,
+    /// gcsim's NoImpulse: set by the attack (Klee's burst) or by a frozen
+    /// enemy as the hit lands; Mona's bubble does not break on it.
+    pub no_impulse: bool,
 }
 
 /// gcsim's additional attack tags (AttackInfo.AdditionalTags), as bits.
@@ -529,6 +532,7 @@ impl AttackInfo {
             use_def: false,
             add_tags: 0,
             weak_point: false,
+            no_impulse: false,
         }
     }
 }
@@ -1433,6 +1437,9 @@ pub struct Sim {
     pub hit_flat: f64,
     /// BaseDmgBonus EnemyHit subscribers add to the hit.
     pub hit_base_bonus: f64,
+    /// A factor EnemyHit subscribers put on the hit's Mult (Mona's Hexerei
+    /// C6 doubles her charged attack's).
+    pub hit_mult: f64,
     /// Stellar-Conduct and the Polestar Field.
     pub stellar: crate::stellar::Stellar,
     /// CRIT Rate an EnemyHit subscriber adds to the hit and the CRIT DMG it
@@ -1572,6 +1579,7 @@ impl Sim {
             nightsoul_burst_icd: 0,
             hit_flat: 0.0,
             hit_base_bonus: 0.0,
+            hit_mult: 1.0,
             stellar: Default::default(),
             hit_crit: None,
             special_base_bonus: 0.0,
@@ -2634,10 +2642,11 @@ impl Sim {
                 // a subscriber can apply an attack inside the emit (an
                 // attack queued with no delay, as Escoffier's C6 with
                 // travel 0): keep the outer hit's accumulators
-                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus);
+                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult);
                 self.hit_flat = 0.0;
                 self.hit_crit = None;
                 self.hit_base_bonus = 0.0;
+                self.hit_mult = 1.0;
                 self.emit(Event::EnemyHit(&ev));
                 ev.info.flat_dmg += self.hit_flat;
                 base_bonus = self.hit_base_bonus;
@@ -2645,7 +2654,10 @@ impl Sim {
                     ev.stats[st::CR] += cr;
                     ev.stats[st::CD] = cd;
                 }
-                (self.hit_flat, self.hit_crit, self.hit_base_bonus) = outer;
+                if self.hit_mult != 1.0 {
+                    ev.info.mult *= self.hit_mult;
+                }
+                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult) = outer;
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }
@@ -2653,6 +2665,10 @@ impl Sim {
         // reaction damage
         if !ev.info.sim && (!ev.info.tag.is_reaction() || ev.info.tag.is_direct()) {
             self.apply_attack_mods(actor, &mut ev);
+        }
+        // gcsim's attack: a frozen enemy takes the hit without impulse
+        if self.enemy.aura.get(AURA_FROZEN) > ZERO_DUR {
+            ev.info.no_impulse = true;
         }
         // poise, then shatter, on a frozen enemy
         if self.enemy.aura.get(AURA_FROZEN) >= ZERO_DUR {
@@ -3106,6 +3122,27 @@ impl Sim {
         }
         offset_point(self.player_pos, (ox, oy), self.player_dir)
     }
+    /// gcsim's CalcRandomPointFromCenter around (cx, cy): a point between
+    /// min and max from it, drawn by rejection sampling.
+    pub fn random_point(&mut self, cx: f64, cy: f64, min: f64, max: f64) -> (f64, f64) {
+        loop {
+            let x = -1.0 + self.rng.float64() * 2.0;
+            let y = -1.0 + self.rng.float64() * 2.0;
+            if x * x + y * y <= 1.0 {
+                let r = (min * min + self.rng.float64() * (max * max - min * min)).sqrt();
+                let (x, y) = if x == 0.0 && y == 0.0 { (0.0, 1.0) } else { (x, y) };
+                let factor = r / (x * x + y * y).sqrt();
+                return (x * factor + cx, y * factor + cy);
+            }
+        }
+    }
+
+    /// gcsim's IsBurning on the enemy: burning and its fuel.
+    pub fn enemy_burning(&self) -> bool {
+        let a = &self.enemy.aura;
+        a.get(AURA_BURNING_FUEL) > ZERO_DUR && a.get(AURA_BURNING) > ZERO_DUR
+    }
+
     /// gcsim's NewCircleHitOnTarget on the player, with its offset.
     pub fn circle_on_player(&self, ox: f64, oy: f64, r: f64) -> Pattern {
         let (x, y) = self.on_player(ox, oy);

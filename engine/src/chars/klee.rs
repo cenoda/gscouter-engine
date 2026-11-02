@@ -287,6 +287,7 @@ impl Character for Char {
                 let lvl = s.talent(ci, 2);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::BURST[lvl]);
                 ai.abil = "Sparks'n'Splash";
+                ai.no_impulse = true;
                 ai.def_halt = true;
                 ai.deployable = true;
                 ai.pattern = s.circle_on_target(1.5);
