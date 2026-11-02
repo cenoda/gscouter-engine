@@ -233,6 +233,9 @@ pub trait Character {
     fn attack_cb(_s: &mut Sim, _ci: usize, _cbs: u16, _ev: &AttackEvent) {}
     /// Changes to an attack of its as it is snapshot.
     fn snapshot(_s: &Sim, _ci: usize, _info: &mut AttackInfo) {}
+    /// Its Snapshot's changes to the snapshot's stats, after `snapshot`
+    /// (Xiao's burst DMG bonus).
+    fn snapshot_stats(_s: &Sim, _ci: usize, _info: &AttackInfo, _stats: &mut Stats) {}
     /// The amount of a mod it owns on character `on`; false when the mod
     /// does not apply now.
     fn mod_amount(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _out: &mut Stats) -> bool {
@@ -475,6 +478,7 @@ macro_rules! chars {
             pub fn attack_cb(k: CharKind, s: &mut Sim, ci: usize, cbs: u16, ev: &AttackEvent) { match k { $(CharKind::$kind => $m::Char::attack_cb(s, ci, cbs, ev)),* } }
             #[inline]
             pub fn snapshot(k: CharKind, s: &Sim, ci: usize, info: &mut AttackInfo) { match k { $(CharKind::$kind => $m::Char::snapshot(s, ci, info)),* } }
+            pub fn snapshot_stats(k: CharKind, s: &Sim, ci: usize, info: &AttackInfo, stats: &mut Stats) { match k { $(CharKind::$kind => $m::Char::snapshot_stats(s, ci, info, stats)),* } }
             #[inline]
             pub fn mod_amount(k: CharKind, s: &Sim, ci: usize, on: usize, m: &Mod, out: &mut Stats) -> bool { match k { $(CharKind::$kind => $m::Char::mod_amount(s, ci, on, m, out)),* } }
             #[inline]

@@ -1,0 +1,8 @@
+# Xiao's low plunges from his burst's jump, with and without the collision; the library's rotations plunge high.
+team xiao-faruzan-furina-bennett
+rotation- xiao jump, high_plunge[collision=1];
+rotation- } else {
+rotation- xiao jump, high_plunge;
+rotation+ xiao jump, low_plunge[collision=1];
+rotation+ } else {
+rotation+ xiao jump, low_plunge;

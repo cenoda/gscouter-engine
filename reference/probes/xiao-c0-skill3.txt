@@ -1,0 +1,4 @@
+# Xiao C0 on the C1 probe's rotation (three skills before his burst, the third waiting for its cooldown), the baseline C1 changes.
+team xiao-faruzan-furina-bennett
+rotation- xiao skill:2, burst;
+rotation+ xiao skill:3, burst;

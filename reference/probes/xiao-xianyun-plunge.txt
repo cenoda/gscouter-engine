@@ -1,0 +1,4 @@
+# Xiao's plunges from Xianyun's jump before his burst (her frames, poise and areas), low with the collision.
+team xiao-faruzan-bennett-xianyun
+rotation- xiao skill:2, burst;
+rotation+ xiao jump, low_plunge[collision=1], skill:2, burst;

@@ -1,0 +1,3 @@
+# Xiao C6: two enemies hit by one plunge reset the skill (never with the single target); the library builds are all C0.
+team xiao-faruzan-furina-bennett
+xiao char lvl=90/90 cons=6 talent=9,9,9;

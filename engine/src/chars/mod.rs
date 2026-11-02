@@ -71,6 +71,7 @@ crate::chars! {
     Lanyan => lanyan,
     Columbina => columbina,
     Charlotte => charlotte,
+    Xiao => xiao,
 }
 
 /// The characters whose modules have been checked against gcsim for a

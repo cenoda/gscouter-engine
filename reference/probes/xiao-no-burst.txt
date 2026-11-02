@@ -1,0 +1,4 @@
+# Xiao outside his burst: a physical charged attack, and a plain jump's plunge (gcsim gives it the burst's hitmark and area).
+team xiao-faruzan-furina-bennett
+rotation- xiao attack;
+rotation+ xiao attack, charge, jump, high_plunge[collision=1];

@@ -1,0 +1,3 @@
+# Xiao C3: the skill's talent level +3; the library builds are all C0.
+team xiao-faruzan-furina-bennett
+xiao char lvl=90/90 cons=3 talent=9,9,9;

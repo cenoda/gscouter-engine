@@ -2647,13 +2647,14 @@ impl Sim {
     /// A character's Snapshot of an attack.
     pub fn make_snapshot(&self, info: &mut AttackInfo) -> (Stats, i32) {
         let ci = info.actor as usize;
-        let stats = self.stats_pruning(ci);
+        let mut stats = self.stats_pruning(ci);
         if !info.ignore_infusion {
             if let Some(e) = self.infused(ci, info.tag) {
                 info.element = e;
             }
         }
         crate::chars::dispatch::snapshot(self.chars[ci].kind, self, ci, info);
+        crate::chars::dispatch::snapshot_stats(self.chars[ci].kind, self, ci, info, &mut stats);
         (stats, self.chars[ci].level)
     }
 

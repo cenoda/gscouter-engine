@@ -1,0 +1,3 @@
+# Xiao C2: ER +25% off the field, on a team whose bursts wait for his energy; the library builds are all C0.
+team xiao-xingqiu-bennett-xiangling
+xiao char lvl=90/90 cons=2 talent=9,9,9;
