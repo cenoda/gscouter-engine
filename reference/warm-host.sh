@@ -15,6 +15,15 @@
 # Optional: DEADLINE (default 20h, compare's -deadline: past it the jobs
 # start no more builds and the cache is uploaded as it is), TAG.
 #
+# Several servers share the work by slices: the teams are cut into SHARDS
+# slices (compare's -shard k/SHARDS) and this server runs SLICES, a range
+# such as 0-23 (default: all of them). Give each server its own range and
+# TAG; import_release takes one tag per run. A server rerun on the same
+# disk keeps its cache, so only builds not yet cached run again.
+#
+# The cache is uploaded in increments every UPLOAD_EVERY (default 2h), so
+# CI can import what is done before the end.
+#
 # Progress: the prerelease's progress.txt asset, replaced every 10 minutes.
 # When it says DONE, the server can be deleted.
 set -euo pipefail
@@ -28,7 +37,7 @@ API=https://api.github.com/repos/$REPO
 UPLOADS=https://uploads.github.com/repos/$REPO
 
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -q && apt-get install -yq git curl jq tar gzip ca-certificates
+apt-get update -q && apt-get install -yq git curl jq tar gzip bc ca-certificates
 
 mkdir -p "$WORK" && cd "$WORK"
 [ -d engine ] || git clone -q https://github.com/$REPO engine
@@ -60,12 +69,16 @@ mkdir -p "$CACHE" "$LOGS"
 NCPU=$(nproc)
 PER=8                      # gcsim workers per job
 JOBS=$(( NCPU / PER > 0 ? NCPU / PER : 1 ))
+SHARDS=${SHARDS:-$JOBS}
+SLICES=${SLICES:-0-$((SHARDS - 1))}
+UPLOAD_EVERY=${UPLOAD_EVERY:-2h}
+DEADLINE_AT=$(( $(date -u +%s) + $(echo "$DEADLINE" | sed 's/h/*3600+/;s/m/*60+/;s/s//;s/+$//' | bc) ))
 START=$(date -u +%s)
 
 progress() {
 	{
 		echo "tag $TAG, engine $(git -C engine rev-parse --short HEAD), Gscouter ${GSCOUTER_COMMIT:0:12}"
-		echo "$NCPU CPUs, $JOBS jobs of $PER workers, deadline $DEADLINE"
+		echo "$NCPU CPUs, $JOBS jobs of $PER workers, slices $SLICES of $SHARDS, deadline $DEADLINE"
 		echo "elapsed $(( ($(date -u +%s) - START) / 60 )) min, $(find "$CACHE" -type f | wc -l) chunks, $(du -sh "$CACHE" | cut -f1)"
 		echo "load: $(cut -d' ' -f1-3 /proc/loadavg)"
 		for k in $(seq 0 $((JOBS - 1))); do
@@ -79,26 +92,52 @@ progress() {
 cd "$WORK/engine/reference"
 go build -o "$WORK/compare" ./compare
 progress "started"
+# job k runs every JOBS-th slice of this server's range, one after another
+read -r LO HI <<< "$(echo "$SLICES" | tr '-' ' ')"
 for k in $(seq 0 $((JOBS - 1))); do
-	"$WORK/compare" -gscouter "$WORK/gscouter" -gcsim-only -only library,variants,probes -sample 4 \
-		-shard "$k/$JOBS" -j "$PER" -deadline "$DEADLINE" -cache "$CACHE" \
-		-json "$LOGS/$k.json" -md "$LOGS/$k.md" > "$LOGS/$k.out" 2> "$LOGS/$k.err" &
+	(
+		for s in $(seq $((LO + k)) "$JOBS" "$HI"); do
+			left=$(( DEADLINE_AT - $(date -u +%s) ))
+			[ "$left" -gt 60 ] || break
+			"$WORK/compare" -gscouter "$WORK/gscouter" -gcsim-only -only library,variants,probes -sample 4 \
+				-shard "$s/$SHARDS" -j "$PER" -deadline "${left}s" -cache "$CACHE" \
+				-json "$LOGS/$s.json" -md "$LOGS/$s.md" >> "$LOGS/$k.out" 2>> "$LOGS/$k.err" || true
+		done
+	) &
 done
+
+# increments: the chunks not uploaded yet, as gcsim-cache-incNN.tar.gz
+INC=0
+touch "$WORK/uploaded.txt"
+increment() {
+	(cd "$CACHE" && find . -type f -name '*.json' | sort) > "$WORK/all.txt"
+	comm -13 "$WORK/uploaded.txt" "$WORK/all.txt" > "$WORK/new.txt"
+	[ -s "$WORK/new.txt" ] || return 0
+	local n
+	n=$(printf 'inc%02d' "$INC")
+	split -l 200000 -d "$WORK/new.txt" "$WORK/new-"
+	for p in "$WORK"/new-*; do
+		tar -czf "$WORK/gcsim-cache-$n-${p##*/new-}.tar.gz" -C "$CACHE" -T "$p"
+		upload "$WORK/gcsim-cache-$n-${p##*/new-}.tar.gz" "gcsim-cache-$n-${p##*/new-}.tar.gz"
+		rm -f "$p" "$WORK/gcsim-cache-$n-${p##*/new-}.tar.gz"
+	done
+	sort -m "$WORK/uploaded.txt" "$WORK/new.txt" > "$WORK/up.tmp" && mv "$WORK/up.tmp" "$WORK/uploaded.txt"
+	INC=$((INC + 1))
+}
+EVERY=$(( $(echo "$UPLOAD_EVERY" | sed 's/h/*3600+/;s/m/*60+/;s/s//;s/+$//' | bc) ))
+NEXT=$(( $(date -u +%s) + EVERY ))
 while [ -n "$(jobs -r)" ]; do
 	sleep 600
+	if [ "$(date -u +%s)" -ge "$NEXT" ]; then
+		increment || true
+		NEXT=$(( $(date -u +%s) + EVERY ))
+	fi
 	progress "running"
 done
 wait || true
 
-# the cache, in parts below GitHub's 2 GiB per asset
-cd "$CACHE"
-find . -type f -name '*.json' | sort > "$WORK/files.txt"
-split -l 200000 -d "$WORK/files.txt" "$WORK/part-"
-for p in "$WORK"/part-*; do
-	n=${p##*/part-}
-	tar -czf "$WORK/gcsim-cache-$n.tar.gz" -T "$p"
-	upload "$WORK/gcsim-cache-$n.tar.gz" "gcsim-cache-$n.tar.gz"
-done
+# the rest of the cache
+increment
 tar -czf "$WORK/reports.tar.gz" -C "$LOGS" .
 upload "$WORK/reports.tar.gz" reports.tar.gz
 progress "DONE: the cache is uploaded; the server can be deleted"
