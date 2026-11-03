@@ -1,0 +1,3 @@
+# Xinyan C1: a crit while she is active gives her normal attacks 12% ATK SPD for 5 s, every 5 s.
+team xinyan-furina-rosaria-bennett
+xinyan char lvl=90/90 cons=1 talent=9,9,9;

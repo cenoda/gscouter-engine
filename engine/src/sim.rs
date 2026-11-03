@@ -1369,6 +1369,7 @@ pub enum ShieldType {
     YunjinSkill,
     NoelleSkill,
     NoelleA1,
+    XinyanSkill,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against

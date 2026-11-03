@@ -1,0 +1,3 @@
+# Xinyan C2: the burst's Physical hit crits, and the burst makes a level 3 shield with two extra DoT pulses.
+team xinyan-furina-rosaria-xianyun
+xinyan char lvl=90/90 cons=2 talent=9,9,9;
