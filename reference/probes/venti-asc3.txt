@@ -1,0 +1,3 @@
+# Venti at level 60 (ascension 3): no A4 energy after the burst.
+team mona-shenhe-venti-ganyu
+venti char lvl=60/60 cons=0 talent=9,9,9;

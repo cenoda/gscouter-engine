@@ -1,0 +1,3 @@
+# Venti at C6 with a hydro absorb.
+team neuvillette-furina-venti-xilonen
+venti char lvl=90/90 cons=6 talent=9,9,9;

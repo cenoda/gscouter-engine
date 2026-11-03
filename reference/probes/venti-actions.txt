@@ -1,0 +1,4 @@
+# Venti's aimed shots, full and physical, his held skill and his normal attack chain.
+team mona-shenhe-venti-ganyu
+rotation- venti skill, attack;
+rotation+ venti skill[hold=1], aim, aim[hold=0,weakspot=1], attack:6;

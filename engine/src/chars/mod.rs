@@ -93,6 +93,7 @@ crate::chars! {
     Varesa => varesa,
     Wanderer => wanderer,
     Itto => itto,
+    Venti => venti,
 }
 
 /// The characters whose modules have been checked against gcsim for a
