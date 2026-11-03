@@ -1,0 +1,3 @@
+# Itto with Redhorn Stonethresher R5.
+team aratakiitto-albedo-gorou-fischl
+itto add weapon="redhornstonethresher" refine=5 lvl=90/90;

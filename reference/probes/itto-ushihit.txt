@@ -1,0 +1,4 @@
+# Itto: Ushi takes three hits (skill[ushihit=3]), each giving a stack.
+team aratakiitto-albedo-gorou-fischl
+rotation- itto burst, attack:3, skill, charge:5,
+rotation+ itto burst, attack:3, skill[ushihit=3], charge:5,

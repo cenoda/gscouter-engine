@@ -129,4 +129,6 @@ crate::weapons! {
     CranesEchoingCall => cranesechoingcall,
     AmosBow => amosbow,
     PrototypeRancour => prototyperancour,
+    RedhornStonethresher => redhornstonethresher,
+    Whiteblind => whiteblind,
 }
