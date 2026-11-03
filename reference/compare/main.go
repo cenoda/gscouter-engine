@@ -98,33 +98,34 @@ const bound = 0.01
 const z = 1.96
 
 var (
-	gscouterDir = flag.String("gscouter", "", "Gscouter checkout (its teams/ and cmd/gscouter)")
-	gsePath     = flag.String("gse", "../engine/target/release/gse", "the engine's executable")
-	teamsFlag   = flag.String("teams", "", "comma-separated team ids (default: the whole library)")
-	buildsFlag  = flag.String("builds", "", "comma-separated team/build pairs as the report names them (team/library, team/er-0, team/cons:xingqiu=C0, team/probe:kuki-c6): compare only those, of any kind; implies -only library,variants,buildspace,probes and -teams")
-	censusOnly  = flag.Bool("census", false, "only classify teams as supported or not; run nothing")
-	noVariants  = flag.Bool("no-variants", false, "compare library builds and probes only (same as -only library,probes)")
-	onlyFlag    = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, buildspace, probes, pages")
-	bsWeapons   = flag.Int("buildspace-weapons", 2, "build space: other weapons of the class per member, chosen by a hash of team, member and weapon (0: every one the engine has)")
-	dryRun      = flag.Bool("dry-run", false, "list the builds that would be compared, and compare none")
-	reverse     = flag.Bool("reverse", false, "take the teams in reverse order (for a second host warming the cache beside one that runs forward)")
-	shardFlag   = flag.String("shard", "", "k/n: compare only the k-th of n parts of the teams that have builds to compare (k from 0); the census still covers every team")
-	iter0       = flag.Int("iter", 4000, "iterations of the first batch")
-	maxIter     = flag.Int("max-iter", 32000, "most iterations gcsim runs to for a build that fails or is inconclusive at -iter; with -settle=false, a build still inconclusive there grows further on the seeds gcsim's cache already holds for its config (whole chunks from seed 1), running only the engine")
-	targetSE    = flag.Float64("target-se", 0, "standard error, relative to the mean, each engine must reach (0: none)")
-	settle      = flag.Bool("settle", true, "decide a verdict still inconclusive at -max-iter by its estimate: pass inside the bound, fail outside it")
-	charShare   = flag.Float64("char-share", 0.10, "characters below this share of gcsim's team DPS are reported, not judged")
-	sampleN     = flag.Int("sample", 0, "variants, build space and pages: run at most this many builds of each kind per team, chosen by a hash of team and build (0: every one); the page's one-pass configs are always run, and builds the engine cannot run are all reported")
-	warmup      = flag.Float64("warmup", 150, "seconds of the looped fight excluded from the window")
-	workers     = flag.Int("j", runtime.NumCPU(), "workers")
-	jsonOut     = flag.String("json", "", "write the results as JSON to this file")
-	mdOut       = flag.String("md", "", "also write the report to this file")
-	probesDir   = flag.String("probes", "probes", "directory of probes: library builds with lines replaced, and rotations with hunks replaced")
-	configsOut  = flag.String("configs", "", "also write the config of each build selected to this directory, as <team>-<build>.txt (with -dry-run, without comparing)")
-	cacheDir    = flag.String("cache", harness.DefaultCacheDir(), "directory of stored gcsim results, by config and chunk of seeds; empty for none")
-	deadline    = flag.Duration("deadline", 0, "after this long, start no more builds and grow none further; builds not started are reported as deferred (0: no limit)")
-	gcsimOnly   = flag.Bool("gcsim-only", false, "run only gcsim, into the cache, on the selected builds, whether the engine supports their teams or not (build-space builds need the engine to assemble and check them)")
-	seedsFlag   = flag.String("seeds", "", "lo:hi, with -gcsim-only: run gcsim on iterations lo to hi of each selected build (seeds lo+1 to hi), whole chunks, into the cache, and nothing else, so that several jobs can share a build's seeds; respects -deadline")
+	gscouterDir   = flag.String("gscouter", "", "Gscouter checkout (its teams/ and cmd/gscouter)")
+	gsePath       = flag.String("gse", "../engine/target/release/gse", "the engine's executable")
+	teamsFlag     = flag.String("teams", "", "comma-separated team ids (default: the whole library)")
+	buildsFlag    = flag.String("builds", "", "comma-separated team/build pairs as the report names them (team/library, team/er-0, team/cons:xingqiu=C0, team/probe:kuki-c6): compare only those, of any kind; implies -only library,variants,buildspace,probes and -teams")
+	censusOnly    = flag.Bool("census", false, "only classify teams as supported or not; run nothing")
+	noVariants    = flag.Bool("no-variants", false, "compare library builds and probes only (same as -only library,probes)")
+	onlyFlag      = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, buildspace, probes, pages")
+	bsWeapons     = flag.Int("buildspace-weapons", 2, "build space: other weapons of the class per member, chosen by a hash of team, member and weapon (0: every one the engine has)")
+	dryRun        = flag.Bool("dry-run", false, "list the builds that would be compared, and compare none")
+	reverse       = flag.Bool("reverse", false, "take the teams in reverse order (for a second host warming the cache beside one that runs forward)")
+	shardFlag     = flag.String("shard", "", "k/n: compare only the k-th of n parts of the teams that have builds to compare (k from 0); the census still covers every team")
+	iter0         = flag.Int("iter", 4000, "iterations of the first batch")
+	maxIter       = flag.Int("max-iter", 32000, "most iterations gcsim runs to for a build that fails or is inconclusive at -iter; with -settle=false, a build still inconclusive there grows further on the seeds gcsim's cache already holds for its config (whole chunks from seed 1), running only the engine")
+	targetSE      = flag.Float64("target-se", 0, "standard error, relative to the mean, each engine must reach (0: none)")
+	settle        = flag.Bool("settle", true, "decide a verdict still inconclusive at -max-iter by its estimate: pass inside the bound, fail outside it")
+	charShare     = flag.Float64("char-share", 0.10, "characters below this share of gcsim's team DPS are reported, not judged")
+	sampleN       = flag.Int("sample", 0, "variants, build space and pages: run at most this many builds of each kind per team, chosen by a hash of team and build (0: every one); the page's one-pass configs are always run, and builds the engine cannot run are all reported")
+	warmup        = flag.Float64("warmup", 150, "seconds of the looped fight excluded from the window")
+	workers       = flag.Int("j", runtime.NumCPU(), "workers")
+	jsonOut       = flag.String("json", "", "write the results as JSON to this file")
+	mdOut         = flag.String("md", "", "also write the report to this file")
+	probesDir     = flag.String("probes", "probes", "directory of probes: library builds with lines replaced, and rotations with hunks replaced")
+	configsOut    = flag.String("configs", "", "also write the config of each build selected to this directory, as <team>-<build>.txt (with -dry-run, without comparing)")
+	cacheDir      = flag.String("cache", harness.DefaultCacheDir(), "directory of stored gcsim results, by config and chunk of seeds; empty for none")
+	deadline      = flag.Duration("deadline", 0, "after this long, start no more builds and grow none further; builds not started are reported as deferred (0: no limit)")
+	gcsimOnly     = flag.Bool("gcsim-only", false, "run only gcsim, into the cache, on the selected builds, whether the engine supports their teams or not (build-space builds need the engine to assemble and check them)")
+	supportedOnly = flag.Bool("supported-only", false, "with -gcsim-only: take only the teams the engine supports, as compare without -gcsim-only does, so that -shard k/n names the same part as a compare run (a host warming the cache ahead of CI's jobs)")
+	seedsFlag     = flag.String("seeds", "", "lo:hi, with -gcsim-only: run gcsim on iterations lo to hi of each selected build (seeds lo+1 to hi), whole chunks, into the cache, and nothing else, so that several jobs can share a build's seeds; respects -deadline")
 
 	// cacheKeys reads what the cache holds without running gcsim.
 	cacheKeys *cacheView
@@ -416,6 +417,9 @@ func main() {
 	if cacheKeys, err = openCacheView(*cacheDir); err != nil {
 		fail(err)
 	}
+	if *supportedOnly && !*gcsimOnly {
+		fail(errors.New("-supported-only needs -gcsim-only"))
+	}
 	if *gcsimOnly && gcsimCache == nil {
 		fail(errors.New("-gcsim-only needs a cache (-cache)"))
 	}
@@ -509,7 +513,7 @@ func main() {
 		cfg, err := dump(gscouter, id, "")
 		if err != nil {
 			st.Status, st.Error = "error", err.Error()
-		} else if *gcsimOnly && !needsEngine(id, kinds) {
+		} else if *gcsimOnly && !*supportedOnly && !needsEngine(id, kinds) {
 			// gcsim needs no support from the engine
 			st.Status = "dumped"
 			configs[i] = cfg
@@ -517,7 +521,7 @@ func main() {
 			st.Status, st.Error = "error", err.Error()
 		} else if len(miss) > 0 {
 			st.Status, st.Unsupported = "unsupported", miss
-			if *gcsimOnly {
+			if *gcsimOnly && !*supportedOnly {
 				// its library build, variants and probes need no engine
 				configs[i] = cfg
 			}
@@ -546,7 +550,8 @@ func main() {
 			id := ids[i]
 			supported := statuses[i].Status == "supported"
 			// -gcsim-only takes every team, and reports one whose dump failed
-			selected := supported || *gcsimOnly
+			// (-supported-only: the teams a compare run takes, for its parts)
+			selected := supported || (*gcsimOnly && !*supportedOnly)
 			var probes []probe
 			if kinds["probes"] {
 				probes = probesFor(id)
