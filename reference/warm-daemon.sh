@@ -29,6 +29,15 @@
 # job would cancel a waiting one and lose that run's chunks. Tags not yet
 # imported are kept in $WORK/pending.txt and dispatched in order.
 #
+# Several servers share the work with no setting: before an item (a part
+# of the schedule, a requested team, an import) a server claims it by
+# creating the tag warm-claim/<item>, which GitHub creates for one server
+# only; the others skip it. Claims of past days are deleted.
+#
+# Each round it also compares its installed copy with main's
+# reference/warm-daemon.sh, and installs main's and restarts when they
+# differ, so a fix on main reaches every server.
+#
 # Needs GH_TOKEN: a fine-grained token for cenoda/gscouter-engine only, with
 # Contents read and write (releases) and Actions read and write (dispatch).
 # Put it in /etc/warm-daemon.env as GH_TOKEN=..., mode 600, and run
@@ -70,7 +79,8 @@ Nice=5
 WantedBy=multi-user.target
 EOF
 	systemctl daemon-reload
-	systemctl enable --now warm-daemon
+	systemctl enable warm-daemon
+	systemctl restart warm-daemon
 	echo "warm-daemon started: journalctl -u warm-daemon -f"
 	exit 0
 fi
@@ -81,6 +91,23 @@ export HOME=${HOME:-/root} GOPATH=${GOPATH:-/root/go}
 export PATH=/usr/local/go/bin:/root/.cargo/bin:$PATH GOFLAGS=-mod=mod
 gh() { curl -sSf -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$@"; }
 log() { echo "$(date -u +%FT%TZ) $*"; echo "$(date -u +%FT%TZ) $*" > "$WORK/status.txt"; }
+
+# claim NAME: true when this server created the tag warm-claim/NAME (a
+# tag GitHub creates once: another server's claim makes this fail)
+claim() {
+	gh -X POST "$API/git/refs" -d "$(jq -n --arg r "refs/tags/warm-claim/$1" --arg s "$BUILT" '{ref:$r, sha:$s}')" >/dev/null 2>&1
+}
+today() { echo $(( $(date -u +%s) / 86400 )); }
+# claims of days before yesterday: d<day>-...
+prune_claims() {
+	local t ref day
+	t=$(today)
+	for ref in $(gh "$API/git/matching-refs/tags/warm-claim/d" | jq -r '.[].ref'); do
+		day=${ref#refs/tags/warm-claim/d}; day=${day%%-*}
+		[[ $day =~ ^[0-9]+$ ]] && [ "$day" -lt $((t - 1)) ] || continue
+		gh -X DELETE "$API/git/$ref" >/dev/null 2>&1 || true
+	done
+}
 
 mkdir -p "$WORK"/{cache,logs}
 cd "$WORK"
@@ -94,6 +121,12 @@ BUILT=""
 update() {
 	git -C engine fetch -q origin main
 	git -C engine checkout -q -f origin/main
+	# main's copy of this script replaces the installed one
+	if [ "$0" = /usr/local/bin/warm-daemon.sh ] && ! cmp -s engine/reference/warm-daemon.sh /usr/local/bin/warm-daemon.sh; then
+		install -m 755 engine/reference/warm-daemon.sh /usr/local/bin/warm-daemon.sh
+		log "installed main's warm-daemon.sh; restarting"
+		exit 0
+	fi
 	local head
 	head=$(git -C engine rev-parse HEAD)
 	[ "$head" != "$BUILT" ] || return 0
@@ -166,6 +199,9 @@ import_pending() {
 	tag=$(head -n1 "$WORK/pending.txt")
 	[ -n "$tag" ] || return 0
 	if main_cache_busy; then log "import of $tag waits for main's cache job"; return 0; fi
+	# one dispatch in all servers per 10 minutes, so that two servers do
+	# not dispatch at once past the check above
+	claim "d$(today)-import-$(( $(date -u +%s) % 86400 / 600 ))" || { log "import of $tag waits for its turn"; return 0; }
 	gh -X POST "$API/actions/workflows/compare.yml/dispatches" -d "$(jq -n --arg t "$tag" '{ref:"main", inputs:{import_release:$t}}')" >/dev/null
 	sed -i 1d "$WORK/pending.txt"
 	log "dispatched import_release=$tag on main"
@@ -174,7 +210,7 @@ import_pending() {
 next_request() {
 	git -C engine fetch -q origin warm-requests 2>/dev/null || return 1
 	git -C engine show FETCH_HEAD:requests.txt 2>/dev/null | tr -d '\r' | sed 's/#.*//;s/[[:space:]]//g' | grep -E '^[A-Za-z0-9_.-]+$' |
-		grep -vxF -f "$WORK/requests-done.txt" | head -n 20 | paste -sd, -
+		grep -vxF -f "$WORK/requests-done.txt" | head -n 20
 }
 
 # the schedule's day after now (its cron is 17 3 * * *) and its parts
@@ -193,12 +229,18 @@ next_schedule() {
 }
 
 serve_requests() {
-	local ids
-	while ids=$(next_request) && [ -n "$ids" ]; do
+	local ids id
+	while true; do
+		ids=""
+		for id in $(next_request || true); do
+			echo "$id" >> "$WORK/requests-done.txt"
+			claim "req-$id" && ids="$ids,$id"
+		done
+		ids=${ids#,}
+		[ -n "$ids" ] || break
 		for k in $(seq 0 $((JOBS - 1))); do
 			echo "-teams $ids -only library,variants,probes -sample 4 -shard $k/$JOBS"
 		done | warm "request-$(date -u +%H%M%S)"
-		echo "$ids" | tr , '\n' >> "$WORK/requests-done.txt"
 		import_pending
 	done
 }
@@ -206,6 +248,7 @@ serve_requests() {
 while true; do
 	update || log "update failed; using ${BUILT:0:7}"
 	[ -n "$BUILT" ] || { sleep "$POLL"; continue; }
+	[ "$(cat "$WORK/pruned" 2>/dev/null)" = "$(today)" ] || { prune_claims || true; today > "$WORK/pruned"; }
 	import_pending || true
 	serve_requests || true
 	# the next schedule's parts not run yet, JOBS at a time, the requests
@@ -216,10 +259,20 @@ while true; do
 		done
 	done > "$WORK/todo.txt"
 	while [ -s "$WORK/todo.txt" ]; do
-		head -n "$JOBS" "$WORK/todo.txt" > "$WORK/batch.txt"
+		# the next JOBS items this server claims; the others are another's
+		: > "$WORK/batch.txt"
+		while [ -s "$WORK/todo.txt" ] && [ "$(wc -l < "$WORK/batch.txt")" -lt "$JOBS" ]; do
+			read -r day kind s n < "$WORK/todo.txt"
+			sed -i 1d "$WORK/todo.txt"
+			if claim "d$day-$kind-$s"; then
+				echo "$day $kind $s $n" >> "$WORK/batch.txt"
+			else
+				echo "$day $kind $s" >> "$WORK/prewarmed.txt"
+			fi
+		done
+		[ -s "$WORK/batch.txt" ] || break
 		awk '{print "-supported-only -only " $2 " -sample 4 -shard " $3 "/" $4}' "$WORK/batch.txt" | warm "schedule-day$(head -c 5 "$WORK/batch.txt")"
 		cut -d' ' -f1-3 "$WORK/batch.txt" >> "$WORK/prewarmed.txt"
-		sed -i "1,${JOBS}d" "$WORK/todo.txt"
 		import_pending || true
 		serve_requests || true
 	done
