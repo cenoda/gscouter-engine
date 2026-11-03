@@ -1,0 +1,3 @@
+# Lyney C6: a second Pyrotechnic Strike on each Prop Arrow; the library builds are all C0.
+team lyney-bennett-xilonen-mavuika
+lyney char lvl=90/90 cons=6 talent=9,9,9;

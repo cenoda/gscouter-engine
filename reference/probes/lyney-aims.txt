@@ -1,0 +1,4 @@
+# Lyney's physical and charged aimed shots (hold 0 and 1, the second on a weak spot) and three normal attacks (an aim after the fourth is an error), before his Prop Arrows.
+team lyney-bennett-xilonen-mavuika
+rotation- lyney aim, aim;
+rotation+ lyney attack:3, aim[hold=0], aim[hold=1,weakspot=1], aim, aim;

@@ -111,6 +111,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             ("hexerei", Some(CharKind::Sucrose | CharKind::Mona | CharKind::Razor | CharKind::Durin | CharKind::Nicole)) => {}
             ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno)) => {}
+            ("c2_stacks" | "pyrotechnic_travel", Some(CharKind::Lyney)) => {}
             // the character itself is unsupported
             (_, None) => {}
             _ => errs.push(format!("unsupported: param {name} {k}")),

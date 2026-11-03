@@ -75,6 +75,7 @@ crate::chars! {
     Eula => eula,
     Freminet => freminet,
     Kinich => kinich,
+    Lyney => lyney,
 }
 
 /// The characters whose modules have been checked against gcsim for a
