@@ -1,0 +1,4 @@
+# Wanderer's plain attack, charge, jump, walk and dash, then the Windfavored jump, walk and charge.
+team wanderer-faruzan-yelan-xingqiu
+rotation- wanderer attack, skill;
+rotation+ wanderer attack, charge, jump, walk[f=10], dash, attack, skill, jump, walk[f=10], charge;

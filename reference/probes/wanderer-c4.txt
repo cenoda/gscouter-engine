@@ -1,0 +1,3 @@
+# Wanderer C4: a third A1 element at random once the skill absorbs one (pyro here).
+team wanderer-faruzan-thoma-bennett
+wanderer char lvl=90/90 cons=4 talent=9,9,9;

@@ -1,0 +1,3 @@
+# Wanderer C6: Windfavored normal attacks' extra hit and the points they return.
+team wanderer-faruzan-yelan-xingqiu
+wanderer char lvl=90/90 cons=6 talent=9,9,9;

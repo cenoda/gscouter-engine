@@ -1,0 +1,3 @@
+# Wanderer C3: +3 burst talent levels.
+team wanderer-faruzan-yelan-xingqiu
+wanderer char lvl=90/90 cons=3 talent=9,9,9;
