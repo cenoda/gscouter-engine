@@ -1,0 +1,3 @@
+# Arlecchino with Crimson Moon's Semblance R5.
+team arlecchino-furina-lynette-bennett
+arle add weapon="crimsonmoonssemblance" refine=5 lvl=90/90;

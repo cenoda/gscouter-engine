@@ -1,0 +1,3 @@
+# Rosaria with Prospector's Drill R5.
+team rosaria-furina-chongyun-escoffier
+rosaria add weapon="prospectorsdrill" refine=5 lvl=90/90;

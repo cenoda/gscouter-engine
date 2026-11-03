@@ -1,0 +1,3 @@
+# Yae Miko with Kagura's Verity R1.
+team raidenshogun-furina-nahida-yaemiko
+yaemiko add weapon="kagurasverity" refine=1 lvl=90/90;

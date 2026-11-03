@@ -2223,6 +2223,7 @@ impl Sim {
                     let kind = self.chars[o as usize].sets[si as usize].kind;
                     crate::sets::dispatch::react_bonus(kind, self, o as usize, si as usize, ci, m, info)
                 }
+                Amount::Owner(Owner::Weapon(o)) => crate::weapons::dispatch::react_bonus(self.chars[o as usize].weapon, self, o as usize, ci, m, info),
                 // Ascendant Gleam, on lunar reactions
                 Amount::Owner(Owner::Core) if m.key == ASCENDANT_GLEAM && info.tag.is_lunar() => self.gleam.map_or(0.0, |g| g.0),
                 _ => 0.0,
