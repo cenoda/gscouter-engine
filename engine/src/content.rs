@@ -370,6 +370,10 @@ pub trait WeaponImpl {
         false
     }
     fn attack_mod(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _ev: &mut AttackEvent) {}
+    /// A reaction bonus mod the weapon owns, on character `on`.
+    fn react_bonus(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _info: &AttackInfo) -> f64 {
+        0.0
+    }
     fn event(_s: &mut Sim, _ci: usize, _e: &Event) {}
 }
 
@@ -579,6 +583,8 @@ macro_rules! weapons {
             pub fn mod_amount(k: WeaponKind, s: &Sim, ci: usize, on: usize, m: &Mod, out: &mut Stats) -> bool { match k { $(WeaponKind::$kind => $m::Weapon::mod_amount(s, ci, on, m, out)),* } }
             #[inline]
             pub fn attack_mod(k: WeaponKind, s: &Sim, ci: usize, on: usize, m: &Mod, ev: &mut AttackEvent) { match k { $(WeaponKind::$kind => $m::Weapon::attack_mod(s, ci, on, m, ev)),* } }
+            #[inline]
+            pub fn react_bonus(k: WeaponKind, s: &Sim, ci: usize, on: usize, m: &Mod, info: &AttackInfo) -> f64 { match k { $(WeaponKind::$kind => $m::Weapon::react_bonus(s, ci, on, m, info)),* } }
             #[inline]
             pub fn event(k: WeaponKind, s: &mut Sim, ci: usize, e: &Event) { match k { $(WeaponKind::$kind => $m::Weapon::event(s, ci, e)),* } }
         }

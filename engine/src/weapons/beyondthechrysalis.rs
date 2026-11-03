@@ -1,8 +1,4 @@
 //! Beyond the Chrysalis, from gcsim's internal/weapons/sword/beyondthechrysalis.
-//!
-//! Its second buff adds to Stellar Swirl DMG only, which the engine never
-//! deals (Stellar Swirl is an error), so it is not added; the cycle that
-//! reaches it is kept. Port it with Stellar Swirl.
 
 use crate::content::{Event, WeaponImpl};
 use crate::sim::*;
@@ -16,6 +12,7 @@ pub struct State {
 }
 
 const CD: ModKey = ModKey::new("beyond-the-chrysalis-crit-dmg");
+const STELLAR: ModKey = ModKey::new("beyond-the-chrysalis-stellar-buff");
 const ENERGY_ICD: ModKey = ModKey::new("beyond-the-chrysalis-energy-icd");
 
 impl WeaponImpl for Weapon {
@@ -32,8 +29,17 @@ impl WeaponImpl for Weapon {
         s.subscribe(EventKind::Swap, o);
     }
 
+    /// Winds of Defiance: Stellar Swirl DMG, direct or not, +36 to 72%.
+    fn react_bonus(s: &Sim, ci: usize, _: usize, _: &Mod, info: &AttackInfo) -> f64 {
+        if !info.tag.is_stellar_swirl() {
+            return 0.0;
+        }
+        0.27 + 0.09 * s.chars[ci].refine as f64
+    }
+
     /// A skill or burst on field, in turn: CRIT DMG +56 to 120% for 10 s
-    /// (hitlag); the Stellar Swirl buff; 5 to 7 energy (once every 4 s).
+    /// (hitlag); Stellar Swirl DMG for 10 s (hitlag); 5 to 7 energy (once
+    /// every 4 s).
     /// Leaving the field starts the turn over and ends them.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         let r = s.chars[ci].refine as f64;
@@ -44,7 +50,10 @@ impl WeaponImpl for Weapon {
                 }
                 match s.weapon_st::<State>(ci).count {
                     0 => s.add_stat_mod(ci, CD, st::CD, 0.4 + 0.16 * r, 10 * 60, true),
-                    1 => {}
+                    1 => {
+                        let m = Mod::owned(STELLAR, ModKind::ReactBonus, Owner::Weapon(ci as u8), st::NONE, false, true, -1);
+                        s.add_mod(ci, m, 10 * 60);
+                    }
                     _ => {
                         if !s.mod_active(ci, ENERGY_ICD) {
                             s.add_energy(ci, 4.5 + 0.5 * r);
@@ -58,6 +67,7 @@ impl WeaponImpl for Weapon {
             Event::Swap { prev, .. } if prev == ci => {
                 s.weapon_st_mut::<State>(ci).count = 0;
                 s.delete_mod(ci, CD);
+                s.delete_mod(ci, STELLAR);
                 s.delete_mod(ci, ENERGY_ICD);
             }
             _ => {}

@@ -613,7 +613,7 @@ impl Character for Char {
             // A1: a Void Rift from a cryo reaction on the enemy, once
             // every 2.5 s
             Event::Reaction(r, ev) => {
-                if ev.on_player || !matches!(r, Reaction::Frozen | Reaction::Superconduct | Reaction::StellarConduct | Reaction::SwirlCryo | Reaction::CrystallizeCryo) {
+                if ev.on_player || !matches!(r, Reaction::Frozen | Reaction::Superconduct | Reaction::StellarConduct | Reaction::SwirlCryo | Reaction::StellarSwirl | Reaction::CrystallizeCryo) {
                     return;
                 }
                 if s.mod_active(ci, A1_ICD) {

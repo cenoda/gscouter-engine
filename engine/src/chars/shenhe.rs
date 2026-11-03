@@ -1,11 +1,9 @@
 //! Shenhe, from gcsim's internal/characters/shenhe: normal and charged
 //! attacks, the pressed and held skill with their Icy Quills (flat cryo
 //! DMG from her ATK at each hit), the burst's field (its DoT, cryo and
-//! physical shred), A1, A4 and every constellation. C2's CRIT DMG on
-//! Stellar reactions (gcsim's OnSpecialReactionAttack, IsStellarReact) is
-//! for Stellar Swirl only, which is not ported (an error with any anemo
-//! character in a Stellar team, `stellar.rs`), so it never applies. No
-//! plunges.
+//! physical shred), A1, A4 and every constellation, with C2's CRIT DMG
+//! on Stellar reaction contributions (gcsim's OnSpecialReactionAttack,
+//! IsStellarReact: Stellar Swirl's). No plunges.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::shenhe as g;
@@ -58,6 +56,9 @@ impl Character for Char {
             cd.max_extra = 1;
         }
         s.subscribe(EventKind::EnemyHit, Owner::Char(ci as u8));
+        if s.chars[ci].cons >= 2 {
+            s.subscribe(EventKind::SpecialReactionAttack, Owner::Char(ci as u8));
+        }
     }
 
     fn unsupported(a: Action, _: &Params) -> Option<String> {
@@ -245,7 +246,16 @@ impl Character for Char {
     /// Icy Quills: a cryo hit of these kinds by a character with quills
     /// adds her current ATK times the skill's multiplier, using up a quill
     /// (C6: not for normal and charged attacks). C4 counts each.
+    ///
+    /// C2: a Stellar reaction contribution by a character with C2's buff
+    /// gains its CRIT DMG.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
+        if let Event::SpecialReactionAttack(ev) = *e {
+            if ev.info.tag.is_stellar_react() && s.mod_active(ev.info.actor as usize, C2) {
+                s.special_atk.stats[st::CD] += 0.15;
+            }
+            return;
+        }
         let Event::EnemyHit(ev) = *e else { return };
         if ev.info.element != Element::Cryo {
             return;

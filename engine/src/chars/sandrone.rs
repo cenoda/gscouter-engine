@@ -5,18 +5,19 @@
 //! bombardment and ray, A1 (the 400% Prism Shot, Refined Tactics and the
 //! ray's bonus), A4, C1 to C6, and her Stellar part: she turns
 //! superconduct into Stellar-Conduct (`stellar.rs`), and the Base DMG of
-//! every direct Stellar-Conduct hit gains 0.7% per 100 of her ATK (at most
-//! 14%). In Radiance: Stellar-Conduct (inside a Polestar Field) her beams,
-//! second Prism Shot, ray, C4 cannon and C6 cluster beam deal direct
-//! Stellar-Conduct DMG instead. Stellar Swirl, and with it Radiance:
-//! Stellar Swirl and the Stellar Swirl halves of these, is not ported: a
-//! team that could swirl cryo with her is an error. No plunges.
+//! superconduct into Stellar-Conduct and cryo swirl into Stellar Swirl
+//! (`stellar.rs`), and the Base DMG of every direct Stellar hit and Stellar
+//! Swirl contribution gains 0.7% per 100 of her ATK (at most 14%). In
+//! Radiance: Stellar-Conduct (inside a Polestar Field) or, failing that,
+//! Radiance: Stellar Swirl (8 s after a Stellar Swirl) her beams, second
+//! Prism Shot, ray, C4 cannon and C6 cluster beam deal direct Stellar DMG
+//! of that kind instead. No plunges.
 
 use crate::content::{Character, Event, EventKind, Owner};
 use crate::gcsimdata::chars::sandrone as g;
 use crate::gcsl::Num;
 use crate::sim::*;
-use crate::stellar::POLESTAR_FIELD;
+use crate::stellar::{POLESTAR_FIELD, RADIANCE_SWIRL};
 use crate::types::*;
 
 pub struct Char;
@@ -172,29 +173,48 @@ fn overdrive_after(s: &Sim, ci: usize) -> i32 {
     g::MAX_HOLD
 }
 
-fn radiance(s: &Sim, ci: usize) -> bool {
-    s.mod_active(ci, POLESTAR_FIELD)
+/// gcsim's getRadiance: Stellar-Conduct takes priority.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Radiance {
+    None,
+    Conduct,
+    Swirl,
 }
 
+fn radiance(s: &Sim, ci: usize) -> Radiance {
+    if s.mod_active(ci, POLESTAR_FIELD) {
+        Radiance::Conduct
+    } else if s.mod_active(ci, RADIANCE_SWIRL) {
+        Radiance::Swirl
+    } else {
+        Radiance::None
+    }
+}
 
-
-/// gcsim's stellarInfo, for Radiance: Stellar-Conduct: the hit becomes
-/// direct Stellar-Conduct DMG that applies no element.
-fn stellar_info(ai: &mut AttackInfo, abil: &'static str, mult: f64) {
+/// gcsim's stellarInfo: the hit becomes direct Stellar-Conduct or Stellar
+/// Swirl DMG, by the Radiance state, that applies no element. `abil` and
+/// `mult` are the (Stellar-Conduct, Stellar Swirl) versions.
+fn stellar_info(ai: &mut AttackInfo, rad: Radiance, abil: (&'static str, &'static str), mult: (f64, f64)) {
     ai.icd_tag = icd::TAG_NONE;
     ai.icd_group = icd::GROUP_DEFAULT;
     ai.durability = 0.0;
     ai.ignore_def = 1.0;
-    ai.abil = abil;
-    ai.tag = AttackTag::DirectStellarConduct;
-    ai.mult = mult;
+    if rad == Radiance::Conduct {
+        ai.abil = abil.0;
+        ai.tag = AttackTag::DirectStellarConduct;
+        ai.mult = mult.0;
+    } else {
+        ai.abil = abil.1;
+        ai.tag = AttackTag::DirectStellarSwirl;
+        ai.mult = mult.1;
+    }
 }
 
 fn c4_cb(s: &Sim, ci: usize) -> u16 {
     if s.chars[ci].cons >= 4 { CB_C4 } else { 0 }
 }
 
-/// A beam hit: cryo DMG, or direct Stellar-Conduct DMG in Radiance.
+/// A beam hit: cryo DMG, or direct Stellar DMG in Radiance.
 /// `cluster` is C6's Condensed Cluster Beam.
 fn fire_beam(s: &mut Sim, ci: usize, cluster: bool) {
     let lvl = s.talent(ci, 0);
@@ -203,10 +223,13 @@ fn fire_beam(s: &mut Sim, ci: usize, cluster: bool) {
     ai.abil = abil;
     ai.blunt = true;
     ai.mult = if cluster { g::C6_CLUSTER_MULT } else { g::BEAM[lvl] };
-    let rad = radiance(s, ci);
+    let rad = radiance(s, ci) != Radiance::None;
     if rad {
-        let (abil, mult) = if cluster { ("Condensed Cluster Beam (Stellar-Conduct)", g::C6_CLUSTER_SSC) } else { ("Condensed Beam (Stellar-Conduct)", g::BEAM_SSC[lvl]) };
-        stellar_info(&mut ai, abil, mult);
+        if cluster {
+            stellar_info(&mut ai, radiance(s, ci), ("Condensed Cluster Beam (Stellar-Conduct)", "Condensed Cluster Beam (Stellar Swirl)"), (g::C6_CLUSTER_SSC, g::C6_CLUSTER_S_SW));
+        } else {
+            stellar_info(&mut ai, radiance(s, ci), ("Condensed Beam (Stellar-Conduct)", "Condensed Beam (Stellar Swirl)"), (g::BEAM_SSC[lvl], g::BEAM_S_SW[lvl]));
+        }
     }
     ai.pattern = s.circle_on_target(2.5);
     let mut ev = s.snapshot_event(ai, 0);
@@ -268,8 +291,10 @@ impl Character for Char {
 
     fn init(s: &mut Sim, ci: usize) {
         let o = Owner::Char(ci as u8);
-        // stellarInit: the Base DMG bonus on direct Stellar-Conduct hits
+        // stellarInit: the Base DMG bonus on direct Stellar hits and
+        // Stellar Swirl contributions
         s.subscribe(EventKind::EnemyHit, o);
+        s.subscribe(EventKind::SpecialReactionAttack, o);
         // fagioInit: Decoding Power decays
         s.add_task(Task::Char { c: ci as u8, id: TASK_DECAY, arg: 0 }, g::DECAY_INTERVAL);
         // A4: EM from her ATK, refreshed every 0.4 s
@@ -542,8 +567,9 @@ impl Character for Char {
                 let lvl = s.talent(ci, 1);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_ELEMENTAL_ART, icd::GROUP_DEFAULT, Element::Cryo, 25.0, g::PRISM[lvl]);
                 ai.abil = "Prism Shot 2";
-                if radiance(s, ci) {
-                    stellar_info(&mut ai, "Prism Shot 2 (Stellar-Conduct)", g::PRISM_SSC[lvl]);
+                let rad = radiance(s, ci);
+                if rad != Radiance::None {
+                    stellar_info(&mut ai, rad, ("Prism Shot 2 (Stellar-Conduct)", "Prism Shot 2 (Stellar Swirl)"), (g::PRISM_SSC[lvl], g::PRISM_S_SW[lvl]));
                     if s.st::<State>(ci).a1_prism {
                         ai.mult *= g::A1_PRISM_MULT as f64;
                     }
@@ -557,8 +583,9 @@ impl Character for Char {
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_ELEMENTAL_BURST, icd::GROUP_DEFAULT, Element::Cryo, 25.0, g::RAY[lvl]);
                 ai.abil = "Convective Inhibition Ray";
                 ai.blunt = true;
-                if radiance(s, ci) {
-                    stellar_info(&mut ai, "Convective Inhibition Ray (Stellar-Conduct)", g::RAY_SSC[lvl]);
+                let rad = radiance(s, ci);
+                if rad != Radiance::None {
+                    stellar_info(&mut ai, rad, ("Convective Inhibition Ray (Stellar-Conduct)", "Convective Inhibition Ray (Stellar Swirl)"), (g::RAY_SSC[lvl], g::RAY_S_SW[lvl]));
                     ai.mult *= s.st::<State>(ci).ray_mult;
                 }
                 ai.pattern = s.circle_on_player(0.0, 6.5, 7.5);
@@ -570,10 +597,10 @@ impl Character for Char {
         }
     }
 
-    /// C6: her direct Stellar-Conduct DMG (stellarInfo's hits and C4's
-    /// cannon, all of it) is elevated by 20%.
+    /// C6: her direct Stellar DMG (stellarInfo's hits and C4's cannon, all
+    /// of it) is elevated by 20%.
     fn own_hit(s: &Sim, ci: usize, ev: &mut AttackEvent) {
-        if s.chars[ci].cons >= 6 && ev.info.tag == AttackTag::DirectStellarConduct {
+        if s.chars[ci].cons >= 6 && ev.info.tag.is_stellar_direct() {
             ev.elevation += (g::C6_ELEV * 1000.0).round() as u16;
         }
     }
@@ -586,21 +613,26 @@ impl Character for Char {
 
     /// C1: Stellar DMG +30% while her C1 status lasts.
     fn react_bonus(s: &Sim, ci: usize, _: usize, _: &Mod, info: &AttackInfo) -> f64 {
-        if !s.mod_active(ci, C1) || info.tag != AttackTag::DirectStellarConduct {
+        if !s.mod_active(ci, C1) || !info.tag.is_stellar() {
             return 0.0;
         }
         g::C1_BONUS
     }
 
-    /// stellarInit: a direct Stellar-Conduct hit by anyone gains Base DMG,
-    /// 0.7% per 100 of her ATK, at most 14%.
+    /// stellarInit: a direct Stellar hit or a Stellar Swirl contribution,
+    /// by anyone, gains Base DMG, 0.7% per 100 of her ATK, at most 14%.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
-        let Event::EnemyHit(ev) = *e else { return };
-        if ev.info.tag != AttackTag::DirectStellarConduct {
-            return;
+        match *e {
+            Event::EnemyHit(ev) if ev.info.tag.is_stellar_direct() => {
+                let bonus = (total_atk(&s.stats(ci)) / 100.0 * 0.007).min(0.14);
+                s.hit_base_bonus += bonus;
+            }
+            Event::SpecialReactionAttack(ev) if ev.info.tag.is_stellar_react() => {
+                let bonus = (total_atk(&s.stats(ci)) / 100.0 * 0.007).min(0.14);
+                s.special_base_bonus += bonus;
+            }
+            _ => {}
         }
-        let bonus = (total_atk(&s.stats(ci)) / 100.0 * 0.007).min(0.14);
-        s.hit_base_bonus += bonus;
     }
 
     fn attack_cb(s: &mut Sim, ci: usize, cbs: u16, ev: &AttackEvent) {
@@ -608,12 +640,17 @@ impl Character for Char {
             s.add_status(ci, PARTICLE_ICD, g::PARTICLE_ICD, true);
             s.queue_particle(1.0, Element::Cryo, s.particle_delay[ci]);
         }
-        // C4: direct Stellar-Conduct DMG on the enemy fires an extra
-        // cannon 0.5 s later, once every 4 s
-        if cbs & CB_C4 != 0 && ev.info.tag == AttackTag::DirectStellarConduct && !s.mod_active(ci, C4_ICD) {
+        // C4: direct Stellar DMG on the enemy fires an extra cannon of the
+        // same kind 0.5 s later, once every 4 s
+        if cbs & CB_C4 != 0 && ev.info.tag.is_stellar_direct() && !s.mod_active(ci, C4_ICD) {
             s.add_status(ci, C4_ICD, g::C4_ICD, false);
             let mut ai = AttackInfo::new(ci, AttackTag::DirectStellarConduct, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Cryo, 0.0, g::C4_SSC);
             ai.abil = "Prismatic Resonance Cannon (C4) (Stellar-Conduct)";
+            if ev.info.tag == AttackTag::DirectStellarSwirl {
+                ai.abil = "Prismatic Resonance Cannon (C4) (Stellar Swirl)";
+                ai.tag = AttackTag::DirectStellarSwirl;
+                ai.mult = g::C4_S_SW;
+            }
             ai.ignore_def = 1.0;
             ai.pattern = Pattern::Single;
             s.queue_attack(ai, 0, g::C4_DELAY, g::C4_DELAY);

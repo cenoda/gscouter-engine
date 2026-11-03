@@ -112,6 +112,7 @@ impl WeaponImpl for Weapon {
             | Reaction::SwirlPyro
             | Reaction::SwirlHydro
             | Reaction::SwirlCryo
+            | Reaction::StellarSwirl
             | Reaction::Spread
             | Reaction::Bloom
             | Reaction::Burgeon

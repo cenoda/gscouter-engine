@@ -1,11 +1,9 @@
 //! Escoffier, from gcsim's internal/characters/escoffier: normal attacks,
 //! the skill and its ticks (with its Surging Blade), the burst with its
 //! heals, A1, A4 and constellations 1 to 6. Charged attacks, and
-//! plunges from Xianyun's airborne state.
-//! C1's CRIT DMG on Stellar reactions (gcsim's OnSpecialReactionAttack,
-//! IsStellarReact) is for Stellar Swirl only, which is not ported (an error
-//! with any anemo character in a Stellar team, `stellar.rs`), so it never
-//! applies.
+//! plunges from Xianyun's airborne state. C1 also gives its CRIT DMG to
+//! Stellar reaction contributions (gcsim's OnSpecialReactionAttack,
+//! IsStellarReact: Stellar Swirl's).
 
 use crate::content::{Character, Event, EventKind, Owner};
 use crate::gcsl::Num;
@@ -76,6 +74,9 @@ impl Character for Char {
         // C1 (with A4): only when every member is hydro or cryo
         if s.chars[ci].cons >= 1 && s.chars[ci].ascension >= 4 {
             s.st_mut::<State>(ci).c1_active = n == s.chars.len();
+            if n == s.chars.len() {
+                s.subscribe(EventKind::SpecialReactionAttack, Owner::Char(ci as u8));
+            }
         }
         // C2 and C6: OnEnemyHit (gcsim subscribes C2, then C6; one
         // subscription handles both in that order)
@@ -275,6 +276,13 @@ impl Character for Char {
     }
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
+        // C1: a Stellar reaction contribution by a character with C1's buff
+        if let Event::SpecialReactionAttack(ev) = *e {
+            if ev.info.tag.is_stellar_react() && s.mod_active(ev.info.actor as usize, C1) {
+                s.special_atk.stats[st::CD] += 0.6;
+            }
+            return;
+        }
         let Event::EnemyHit(ev) = *e else { return };
         let actor = ev.info.actor as usize;
         if s.player.active as usize != actor {

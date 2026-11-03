@@ -25,7 +25,9 @@ pub struct State {
     a4_em: f64,
     /// A1's same-frame guard, by swirled element (pyro, hydro, electro,
     /// cryo).
-    a1_icd: [i32; 4],
+    /// One per swirl event gcsim subscribes (pyro, hydro, electro, cryo,
+    /// Stellar Swirl), each with its own ICD.
+    a1_icd: [i32; 5],
     c4_count: i32,
     /// C6's element.
     c6: Option<Element>,
@@ -58,7 +60,7 @@ impl Character for Char {
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
-        State { a1_icd: [-1; 4], ..Default::default() }
+        State { a1_icd: [-1; 5], ..Default::default() }
     }
 
     fn init(s: &mut Sim, ci: usize) {
@@ -267,7 +269,7 @@ impl Character for Char {
     }
 
     /// A1: her swirl on an enemy gives the characters of the swirled
-    /// element 50 EM for 8 s.
+    /// element 50 EM for 8 s; a Stellar Swirl counts as cryo.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         let Event::Reaction(r, ev) = *e else { return };
         let (k, ele) = match r {
@@ -275,6 +277,7 @@ impl Character for Char {
             Reaction::SwirlHydro => (1, Element::Hydro),
             Reaction::SwirlElectro => (2, Element::Electro),
             Reaction::SwirlCryo => (3, Element::Cryo),
+            Reaction::StellarSwirl => (4, Element::Cryo),
             _ => return,
         };
         if !ev.on_enemy() || ev.info.actor as usize != ci {

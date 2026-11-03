@@ -35,10 +35,27 @@
 //! the enemy camp); they tick after the gadgets, in the order they came.
 //! They take no gadget key, which only orders the others.
 //!
-//! Stellar Swirl (gcsim's StellarSwirlEnableKey, which every character
-//! that enables Stellar-Conduct enables too) is not ported: a cryo or
-//! frozen swirl while it is on is an error, and so is an anemo character
-//! in a team that enables it (`profile::config`).
+//! Stellar Swirl, from gcsim's pkg/reactable/stellarswirl.go and
+//! stellarswirl_gadget.go. While a character that enables it is in the
+//! team (StellarSwirlEnableKey: Sandrone, Vesna), an anemo hit on the
+//! enemy's cryo or frozen aura reacts as Stellar Swirl instead of a cryo
+//! swirl: it emits OnStellarSwirl, gives every character Radiance: Stellar
+//! Swirl for 8 s (not hitlag), hits the enemy 3 frames later with the
+//! contributors' damage (the attacker and every character with durability
+//! in that aura; `Sim::special_reaction_attack`, times 0.75), records the
+//! contributors and the attacker as the owner, adds a stack (at most 6)
+//! and makes a Stellar Vortex at the player if there is none; at 6 stacks
+//! the vortex is killed. Only then does the aura lose its durability, half
+//! the attack's, with no swirl GCD and no aoe. The vortex lives 181 frames
+//! and explodes when killed or when it expires: the owner's cryo
+//! detonation, its contributors' damage times 2 or 3 by stacks, on the
+//! enemy if a circle of 6 or 8 around the vortex reaches it; the stacks and
+//! contributors are cleared, and the jump gets airborne for 5 s
+//! (`player.StellarSwirlAirborneBuff`). A detonation that reaches a player
+//! jumping from the ground (gcsim's boosted jump) is an error, and so is a
+//! cryo swirl on the player's own aura. Like the fields, the vortex is not
+//! among `Sim::gadgets` and ticks after the fields. gcsim's Wandering
+//! Vortex (Vodyanitsa) is not ported with her.
 
 use crate::chars::CharKind;
 use crate::content::Event;
@@ -66,10 +83,34 @@ const BUFF: [f64; 13] = [0.2, 0.29, 0.3, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0.3
 /// attacker's stacks tag.
 pub const MULT: [f64; 13] = [1.0, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0];
 
-/// Whether gcsim's Init of this character sets StellarConductEnableKey
-/// (and StellarSwirlEnableKey).
+/// Whether gcsim's Init of this character sets StellarConductEnableKey.
 pub fn enables_stellar(k: CharKind) -> bool {
     matches!(k, CharKind::Sandrone)
+}
+
+/// Whether gcsim's Init of this character sets StellarSwirlEnableKey.
+pub fn enables_stellar_swirl(k: CharKind) -> bool {
+    matches!(k, CharKind::Sandrone | CharKind::Vesna)
+}
+
+/// gcsim's RadianceSwirlKey: the status of Radiance: Stellar Swirl.
+pub const RADIANCE_SWIRL: ModKey = ModKey::new("radiance-stellar-swirl");
+/// gcsim's player.StellarSwirlAirborneBuff, a core status.
+pub const SSW_AIRBORNE: ModKey = ModKey::new("ssw-airborne-buff");
+const SSW_MAX_STACKS: i32 = 6;
+const SSW_DURATION: i32 = 181;
+/// gcsim's sswStackMult and sswStackRadius: the detonation by stacks.
+const SSW_STACK_MULT: [f64; 7] = [0.0, 2.0, 2.0, 3.0, 3.0, 3.0, 3.0];
+const SSW_STACK_RADIUS: [f64; 7] = [0.0, 6.0, 6.0, 8.0, 8.0, 8.0, 8.0];
+
+/// gcsim's StellarVortex.
+#[derive(Clone, Copy, Debug)]
+pub struct Vortex {
+    /// Ticks left.
+    duration: i32,
+    /// Where it is.
+    x: f64,
+    y: f64,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -105,6 +146,14 @@ pub struct Stellar {
     pub stacks: i32,
     /// Each character's polestar-field-stacks tag.
     pub tags: [i32; 4],
+    /// gcsim's stellar-swirl-contribution-N flags, one bit per character.
+    swirl_contrib: u8,
+    /// gcsim's stellar-swirl-owner flag.
+    swirl_owner: u8,
+    /// gcsim's stellar-swirl-stacks flag.
+    swirl_stacks: i32,
+    /// The Stellar Vortex, if there is one.
+    pub vortex: Option<Vortex>,
 }
 
 impl Sim {
@@ -185,6 +234,82 @@ impl Sim {
             } else {
                 k += 1;
             }
+        }
+    }
+
+    /// gcsim's tryStellarSwirl on the enemy's cryo or frozen aura (aura
+    /// `m`), once try_swirl's checks passed.
+    pub(crate) fn try_stellar_swirl(&mut self, ev: &mut AttackEvent, m: usize) {
+        ev.reacted = true;
+        self.emit(Event::Reaction(Reaction::StellarSwirl, ev));
+        self.queue_stellar_swirl(ev.info.actor as usize, m);
+        let rd = self.enemy.aura.reduce(m, ev.info.durability, 0.5);
+        ev.info.durability -= rd;
+    }
+
+    /// gcsim's queueStellarSwirl.
+    fn queue_stellar_swirl(&mut self, actor: usize, m: usize) {
+        let n = self.chars.len();
+        for i in 0..n {
+            self.add_status(i, RADIANCE_SWIRL, 8 * 60, false);
+        }
+        let mut contrib = 1u8 << actor;
+        for i in 0..n {
+            if self.enemy.aura.dur[m][i] > ZERO_DUR {
+                contrib |= 1 << i;
+            }
+        }
+        // a circle of radius 5 on the enemy, which reaches it
+        if self.enemy_alive {
+            if let Some(mut ev) = self.special_reaction_attack(contrib, AttackTag::ReactionStellarSwirl, Element::Anemo, "Stellar Swirl", 1.0, 0.75, actor) {
+                ev.info.icd_tag = icd::TAG_SWIRL_CRYO;
+                ev.info.icd_group = icd::GROUP_REACTION_A;
+                self.queue_attack_with_snap(ev, 0, 3);
+            }
+        }
+        let sw = &mut self.stellar;
+        sw.swirl_contrib |= contrib;
+        sw.swirl_owner = actor as u8;
+        sw.swirl_stacks = (sw.swirl_stacks + 1).min(SSW_MAX_STACKS);
+        if sw.vortex.is_none() {
+            let (x, y) = self.player_pos;
+            self.stellar.vortex = Some(Vortex { duration: SSW_DURATION, x, y });
+        }
+        if self.stellar.swirl_stacks >= SSW_MAX_STACKS {
+            // Kill: OnKill, then the gadget is removed
+            let v = self.stellar.vortex.take().unwrap();
+            self.vortex_explode(v.x, v.y);
+        }
+    }
+
+    /// The vortex's explode, on a kill or on expiry.
+    fn vortex_explode(&mut self, x: f64, y: f64) {
+        let owner = self.stellar.swirl_owner as usize;
+        let contrib = self.stellar.swirl_contrib;
+        self.stellar.swirl_contrib = 0;
+        let stacks = self.stellar.swirl_stacks.min(SSW_MAX_STACKS) as usize;
+        let ap = Pattern::Circle { x, y, r: SSW_STACK_RADIUS[stacks] };
+        if self.enemy_alive && self.hits_enemy(ap) == Some(true) {
+            if let Some(mut ev) = self.special_reaction_attack(contrib, AttackTag::ReactionStellarSwirl, Element::Cryo, "Stellar Swirl Detonation", 1.0, SSW_STACK_MULT[stacks], owner) {
+                ev.info.durability = 25.0;
+                self.queue_attack_with_snap(ev, 0, 0);
+            }
+        }
+        self.stellar.swirl_stacks = 0;
+        self.add_core_status(SSW_AIRBORNE, 5 * 60);
+        // OnStellarVortexDetonate: the template's boosted jump
+        if self.current_state() == AnimState::Jump && self.player.airborne == Airborne::Grounded && self.player_within(ap) {
+            self.unsupported("a Stellar Swirl detonation during a jump");
+        }
+    }
+
+    /// The vortex's Gadget.Tick: its expiry.
+    pub(crate) fn tick_vortex(&mut self) {
+        let Some(v) = &mut self.stellar.vortex else { return };
+        v.duration -= 1;
+        if v.duration == 0 {
+            let v = self.stellar.vortex.take().unwrap();
+            self.vortex_explode(v.x, v.y);
         }
     }
 
