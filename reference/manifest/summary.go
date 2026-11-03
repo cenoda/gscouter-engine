@@ -153,12 +153,94 @@ func reasonOf(why string) string {
 	return why
 }
 
-// approvalSummary is the page the owner answers.
-func approvalSummary(m *Manifest) string {
+// approvedTeam is a line of Gscouter's approved list
+// (internal/engine/approved.txt): a team id, the date of the owner's
+// answer, and for a team approved from group B, release=<first 16 hex
+// digits of the module's SHA-256>.
+type approvedTeam struct {
+	team, date, release string
+}
+
+// parseApproved reads Gscouter's approved list.
+func parseApproved(text string) ([]approvedTeam, error) {
+	var out []approvedTeam
+	for n, line := range strings.Split(text, "\n") {
+		f := strings.Fields(line)
+		if len(f) == 0 || strings.HasPrefix(f[0], "#") {
+			continue
+		}
+		if len(f) != 2 && len(f) != 3 {
+			return nil, fmt.Errorf("approved list, line %d: %q", n+1, line)
+		}
+		a := approvedTeam{team: f[0], date: f[1]}
+		if len(f) == 3 {
+			r, ok := strings.CutPrefix(f[2], "release=")
+			if !ok || len(r) != 16 {
+				return nil, fmt.Errorf("approved list, line %d: %q", n+1, line)
+			}
+			a.release = r
+		}
+		out = append(out, a)
+	}
+	return out, nil
+}
+
+// dropped says why an approval does not hold for m's release, as
+// Gscouter's engine.Dropped does: an approval holds while its team is
+// verified and in group A, one from group B for its release only.
+func dropped(m *Manifest, a approvedTeam) string {
+	t, ok := m.Teams[a.team]
+	switch {
+	case !ok:
+		return "not supported"
+	case !t.Verified:
+		return "not verified: " + strings.Join(t.Why, "; ")
+	case a.release != "":
+		if !strings.HasPrefix(m.Engine.WasmSHA256, a.release) {
+			return "approved from group B for module " + a.release + " only; in group " + t.Group + " " + strings.Join(t.GroupWhy, "; ")
+		}
+	case t.Group != "A":
+		return "left group A: " + strings.Join(t.GroupWhy, "; ")
+	}
+	return ""
+}
+
+// approvalSummary is the page the owner answers. approved is Gscouter's
+// approved list, nil when not known: its teams that still hold run on
+// this release without a new answer, and the others are listed.
+func approvalSummary(m *Manifest, approved []approvedTeam) string {
 	var b strings.Builder
-	a, bs := verifiedIDs(m, "A"), verifiedIDs(m, "B")
+	listed := map[string]bool{}
+	var carried int
+	var drops []string
+	for _, ap := range approved {
+		listed[ap.team] = true
+		if w := dropped(m, ap); w != "" {
+			drops = append(drops, fmt.Sprintf("| %s | %s | %s |", ap.team, ap.date, w))
+		} else {
+			carried++
+		}
+	}
+	var a, bs []string
+	for _, id := range verifiedIDs(m, "A") {
+		if !listed[id] {
+			a = append(a, id)
+		}
+	}
+	for _, id := range verifiedIDs(m, "B") {
+		if !listed[id] {
+			bs = append(bs, id)
+		}
+	}
 	fmt.Fprintf(&b, "# Approving teams for the engine\n\n%s\n\n", header(m))
-	fmt.Fprintf(&b, "- Supported: %d. Verified: %d. **Group A: %d** (approved at once). **Group B: %d** (one by one, below). Unverified: %d.\n", m.Supported, m.Verified, len(a), len(bs), m.Supported-m.Verified)
+	if approved != nil {
+		fmt.Fprintf(&b, "- Approved before: %d. Still holding (verified, in group A, or approved from group B for this module), so they stay on the engine with no new answer: %d. **Dropped: %d** (below): back on gcsim, each back to the owner.\n", len(approved), carried, len(drops))
+	}
+	fmt.Fprintf(&b, "- Supported: %d. Verified: %d. **Group A to answer: %d** (approved at once). **Group B to answer: %d** (one by one, below). Unverified: %d.", m.Supported, m.Verified, len(a), len(bs), m.Supported-m.Verified)
+	if approved != nil {
+		b.WriteString(" Groups count only the teams not approved before.")
+	}
+	b.WriteString("\n")
 	fmt.Fprintf(&b, "- Group A: both the library build's and the one-pass page config's team DPS within ±%.2f%% of gcsim, no build with a settled verdict, every judged character within ±%.0f%%. Every verified team passed compare at 1%%; the groups only decide how closely each is read.\n", 100*groupALimit, 100*judgedLimit)
 	if m.Drift.Builds > 0 {
 		fmt.Fprintf(&b, "- Drift: %s.", driftLine(m.Drift))
@@ -256,6 +338,12 @@ func approvalSummary(m *Manifest) string {
 	}
 	b.WriteString("\nEach column counts the teams above the bound of the column before it, up to its own.\n")
 
+	if len(drops) > 0 {
+		fmt.Fprintf(&b, "\n## Approvals this release drops: %d\n\nEach runs on gcsim from this release on, and needs the owner's yes again before it runs on the engine (Gscouter's cmd/pinengine takes it off the approved list when pinning).\n\n| Team | Approved | Why |\n|---|---|---|\n", len(drops))
+		sort.Strings(drops)
+		b.WriteString(strings.Join(drops, "\n") + "\n")
+	}
+
 	fmt.Fprintf(&b, "\n## Group B: %d teams, one by one\n\nLargest difference first, with why each is in group B.\n\n", len(bs))
 	if len(bs) > 0 {
 		table(&b, m, bs, true)
@@ -264,13 +352,22 @@ func approvalSummary(m *Manifest) string {
 	return b.String()
 }
 
-// candidateList is group A's ids, one per line, for Gscouter's
-// approved.txt once the owner answers: they carry no date, since only
-// the owner's answer gives one.
-func candidateList(m *Manifest) string {
+// candidateList is group A's ids not on the approved list, one per
+// line, for Gscouter's approved.txt once the owner answers: they carry
+// no date, since only the owner's answer gives one.
+func candidateList(m *Manifest, approved []approvedTeam) string {
+	listed := map[string]bool{}
+	for _, a := range approved {
+		listed[a.team] = true
+	}
 	var b strings.Builder
 	fmt.Fprintf(&b, "# Group A of %s\n# Team DPS within ±%.2f%% of gcsim on the library build and the one-pass\n# page config, no settled verdict (docs/phase4-approval.md).\n# NOT APPROVED. Only the owner approves: add these to Gscouter's\n# internal/engine/approved.txt with the date of the owner's answer, after it.\n", header(m), 100*groupALimit)
-	ids := verifiedIDs(m, "A")
+	var ids []string
+	for _, id := range verifiedIDs(m, "A") {
+		if !listed[id] {
+			ids = append(ids, id)
+		}
+	}
 	sort.Strings(ids)
 	for _, id := range ids {
 		b.WriteString(id + "\n")

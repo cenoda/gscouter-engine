@@ -108,8 +108,8 @@ func TestGroups(t *testing.T) {
 	if d := m.Teams["d"]; d.Group != "" {
 		t.Errorf("d, unverified, in group %s", d.Group)
 	}
-	sum := approvalSummary(m)
-	for _, want := range []string{"Group A: 1**", "Group B: 2**", "| fail | 1 |", "| b | B: library +0.80% |", "| c | B: 1 settled |"} {
+	sum := approvalSummary(m, nil)
+	for _, want := range []string{"Group A to answer: 1**", "Group B to answer: 2**", "| fail | 1 |", "| b | B: library +0.80% |", "| c | B: 1 settled |"} {
 		if !strings.Contains(sum, want) {
 			t.Errorf("summary lacks %q:\n%s", want, sum)
 		}
@@ -121,11 +121,36 @@ func TestGroups(t *testing.T) {
 	if ia, ib := strings.Index(full, "| a |"), strings.Index(full, "| b |"); ia < 0 || ib < ia || !strings.Contains(full, "x +0.20% | y -5.00% |") {
 		t.Errorf("approval.md: group A first:\n%s", full)
 	}
-	cand := candidateList(m)
+	cand := candidateList(m, nil)
 	if !strings.HasSuffix(cand, "\na\n") || strings.Contains(cand, "\nb\n") || !strings.Contains(cand, "NOT APPROVED") {
 		t.Errorf("candidates:\n%s", cand)
 	}
 	if m.DriftByKind["library"].Builds != 3 || m.GroupALimit != groupALimit {
 		t.Errorf("drift by kind %+v, limit %v", m.DriftByKind, m.GroupALimit)
+	}
+}
+
+// Teams approved before are carried forward while they hold, listed as
+// dropped when not, and left out of the groups to answer.
+func TestCarryForward(t *testing.T) {
+	m := &Manifest{Engine: Engine{WasmSHA256: "fedcba9876543210" + strings.Repeat("0", 48)}, Verified: 3, Supported: 4, Teams: map[string]Team{
+		"kept":  {Verified: true, Group: "A"},
+		"left":  {Verified: true, Group: "B", GroupWhy: []string{"1 settled"}},
+		"b-now": {Verified: true, Group: "B"},
+		"gone":  {Why: []string{"library: fail"}},
+		"new":   {Verified: true, Group: "A"},
+	}}
+	approved, err := parseApproved("# x\nkept 2026-11-04\nleft 2026-11-04\nb-now 2026-11-04 release=fedcba9876543210\ngone 2026-11-04\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := approvalSummary(m, approved)
+	for _, want := range []string{"Approved before: 4. Still holding", "with no new answer: 2. **Dropped: 2**", "**Group A to answer: 1**", "**Group B to answer: 0**", "| left | 2026-11-04 | left group A: 1 settled |", "| gone | 2026-11-04 | not verified: library: fail |"} {
+		if !strings.Contains(sum, want) {
+			t.Errorf("summary lacks %q:\n%s", want, sum)
+		}
+	}
+	if cand := candidateList(m, approved); !strings.HasSuffix(cand, "\nnew\n") || strings.Contains(cand, "kept") {
+		t.Errorf("candidates:\n%s", cand)
 	}
 }

@@ -233,8 +233,21 @@ func main() {
 	approval := flag.String("approval", "", "also write the owner's approval table (Markdown), every verified team, to this file")
 	summary := flag.String("summary", "", "also write the page the owner answers (Markdown): counts, drift, group B in full")
 	candidates := flag.String("candidates", "", "also write group A's team ids to this file, for approved.txt once the owner answers")
+	approvedPath := flag.String("approved", "", "Gscouter's approved list (internal/engine/approved.txt): its teams are carried forward or listed as dropped, and left out of the groups to answer; none or a missing file for none known")
 	flag.Parse()
 	m, err := build(*wasm, *commit, flag.Args())
+	var approved []approvedTeam
+	if err == nil && *approvedPath != "" {
+		var raw []byte
+		if raw, err = os.ReadFile(*approvedPath); errors.Is(err, os.ErrNotExist) {
+			err = nil
+		} else if err == nil {
+			approved, err = parseApproved(string(raw))
+			if err == nil && approved == nil {
+				approved = []approvedTeam{}
+			}
+		}
+	}
 	if err == nil {
 		var b []byte
 		if b, err = json.MarshalIndent(m, "", "  "); err == nil {
@@ -245,10 +258,10 @@ func main() {
 		err = os.WriteFile(*approval, []byte(approvalTable(m)), 0o644)
 	}
 	if err == nil && *summary != "" {
-		err = os.WriteFile(*summary, []byte(approvalSummary(m)), 0o644)
+		err = os.WriteFile(*summary, []byte(approvalSummary(m, approved)), 0o644)
 	}
 	if err == nil && *candidates != "" {
-		err = os.WriteFile(*candidates, []byte(candidateList(m)), 0o644)
+		err = os.WriteFile(*candidates, []byte(candidateList(m, approved)), 0o644)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "manifest:", err)
