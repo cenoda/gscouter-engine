@@ -4357,6 +4357,11 @@ impl Sim {
         Some(ev)
     }
 
+    /// gcsim's AuraCount on the player: its auras above zero durability.
+    pub fn player_aura_count(&self) -> usize {
+        (0..N_AURAS).filter(|&m| self.player_aura.get(m) > ZERO_DUR).count()
+    }
+
     /// gcsim's Player.ApplySelfInfusion: the element on the player for f
     /// frames, its source the active character.
     pub fn apply_self_infusion(&mut self, m: usize, dur: f64, f: i32) {
