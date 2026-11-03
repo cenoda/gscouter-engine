@@ -1,0 +1,4 @@
+# Keqing's five normal attacks (N5 a bullet on the enemy); the library's rotations cancel N1 into a charge.
+team keqing-chevreuse-fischl-bennett
+rotation- attack, charge;
+rotation+ attack:5;

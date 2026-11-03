@@ -1,0 +1,3 @@
+# Keqing C4: ATK +25% after her electro reactions; the library builds are C0 but two.
+team keqing-chevreuse-fischl-bennett
+keqing char lvl=90/90 cons=4 talent=9,9,9;

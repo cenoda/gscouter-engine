@@ -1,0 +1,4 @@
+# Keqing's charged attack on the Lightning Stiletto (Thunderclap Slash), before her recast.
+team keqing-chevreuse-fischl-bennett
+rotation- keqing skill, burst;
+rotation+ keqing skill, attack, charge, burst;

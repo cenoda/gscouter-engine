@@ -1,0 +1,3 @@
+# Keqing C1: two hits on the recast; the library builds are C0 but two.
+team keqing-chevreuse-fischl-bennett
+keqing char lvl=90/90 cons=1 talent=9,9,9;
