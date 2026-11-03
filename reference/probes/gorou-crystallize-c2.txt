@@ -1,0 +1,3 @@
+# Gorou at C2 with crystallize shards and two Geo characters.
+team navia-gorou-bennett-xiangling
+gorou char lvl=90/90 cons=2 talent=9,9,9;

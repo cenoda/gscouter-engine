@@ -1,0 +1,4 @@
+# Gorou's aimed shots, full and physical.
+team gorou-zhongli-chiori-albedo
+rotation- gorou attack, skill, attack;
+rotation+ gorou aim, skill, aim[hold=0];

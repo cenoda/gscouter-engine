@@ -1,0 +1,4 @@
+# Gorou's four normal attacks.
+team gorou-zhongli-chiori-albedo
+rotation- gorou attack, skill, attack;
+rotation+ gorou skill, attack:4;
