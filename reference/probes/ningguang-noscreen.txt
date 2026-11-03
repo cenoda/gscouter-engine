@@ -1,0 +1,7 @@
+# Ningguang's skill with noscreen (the screen is destroyed a frame later: no screen gems, no A4) and attacks with travel.
+team ningguang-albedo-zhongli-bennett
+ningguang char lvl=90/90 cons=2 talent=9,9,9;
+rotation- ningguang skill, dash;
+rotation+ ningguang skill[noscreen=1], dash;
+rotation- ningguang attack;
+rotation+ ningguang attack[travel=5];

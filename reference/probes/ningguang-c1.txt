@@ -1,0 +1,3 @@
+# Ningguang C1: normal attacks hit in a circle of radius 3.5 (against the one enemy here it reaches the same hits as C0; gcsim agrees).
+team ningguang-albedo-zhongli-bennett
+ningguang char lvl=90/90 cons=1 talent=9,9,9;

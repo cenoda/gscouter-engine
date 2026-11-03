@@ -93,6 +93,7 @@ crate::chars! {
     Dori => dori,
     Varesa => varesa,
     Wanderer => wanderer,
+    Ningguang => ningguang,
     Itto => itto,
 }
 
