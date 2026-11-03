@@ -65,6 +65,7 @@ crate::chars! {
     Layla => layla,
     Durin => durin,
     Nicole => nicole,
+    Mika => mika,
     Chongyun => chongyun,
     Beidou => beidou,
     Ayato => ayato,

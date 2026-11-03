@@ -1,0 +1,4 @@
+# Mika's four normal attacks and charged attack.
+team razor-furina-rosaria-mika
+rotation- mika attack, skill;
+rotation+ mika attack:4, charge, skill;

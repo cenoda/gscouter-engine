@@ -1,0 +1,4 @@
+# Mika's five normal attacks.
+team razor-furina-rosaria-mika
+rotation- mika attack, skill;
+rotation+ mika attack:5, skill;

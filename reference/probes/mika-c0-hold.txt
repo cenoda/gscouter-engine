@@ -1,0 +1,5 @@
+# Mika at C0 with held skill.
+team razor-furina-rosaria-mika
+mika char lvl=90/90 cons=0 talent=9,9,9;
+rotation- mika attack, skill;
+rotation+ mika attack, skill[hold=1];

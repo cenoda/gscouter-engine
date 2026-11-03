@@ -1,0 +1,4 @@
+# Mika's held skill (Rimestar Flare).
+team razor-furina-rosaria-mika
+rotation- mika attack, skill;
+rotation+ mika attack, skill[hold=1];
