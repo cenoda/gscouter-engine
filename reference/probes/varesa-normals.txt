@@ -1,0 +1,4 @@
+# Varesa's normal attacks and plain charged attack before the skill.
+team varesa-fischl-durin-nicole
+rotation-       varesa skill, attack, high_plunge[collision=1]; 
+rotation+       varesa attack:3, charge, skill, attack, high_plunge[collision=1]; 

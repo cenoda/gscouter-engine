@@ -1,0 +1,4 @@
+# Varesa's low plunge from Xianyun's jump.
+team varesa-kujousara-furina-xianyun
+rotation-        varesa high_plunge[collision=1];
+rotation+        varesa low_plunge[collision=1];

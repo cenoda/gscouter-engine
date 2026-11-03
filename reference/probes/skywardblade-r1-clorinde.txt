@@ -1,0 +1,3 @@
+# Clorinde with Skyward Blade R1: normal hits after her burst.
+team clorinde-furina-xilonen-chiori
+clorinde add weapon="skywardblade" refine=1 lvl=90/90;

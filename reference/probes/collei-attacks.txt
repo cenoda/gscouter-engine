@@ -1,0 +1,7 @@
+# Collei's normal attacks and aimed shots, physical and charged.
+team kaedeharakazuha-fischl-kukishinobu-collei
+rotation- kuki burst;
+rotation- kuki skill;
+rotation+ collei attack:4, aim[hold=0], aim;
+rotation+ kuki burst;
+rotation+ kuki skill;

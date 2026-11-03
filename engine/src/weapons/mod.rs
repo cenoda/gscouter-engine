@@ -5,6 +5,8 @@
 pub mod favonius;
 /// Shared by Mouun's Moon, Wavebreaker's Fin and Akuoumaru.
 pub mod wavebreaker;
+/// Shared by Lithic Spear and Lithic Blade.
+pub mod lithic;
 
 crate::weapons! {
     StaffOfHoma => staffofhoma,
@@ -84,4 +86,25 @@ crate::weapons! {
     RecurveBow => recurvebow,
     Azurelight => azurelight,
     FleuveCendreFerryman => fleuvecendreferryman,
+    AshGravenDrinkingHorn => ashgravendrinkinghorn,
+    ElegyForTheEnd => elegyfortheend,
+    JadeVista => jadevista,
+    LithicSpear => lithicspear,
+    LithicBlade => lithicblade,
+    FluteOfEzpitzal => fluteofezpitzal,
+    FlameForgedInsight => flameforgedinsight,
+    FreedomSworn => freedomsworn,
+    SkywardBlade => skywardblade,
+    EarthShaker => earthshaker,
+    KeyOfKhajNisut => keyofkhajnisut,
+    StarcallersWatch => starcallerswatch,
+    TamayurateiNoOhanashi => tamayurateinoohanashi,
+    Verdict => verdict,
+    EngulfingLightning => engulfinglightning,
+    LightOfFoliarIncision => lightoffoliarincision,
+    ForestRegalia => forestregalia,
+    RightfulReward => rightfulreward,
+    LumidouceElegy => lumidouceelegy,
+    SolarPearl => solarpearl,
+    PrimordialJadeCutter => primordialjadecutter,
 }

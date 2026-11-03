@@ -28,6 +28,9 @@
 # server started beside one already running forward meets it in the middle
 # instead of running the same teams first.
 #
+# A rerun on a new server with the same TAG first downloads the increments
+# already uploaded, so it does not run them again.
+#
 # Progress: the prerelease's progress.txt asset, replaced every 10 minutes.
 # When it says DONE, the server can be deleted.
 set -euo pipefail
@@ -102,6 +105,17 @@ progress() {
 
 cd "$WORK/engine/reference"
 go build -o "$WORK/compare" ./compare
+# a server that replaces another on the same TAG (a Spot VM evicted, a
+# bigger machine) starts from the increments already uploaded, and numbers
+# its own after them
+INC=0
+touch "$WORK/uploaded.txt"
+for a in $(gh "$API/releases/$REL/assets?per_page=100" | jq -r '.[] | select(.name|test("^gcsim-cache-inc[0-9]+-")) | "\(.id)/\(.name)"'); do
+	gh -H "Accept: application/octet-stream" -L "$API/releases/assets/${a%%/*}" | tar -xz -C "$CACHE"
+	n=$(echo "${a#*/}" | sed 's/^gcsim-cache-inc0*\([0-9][0-9]*\)-.*/\1/;s/^gcsim-cache-inc0*-.*/0/')
+	[ "$n" -lt "$INC" ] || INC=$((n + 1))
+done
+(cd "$CACHE" && find . -type f -name '*.json' | sort) > "$WORK/uploaded.txt"
 progress "started"
 # job k runs every JOBS-th slice of this server's range, one after another
 read -r LO HI <<< "$(echo "$SLICES" | tr '-' ' ')"
@@ -117,9 +131,7 @@ for k in $(seq 0 $((JOBS - 1))); do
 	) &
 done
 
-# increments: the chunks not uploaded yet, as gcsim-cache-incNN.tar.gz
-INC=0
-touch "$WORK/uploaded.txt"
+# increments: the chunks not uploaded yet, as gcsim-cache-incNN-XX.tar.gz
 increment() {
 	(cd "$CACHE" && find . -type f -name '*.json' | sort) > "$WORK/all.txt"
 	comm -13 "$WORK/uploaded.txt" "$WORK/all.txt" > "$WORK/new.txt"

@@ -1,0 +1,3 @@
+# Citlali with Starcaller's Watch R1.
+team bennett-yelan-xilonen-citlali
+citlali add weapon="starcallerswatch" refine=1 lvl=90/90;

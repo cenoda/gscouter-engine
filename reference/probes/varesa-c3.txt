@@ -1,0 +1,3 @@
+# Varesa at C3.
+team varesa-fischl-durin-nicole
+varesa char lvl=90/90 cons=3 talent=9,9,9;

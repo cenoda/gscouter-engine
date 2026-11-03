@@ -1,0 +1,4 @@
+# Dori's low plunge with its collision hit (the library rotations use the high plunge).
+team dori-furina-fischl-xianyun
+rotation- dori high_plunge[collision=rand()>0.5];
+rotation+ dori low_plunge[collision=1];
