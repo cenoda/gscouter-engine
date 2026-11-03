@@ -1,7 +1,6 @@
-//! Archaic Petra, from gcsim's internal/artifacts/archaic. Lunar-Crystallize
-//! is an error in the engine (nothing ported enables it), so only a
-//! crystallize shard picked up sets the 4-piece's element; gcsim's
-//! OnLunarCrystallize by the active holder would set hydro.
+//! Archaic Petra, from gcsim's internal/artifacts/archaic: a crystallize
+//! shard picked up by the holder on field sets the 4-piece's element, and
+//! a Lunar-Crystallize (by anyone) while the holder is on field sets hydro.
 
 use crate::content::{Event, SetImpl};
 use crate::sim::*;
@@ -27,6 +26,7 @@ impl SetImpl for Set {
         s.chars[ci].mods.push(Mod::stat(TWO, st::GEOP, 0.15, false, false, -1));
         if count >= 4 {
             s.subscribe(EventKind::Shielded, Owner::Set(ci as u8, si as u8));
+            s.subscribe(EventKind::Reaction, Owner::Set(ci as u8, si as u8));
         }
     }
 
@@ -38,15 +38,26 @@ impl SetImpl for Set {
         true
     }
 
-    /// A crystallize shard picked up by the holder on field.
+    /// A crystallize shard picked up by the holder on field, or a
+    /// Lunar-Crystallize (gcsim's OnLunarCrystallize checks only that the
+    /// holder is on field).
     fn event(s: &mut Sim, ci: usize, si: usize, e: &Event) {
-        let Event::Shielded(sh) = *e else { return };
-        if s.player.active as usize != ci || sh.typ != ShieldType::Crystallize {
+        let ele = match *e {
+            Event::Shielded(sh) if sh.typ == ShieldType::Crystallize => sh.ele,
+            Event::Reaction(Reaction::LunarCrystallize, _) => Element::Hydro,
+            _ => return,
+        };
+        if s.player.active as usize != ci {
             return;
         }
-        s.set_st_mut::<State>(ci, si).element = sh.ele;
-        for i in 0..s.chars.len() {
-            s.add_mod(i, Mod::owned(FOUR, ModKind::Stat, Owner::Set(ci as u8, si as u8), st::NONE, false, true, -1), 10 * 60);
-        }
+        enable(s, ci, si, ele);
+    }
+}
+
+/// gcsim's enableSet: the element's 35% for the whole party, 10 s (hitlag).
+fn enable(s: &mut Sim, ci: usize, si: usize, ele: Element) {
+    s.set_st_mut::<State>(ci, si).element = ele;
+    for i in 0..s.chars.len() {
+        s.add_mod(i, Mod::owned(FOUR, ModKind::Stat, Owner::Set(ci as u8, si as u8), st::NONE, false, true, -1), 10 * 60);
     }
 }
