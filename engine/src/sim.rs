@@ -1367,6 +1367,8 @@ pub enum ShieldType {
     ColumbinaC1,
     KaeyaC4,
     YunjinSkill,
+    NoelleSkill,
+    NoelleA1,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -1483,6 +1485,8 @@ pub struct Sim {
     pub tick_subs: Vec<u8>,
     /// Diona's A1: stamina -10% while her shield is up.
     pub diona_a1: bool,
+    /// Noelle's C2 -20% charged attack stamina, from her slot.
+    pub noelle_c2: Option<u8>,
     /// Electro resonance, with the frame of its last particle (0 before
     /// the first).
     pub electro_res: Option<i32>,
@@ -1678,6 +1682,7 @@ impl Sim {
             pre_drain_subs: Vec::new(),
             tick_subs: Vec::new(),
             diona_a1: false,
+            noelle_c2: None,
             electro_res: None,
             dendro_res: false,
             anemo_res: false,
@@ -3907,7 +3912,14 @@ impl Sim {
     /// gcsim's Shields.Add: replaces the shield of its type and target.
     pub fn add_shield(&mut self, sh: Shield) {
         match self.shields.iter().rposition(|x| x.typ == sh.typ && x.target == sh.target) {
-            Some(i) => self.shields[i] = sh,
+            Some(i) => {
+                // OnOverwrite: only Noelle's Breastplate has one
+                let old = self.shields[i];
+                if old.typ == ShieldType::NoelleSkill {
+                    crate::chars::dispatch::shield_overwritten(self.chars[old.owner as usize].kind, self, old.owner as usize, old.key);
+                }
+                self.shields[i] = sh;
+            }
             None => self.shields.push(sh),
         }
         self.update_next_expiry();
@@ -4016,7 +4028,7 @@ impl Sim {
         while k < self.shields.len() {
             if self.shields[k].expiry == f {
                 let sh = self.shields.remove(k);
-                if matches!(sh.typ, ShieldType::ZhongliJadeShield | ShieldType::BaizhuBurst | ShieldType::LaylaSkill) {
+                if matches!(sh.typ, ShieldType::ZhongliJadeShield | ShieldType::BaizhuBurst | ShieldType::LaylaSkill | ShieldType::NoelleSkill) {
                     crate::chars::dispatch::shield_expired(self.chars[sh.owner as usize].kind, self, sh.owner as usize, sh.key);
                 }
                 expired.push(sh);
@@ -5249,8 +5261,19 @@ impl Sim {
         if a == Action::Dash && self.utility_dash.is_some_and(|o| self.chars[o as usize].hp_ratio > 0.0) {
             pct += -0.2;
         }
-        if self.diona_a1 && self.shields.iter().any(|x| x.typ == ShieldType::DionaSkill) {
+        // Diona's A1 and Noelle's C2 are added in their Init, in party
+        // order
+        let diona = self.diona_a1 && self.shields.iter().any(|x| x.typ == ShieldType::DionaSkill);
+        let noelle = a == Action::Charge && self.noelle_c2.is_some();
+        let noelle_first = noelle && self.chars.iter().position(|c| c.kind == CharKind::Diona).is_none_or(|d| (self.noelle_c2.unwrap() as usize) < d);
+        if noelle && noelle_first {
+            pct += -0.2;
+        }
+        if diona {
             pct += -0.1;
+        }
+        if noelle && !noelle_first {
+            pct += -0.2;
         }
         pct
     }

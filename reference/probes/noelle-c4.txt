@@ -1,0 +1,3 @@
+# Noelle at C4.
+team noelle-albedo-yelan-xingqiu
+noelle char lvl=90/90 cons=4 talent=9,9,9;

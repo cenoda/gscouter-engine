@@ -1,0 +1,3 @@
+# Itto with Whiteblind R1.
+team aratakiitto-albedo-gorou-fischl
+itto add weapon="whiteblind" refine=1 lvl=90/90;

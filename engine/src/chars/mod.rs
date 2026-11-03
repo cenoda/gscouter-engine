@@ -62,6 +62,7 @@ crate::chars! {
     Ganyu => ganyu,
     Sethos => sethos,
     Yunjin => yunjin,
+    Noelle => noelle,
     Ayaka => ayaka,
     Albedo => albedo,
     Layla => layla,
@@ -92,6 +93,7 @@ crate::chars! {
     Varesa => varesa,
     Wanderer => wanderer,
     Ningguang => ningguang,
+    Itto => itto,
 }
 
 /// The characters whose modules have been checked against gcsim for a

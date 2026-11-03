@@ -6,8 +6,8 @@
 //! 1.5 s, which also picks up a crystallize shard), A1, A4 and C1 to C6.
 //! gcsim's package has no plunge.
 //!
-//! C2 also extends Glory on gcsim's OnLunarCrystallize, which the engine
-//! never triggers (it is an error, `Sim::check_lunar_crystallize`).
+//! C2 extends Glory on a crystallize shield and on a Lunar-Crystallize by
+//! the active character on the enemy (gcsim's OnLunarCrystallize).
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::gorou as g;
@@ -86,6 +86,7 @@ impl Character for Char {
             s.subscribe(EventKind::EnemyDamage, o);
         }
         if cons >= 2 {
+            s.subscribe(EventKind::Reaction, o);
             s.subscribe(EventKind::Shielded, o);
         }
         if cons >= 6 {
@@ -337,6 +338,14 @@ impl Character for Char {
                 }
                 s.st_mut::<State>(ci).c1_icd = s.f + 600;
                 s.reduce_cd(ci, Action::Skill, 120);
+            }
+            // C2: a Lunar-Crystallize by the active character on the enemy
+            // extends Glory
+            Event::Reaction(Reaction::LunarCrystallize, ev) => {
+                if s.core_status_key(GLORY) <= 0 || !ev.on_enemy() || ev.info.actor != s.player.active {
+                    return;
+                }
+                c2_extend(s, ci);
             }
             // C2: crystallize shields extend Glory
             Event::Shielded(sh) => {

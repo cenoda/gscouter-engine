@@ -283,6 +283,9 @@ pub trait Character {
     fn shield_damaged(_s: &mut Sim, _ci: usize, _key: ModKey, _dmg: f64, _broken: bool) {}
     /// A shield of its expired (gcsim's OnExpire).
     fn shield_expired(_s: &mut Sim, _ci: usize, _key: ModKey) {}
+    /// A shield of its replaced by one of its type and target (gcsim's
+    /// OnOverwrite, before the new one goes in).
+    fn shield_overwritten(_s: &mut Sim, _ci: usize, _key: ModKey) {}
     /// A shield bonus mod it owns: the bonus, and whether gcsim's
     /// ShieldBonus then drops the mod (its `done`).
     fn shield_bonus(_s: &Sim, _ci: usize, _key: ModKey) -> (f64, bool) {
@@ -516,6 +519,7 @@ macro_rules! chars {
             pub fn shield_damaged(k: CharKind, s: &mut Sim, ci: usize, key: ModKey, dmg: f64, broken: bool) { match k { $(CharKind::$kind => $m::Char::shield_damaged(s, ci, key, dmg, broken)),* } }
             pub fn dash_info(k: CharKind, s: &mut Sim, ci: usize, info: ActInfo) -> ActInfo { match k { $(CharKind::$kind => $m::Char::dash_info(s, ci, info)),* } }
             pub fn shield_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_expired(s, ci, key)),* } }
+            pub fn shield_overwritten(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_overwritten(s, ci, key)),* } }
             pub fn shield_bonus(k: CharKind, s: &Sim, ci: usize, key: ModKey) -> (f64, bool) { match k { $(CharKind::$kind => $m::Char::shield_bonus(s, ci, key)),* } }
             #[inline]
             pub fn action_stam(k: CharKind, s: &Sim, ci: usize, a: Action) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::action_stam(s, ci, a)),* } }

@@ -1,0 +1,4 @@
+# Noelle's spin held for three segments, then an explicit final.
+team noelle-albedo-yelan-xingqiu
+rotation- noelle  attack:2;
+rotation+ noelle  attack:2, charge, charge, charge[final=1];

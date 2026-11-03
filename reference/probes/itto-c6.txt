@@ -1,0 +1,3 @@
+# Itto C6: Arataki Kesagiri gains 70% crit damage and may keep its stacks (50%).
+team aratakiitto-albedo-gorou-fischl
+itto char lvl=90/90 cons=6 talent=9,9,9;
