@@ -1,0 +1,4 @@
+# Sethos's physical and weak spot aimed shots.
+team sethos-chevreuse-fischl-bennett
+rotation- sethos aim[hold=1];
+rotation+ sethos aim[hold=0], aim[hold=0,weakspot=1], aim[hold=1,weakspot=1], aim[hold=2,weakspot=1];
