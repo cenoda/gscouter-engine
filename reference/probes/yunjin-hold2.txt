@@ -1,0 +1,4 @@
+# Yun Jin's skill held to level 2 (radius 8, 100 durability, 3 particles).
+team yoimiya-bennett-yunjin-zhongli
+rotation- yunjin burst, attack, skill;
+rotation+ yunjin burst, attack, skill[hold=2];

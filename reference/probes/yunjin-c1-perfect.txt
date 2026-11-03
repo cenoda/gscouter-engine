@@ -1,0 +1,5 @@
+# Yun Jin at C1 with a perfect skill (level 2 on the press's frames).
+team yoimiya-bennett-yunjin-zhongli
+yunjin char lvl=90/90 cons=1 talent=9,9,9;
+rotation- yunjin burst, attack, skill;
+rotation+ yunjin burst, attack, skill[perfect=1];

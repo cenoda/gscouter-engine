@@ -1,0 +1,4 @@
+# Yun Jin's skill held to level 1 (2 or 3 particles, drawn at the skill).
+team yoimiya-bennett-yunjin-zhongli
+rotation- yunjin skill, attack:3;
+rotation+ yunjin skill[hold=1], attack:3;

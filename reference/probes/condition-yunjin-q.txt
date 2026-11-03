@@ -1,0 +1,6 @@
+# Yun Jin's burst stacks left on a character, read by a condition (.yoimiya.tags.yunjin-q), gating a wait.
+team yoimiya-bennett-yunjin-zhongli
+rotation- yoimiya skill, attack:5, dash, attack:5, dash, attack:5;
+rotation+ yoimiya skill, attack:5, dash, attack:5;
+rotation+ if .yoimiya.tags.yunjin-q > 5 { wait(30); }
+rotation+ yoimiya dash, attack:5;

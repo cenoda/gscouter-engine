@@ -1362,6 +1362,7 @@ pub enum ShieldType {
     LanyanShield,
     ColumbinaC1,
     KaeyaC4,
+    YunjinSkill,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -5949,6 +5950,7 @@ impl Sim {
                         match fields[2].as_str() {
                             crate::gcsimdata::chars::shenhe::QUILL_KEY => Ok(int(crate::chars::shenhe::quill_tag(self, ci))),
                             crate::gcsimdata::chars::xilonen::C4KEY => Ok(int(crate::chars::xilonen::c4_tag(self, ci))),
+                            crate::gcsimdata::chars::yunjin::BURST_BUFF_KEY => Ok(int(crate::chars::yunjin::burst_tag(self, ci))),
                             t @ (crate::gcsimdata::chars::xianyun::A1_KEY | crate::gcsimdata::chars::xianyun::C6_KEY) => Ok(int(crate::chars::xianyun::tag(self, ci, t))),
                             _ => Ok(int(0)),
                         }

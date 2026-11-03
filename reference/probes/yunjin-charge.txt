@@ -1,0 +1,4 @@
+# Yun Jin's charged attack.
+team yoimiya-bennett-yunjin-zhongli
+rotation- yunjin skill, attack:3;
+rotation+ yunjin skill, attack, charge;
