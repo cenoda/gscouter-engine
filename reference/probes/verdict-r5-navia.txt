@@ -1,0 +1,3 @@
+# Navia with Verdict R5.
+team navia-mona-bennett-zhongli
+navia add weapon="verdict" refine=5 lvl=90/90;

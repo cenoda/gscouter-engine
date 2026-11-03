@@ -1,0 +1,3 @@
+# Mona with Solar Pearl R5.
+team mona-citlali-escoffier-furina
+mona add weapon="solarpearl" refine=5 lvl=90/90;

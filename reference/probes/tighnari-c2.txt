@@ -1,0 +1,3 @@
+# Tighnari C2: Dendro DMG while the player is in the skill's area.
+team tighnari-nahida-fischl-kirara
+tighnari char lvl=90/90 cons=2 talent=9,9,9;

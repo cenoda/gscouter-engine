@@ -1,0 +1,3 @@
+# Clorinde with Primordial Jade Cutter R1.
+team clorinde-furina-xilonen-chiori
+clorinde add weapon="primordialjadecutter" refine=1 lvl=90/90;

@@ -1,0 +1,4 @@
+# Wanderer's dash once the points are spent: the state ends first, and the fall delays it.
+team wanderer-faruzan-yelan-xingqiu
+rotation- wanderer burst;
+rotation+ wanderer walk[f=30], dash, burst;

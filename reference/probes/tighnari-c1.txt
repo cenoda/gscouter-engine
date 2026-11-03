@@ -1,0 +1,3 @@
+# Tighnari C1: charged attacks CRIT Rate +15% (the library builds are C0).
+team tighnari-nahida-fischl-kirara
+tighnari char lvl=90/90 cons=1 talent=9,9,9;

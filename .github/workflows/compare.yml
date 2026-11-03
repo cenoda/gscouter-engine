@@ -83,6 +83,13 @@
 # adds the run's chunk artifacts (kept a day) to main's cache, and runs
 # nothing else.
 #
+# The schedule's jobs run at most 4 variant, 8 build-space and 8 page
+# jobs at once (max-parallel), half of what it starts: they take up to
+# six hours each, and the 40 the schedule starts would take every one of
+# the account's 40 concurrent GitHub runners and leave a push's library
+# jobs waiting. The other half start as the first finish. Manual runs are
+# not held back.
+#
 # Caches of one branch must not be saved by two cache jobs at once: each
 # restores the latest and adds its own chunks, so the one saved second
 # would lack the first one's chunks, and the next restore takes only the
@@ -361,6 +368,7 @@ jobs:
     timeout-minutes: 355
     strategy:
       fail-fast: false
+      max-parallel: ${{ github.event_name == 'schedule' && 4 || 256 }}
       matrix:
         part: ${{ fromJSON(needs.plan.outputs.parts) }}
     steps:
@@ -420,6 +428,7 @@ jobs:
     timeout-minutes: 355
     strategy:
       fail-fast: false
+      max-parallel: ${{ github.event_name == 'schedule' && 8 || 256 }}
       matrix:
         part: ${{ fromJSON(needs.plan.outputs.bs_parts) }}
     steps:
@@ -479,6 +488,7 @@ jobs:
     timeout-minutes: 355
     strategy:
       fail-fast: false
+      max-parallel: ${{ github.event_name == 'schedule' && 8 || 256 }}
       matrix:
         part: ${{ fromJSON(needs.plan.outputs.pg_parts) }}
     steps:

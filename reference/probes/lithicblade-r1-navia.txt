@@ -1,0 +1,3 @@
+# Navia with Lithic Blade R1, Xianyun a Liyue member.
+team navia-xianyun-fischl-furina
+navia add weapon="lithicblade" refine=1 lvl=90/90;

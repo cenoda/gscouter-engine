@@ -1,0 +1,4 @@
+# Tighnari's normal attacks and shots outside Vijnana Suffusion: physical, charged and a full Wreath Arrow.
+team tighnari-nahida-fischl-kirara
+rotation-   tighnari skill, aim, burst, aim:2;
+rotation+   tighnari attack:4, aim[hold=0], aim[hold=1], aim[hold=2], skill, aim, burst, aim:2;

@@ -1,0 +1,3 @@
+# Dori C4: heal bonus and ER for a member low on HP or energy at the connector's ticks.
+team dori-furina-fischl-xianyun
+dori char lvl=90/90 cons=4 talent=9,9,9;

@@ -4374,6 +4374,11 @@ impl Sim {
         Some(ev)
     }
 
+    /// gcsim's AuraCount on the player: its auras above zero durability.
+    pub fn player_aura_count(&self) -> usize {
+        (0..N_AURAS).filter(|&m| self.player_aura.get(m) > ZERO_DUR).count()
+    }
+
     /// gcsim's Player.ApplySelfInfusion: the element on the player for f
     /// frames, its source the active character.
     pub fn apply_self_infusion(&mut self, m: usize, dur: f64, f: i32) {
@@ -4993,6 +4998,14 @@ impl Sim {
         self.emit(Event::EnergyBurst { on: ci, amount });
     }
 
+    /// gcsim's ConsumeEnergyPartial with no delay: `amount` of the energy,
+    /// and OnEnergyBurst with it.
+    pub fn consume_energy_partial(&mut self, ci: usize, amount: f64) {
+        let c = &mut self.chars[ci];
+        c.energy = (c.energy - amount).max(0.0);
+        self.emit(Event::EnergyBurst { on: ci, amount });
+    }
+
     pub fn consume_energy(&mut self, ci: usize, delay: i32) {
         if delay == 0 {
             self.drain_energy(ci);
@@ -5586,10 +5599,10 @@ impl Sim {
                     self.char_jump(ci)
                 }
             },
-            Action::Walk => {
-                let f = p.get("f").unwrap_or(1) as i32;
-                ActInfo::new(Frames::Const(f), f, f, AnimState::Walk)
-            }
+            Action::Walk => match chars::dispatch::own_walk(kind, self, ci, p) {
+                Some(info) => info,
+                None => self.char_walk(p),
+            },
             _ => unreachable!("unsupported action {a:?}"),
         };
         self.set_action_used(info);
@@ -5627,10 +5640,16 @@ impl Sim {
         }
     }
 
+    /// The template character's Walk.
+    pub fn char_walk(&self, p: &Params) -> ActInfo {
+        let f = p.get("f").unwrap_or(1) as i32;
+        ActInfo::new(Frames::Const(f), f, f, AnimState::Walk)
+    }
+
     /// The template character's Jump: airborne with Xianyun's buff, or the
     /// plain jump (Stellar Swirl's airborne state comes from content not
     /// ported).
-    fn char_jump(&mut self, ci: usize) -> ActInfo {
+    pub fn char_jump(&mut self, ci: usize) -> ActInfo {
         let c = &self.chars[ci];
         if self.mod_active(ci, XIANYUN_AIRBORNE) {
             let (low, high) = if matches!(c.class, WeaponClass::Sword | WeaponClass::Spear) { (5, 9) } else { (4, 8) };

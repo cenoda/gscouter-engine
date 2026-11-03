@@ -1,0 +1,4 @@
+# Wanderer's skill pressed again to end the state, and the low plunge (with its collision) in the fall.
+team wanderer-faruzan-yelan-xingqiu
+rotation- wanderer attack, skill;
+rotation+ wanderer attack, skill, attack, skill, low_plunge[collision=1], skill;

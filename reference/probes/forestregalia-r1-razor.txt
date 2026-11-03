@@ -1,0 +1,3 @@
+# Razor with Forest Regalia R1.
+team fischl-nahida-razor-alhaitham
+razor add weapon="forestregalia" refine=1 lvl=90/90;

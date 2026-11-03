@@ -1,0 +1,6 @@
+# Wanderer's low plunge (with its collision) once the points are spent: the plunge ends the state itself and waits 7 frames of the fall (the walk leaves the points at 0 or below with the state still on).
+team wanderer-faruzan-yelan-xingqiu
+rotation- while .wanderer.skydweller-points > 3 {
+rotation+ while .wanderer.skydweller-points > 15 {
+rotation- wanderer burst;
+rotation+ wanderer walk[f=100], low_plunge[collision=1], burst;

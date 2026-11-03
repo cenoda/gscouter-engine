@@ -1,0 +1,3 @@
+# Chevreuse with Rightful Reward R1.
+team raidenshogun-yaemiko-dehya-chevreuse
+chevreuse add weapon="rightfulreward" refine=1 lvl=90/90;
