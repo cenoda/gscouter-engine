@@ -313,6 +313,10 @@ pub trait Character {
     fn pre_drain(_s: &mut Sim, _ci: usize, _on: usize, amount: f64, _external: bool, _abil: &'static str) -> f64 {
         amount
     }
+    /// Its OnTick subscription (subscribed with `Sim::tick_subs`): gcsim
+    /// emits OnTick at the end of every frame, after the energy drops and
+    /// before the stop check.
+    fn on_tick(_s: &mut Sim, _ci: usize) {}
     /// The frames of an action of its whose ActInfo has Frames::CharLive:
     /// a gcsim frames function that reads the character's state when the
     /// frames are asked for.
@@ -486,6 +490,7 @@ macro_rules! chars {
             #[inline]
             pub fn event(k: CharKind, s: &mut Sim, ci: usize, e: &Event) { match k { $(CharKind::$kind => $m::Char::event(s, ci, e)),* } }
             #[inline]
+            pub fn on_tick(k: CharKind, s: &mut Sim, ci: usize) { match k { $(CharKind::$kind => $m::Char::on_tick(s, ci)),* } }
             pub fn frames(k: CharKind, id: u8, arg: i16, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames(id, arg, next)),* } }
             #[inline]
             pub fn on_removed(k: CharKind, s: &mut Sim, ci: usize, id: u8, next: AnimState) { match k { $(CharKind::$kind => $m::Char::on_removed(s, ci, id, next)),* } }

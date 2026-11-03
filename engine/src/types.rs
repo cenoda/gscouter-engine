@@ -142,6 +142,7 @@ pub enum Failure {
     BurstCd,
     InsufficientEnergy,
     InsufficientStamina,
+    CharacterDeceased,
     DashCd = 7,
 }
 pub const N_FAILURES: usize = 8;

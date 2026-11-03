@@ -1468,6 +1468,8 @@ pub struct Sim {
     pub utility_dash: Option<u8>,
     /// The characters subscribed to OnPlayerPreHPDrain, in order.
     pub pre_drain_subs: Vec<u8>,
+    /// The characters subscribed to OnTick, in order.
+    pub tick_subs: Vec<u8>,
     /// Diona's A1: stamina -10% while her shield is up.
     pub diona_a1: bool,
     /// Electro resonance, with the frame of its last particle (0 before
@@ -1659,6 +1661,7 @@ impl Sim {
             no_more_actions: false,
             utility_dash: None,
             pre_drain_subs: Vec::new(),
+            tick_subs: Vec::new(),
             diona_a1: false,
             electro_res: None,
             dendro_res: false,
@@ -5408,6 +5411,11 @@ impl Sim {
                 self.last_energy_drop = f + d;
                 self.add_task(Task::Particle { num: amount as f64, ele: Element::NoElement }, d);
             }
+        }
+        // OnTick
+        for i in 0..self.tick_subs.len() {
+            let c = self.tick_subs[i] as usize;
+            crate::chars::dispatch::on_tick(self.chars[c].kind, self, c);
         }
         if self.damage_mode {
             return self.no_more_actions || !self.enemy_alive || f == self.end;
