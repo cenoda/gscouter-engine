@@ -196,6 +196,13 @@ pub fn run(sim: &mut Sim, program: &Block) -> Result<(), String> {
 }
 
 impl<'s> Eval<'s> {
+    /// queue_action stopped: the fight ended, or the action's Exec failed.
+    fn queue_failed<T>(&mut self) -> Result<T, Stop> {
+        match self.sim.exec_err.take() {
+            Some(why) => err(why),
+            None => Err(Stop::Terminated),
+        }
+    }
     fn block<'a>(&mut self, b: &'a Block, env: &Env<'a>) -> R<'a> {
         let scope = new_env(Some(env));
         let mut last = Value::Null;
@@ -497,19 +504,13 @@ impl<'s> Eval<'s> {
                 if ci != self.sim.player.active as usize {
                     // gcsim asks the active character whether the swap may
                     // come next, as for any queued action
-                    let active = self.sim.player.active as usize;
-                    if let Some(why) = crate::chars::dispatch::invalid(self.sim.chars[active].kind, self.sim, active, Action::Swap, &Params::default()) {
-                        return err(format!("{}: {why}", char_name(self.sim.chars[active].key)));
-                    }
+                    // (queue_action does so when the swap runs)
                     if !self.sim.queue_action(ci, Action::Swap, &Params::default()) {
-                        return Err(Stop::Terminated);
+                        return self.queue_failed();
                     }
-                }
-                if let Some(why) = crate::chars::dispatch::invalid(self.sim.chars[ci].kind, self.sim, ci, action, &params) {
-                    return err(format!("{}: {why}", char_name(key)));
                 }
                 if !self.sim.queue_action(ci, action, &params) {
-                    return Err(Stop::Terminated);
+                    return self.queue_failed();
                 }
                 Ok(Value::Null)
             }
