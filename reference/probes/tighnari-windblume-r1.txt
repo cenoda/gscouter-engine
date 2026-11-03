@@ -1,0 +1,3 @@
+# Tighnari with Windblume Ode R1.
+team tighnari-yaemiko-fischl-layla
+tighnari add weapon="windblumeode" refine=1 lvl=90/90;

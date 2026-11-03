@@ -1,0 +1,3 @@
+# Clorinde with Absolution R1.
+team clorinde-citlali-mavuika-xilonen
+clorinde add weapon="absolution" refine=1 lvl=90/90;

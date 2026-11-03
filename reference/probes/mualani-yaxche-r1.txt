@@ -1,0 +1,3 @@
+# Mualani with Ring of Yaxche R1.
+team mualani-furina-escoffier-citlali
+mualani add weapon="ringofyaxche" refine=1 lvl=90/90;

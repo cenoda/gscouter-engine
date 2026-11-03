@@ -1,0 +1,3 @@
+# The Dockhand's Assistant at refinement 5 on Nilou.
+team mona-nilou-nahida-baizhu
+nilou add weapon="dockhand" refine=5 lvl=90/90;

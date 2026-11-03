@@ -84,6 +84,7 @@ crate::chars! {
     Keqing => keqing,
     Mualani => mualani,
     Lauma => lauma,
+    Nilou => nilou,
     Collei => collei,
     Tighnari => tighnari,
     Dori => dori,

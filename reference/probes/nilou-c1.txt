@@ -1,0 +1,3 @@
+# Nilou at C1 (Luminous Illusion, the burst).
+team nilou-furina-jean-yelan
+nilou char lvl=90/90 cons=1 talent=9,9,9;

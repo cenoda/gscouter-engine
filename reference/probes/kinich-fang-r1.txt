@@ -1,0 +1,3 @@
+# Kinich with Fang of the Mountain King R1.
+team kinich-emilie-klee-bennett
+kinich add weapon="fangofthemountainking" refine=1 lvl=90/90;
