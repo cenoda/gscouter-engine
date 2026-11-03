@@ -1,0 +1,5 @@
+# Mualani at level 20 (ascension 0) and C6: no A1 points (so no C2 or C4 puffer), no A4 stacks. The Momentum loop also stops when the blessing ends.
+team mualani-candace-sucrose-xiangling
+mualani char lvl=20/20 cons=6 talent=9,9,9;
+rotation-       while .mualani.momentum < 3 {
+rotation+       while .mualani.momentum < 3 && .mualani.nightsoul.state {

@@ -1,0 +1,3 @@
+# Mualani C0 on her own team's rotation.
+team mualani-candace-sucrose-xiangling
+mualani char lvl=90/90 cons=0 talent=9,9,9;

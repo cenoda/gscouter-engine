@@ -1,0 +1,3 @@
+# Mualani C4: 8 energy on A1's points and burst DMG +75%.
+team mualani-candace-sucrose-xiangling
+mualani char lvl=90/90 cons=4 talent=9,9,9;

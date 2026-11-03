@@ -1,0 +1,6 @@
+# Mualani's dash, jump (out of a dash and not), walk and bites in the blessing, the skill's cancel and a normal attack after it.
+team mualani-candace-sucrose-xiangling
+rotation-   mualani_combo();
+rotation-   mualani walk[f=1];
+rotation+   mualani dash, jump, walk[f=30], dash, walk[f=20], attack, jump, attack, skill, attack;
+rotation+   mualani walk[f=1];
