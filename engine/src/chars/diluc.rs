@@ -60,7 +60,7 @@ impl Character for Char {
     }
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
-        if let Event::PlayerHit { on } = *e {
+        if let Event::PlayerHit { on, .. } = *e {
             if on == ci {
                 s.unsupported("constellation diluc C2 (Diluc hit)");
             }

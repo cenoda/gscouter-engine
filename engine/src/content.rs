@@ -101,8 +101,8 @@ pub enum Event<'a> {
     /// the hit through `Sim::hit_flat`, and changes its crit through
     /// `Sim::hit_crit`.
     EnemyHit(&'a AttackEvent),
-    /// OnPlayerHit: the active character was hit.
-    PlayerHit { on: usize },
+    /// OnPlayerHit: the active character was hit, by an attack of `ele`.
+    PlayerHit { on: usize, ele: Element },
     /// OnShielded: a shield was added (or replaced one of its type).
     Shielded(&'a crate::sim::Shield),
     /// OnShieldBreak: a shield broke or expired.

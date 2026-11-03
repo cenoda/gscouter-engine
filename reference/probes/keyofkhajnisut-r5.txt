@@ -1,0 +1,3 @@
+# Key of Khaj-Nisut at refinement 5 on Nilou.
+team nahida-nilou-yelan-baizhu
+nilou add weapon="key" refine=5 lvl=90/90;

@@ -68,6 +68,8 @@ crate::weapons! {
     CrescentPike => crescentpike,
     DialoguesOfTheDesertSages => dialoguesofthedesertsages,
     KagotsurubeIsshin => kagotsurubeisshin,
+    KeyOfKhajNisut => keyofkhajnisut,
+    TheDockhandsAssistant => thedockhandsassistant,
     SplendorOfTranquilWaters => splendoroftranquilwaters,
     Moonpiercer => moonpiercer,
     BalladOfTheBoundlessBlue => balladoftheboundlessblue,

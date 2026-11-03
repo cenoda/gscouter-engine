@@ -82,6 +82,7 @@ crate::chars! {
     Keqing => keqing,
     Mualani => mualani,
     Lauma => lauma,
+    Nilou => nilou,
 }
 
 /// The characters whose modules have been checked against gcsim for a
