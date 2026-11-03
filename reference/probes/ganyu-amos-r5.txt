@@ -1,0 +1,3 @@
+# Ganyu with Amos' Bow R5.
+team ganyu-bennett-nahida-thoma
+ganyu add weapon="amosbow" refine=5 lvl=90/90;

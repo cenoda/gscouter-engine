@@ -1,0 +1,3 @@
+# Beidou with Luxurious Sea-Lord R1.
+team beidou-kamisatoayato-nahida-kukishinobu
+beidou add weapon="luxurioussealord" refine=1 lvl=90/90;

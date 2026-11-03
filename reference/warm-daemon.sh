@@ -60,6 +60,7 @@ UPLOADS=https://uploads.github.com/repos/$REPO
 WORK=${WORK:-/var/lib/warm-daemon}
 POLL=${POLL:-600}
 PER=${PER:-8}               # gcsim workers per compare process
+PUBLISH_EVERY=${PUBLISH_EVERY:-1800}
 
 if [ "${1:-}" = install ]; then
 	[ -f /etc/warm-daemon.env ] || { echo "write GH_TOKEN=... to /etc/warm-daemon.env (mode 600) first" >&2; exit 1; }
@@ -163,6 +164,17 @@ warm() { # name; argument sets on stdin
 			< /dev/null >> "$WORK/logs/$name.out" 2>> "$WORK/logs/$name.err" &
 		i=$((i + 1))
 		[ "$(jobs -rp | wc -l)" -lt "$JOBS" ] || wait -n || true
+	done
+	# a batch can take hours: what it has made goes out every PUBLISH_EVERY
+	# meanwhile, so CI gets it sooner and an eviction loses less
+	local next=$(( $(date -u +%s) + PUBLISH_EVERY ))
+	while [ -n "$(jobs -rp)" ]; do
+		sleep 60
+		if [ "$(date -u +%s)" -ge "$next" ]; then
+			publish "$name (so far)" || true
+			import_pending || true
+			next=$(( $(date -u +%s) + PUBLISH_EVERY ))
+		fi
 	done
 	wait || true
 	publish "$name"
