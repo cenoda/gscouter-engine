@@ -514,6 +514,8 @@ pub mod add_tag {
     pub const WRIO_SSC_N5: u8 = 1 << 1;
     /// AttackTagWrioSSCCA: Wriothesley's Luster: Vaulting Fist.
     pub const WRIO_SSC_CA: u8 = 1 << 2;
+    /// AttackTagKinichCannon: Kinich's Scalespiker Cannon (his C1).
+    pub const KINICH_CANNON: u8 = 1 << 3;
 }
 
 impl AttackInfo {

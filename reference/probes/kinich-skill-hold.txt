@@ -1,0 +1,4 @@
+# Kinich's skill held 60 frames before the blessing starts.
+team kinich-emilie-xiangling-bennett
+rotation- kinich skill;
+rotation+ kinich skill[hold=60];

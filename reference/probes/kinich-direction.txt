@@ -1,0 +1,4 @@
+# Kinich's Loop Shots in the default direction (-1); the library's rotations shoot with direction=1.
+team kinich-emilie-xiangling-bennett
+rotation- kinich attack[direction=1]:2;
+rotation+ kinich attack:2;

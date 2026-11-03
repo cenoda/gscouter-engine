@@ -1,0 +1,5 @@
+# Kinich's three normal attacks and his charged attack outside the blessing, before his combo.
+team kinich-emilie-xiangling-bennett
+rotation- kinich_combo();
+rotation+ kinich attack:3, charge;
+rotation+ kinich_combo();

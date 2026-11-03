@@ -1,0 +1,4 @@
+# Kinich's Scalespiker Cannon tapped (released at 35, the blind spot 5 frames later); the library's rotations hold it.
+team kinich-emilie-xiangling-bennett
+rotation- kinich skill[hold=1];
+rotation+ kinich skill;

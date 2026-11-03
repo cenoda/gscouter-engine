@@ -1,0 +1,3 @@
+# Kinich C2: the first cannon of a blessing DMG +100% and radius 5, and the skill's dendro shred; the library builds are all C0.
+team kinich-emilie-xiangling-bennett
+kinich char lvl=90/90 cons=2 talent=9,9,9;

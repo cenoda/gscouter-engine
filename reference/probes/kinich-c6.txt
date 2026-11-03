@@ -1,0 +1,3 @@
+# Kinich C6: a second cannon after the first; the library builds are all C0.
+team kinich-emilie-xiangling-bennett
+kinich char lvl=90/90 cons=6 talent=9,9,9;
