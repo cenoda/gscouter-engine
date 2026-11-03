@@ -1,0 +1,3 @@
+# Ningguang C0: Star Jades capped at 3, A1's free charged attacks and A4's Geo DMG on a dash through the screen.
+team ningguang-albedo-zhongli-bennett
+ningguang char lvl=90/90 cons=0 talent=9,9,9;

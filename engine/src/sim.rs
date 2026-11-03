@@ -4462,6 +4462,30 @@ impl Sim {
         self.emit(Event::ConstructSpawned);
     }
 
+    /// gcsim's Constructs.Destroy: every construct whose key (the frame it
+    /// was made) is `src` is destroyed, calling its OnDestruct; the
+    /// unlimited ones only when no limited one matched.
+    pub fn destroy_construct(&mut self, src: i32) -> bool {
+        let mut ok = false;
+        let mut k = 0;
+        while k < self.constructs.len() {
+            if self.constructs[k].limited && self.constructs[k].src == src {
+                let c = self.constructs.remove(k);
+                ok = true;
+                crate::chars::dispatch::construct_expired(self.chars[c.owner as usize].kind, self, c.owner as usize, c.key);
+            } else {
+                k += 1;
+            }
+        }
+        if ok {
+            return true;
+        }
+        // Moondrifts: their OnDestruct does nothing
+        let n = self.constructs.len();
+        self.constructs.retain(|c| c.limited || c.src != src);
+        self.constructs.len() != n
+    }
+
     /// gcsim's NewNoLimitCons of a Moondrift (OnDestruct does nothing).
     fn new_moondrift(&mut self, x: f64, y: f64, dir: (f64, f64)) {
         let f = self.f;

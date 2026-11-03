@@ -1,0 +1,3 @@
+# Ningguang C4 (C3's burst levels; C4 has no logic in gcsim).
+team ningguang-albedo-zhongli-bennett
+ningguang char lvl=90/90 cons=4 talent=9,9,9;

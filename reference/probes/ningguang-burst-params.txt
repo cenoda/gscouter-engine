@@ -1,0 +1,8 @@
+# Ningguang's burst with jade, screen and travel, and charged attacks with travel.
+team ningguang-albedo-zhongli-bennett
+rotation- ningguang burst, walk;
+rotation+ ningguang burst[jade=4,screen=3,travel=12], walk;
+rotation- } else if .ningguang.jadeCount == 7 && .ningguang.swap.ready {
+rotation-   ningguang charge;
+rotation+ } else if .ningguang.jadeCount == 7 && .ningguang.swap.ready {
+rotation+   ningguang charge[travel=20];

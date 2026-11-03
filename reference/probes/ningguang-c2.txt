@@ -1,0 +1,3 @@
+# Ningguang C2: the screen's end (the burst destroys it) resets the skill's cooldown, at most every 6 s.
+team ningguang-albedo-zhongli-bennett
+ningguang char lvl=90/90 cons=2 talent=9,9,9;
