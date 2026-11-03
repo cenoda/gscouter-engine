@@ -4981,6 +4981,14 @@ impl Sim {
         self.emit(Event::EnergyBurst { on: ci, amount });
     }
 
+    /// gcsim's ConsumeEnergyPartial with no delay: `amount` of the energy,
+    /// and OnEnergyBurst with it.
+    pub fn consume_energy_partial(&mut self, ci: usize, amount: f64) {
+        let c = &mut self.chars[ci];
+        c.energy = (c.energy - amount).max(0.0);
+        self.emit(Event::EnergyBurst { on: ci, amount });
+    }
+
     pub fn consume_energy(&mut self, ci: usize, delay: i32) {
         if delay == 0 {
             self.drain_energy(ci);
