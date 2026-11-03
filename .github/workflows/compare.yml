@@ -87,7 +87,8 @@
 # run on the runners the repository variable HEAVY_RUNS_ON names, as JSON:
 # ["self-hosted","azure"] for the spot VMs reference/azure-runner.sh sets
 # up, so that they do not take the GitHub runners the push jobs need;
-# without it, on GitHub's. They pass compare -j COMPARE_J, which a
+# without it, and on a pull request (whatever its source), on GitHub's.
+# They pass compare -j COMPARE_J, which a
 # self-hosted runner sets so that the runners of one VM share its cores
 # (nproc on GitHub's, as before).
 #
@@ -365,7 +366,7 @@ jobs:
   variants:
     needs: plan
     if: needs.plan.outputs.parts != '[]'
-    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
+    runs-on: ${{ fromJSON(github.event_name != 'pull_request' && vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -424,7 +425,7 @@ jobs:
   buildspace:
     needs: plan
     if: needs.plan.outputs.bs_parts != '[]'
-    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
+    runs-on: ${{ fromJSON(github.event_name != 'pull_request' && vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -483,7 +484,7 @@ jobs:
   pages:
     needs: plan
     if: needs.plan.outputs.pg_parts != '[]'
-    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
+    runs-on: ${{ fromJSON(github.event_name != 'pull_request' && vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -543,7 +544,7 @@ jobs:
   rerun-gcsim:
     needs: plan
     if: needs.plan.outputs.rerun != '[]' && needs.plan.outputs.rerun_shards != '[]'
-    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
+    runs-on: ${{ fromJSON(github.event_name != 'pull_request' && vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -619,7 +620,7 @@ jobs:
     needs: [plan, rerun-gcsim]
     # after the shards, whether they ran (rerun_shards above 1), failed or not
     if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.rerun != '[]' }}
-    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
+    runs-on: ${{ fromJSON(github.event_name != 'pull_request' && vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -699,7 +700,7 @@ jobs:
   warm:
     needs: plan
     if: needs.plan.outputs.warm_parts != '[]'
-    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
+    runs-on: ${{ fromJSON(github.event_name != 'pull_request' && vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false

@@ -12,6 +12,10 @@
 # stay on GitHub's. Each runner here passes compare -j COMPARE_J (default
 # nproc / RUNNERS), so that the runners of one VM share its cores.
 #
+# Give the VM an OS disk of 256 GB or more: each runner keeps its own
+# _work (Gscouter and gcsim clones, cargo target, the restored cache).
+# x86 only: gcsim gives other results on ARM (FMA).
+#
 # Run once as root:
 #   sudo RUNNER_TOKEN=... bash azure-runner.sh
 # RUNNER_TOKEN is a registration token from the repository's Settings →
