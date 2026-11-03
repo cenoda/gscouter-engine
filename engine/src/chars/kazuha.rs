@@ -21,7 +21,9 @@ pub struct State {
     q_tick: AttackEvent,
     q_tick_absorb: AttackEvent,
     /// A4's per-element guard: no second proc in the same frame.
-    a4_icd: [i32; 4],
+    /// One per swirl event gcsim subscribes (pyro, hydro, electro, cryo,
+    /// Stellar Swirl), each with its own ICD.
+    a4_icd: [i32; 5],
 }
 
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
@@ -70,7 +72,7 @@ impl Character for Char {
             q_field_src: 0,
             q_tick: empty,
             q_tick_absorb: empty,
-            a4_icd: [-1; 4],
+            a4_icd: [-1; 5],
         }
     }
 
@@ -310,7 +312,7 @@ impl Character for Char {
     }
 
     /// A4: a swirl by Kazuha gives the party a DMG bonus of the swirled
-    /// element from his EM, for 8 s.
+    /// element from his EM, for 8 s; a Stellar Swirl counts as cryo.
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         let Event::Reaction(r, ev) = *e else { return };
         // only swirls on an enemy
@@ -322,6 +324,7 @@ impl Character for Char {
             Reaction::SwirlHydro => (1, st::HYDROP),
             Reaction::SwirlElectro => (2, st::ELECTROP),
             Reaction::SwirlCryo => (3, st::CRYOP),
+            Reaction::StellarSwirl => (4, st::CRYOP),
             _ => return,
         };
         if ev.info.actor as usize != ci {
@@ -335,7 +338,7 @@ impl Character for Char {
         st.a4_icd[i] = f + 1;
         let dmg = 0.0004 * s.stat_ex(ci, st::EM, true);
         for c in 0..s.chars.len() {
-            s.add_mod(c, Mod::stat(A4[i], stat, dmg, true, true, -1), 60 * 8);
+            s.add_mod(c, Mod::stat(A4[i.min(3)], stat, dmg, true, true, -1), 60 * 8);
         }
     }
 }

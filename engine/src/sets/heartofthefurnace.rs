@@ -1,8 +1,4 @@
 //! Heart of the Furnace, from gcsim's internal/artifacts/heartofthefurnace.
-//!
-//! Its 4-piece also follows Stellar Swirl (gcsim's OnStellarSwirl and its
-//! tags), which the engine never deals: Stellar Swirl is an error. Port
-//! that part with it.
 
 use crate::content::{Event, SetImpl};
 use crate::sim::*;
@@ -42,11 +38,12 @@ impl SetImpl for Set {
         }
     }
 
-    /// A Stellar-Conduct by the wearer, or its Stellar damage: ATK +12% for
+    /// A Stellar-Conduct or Stellar Swirl by the wearer, or its Stellar
+    /// damage: ATK +12% for
     /// it and Stellar DMG +50% for the party, 12 s (hitlag).
     fn event(s: &mut Sim, ci: usize, si: usize, e: &Event) {
         let ev = match *e {
-            Event::Reaction(Reaction::StellarConduct, ev) => ev,
+            Event::Reaction(Reaction::StellarConduct | Reaction::StellarSwirl, ev) => ev,
             Event::EnemyDamage(ev) if ev.info.tag.is_stellar() => ev,
             _ => return,
         };

@@ -64,6 +64,7 @@ impl SetImpl for Set {
             | Reaction::SwirlHydro
             | Reaction::SwirlElectro
             | Reaction::SwirlCryo
+            | Reaction::StellarSwirl
             | Reaction::Spread
             | Reaction::Bloom
             | Reaction::Burgeon

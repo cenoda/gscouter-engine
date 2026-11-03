@@ -85,6 +85,7 @@ fn react_elements(r: Reaction) -> &'static [Element] {
         | Reaction::SwirlHydro
         | Reaction::SwirlElectro
         | Reaction::SwirlCryo
+        | Reaction::StellarSwirl
         | Reaction::Quicken
         | Reaction::Aggravate
         | Reaction::Spread

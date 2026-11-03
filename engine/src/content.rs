@@ -583,6 +583,7 @@ macro_rules! weapons {
             pub fn mod_amount(k: WeaponKind, s: &Sim, ci: usize, on: usize, m: &Mod, out: &mut Stats) -> bool { match k { $(WeaponKind::$kind => $m::Weapon::mod_amount(s, ci, on, m, out)),* } }
             #[inline]
             pub fn attack_mod(k: WeaponKind, s: &Sim, ci: usize, on: usize, m: &Mod, ev: &mut AttackEvent) { match k { $(WeaponKind::$kind => $m::Weapon::attack_mod(s, ci, on, m, ev)),* } }
+            #[inline]
             pub fn react_bonus(k: WeaponKind, s: &Sim, ci: usize, on: usize, m: &Mod, info: &AttackInfo) -> f64 { match k { $(WeaponKind::$kind => $m::Weapon::react_bonus(s, ci, on, m, info)),* } }
             #[inline]
             pub fn event(k: WeaponKind, s: &mut Sim, ci: usize, e: &Event) { match k { $(WeaponKind::$kind => $m::Weapon::event(s, ci, e)),* } }

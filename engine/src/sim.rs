@@ -960,7 +960,7 @@ impl Aura {
     /// gcsim's reduce of the element of slot m: takes up to dur*factor off
     /// every slot of that element (burning is pyro, burning fuel dendro)
     /// and returns the attack durability the largest consumed.
-    fn reduce(&mut self, m: usize, dur: f64, factor: f64) -> f64 {
+    pub(crate) fn reduce(&mut self, m: usize, dur: f64, factor: f64) -> f64 {
         let (a, b) = match m {
             AURA_PYRO => (AURA_PYRO, Some(AURA_BURNING)),
             AURA_DENDRO => (AURA_BURNING_FUEL, Some(AURA_DENDRO)),
@@ -1209,12 +1209,13 @@ pub struct Player {
     pub airborne: Airborne,
 }
 
-/// gcsim's AirborneSource, for the sources the engine has. Xiao's, Venti's,
-/// Kazuha's and Stellar Swirl's come from content not ported.
+/// gcsim's AirborneSource, for the sources the engine has. Xiao's, Venti's
+/// and Kazuha's come from content not ported.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Airborne {
     Grounded,
     Xianyun,
+    StellarSwirl,
 }
 
 /// gcsim's player.XianyunAirborneBuff: the status Xianyun's burst gives
@@ -1864,9 +1865,11 @@ impl Sim {
         self.subscribe(EventKind::Swap, Owner::Core);
         // the Stellar characters' Init sets these flags, which only the
         // fight reads; set before any Init, so that every one sees them
+        if self.chars.iter().any(|c| crate::stellar::enables_stellar_swirl(c.kind)) {
+            self.stellar.swirl = true;
+        }
         if self.chars.iter().any(|c| crate::stellar::enables_stellar(c.kind)) {
             self.stellar.conduct = true;
-            self.stellar.swirl = true;
         }
         for i in 0..n {
             crate::chars::dispatch::init(self.chars[i].kind, self, i);
@@ -4321,6 +4324,17 @@ impl Sim {
     /// 30%, the others 5% each, as the flat damage of one hit owned by
     /// `owner` that crits when the largest did. None without contributors.
     fn lunar_attack(&mut self, contrib: u8, tag: AttackTag, element: Element, abil: &'static str, mult: f64, owner: usize) -> Option<AttackEvent> {
+        self.special_reaction_attack(contrib, tag, element, abil, mult, 1.0, owner)
+    }
+
+    /// gcsim's contributor damage of Lunar reactions and Stellar Swirl
+    /// (calcStellarSwirlDmg): each contributor's CalcSpecialReactionDmg with
+    /// the reaction's multiplier `mult`, times `scale` (Stellar Swirl's
+    /// 0.75 or its detonation's stack multiplier; 1 for Lunar reactions),
+    /// its crit drawn in the characters' order; the largest first, weighted
+    /// 0.6, 0.3, 0.05 and 0.05, into the flat damage of an attack by
+    /// `owner` that crits when the largest did.
+    pub(crate) fn special_reaction_attack(&mut self, contrib: u8, tag: AttackTag, element: Element, abil: &'static str, mult: f64, scale: f64, owner: usize) -> Option<AttackEvent> {
         // (damage, crit) by contribution, in the characters' order
         let mut parts = [(0.0f64, false); 4];
         let mut n = 0;
@@ -4345,7 +4359,7 @@ impl Sim {
             let lvl = self.chars[ci].level;
             // gcsim's CalcSpecialReactionDmg
             let base = crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
-            let mut dmg = (mult * (1.0 + (6.0 * em) / (2000.0 + em) + react) * base * (1.0 + base_bonus) + ev.info.flat_dmg) * (1.0 + ev.elevation as f64 / 1000.0);
+            let mut dmg = scale * ((mult * (1.0 + (6.0 * em) / (2000.0 + em) + react) * base * (1.0 + base_bonus) + ev.info.flat_dmg) * (1.0 + ev.elevation as f64 / 1000.0));
             let mut crit = false;
             if self.rng.float64() <= cr {
                 dmg *= 1.0 + cd;
@@ -4582,7 +4596,7 @@ impl Sim {
             return;
         }
         if self.stellar.swirl && (m == AURA_CRYO || m == AURA_FROZEN) {
-            self.unsupported("stellar swirl");
+            self.try_stellar_swirl(ev, m);
             return;
         }
         let rd = self.enemy.aura.reduce(m, dur, 0.5);
@@ -4700,7 +4714,7 @@ impl Sim {
             return;
         }
         if self.stellar.swirl && m == AURA_CRYO {
-            self.unsupported("stellar swirl");
+            self.unsupported("stellar swirl on the player");
             return;
         }
         if m == AURA_FROZEN {
@@ -5403,6 +5417,10 @@ impl Sim {
         if !self.stellar.fields.is_empty() {
             self.tick_polestar();
         }
+        // the Stellar Vortex, after the fields
+        if self.stellar.vortex.is_some() {
+            self.tick_vortex();
+        }
         // shards last the same 15 s, so they go in the order they came
         if f >= self.next_expiry {
             while self.shards.first().is_some_and(|sh| sh.expiry == f) {
@@ -5652,14 +5670,20 @@ impl Sim {
         ActInfo::new(Frames::Const(f), f, f, AnimState::Walk)
     }
 
-    /// The template character's Jump: airborne with Xianyun's buff, or the
-    /// plain jump (Stellar Swirl's airborne state comes from content not
-    /// ported).
+    /// The template character's Jump: airborne with Xianyun's buff or
+    /// after a Stellar Vortex's detonation, or the plain jump.
     pub fn char_jump(&mut self, ci: usize) -> ActInfo {
         let c = &self.chars[ci];
         if self.mod_active(ci, XIANYUN_AIRBORNE) {
             let (low, high) = if matches!(c.class, WeaponClass::Sword | WeaponClass::Spear) { (5, 9) } else { (4, 8) };
             self.player.airborne = Airborne::Xianyun;
+            return ActInfo::new(Frames::Jump { low, high }, 60, low, AnimState::Jump);
+        }
+        // a Stellar Vortex's detonation in the last 5 s: the same
+        if self.core_status_key(crate::stellar::SSW_AIRBORNE) > 0 {
+            let (low, high) = if matches!(c.class, WeaponClass::Sword | WeaponClass::Spear) { (5, 9) } else { (4, 8) };
+            self.player.airborne = Airborne::StellarSwirl;
+            self.delete_core_status(crate::stellar::SSW_AIRBORNE);
             return ActInfo::new(Frames::Jump { low, high }, 60, low, AnimState::Jump);
         }
         let after_dash = self.player.last.action == Action::Dash;

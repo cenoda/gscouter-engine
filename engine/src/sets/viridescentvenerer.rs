@@ -44,15 +44,25 @@ impl SetImpl for Set {
         s.subscribe(EventKind::EnemyDamage, o);
     }
 
-    /// Swirl DMG +60%, unless amplified or catalyzed: an aggravate on a
-    /// swirl's hit (the AoE of a swirl of the player's electro, landing on a
-    /// quickened enemy) is computed after Catalyzed is set, and gets none.
+    /// Swirl DMG +60% and Stellar Swirl DMG (direct or not) +20%, unless
+    /// amplified or catalyzed: an aggravate on a swirl's hit (the AoE of a
+    /// swirl of the player's electro, landing on a quickened enemy) is
+    /// computed after Catalyzed is set, and gets none.
     fn react_bonus(_: &Sim, _: usize, _: usize, _: usize, _: &Mod, info: &AttackInfo) -> f64 {
-        if !info.amped && info.catalyzed.is_none() && is_swirl(info.tag) { 0.6 } else { 0.0 }
+        if info.amped || info.catalyzed.is_some() {
+            return 0.0;
+        }
+        if is_swirl(info.tag) {
+            0.6
+        } else if info.tag.is_stellar_swirl() {
+            0.2
+        } else {
+            0.0
+        }
     }
 
     /// A swirl by the holder on field shreds the swirled element by 40% for
-    /// 10 s.
+    /// 10 s; a Stellar Swirl shreds cryo.
     fn event(s: &mut Sim, ci: usize, _: usize, e: &Event) {
         let ele = match *e {
             // a swirl on the enemy (not the player's own aura)
@@ -60,7 +70,7 @@ impl SetImpl for Set {
                 Reaction::SwirlPyro => Element::Pyro,
                 Reaction::SwirlHydro => Element::Hydro,
                 Reaction::SwirlElectro => Element::Electro,
-                Reaction::SwirlCryo => Element::Cryo,
+                Reaction::SwirlCryo | Reaction::StellarSwirl => Element::Cryo,
                 _ => return,
             },
             Event::EnemyDamage(ev) if ev.info.actor as usize == ci && is_swirl(ev.info.tag) => ev.info.element,

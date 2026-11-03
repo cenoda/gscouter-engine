@@ -219,17 +219,6 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
             }
         }
     }
-    // A Stellar character (stellar::enables_stellar) turns cryo swirls into
-    // Stellar Swirl, which is not ported: an anemo character with one is an
-    // error (anemo attacks come only from anemo characters among those the
-    // engine has).
-    if p.chars.iter().any(|c| char_kind(char_name(c.key)).is_some_and(crate::stellar::enables_stellar)) {
-        for c in &p.chars {
-            if data::CHARS.iter().any(|d| d.key == char_name(c.key) && Element::from_gcsim(d.element) == Element::Anemo) {
-                errs.push(format!("unsupported: stellar swirl {}", char_name(c.key)));
-            }
-        }
-    }
     let mut chars = Vec::new();
     for c in &p.chars {
         match char_setup(c) {

@@ -206,6 +206,12 @@ pub enum AttackTag {
     DirectLunarCharged,
     DirectLunarBloom,
     DirectLunarCrystallize,
+    /// gcsim's AttackTagReactionStellarSwirl: Stellar Swirl's own damage
+    /// and its vortex's detonation, the sum of their contributions.
+    ReactionStellarSwirl,
+    /// gcsim's AttackTagDirectStellarSwirl: an ability's own hit counted as
+    /// Stellar Swirl DMG, which Radiance: Stellar Swirl makes.
+    DirectStellarSwirl,
 }
 
 impl AttackTag {
@@ -233,18 +239,31 @@ impl AttackTag {
                 | AttackTag::DirectLunarCharged
                 | AttackTag::DirectLunarBloom
                 | AttackTag::DirectLunarCrystallize
+                | AttackTag::ReactionStellarSwirl
+                | AttackTag::DirectStellarSwirl
         )
     }
-    /// gcsim's IsDirect: direct lunar and Stellar damage (the engine has
-    /// Stellar-Conduct's), which takes attack mods and its own formula.
+    /// gcsim's IsDirect: direct lunar and Stellar damage, which takes
+    /// attack mods and its own formula.
     #[inline]
     pub fn is_direct(self) -> bool {
-        matches!(self, AttackTag::DirectStellarConduct | AttackTag::DirectLunarCharged | AttackTag::DirectLunarBloom | AttackTag::DirectLunarCrystallize)
+        matches!(self, AttackTag::DirectStellarConduct | AttackTag::DirectStellarSwirl | AttackTag::DirectLunarCharged | AttackTag::DirectLunarBloom | AttackTag::DirectLunarCrystallize)
     }
-    /// gcsim's IsStellar: of its Stellar tags the engine has only direct
-    /// Stellar-Conduct (Stellar Swirl is an error).
+    /// gcsim's IsStellar: Stellar damage, direct or not.
     pub fn is_stellar(self) -> bool {
-        matches!(self, AttackTag::DirectStellarConduct)
+        matches!(self, AttackTag::DirectStellarConduct | AttackTag::DirectStellarSwirl | AttackTag::ReactionStellarSwirl)
+    }
+    /// gcsim's IsStellarReact.
+    pub fn is_stellar_react(self) -> bool {
+        matches!(self, AttackTag::ReactionStellarSwirl)
+    }
+    /// Stellar Swirl DMG, direct or not (the pair of tags gcsim's content
+    /// lists together).
+    pub fn is_stellar_direct(self) -> bool {
+        matches!(self, AttackTag::DirectStellarConduct | AttackTag::DirectStellarSwirl)
+    }
+    pub fn is_stellar_swirl(self) -> bool {
+        matches!(self, AttackTag::DirectStellarSwirl | AttackTag::ReactionStellarSwirl)
     }
     /// gcsim's IsLunarDirect.
     pub fn is_lunar_direct(self) -> bool {
@@ -307,6 +326,9 @@ pub enum Reaction {
     /// gcsim's OnStellarConduct: superconduct while a Stellar character is
     /// in the team (`Sim::stellar`).
     StellarConduct,
+    /// gcsim's OnStellarSwirl: a cryo or frozen swirl while a character
+    /// that enables it is in the team (`Sim::stellar`).
+    StellarSwirl,
 }
 
 impl Reaction {
@@ -327,6 +349,7 @@ impl Reaction {
             Reaction::Superconduct => &[Element::Electro, Element::Cryo],
             Reaction::CrystallizeCryo => &[Element::Geo, Element::Cryo],
             Reaction::SwirlCryo => &[Element::Anemo, Element::Cryo],
+            Reaction::StellarSwirl => &[Element::Anemo, Element::Cryo],
             Reaction::Aggravate => &[Element::Dendro, Element::Electro],
             Reaction::Spread => &[Element::Dendro],
             Reaction::Quicken => &[Element::Dendro, Element::Electro],
