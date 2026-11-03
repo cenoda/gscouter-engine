@@ -83,6 +83,14 @@
 # adds the run's chunk artifacts (kept a day) to main's cache, and runs
 # nothing else.
 #
+# The long jobs (variants, buildspace, pages, warm, rerun, rerun-gcsim)
+# run on the runners the repository variable HEAVY_RUNS_ON names, as JSON:
+# ["self-hosted","azure"] for the spot VMs reference/azure-runner.sh sets
+# up, so that they do not take the GitHub runners the push jobs need;
+# without it, on GitHub's. They pass compare -j COMPARE_J, which a
+# self-hosted runner sets so that the runners of one VM share its cores
+# (nproc on GitHub's, as before).
+#
 # Caches of one branch must not be saved by two cache jobs at once: each
 # restores the latest and adds its own chunks, so the one saved second
 # would lack the first one's chunks, and the next restore takes only the
@@ -357,7 +365,7 @@ jobs:
   variants:
     needs: plan
     if: needs.plan.outputs.parts != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -389,7 +397,7 @@ jobs:
         run: cargo build --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only variants -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+        run: go run ./compare -j "${COMPARE_J:-$(nproc)}" -gscouter ../gscouter -gse ../engine/target/release/gse -only variants -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -416,7 +424,7 @@ jobs:
   buildspace:
     needs: plan
     if: needs.plan.outputs.bs_parts != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -448,7 +456,7 @@ jobs:
         run: cargo build --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only buildspace -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.BS_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+        run: go run ./compare -j "${COMPARE_J:-$(nproc)}" -gscouter ../gscouter -gse ../engine/target/release/gse -only buildspace -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.BS_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -475,7 +483,7 @@ jobs:
   pages:
     needs: plan
     if: needs.plan.outputs.pg_parts != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -507,7 +515,7 @@ jobs:
         run: cargo build --release
       - name: Compare with gcsim
         working-directory: reference
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only pages -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.PG_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+        run: go run ./compare -j "${COMPARE_J:-$(nproc)}" -gscouter ../gscouter -gse ../engine/target/release/gse -only pages -sample 4 -deadline 280m -shard ${{ matrix.part }}/${{ env.PG_PARTS }} -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -535,7 +543,7 @@ jobs:
   rerun-gcsim:
     needs: plan
     if: needs.plan.outputs.rerun != '[]' && needs.plan.outputs.rerun_shards != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -581,7 +589,7 @@ jobs:
           lo=$(( c * SHARD / SHARDS * 500 ))
           hi=$(( c * (SHARD + 1) / SHARDS * 500 ))
           echo "build: $b, iterations $lo to $hi"
-          go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -builds "$b" -gcsim-only -seeds "$lo:$hi" -deadline 300m -cache "$GCSIM_CACHE" -json ../warm.json -md ../warm.md
+          go run ./compare -j "${COMPARE_J:-$(nproc)}" -gscouter ../gscouter -gse ../engine/target/release/gse -builds "$b" -gcsim-only -seeds "$lo:$hi" -deadline 300m -cache "$GCSIM_CACHE" -json ../warm.json -md ../warm.md
       - name: Summary
         if: always()
         run: test -f warm.md && cat warm.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -611,7 +619,7 @@ jobs:
     needs: [plan, rerun-gcsim]
     # after the shards, whether they ran (rerun_shards above 1), failed or not
     if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.rerun != '[]' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -664,7 +672,7 @@ jobs:
         run: |
           b=$(printf %s "$RERUN" | tr -d "[:space:]" | cut -d, -f$(( ${{ matrix.part }} + 1 )))
           echo "build: $b"
-          go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -builds "$b" -max-iter "$RERUN_MAX" -deadline 300m -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
+          go run ./compare -j "${COMPARE_J:-$(nproc)}" -gscouter ../gscouter -gse ../engine/target/release/gse -builds "$b" -max-iter "$RERUN_MAX" -deadline 300m -cache "$GCSIM_CACHE" -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && sed '/^## Unsupported/,$d' compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -691,7 +699,7 @@ jobs:
   warm:
     needs: plan
     if: needs.plan.outputs.warm_parts != '[]'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.HEAVY_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 355
     strategy:
       fail-fast: false
@@ -722,7 +730,7 @@ jobs:
         env:
           WARM: ${{ needs.plan.outputs.warm }}
           SHARDS: ${{ strategy.job-total }}
-        run: go run ./compare -gscouter ../gscouter -gcsim-only -teams "$WARM" -only library,variants,probes -sample 4 -shard ${{ matrix.part }}/$SHARDS -cache "$GCSIM_CACHE" -json ../warm.json -md ../warm.md
+        run: go run ./compare -j "${COMPARE_J:-$(nproc)}" -gscouter ../gscouter -gcsim-only -teams "$WARM" -only library,variants,probes -sample 4 -shard ${{ matrix.part }}/$SHARDS -cache "$GCSIM_CACHE" -json ../warm.json -md ../warm.md
       - name: Summary
         if: always()
         run: test -f warm.md && cat warm.md >> "$GITHUB_STEP_SUMMARY" || true
