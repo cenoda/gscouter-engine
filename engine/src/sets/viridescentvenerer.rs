@@ -44,9 +44,11 @@ impl SetImpl for Set {
         s.subscribe(EventKind::EnemyDamage, o);
     }
 
-    /// Swirl DMG +60%, unless amplified.
+    /// Swirl DMG +60%, unless amplified or catalyzed: an aggravate on a
+    /// swirl's hit (the AoE of a swirl of the player's electro, landing on a
+    /// quickened enemy) is computed after Catalyzed is set, and gets none.
     fn react_bonus(_: &Sim, _: usize, _: usize, _: usize, _: &Mod, info: &AttackInfo) -> f64 {
-        if !info.amped && is_swirl(info.tag) { 0.6 } else { 0.0 }
+        if !info.amped && info.catalyzed.is_none() && is_swirl(info.tag) { 0.6 } else { 0.0 }
     }
 
     /// A swirl by the holder on field shreds the swirled element by 40% for
