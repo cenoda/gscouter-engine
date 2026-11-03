@@ -1,0 +1,3 @@
+# Yaoyao C0: no constellations (the library build is C6).
+team nilou-xingqiu-nahida-yaoyao
+yaoyao char lvl=90/90 cons=0 talent=9,9,9;

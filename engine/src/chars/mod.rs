@@ -78,6 +78,7 @@ crate::chars! {
     Lanyan => lanyan,
     Columbina => columbina,
     Charlotte => charlotte,
+    Yaoyao => yaoyao,
     Xiao => xiao,
     Eula => eula,
     Freminet => freminet,

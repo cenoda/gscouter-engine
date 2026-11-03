@@ -1,0 +1,3 @@
+# Yaoyao C4: EM from her max HP after skill and burst.
+team nilou-xingqiu-nahida-yaoyao
+yaoyao char lvl=90/90 cons=4 talent=9,9,9;

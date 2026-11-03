@@ -1,0 +1,4 @@
+# Yaoyao: a charged attack after a normal one (no library rotation uses it).
+team nilou-xingqiu-nahida-yaoyao
+rotation- yaoyao burst, dash,
+rotation+ yaoyao attack, charge, burst, dash,
