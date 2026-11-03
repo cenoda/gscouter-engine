@@ -1,0 +1,3 @@
+# Kaeya C4: a shield below 20% HP on a drain (nothing drains Kaeya here).
+team ganyu-furina-kaeya-escoffier
+kaeya char lvl=90/90 cons=4 talent=9,9,9;

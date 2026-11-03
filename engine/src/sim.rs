@@ -1358,6 +1358,7 @@ pub enum ShieldType {
     BeidouC1,
     LanyanShield,
     ColumbinaC1,
+    KaeyaC4,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -2491,6 +2492,14 @@ impl Sim {
         match self.flags.iter_mut().find(|f| f.0 == key) {
             Some(f) => f.1 = v,
             None => self.flags.push((key, v)),
+        }
+    }
+
+    /// gcsim's Status.Extend: a status still active lasts amt frames longer.
+    pub fn extend_core_status(&mut self, key: ModKey, amt: i32) {
+        let f = self.f;
+        if let Some(s) = self.statuses.iter_mut().find(|s| s.0 == key && s.1 > f) {
+            s.1 += amt;
         }
     }
 

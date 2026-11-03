@@ -1,0 +1,3 @@
+# Kaeya C2: a kill extends the burst (damage mode only; the library fights do not kill).
+team ganyu-furina-kaeya-escoffier
+kaeya char lvl=90/90 cons=2 talent=9,9,9;
