@@ -101,8 +101,8 @@ pub enum Event<'a> {
     /// the hit through `Sim::hit_flat`, and changes its crit through
     /// `Sim::hit_crit`.
     EnemyHit(&'a AttackEvent),
-    /// OnPlayerHit: the active character was hit.
-    PlayerHit { on: usize },
+    /// OnPlayerHit: the active character was hit, by an attack of `ele`.
+    PlayerHit { on: usize, ele: Element },
     /// OnShielded: a shield was added (or replaced one of its type).
     Shielded(&'a crate::sim::Shield),
     /// OnShieldBreak: a shield broke or expired.
@@ -370,7 +370,7 @@ pub trait WeaponImpl {
         false
     }
     fn attack_mod(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _ev: &mut AttackEvent) {}
-    /// A reaction bonus mod the weapon owns, on character `on`.
+    /// A ReactBonusMod it owns: the bonus to a reaction of character `on`.
     fn react_bonus(_s: &Sim, _ci: usize, _on: usize, _m: &Mod, _info: &AttackInfo) -> f64 {
         0.0
     }

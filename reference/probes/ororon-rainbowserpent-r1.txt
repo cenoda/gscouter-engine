@@ -1,0 +1,3 @@
+# Ororon with Rainbow Serpent's Rainbow R1.
+team chasca-ineffa-columbina-ororon
+ororon add weapon="rainbowserpentsrainbow" refine=1 lvl=90/90;

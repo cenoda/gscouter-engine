@@ -639,7 +639,8 @@ pub enum Task {
     /// A dendro core's attack: bloom, burgeon or hyperbloom, by actor; its area
     /// (in the pattern of the attack in slot `area`) reaches the player or not
     /// when it lands.
-    CoreAttack { kind: AttackTag, actor: u8, area: u16 },
+    /// A core's attack lands; `bountiful` for Nilou's Bountiful Core.
+    CoreAttack { kind: AttackTag, actor: u8, area: u16, bountiful: bool },
     PlayerIcdResetDmg { i: u16 },
     /// An attack that reaches only gadgets (swirl's aoe).
     GadgetAttack { slot: u16 },
@@ -1342,6 +1343,8 @@ pub struct Gadget {
 
 /// The owner of dendro cores, which belong to no character.
 pub const CORE: u8 = u8::MAX;
+/// Gadget id of a core Nilou's A1 made Bountiful (owner CORE).
+pub const BOUNTIFUL_CORE: u8 = 1;
 
 /// gcsim's shield.Type, for the shields the engine makes: a new shield
 /// replaces the one of its type with the same target.
@@ -2359,8 +2362,8 @@ impl Sim {
     /// OnPlayerHit on character `on` (the active character when the player
     /// is hit; Dehya's Redmane's Blood names her), with gcsim's shield
     /// stats collector, which subscribes to it.
-    pub fn player_hit_event(&mut self, on: usize) {
-        self.emit(Event::PlayerHit { on });
+    pub fn player_hit_event(&mut self, on: usize, ele: Element) {
+        self.emit(Event::PlayerHit { on, ele });
         // the shield stats collector looks at the shields at the end of
         // the frame (its ShieldBonus drops the mods that are done)
         if !self.shield_bonus_mods.is_empty() {
@@ -2597,7 +2600,7 @@ impl Sim {
             Task::BurningTick { src, counter } => self.burning_tick(src, counter),
             Task::QuickenBloom { slot } => self.quicken_bloom(slot),
             Task::SpawnCore { slot } => self.spawn_core(slot),
-            Task::CoreAttack { kind, actor, area } => self.core_attack(kind, actor as usize, area),
+            Task::CoreAttack { kind, actor, area, bountiful } => self.core_attack(kind, actor as usize, area, bountiful),
             Task::GadgetAttack { slot } => {
                 let ev = self.slots[slot as usize];
                 self.free.push(slot);
@@ -3718,7 +3721,7 @@ impl Sim {
         }
         if count == 5 {
             let g = self.gadgets.remove(oldest.unwrap());
-            self.core_explode(g.actor, g.x, g.y);
+            self.core_explode(g.actor, g.x, g.y, g.id == BOUNTIFUL_CORE);
         }
         let f = self.f;
         self.push_gadget(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true, key: 0 });
@@ -3730,10 +3733,22 @@ impl Sim {
     }
 
     /// A core expired or was killed: its bloom 1 frame later, a circle of
-    /// radius 5 on it.
-    fn core_explode(&mut self, actor: u8, x: f64, y: f64) {
-        let area = self.core_area(Pattern::Circle { x, y, r: 5.0 });
-        self.add_task(Task::CoreAttack { kind: AttackTag::Bloom, actor, area }, 1);
+    /// radius 5 on it (6.5 for a Bountiful Core).
+    fn core_explode(&mut self, actor: u8, x: f64, y: f64, bountiful: bool) {
+        let r = if bountiful { 6.5 } else { 5.0 };
+        let area = self.core_area(Pattern::Circle { x, y, r });
+        self.add_task(Task::CoreAttack { kind: AttackTag::Bloom, actor, area, bountiful }, 1);
+    }
+
+    /// Nilou's A1 replaces the core just made (gadget key) with a Bountiful
+    /// Core in its place: same key, place and source frame, 24 frames, no
+    /// hyperbloom or burgeon, and its own explosion (newBountifulCore).
+    pub fn make_bountiful(&mut self, key: u32) {
+        if let Some(g) = self.gadgets.iter_mut().find(|g| g.key == key && g.owner == CORE) {
+            g.id = BOUNTIFUL_CORE;
+            g.duration = 24;
+            g.timer = 0;
+        }
     }
 
     /// A slot holding a core attack's area until it lands.
@@ -3746,10 +3761,11 @@ impl Sim {
     /// The attack of a core: bloom (2), burgeon (3) or hyperbloom (3) times
     /// the attacker's reaction damage, and 2% of it to the player when its
     /// area reaches the player, where the player is when it lands.
-    fn core_attack(&mut self, kind: AttackTag, actor: usize, area: u16) {
+    fn core_attack(&mut self, kind: AttackTag, actor: usize, area: u16, bountiful: bool) {
         let on_player = self.hits_player(self.slots[area as usize].info.pattern);
         self.free.push(area);
         let (icd_tag, abil, mult) = match kind {
+            AttackTag::Bloom if bountiful => (icd::TAG_BOUNTIFUL_CORE_DAMAGE, "bloom", 2.0),
             AttackTag::Bloom => (icd::TAG_BLOOM_DAMAGE, "bloom", 2.0),
             AttackTag::Burgeon => (icd::TAG_BURGEON_DAMAGE, "burgeon", 3.0),
             _ => (icd::TAG_HYPERBLOOM_DAMAGE, "hyperbloom", 3.0),
@@ -3813,7 +3829,8 @@ impl Sim {
         while k < self.gadgets.len() {
             let g = self.gadgets[k];
             if g.owner == CORE {
-                if cores_react {
+                // a Bountiful Core's HandleAttack only emits OnGadgetHit
+                if cores_react && g.id != BOUNTIFUL_CORE {
                     match ev.info.pattern.hits_gadget(&g, 2.0) {
                         None => {
                             let who = crate::gcsl::char_name(self.chars[ev.info.actor as usize].key);
@@ -3841,11 +3858,11 @@ impl Sim {
             // a circle of radius 1 on the enemy (the closest within 15 of
             // the core, always the enemy: the core is 0.5 beyond its edge)
             let area = self.core_area(self.circle_on_target(1.0));
-            self.add_task(Task::CoreAttack { kind: AttackTag::Hyperbloom, actor, area }, 60);
+            self.add_task(Task::CoreAttack { kind: AttackTag::Hyperbloom, actor, area, bountiful: false }, 60);
             self.emit(Event::Reaction(Reaction::Hyperbloom, ev));
         } else {
             let area = self.core_area(Pattern::Circle { x: g.x, y: g.y, r: 5.0 });
-            self.add_task(Task::CoreAttack { kind: AttackTag::Burgeon, actor, area }, 1);
+            self.add_task(Task::CoreAttack { kind: AttackTag::Burgeon, actor, area, bountiful: false }, 1);
             self.emit(Event::Reaction(Reaction::Burgeon, ev));
         }
     }
@@ -3855,7 +3872,7 @@ impl Sim {
     /// the player, and it does not count as damage.
     fn player_hit(&mut self, mut ev: AttackEvent) {
         let active = self.player.active as usize;
-        self.player_hit_event(active);
+        self.player_hit_event(active, ev.info.element);
         let s = &mut ev.stats;
         let st_ele = ev.info.element.dmg_stat();
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
@@ -4559,7 +4576,7 @@ impl Sim {
             }
             if core {
                 if expired {
-                    self.core_explode(actor, gx, gy);
+                    self.core_explode(actor, gx, gy, id == BOUNTIFUL_CORE);
                 }
             } else {
                 crate::chars::dispatch::gadget_tick(self.chars[owner].kind, self, owner, id, timer);

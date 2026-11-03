@@ -1,0 +1,3 @@
+# Jean with Prototype Rancour R1.
+team jean-rosaria-fischl-beidou
+jean add weapon="prototyperancour" refine=1 lvl=90/90;

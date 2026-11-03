@@ -1,0 +1,3 @@
+# Sandrone with A Teaspoon of Transcendence R5.
+team sandrone-beidou-diona-xilonen
+sandrone add weapon="ateaspoonoftranscendence" refine=5 lvl=90/90;

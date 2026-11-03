@@ -235,7 +235,7 @@ fn self_dot(s: &mut Sim, ci: usize) {
     ai.abil = g::SKILL_SELF_DO_T_ABIL;
     ai.flat_dmg = dmg;
     let _ = s.snapshot_event(ai, 0);
-    s.player_hit_event(ci);
+    s.player_hit_event(ci, Element::Physical);
     let left = s.shields_on_damage(ci, active, dmg, Element::Physical);
     if left > 0.0 {
         s.drain_info(ci, left, true, g::SKILL_SELF_DO_T_ABIL);
@@ -516,7 +516,7 @@ impl Character for Char {
                 s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_A4_HEAL, arg: 0 }, g::A4_DO_T_HEAL_INTERVAL);
             }
             // C2: the active character hit inside the field
-            Event::PlayerHit { on } => {
+            Event::PlayerHit { on, .. } => {
                 if on == s.player.active as usize && s.mod_active(ci, FIELD) && s.player_within(st(s, ci).skill_area) {
                     st_mut(s, ci).has_c2_buff = true;
                 }
