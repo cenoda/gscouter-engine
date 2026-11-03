@@ -40,6 +40,9 @@ WORK=${WORK:-/root/warm}
 API=https://api.github.com/repos/$REPO
 UPLOADS=https://uploads.github.com/repos/$REPO
 
+# a startup script may run without HOME, and go needs it for its caches
+export HOME=${HOME:-/root}
+export GOPATH=${GOPATH:-$HOME/go}
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -q && apt-get install -yq git curl jq tar gzip bc ca-certificates
 
@@ -58,7 +61,9 @@ export PATH=/usr/local/go/bin:$PATH GOFLAGS=-mod=mod
 gh() { curl -sSf -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$@"; }
 
 # the prerelease first, so that a bad token stops here, in minutes
-REL=$(gh -X POST "$API/releases" -d "$(jq -n --arg t "$TAG" --arg c "$(git -C engine rev-parse HEAD)" \
+# a rerun with the same TAG keeps its prerelease
+REL=$(gh "$API/releases/tags/$TAG" 2>/dev/null | jq -r .id || true)
+[ -n "$REL" ] && [ "$REL" != null ] || REL=$(gh -X POST "$API/releases" -d "$(jq -n --arg t "$TAG" --arg c "$(git -C engine rev-parse HEAD)" \
 	'{tag_name:$t, target_commitish:$c, name:$t, prerelease:true, body:"gcsim cache made by reference/warm-host.sh (outside CI). Add it to main'"'"'s cache: run compare.yml on main with import_release set to this tag."}')" | jq -r .id)
 upload() { # file, name: replaces the asset of that name
 	local old
