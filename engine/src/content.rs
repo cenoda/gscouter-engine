@@ -308,6 +308,10 @@ pub trait Character {
     fn own_jump(_s: &mut Sim, _ci: usize, _p: &Params) -> Option<ActInfo> {
         None
     }
+    /// Its own Walk (gcsim's override of Walk): None for the template's.
+    fn own_walk(_s: &mut Sim, _ci: usize, _p: &Params) -> Option<ActInfo> {
+        None
+    }
     /// Its own part of a dash or jump (gcsim's override of Dash or Jump),
     /// run before the template's.
     fn template_action(_s: &mut Sim, _ci: usize, _a: Action) {}
@@ -514,6 +518,7 @@ macro_rules! chars {
             pub fn start_delay(k: CharKind, s: &Sim, ci: usize, key: usize) -> Option<i32> { match k { $(CharKind::$kind => $m::Char::start_delay(s, ci, key)),* } }
             pub fn own_dash(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_dash(s, ci, p)),* } }
             pub fn own_jump(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_jump(s, ci, p)),* } }
+            pub fn own_walk(k: CharKind, s: &mut Sim, ci: usize, p: &Params) -> Option<ActInfo> { match k { $(CharKind::$kind => $m::Char::own_walk(s, ci, p)),* } }
             pub fn template_action(k: CharKind, s: &mut Sim, ci: usize, a: Action) { match k { $(CharKind::$kind => $m::Char::template_action(s, ci, a)),* } }
             pub fn pre_drain(k: CharKind, s: &mut Sim, ci: usize, on: usize, amount: f64, external: bool, abil: &'static str) -> f64 { match k { $(CharKind::$kind => $m::Char::pre_drain(s, ci, on, amount, external, abil)),* } }
             pub fn frames_live(k: CharKind, s: &Sim, ci: usize, id: u8, arg: i16, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames_live(s, ci, id, arg, next)),* } }

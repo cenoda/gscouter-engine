@@ -5586,10 +5586,10 @@ impl Sim {
                     self.char_jump(ci)
                 }
             },
-            Action::Walk => {
-                let f = p.get("f").unwrap_or(1) as i32;
-                ActInfo::new(Frames::Const(f), f, f, AnimState::Walk)
-            }
+            Action::Walk => match chars::dispatch::own_walk(kind, self, ci, p) {
+                Some(info) => info,
+                None => self.char_walk(p),
+            },
             _ => unreachable!("unsupported action {a:?}"),
         };
         self.set_action_used(info);
@@ -5627,10 +5627,16 @@ impl Sim {
         }
     }
 
+    /// The template character's Walk.
+    pub fn char_walk(&self, p: &Params) -> ActInfo {
+        let f = p.get("f").unwrap_or(1) as i32;
+        ActInfo::new(Frames::Const(f), f, f, AnimState::Walk)
+    }
+
     /// The template character's Jump: airborne with Xianyun's buff, or the
     /// plain jump (Stellar Swirl's airborne state comes from content not
     /// ported).
-    fn char_jump(&mut self, ci: usize) -> ActInfo {
+    pub fn char_jump(&mut self, ci: usize) -> ActInfo {
         let c = &self.chars[ci];
         if self.mod_active(ci, XIANYUN_AIRBORNE) {
             let (low, high) = if matches!(c.class, WeaponClass::Sword | WeaponClass::Spear) { (5, 9) } else { (4, 8) };

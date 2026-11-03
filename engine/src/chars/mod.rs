@@ -87,6 +87,7 @@ crate::chars! {
     Tighnari => tighnari,
     Dori => dori,
     Varesa => varesa,
+    Wanderer => wanderer,
 }
 
 /// The characters whose modules have been checked against gcsim for a
