@@ -63,8 +63,9 @@ pub enum EventKind {
     SpecialReactionAttack,
     DendroCore,
     TargetDied,
+    ActionExec,
 }
-pub const N_EVENTS: usize = 26;
+pub const N_EVENTS: usize = 27;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -132,6 +133,9 @@ pub enum Event<'a> {
     /// OnTargetDied: the enemy died (damage mode), with the attack that
     /// killed it.
     TargetDied(&'a AttackEvent),
+    /// OnActionExec: the active character executed this action (after
+    /// it ran).
+    ActionExec(Action),
 }
 
 impl Event<'_> {
@@ -163,6 +167,7 @@ impl Event<'_> {
             Event::SpecialReactionAttack(_) => EventKind::SpecialReactionAttack,
             Event::DendroCore { .. } => EventKind::DendroCore,
             Event::TargetDied(_) => EventKind::TargetDied,
+            Event::ActionExec(_) => EventKind::ActionExec,
         }
     }
 }

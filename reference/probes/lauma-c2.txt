@@ -1,0 +1,3 @@
+# Lauma at C2, Ascendant Gleam.
+team columbina-ineffa-lauma-nahida
+lauma char lvl=90/90 cons=2 talent=9,9,9;

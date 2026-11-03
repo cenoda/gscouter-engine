@@ -1,0 +1,3 @@
+# Lauma at C6, Nascent Gleam, on blooms.
+team neuvillette-furina-lauma-xilonen
+lauma char lvl=90/90 cons=6 talent=9,9,9;

@@ -279,7 +279,8 @@ impl Character for Char {
             // attack mod, C2_LUNAR_BLOOM.)
             Event::EnemyHit(ev) => {
                 if matches!(ev.info.tag, AttackTag::BurningDamage | AttackTag::Bloom | AttackTag::Hyperbloom | AttackTag::Burgeon) && s.enemy_status_active(MARK) {
-                    s.hit_crit = Some((0.2, 1.0));
+                    // with other subscribers' (Lauma's A1): rates add, CRIT DMG is set
+                    s.hit_crit = Some((s.hit_crit.map_or(0.0, |c| c.0) + 0.2, 1.0));
                 }
             }
             // bloom, hyperbloom and burgeon damage

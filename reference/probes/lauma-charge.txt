@@ -1,0 +1,4 @@
+# Lauma's Spirit Envoy, then a charged attack, then normal attacks.
+team columbina-ineffa-lauma-nahida
+rotation-   lauma attack, skill[hold=.dew>0], burst;
+rotation+   lauma charge, charge, attack:2, skill[hold=.dew>0], burst;

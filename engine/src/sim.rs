@@ -496,6 +496,8 @@ pub struct AttackInfo {
     pub use_def: bool,
     /// gcsim's UseHP: the damage scales with max HP (checked first).
     pub use_hp: bool,
+    /// gcsim's UseEM: the damage scales with EM (direct lunar DMG).
+    pub use_em: bool,
     /// gcsim's AdditionalTags, as `add_tag` bits.
     pub add_tags: u8,
     /// gcsim's HitWeakPoint: it always crits, without a random draw.
@@ -551,6 +553,7 @@ impl AttackInfo {
             pattern: Pattern::Unknown,
             use_def: false,
             use_hp: false,
+            use_em: false,
             add_tags: 0,
             weak_point: false,
             no_impulse: false,
@@ -1538,6 +1541,9 @@ pub struct Sim {
     /// CRIT Rate an EnemyHit subscriber adds to the hit and the CRIT DMG it
     /// sets (Nahida's C2 on reaction damage).
     pub hit_crit: Option<(f64, f64)>,
+    /// Elevation (thousandths) EnemyHit subscribers add to the hit
+    /// (Lauma's C6 on direct Lunar-Bloom).
+    pub hit_elevation: u16,
     /// BaseDmgBonus SpecialReactionAttack subscribers add to a lunar
     /// contribution (Ineffa on Lunar-Charged).
     pub special_base_bonus: f64,
@@ -1690,6 +1696,7 @@ impl Sim {
             hit_mult: 1.0,
             stellar: Default::default(),
             hit_crit: None,
+            hit_elevation: 0,
             special_base_bonus: 0.0,
             emit_sub: 0,
             special_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0), 0),
@@ -2476,6 +2483,11 @@ impl Sim {
         self.flags.retain(|f| f.0 != key);
     }
 
+    /// Lunar-Bloom for the fight (gcsim's LunarBloomEnableKey).
+    pub fn enable_lunar_bloom(&mut self) {
+        self.set_flag(LUNAR_BLOOM, 1.0);
+    }
+
     /// Lunar-Bloom and Lunar-Crystallize for the fight (gcsim's
     /// LunarBloomEnableKey and LunarCrystallizeEnableKey).
     pub fn enable_lunar_bloom_crystallize(&mut self) {
@@ -2836,7 +2848,8 @@ impl Sim {
                 // a subscriber can apply an attack inside the emit (an
                 // attack queued with no delay, as Escoffier's C6 with
                 // travel 0): keep the outer hit's accumulators
-                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp);
+                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation);
+                self.hit_elevation = 0;
                 self.hit_flat = 0.0;
                 self.hit_ignore_def = 0.0;
                 self.hit_crit = None;
@@ -2847,6 +2860,7 @@ impl Sim {
                 ev.stats[st::DMGP] += self.hit_dmgp;
                 ev.info.flat_dmg += self.hit_flat;
                 ev.info.ignore_def += self.hit_ignore_def;
+                ev.elevation += self.hit_elevation;
                 base_bonus = self.hit_base_bonus;
                 if let Some((cr, cd)) = self.hit_crit {
                     ev.stats[st::CR] += cr;
@@ -2855,7 +2869,7 @@ impl Sim {
                 if self.hit_mult != 1.0 {
                     ev.info.mult *= self.hit_mult;
                 }
-                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp) = outer;
+                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation) = outer;
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }
@@ -4729,7 +4743,7 @@ impl Sim {
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
         // reaction damage takes no DMG bonus
         let dmg_bonus = if ev.info.tag.is_reaction() { 0.0 } else { ele_per + s[st::DMGP] };
-        let a = if ev.info.use_hp { max_hp(s) } else if ev.info.use_def { total_def(s) } else { total_atk(s) };
+        let a = if ev.info.use_hp { max_hp(s) } else if ev.info.use_def { total_def(s) } else if ev.info.use_em { s[st::EM] } else { total_atk(s) };
         let base = ev.info.mult * a * (1.0 + base_bonus) + ev.info.flat_dmg;
         let mut damage = base * (1.0 + dmg_bonus);
         s[st::CR] = s[st::CR].clamp(0.0, 1.0);
@@ -4770,7 +4784,7 @@ impl Sim {
     fn calc_direct(&mut self, ev: &mut AttackEvent, grp: f64, base_bonus: f64) -> (f64, bool) {
         let actor = ev.info.actor as usize;
         let s = &ev.stats;
-        let a = if ev.info.use_hp { max_hp(s) } else if ev.info.use_def { total_def(s) } else { total_atk(s) };
+        let a = if ev.info.use_hp { max_hp(s) } else if ev.info.use_def { total_def(s) } else if ev.info.use_em { s[st::EM] } else { total_atk(s) };
         let mut damage = ev.info.mult * a * (1.0 + base_bonus);
         damage *= match ev.info.tag {
             AttackTag::DirectLunarCharged => 3.0,
@@ -5568,6 +5582,10 @@ impl Sim {
                 c.normal_counter = 0;
                 c.normal_s_counter = 0;
             }
+        }
+        // OnActionExec, after the action (Lauma's Spirit Envoy ends on it)
+        if !self.subs[EventKind::ActionExec as usize].is_empty() {
+            self.emit(Event::ActionExec(a));
         }
     }
 

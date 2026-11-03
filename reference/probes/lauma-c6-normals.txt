@@ -1,0 +1,5 @@
+# Lauma at C6 with a charged attack and normal attacks in Pale Hymn.
+team columbina-ineffa-lauma-nahida
+lauma char lvl=90/90 cons=6 talent=9,9,9;
+rotation-   lauma attack, skill[hold=.dew>0], burst;
+rotation+   lauma skill[hold=.dew>0], burst, charge, attack:3;
