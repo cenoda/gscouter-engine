@@ -1444,6 +1444,9 @@ pub struct Sim {
     pub ignore_burst_energy: bool,
     /// Frames to wait before the next action (gcsim's preActionDelay).
     pub pre_delay: i32,
+    /// An action's error from gcsim's Exec, raised when the action runs,
+    /// after its wait (Sethos's aim in burst reads the burst then).
+    pub exec_err: Option<String>,
     /// Particle delay by character (set_particle_delay).
     pub particle_delay: [i32; 4],
     /// The swap cooldown a swap starts (set_swap_icd).
@@ -1653,6 +1656,7 @@ impl Sim {
             defhalt: cfg.defhalt,
             ignore_burst_energy: cfg.ignore_burst_energy,
             pre_delay: 0,
+            exec_err: None,
             particle_delay: [100; 4],
             swap_icd: 60,
             starts: cfg.chars.iter().map(|c| (c.start_hp, c.start_hp_ratio)).collect(),
@@ -5718,6 +5722,13 @@ impl Sim {
         }
         if a == Action::Swap && self.player.active as usize == c {
             return true;
+        }
+        // gcsim's Exec: an action that cannot be used now stops the fight;
+        // a swap asks the active character
+        let (who, wa, wp) = if a == Action::Swap { (self.player.active as usize, Action::Swap, &Params::default()) } else { (c, a, p) };
+        if let Some(why) = crate::chars::dispatch::invalid(self.chars[who].kind, self, who, wa, wp) {
+            self.exec_err = Some(format!("{}: {why}", crate::gcsl::char_name(self.chars[who].key)));
+            return false;
         }
         self.wait_done(self.player.active as usize, a as usize);
         self.exec(c, a, p);

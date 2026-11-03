@@ -60,6 +60,7 @@ crate::chars! {
     Dehya => dehya,
     Chasca => chasca,
     Ganyu => ganyu,
+    Sethos => sethos,
     Ayaka => ayaka,
     Albedo => albedo,
     Layla => layla,
