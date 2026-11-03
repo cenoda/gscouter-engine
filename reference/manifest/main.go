@@ -53,6 +53,11 @@ type metric struct {
 	Gse    float64 `json:"gse"`
 	Diff   float64 `json:"diff"`
 	DiffSE float64 `json:"diff_se"`
+	// Minor is a character below compare's -char-share of the team's
+	// DPS: reported, not judged. Settled is a verdict decided by its
+	// estimate at -max-iter, its interval still across the bound.
+	Minor   bool `json:"minor"`
+	Settled bool `json:"settled"`
 }
 
 type report struct {
@@ -80,6 +85,11 @@ type Manifest struct {
 	// build compared, with its standard error: an error the whole engine
 	// shares a little of, which no build's verdict shows.
 	Drift Drift `json:"drift"`
+	// DriftByKind is Drift over each kind of build alone.
+	DriftByKind map[string]Drift `json:"drift_by_kind"`
+	// GroupALimit is the bound on a team's difference for group A
+	// (summary.go), recorded with the groups it drew.
+	GroupALimit float64 `json:"group_a_limit"`
 }
 
 type Drift struct {
@@ -110,74 +120,67 @@ type Team struct {
 	// DPS on both engines, for the owner, who approves each team that
 	// moves to the engine.
 	Scores []Score `json:"scores,omitempty"`
+	// Settled counts the team's builds with a settled verdict.
+	Settled int `json:"settled,omitempty"`
+	// Group is a verified team's group for the owner's answer: "A"
+	// (approved at once) or "B" (one by one), with GroupWhy for B
+	// (summary.go).
+	Group    string   `json:"group,omitempty"`
+	GroupWhy []string `json:"group_why,omitempty"`
 }
 
 // Score is one build's team DPS on gcsim and the engine, with the 95%
-// half-width of their difference, and the character whose DPS differs
-// most.
+// half-width of their difference, and the judged character whose DPS
+// differs most; the minor characters (below compare's -char-share, not
+// judged) have their own, shown apart.
 type Score struct {
-	Build      string  `json:"build"`
-	Iterations int     `json:"iterations"`
-	Gcsim      float64 `json:"gcsim"`
-	Gse        float64 `json:"gse"`
-	Diff       float64 `json:"diff"`
-	Half95     float64 `json:"half95"`
-	WorstChar  string  `json:"worst_char,omitempty"`
-	WorstDiff  float64 `json:"worst_diff,omitempty"`
+	Build          string  `json:"build"`
+	Iterations     int     `json:"iterations"`
+	Gcsim          float64 `json:"gcsim"`
+	Gse            float64 `json:"gse"`
+	Diff           float64 `json:"diff"`
+	Half95         float64 `json:"half95"`
+	WorstChar      string  `json:"worst_char,omitempty"`
+	WorstDiff      float64 `json:"worst_diff,omitempty"`
+	WorstMinorChar string  `json:"worst_minor_char,omitempty"`
+	WorstMinorDiff float64 `json:"worst_minor_diff,omitempty"`
+	// Settled is set when the team's or a judged character's verdict
+	// was settled.
+	Settled bool `json:"settled,omitempty"`
 }
 
-// scoreOf reads a result's team metric and its worst character.
+// scoreOf reads a result's team metric and its worst characters.
 func scoreOf(r result) (Score, bool) {
 	s := Score{Build: r.Variant, Iterations: r.Iter}
 	found := false
 	for _, m := range r.Metrics {
-		if m.Name == "team" {
+		if m.Settled && !m.Minor {
+			s.Settled = true
+		}
+		switch {
+		case m.Name == "team":
 			s.Gcsim, s.Gse, s.Diff, s.Half95 = m.Gcsim, m.Gse, m.Diff, 1.96*m.DiffSE
 			found = true
-		} else if s.WorstChar == "" || math.Abs(m.Diff) > math.Abs(s.WorstDiff) {
+		case m.Minor:
+			if s.WorstMinorChar == "" || math.Abs(m.Diff) > math.Abs(s.WorstMinorDiff) {
+				s.WorstMinorChar, s.WorstMinorDiff = m.Name, m.Diff
+			}
+		case s.WorstChar == "" || math.Abs(m.Diff) > math.Abs(s.WorstDiff):
 			s.WorstChar, s.WorstDiff = m.Name, m.Diff
 		}
 	}
 	return s, found
 }
 
-// approvalTable is the Markdown the owner answers: each verified team's
-// scores on both engines. A team moves to the engine only with the
-// owner's yes for it (CLAUDE.md), recorded in Gscouter's approved list.
-func approvalTable(m *Manifest) string {
-	var ids []string
-	for id, t := range m.Teams {
-		if t.Verified {
-			ids = append(ids, id)
+// settled tells whether a result's team or a judged character's verdict
+// was settled.
+func settled(r result) bool {
+	for _, m := range r.Metrics {
+		if m.Settled && !m.Minor {
+			return true
 		}
 	}
-	sort.Strings(ids)
-	var b strings.Builder
-	fmt.Fprintf(&b, "# Teams to approve\n\nEngine %s (module %s), Gscouter %s: %d of %d supported teams verified. Each verified team's library build (the score a result page starts from) and its one-pass page config, gcsim against the engine; ±95%% is the half-width of the difference's interval. A team moves to the engine only with the owner's yes.\n\n", short(m.Engine.Commit), short(m.Engine.WasmSHA256), short(m.Gscouter), m.Verified, m.Supported)
-	if d := m.Drift; d.Builds > 0 {
-		fmt.Fprintf(&b, "Drift: over the %d builds compared, the team's difference averages %+.3f%% ± %.3f%% (95%%).", d.Builds, 100*d.Mean, 196*d.SE)
-		if math.Abs(d.Mean) > driftLimit {
-			fmt.Fprintf(&b, " **Above %.1f%%: the engine as a whole leans; find why before approving.**", 100*driftLimit)
-		}
-		b.WriteString("\n\n")
-	}
-	b.WriteString("| Team | Build | Iterations | gcsim | engine | Difference | ±95% | Character most apart | Builds passed |\n|---|---|---|---|---|---|---|---|---|\n")
-	for _, id := range ids {
-		t := m.Teams[id]
-		passed := fmt.Sprintf("library %s, variants %s, build space %s, pages %s", t.Builds["library"], t.Builds["variants"], t.Builds["buildspace"], t.Builds["pages"])
-		for i, s := range t.Scores {
-			name, info := id, passed
-			if i > 0 {
-				name, info = "", ""
-			}
-			worst := ""
-			if s.WorstChar != "" {
-				worst = fmt.Sprintf("%s %+.2f%%", s.WorstChar, 100*s.WorstDiff)
-			}
-			fmt.Fprintf(&b, "| %s | %s | %d | %.1f | %.1f | %+.2f%% | %.2f%% | %s | %s |\n", name, s.Build, s.Iterations, s.Gcsim, s.Gse, 100*s.Diff, 100*s.Half95, worst, info)
-		}
-	}
-	return b.String()
+	return false
 }
 
 func driftOf(xs []float64) Drift {
@@ -227,7 +230,9 @@ func main() {
 	wasm := flag.String("wasm", "", "the WebAssembly module built at the commit")
 	commit := flag.String("commit", "", "the engine's commit")
 	out := flag.String("out", "manifest.json", "file to write")
-	approval := flag.String("approval", "", "also write the owner's approval table (Markdown) to this file")
+	approval := flag.String("approval", "", "also write the owner's approval table (Markdown), every verified team, to this file")
+	summary := flag.String("summary", "", "also write the page the owner answers (Markdown): counts, drift, group B in full")
+	candidates := flag.String("candidates", "", "also write group A's team ids to this file, for approved.txt once the owner answers")
 	flag.Parse()
 	m, err := build(*wasm, *commit, flag.Args())
 	if err == nil {
@@ -238,6 +243,12 @@ func main() {
 	}
 	if err == nil && *approval != "" {
 		err = os.WriteFile(*approval, []byte(approvalTable(m)), 0o644)
+	}
+	if err == nil && *summary != "" {
+		err = os.WriteFile(*summary, []byte(approvalSummary(m)), 0o644)
+	}
+	if err == nil && *candidates != "" {
+		err = os.WriteFile(*candidates, []byte(candidateList(m)), 0o644)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "manifest:", err)
@@ -297,6 +308,7 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 	}
 
 	var diffs []float64
+	byKind := map[string][]float64{}
 	for id := range supported {
 		m.Supported++
 		t := Team{Builds: map[string]string{}}
@@ -315,6 +327,10 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 			r := last[v]
 			if r.Verdict != "idle" && len(r.Metrics) > 0 && r.Metrics[0].Name == "team" && !math.IsInf(r.Metrics[0].Diff, 0) && !math.IsNaN(r.Metrics[0].Diff) {
 				diffs = append(diffs, r.Metrics[0].Diff)
+				byKind[kindOf(r)] = append(byKind[kindOf(r)], r.Metrics[0].Diff)
+			}
+			if kindOf(r) != "probes" && settled(r) {
+				t.Settled++
 			}
 			if v == "library" || v == "page:once" {
 				if s, ok := scoreOf(r); ok {
@@ -358,9 +374,15 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		t.Verified = len(t.Why) == 0
 		if t.Verified {
 			m.Verified++
+			t.Group, t.GroupWhy = group(t)
 		}
 		m.Teams[id] = t
 	}
 	m.Drift = driftOf(diffs)
+	m.DriftByKind = map[string]Drift{}
+	for k, xs := range byKind {
+		m.DriftByKind[k] = driftOf(xs)
+	}
+	m.GroupALimit = groupALimit
 	return m, nil
 }

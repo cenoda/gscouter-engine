@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,7 +51,10 @@ func TestBuild(t *testing.T) {
 		t.Fatalf("a's scores: %+v", a.Scores)
 	}
 	table := approvalTable(m)
-	for _, want := range []string{"1 of 2 supported teams verified", "| a | library | 1000 | 200.0 | 199.0 | -0.50% | 0.39% |", "|  | page:once | 2000 | 100.0 | 100.5 | +0.50% | 0.20% | x -1.00% |"} {
+	if a.Group != "A" {
+		t.Errorf("a in group %s: %v", a.Group, a.GroupWhy)
+	}
+	for _, want := range []string{"1 of 2 supported teams verified", "| a | A | library | 1000 | 200.0 | 199.0 | -0.50% | 0.39% |", "|  |  | page:once | 2000 | 100.0 | 100.5 | +0.50% | 0.20% | x -1.00% |"} {
 		if !strings.Contains(table, want) {
 			t.Errorf("approval table lacks %q:\n%s", want, table)
 		}
@@ -64,5 +68,64 @@ func TestBuild(t *testing.T) {
 	other := write(t, dir, "other.json", `{"gscouter_commit": "h", "only": ["pages"], "results": []}`)
 	if _, err := build(wasm, "e", []string{lib, rest, other}); err == nil {
 		t.Fatal("reports of two Gscouter commits")
+	}
+}
+
+// Minor characters are shown apart from the judged ones; settled
+// verdicts and differences above groupALimit put a team in group B.
+func TestGroups(t *testing.T) {
+	dir := t.TempDir()
+	wasm := write(t, dir, "m.wasm", "module")
+	census := `"census": {"status": [{"id": "a", "status": "supported"}, {"id": "b", "status": "supported"}, {"id": "c", "status": "supported"}, {"id": "d", "status": "supported"}]}`
+	once := func(team string, diff float64) string {
+		return fmt.Sprintf(`{"team": %q, "variant": "page:once", "verdict": "pass", "iterations": 4000, "metrics": [{"name": "team", "gcsim": 100, "gse": %v, "diff": %v, "diff_se": 0.001}]}`, team, 100*(1+diff), diff)
+	}
+	lib := write(t, dir, "lib.json", `{"gscouter_commit": "g", "only": ["library", "variants", "buildspace", "pages"], "results": [
+		{"team": "a", "variant": "library", "verdict": "pass", "iterations": 4000, "metrics": [{"name": "team", "gcsim": 200, "gse": 200.2, "diff": 0.001, "diff_se": 0.001}, {"name": "x", "gcsim": 150, "gse": 150.3, "diff": 0.002, "diff_se": 0.002}, {"name": "y", "gcsim": 4, "gse": 3.8, "diff": -0.05, "diff_se": 0.02, "minor": true, "settled": true}]},
+		{"team": "a", "variant": "er-0", "verdict": "pass"},
+		`+once("a", 0.002)+`,
+		{"team": "b", "variant": "library", "verdict": "pass", "iterations": 4000, "metrics": [{"name": "team", "gcsim": 200, "gse": 201.6, "diff": 0.008, "diff_se": 0.001}]},
+		{"team": "b", "variant": "er-0", "verdict": "pass"},
+		`+once("b", 0.001)+`,
+		{"team": "c", "variant": "library", "verdict": "pass", "iterations": 32000, "metrics": [{"name": "team", "gcsim": 200, "gse": 200, "diff": 0, "diff_se": 0.001}]},
+		{"team": "c", "variant": "er-0", "verdict": "pass", "metrics": [{"name": "team", "diff": 0.004, "diff_se": 0.003, "settled": true}]},
+		`+once("c", 0.001)+`,
+		{"team": "d", "variant": "library", "verdict": "fail"}], `+census+`}`)
+	m, err := build(wasm, "e", []string{lib})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := m.Teams["a"]
+	if a.Group != "A" || a.Settled != 0 || a.Scores[0].WorstChar != "x" || a.Scores[0].WorstMinorChar != "y" || a.Scores[0].Settled {
+		t.Errorf("a: %+v", a)
+	}
+	if b := m.Teams["b"]; b.Group != "B" || len(b.GroupWhy) != 1 || b.GroupWhy[0] != "library +0.80%" {
+		t.Errorf("b: %+v", b)
+	}
+	if c := m.Teams["c"]; c.Group != "B" || c.Settled != 1 {
+		t.Errorf("c: %+v", c)
+	}
+	if d := m.Teams["d"]; d.Group != "" {
+		t.Errorf("d, unverified, in group %s", d.Group)
+	}
+	sum := approvalSummary(m)
+	for _, want := range []string{"Group A: 1**", "Group B: 2**", "| fail | 1 |", "| b | B: library +0.80% |", "| c | B: 1 settled |"} {
+		if !strings.Contains(sum, want) {
+			t.Errorf("summary lacks %q:\n%s", want, sum)
+		}
+	}
+	if strings.Contains(sum, "| a |") {
+		t.Error("a group A team in the summary's group B table")
+	}
+	full := approvalTable(m)
+	if ia, ib := strings.Index(full, "| a |"), strings.Index(full, "| b |"); ia < 0 || ib < ia || !strings.Contains(full, "x +0.20% | y -5.00% |") {
+		t.Errorf("approval.md: group A first:\n%s", full)
+	}
+	cand := candidateList(m)
+	if !strings.HasSuffix(cand, "\na\n") || strings.Contains(cand, "\nb\n") || !strings.Contains(cand, "NOT APPROVED") {
+		t.Errorf("candidates:\n%s", cand)
+	}
+	if m.DriftByKind["library"].Builds != 3 || m.GroupALimit != groupALimit {
+		t.Errorf("drift by kind %+v, limit %v", m.DriftByKind, m.GroupALimit)
 	}
 }
