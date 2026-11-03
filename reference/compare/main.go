@@ -107,6 +107,7 @@ var (
 	onlyFlag    = flag.String("only", "library,variants,probes", "comma-separated kinds of build to compare: library, variants, buildspace, probes, pages")
 	bsWeapons   = flag.Int("buildspace-weapons", 2, "build space: other weapons of the class per member, chosen by a hash of team, member and weapon (0: every one the engine has)")
 	dryRun      = flag.Bool("dry-run", false, "list the builds that would be compared, and compare none")
+	reverse     = flag.Bool("reverse", false, "take the teams in reverse order (for a second host warming the cache beside one that runs forward)")
 	shardFlag   = flag.String("shard", "", "k/n: compare only the k-th of n parts of the teams that have builds to compare (k from 0); the census still covers every team")
 	iter0       = flag.Int("iter", 4000, "iterations of the first batch")
 	maxIter     = flag.Int("max-iter", 32000, "most iterations gcsim runs to for a build that fails or is inconclusive at -iter; with -settle=false, a build still inconclusive there grows further on the seeds gcsim's cache already holds for its config (whole chunks from seed 1), running only the engine")
@@ -530,8 +531,19 @@ func main() {
 	if !*censusOnly {
 		// the teams with builds to compare, in the order listed, split
 		// into parts by position
+		order := make([]int, len(ids))
+		for i := range order {
+			order[i] = i
+		}
+		if *reverse {
+			// a second host starts from the end, so two hosts warming the
+			// cache meet in the middle instead of running the same teams;
+			// the parts are numbered in this order
+			slices.Reverse(order)
+		}
 		part := 0
-		for i, id := range ids {
+		for _, i := range order {
+			id := ids[i]
 			supported := statuses[i].Status == "supported"
 			// -gcsim-only takes every team, and reports one whose dump failed
 			selected := supported || *gcsimOnly

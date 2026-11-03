@@ -24,6 +24,10 @@
 # The cache is uploaded in increments every UPLOAD_EVERY (default 2h), so
 # CI can import what is done before the end.
 #
+# REVERSE=1 takes the teams from the end (compare -reverse): a second
+# server started beside one already running forward meets it in the middle
+# instead of running the same teams first.
+#
 # Progress: the prerelease's progress.txt asset, replaced every 10 minutes.
 # When it says DONE, the server can be deleted.
 set -euo pipefail
@@ -72,6 +76,8 @@ JOBS=$(( NCPU / PER > 0 ? NCPU / PER : 1 ))
 SHARDS=${SHARDS:-$JOBS}
 SLICES=${SLICES:-0-$((SHARDS - 1))}
 UPLOAD_EVERY=${UPLOAD_EVERY:-2h}
+ORDER=""
+[ "${REVERSE:-0}" = 1 ] && ORDER=-reverse
 DEADLINE_AT=$(( $(date -u +%s) + $(echo "$DEADLINE" | sed 's/h/*3600+/;s/m/*60+/;s/s//;s/+$//' | bc) ))
 START=$(date -u +%s)
 
@@ -99,7 +105,7 @@ for k in $(seq 0 $((JOBS - 1))); do
 		for s in $(seq $((LO + k)) "$JOBS" "$HI"); do
 			left=$(( DEADLINE_AT - $(date -u +%s) ))
 			[ "$left" -gt 60 ] || break
-			"$WORK/compare" -gscouter "$WORK/gscouter" -gcsim-only -only library,variants,probes -sample 4 \
+			"$WORK/compare" -gscouter "$WORK/gscouter" -gcsim-only -only library,variants,probes -sample 4 $ORDER \
 				-shard "$s/$SHARDS" -j "$PER" -deadline "${left}s" -cache "$CACHE" \
 				-json "$LOGS/$s.json" -md "$LOGS/$s.md" >> "$LOGS/$k.out" 2>> "$LOGS/$k.err" || true
 		done
