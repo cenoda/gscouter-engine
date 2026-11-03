@@ -1,0 +1,3 @@
+# Tighnari at level 20 (ascension 0): no EM after a Wreath Arrow (A1), no charged attack and burst bonus from EM (A4).
+team tighnari-nahida-fischl-kirara
+tighnari char lvl=20/20 cons=0 talent=9,9,9;

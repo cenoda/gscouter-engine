@@ -1,0 +1,3 @@
+# Collei C0: no Sprout without a reaction, no C1 ER, C2 extension, C4 EM or C6 arrows (the library builds are C6).
+team kaedeharakazuha-fischl-kukishinobu-collei
+collei char lvl=90/90 cons=0 talent=9,9,9;
