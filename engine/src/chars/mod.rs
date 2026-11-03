@@ -62,6 +62,7 @@ crate::chars! {
     Ganyu => ganyu,
     Sethos => sethos,
     Yunjin => yunjin,
+    Noelle => noelle,
     Ayaka => ayaka,
     Albedo => albedo,
     Layla => layla,

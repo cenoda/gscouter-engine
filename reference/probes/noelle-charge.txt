@@ -1,0 +1,4 @@
+# Noelle's charged attack after N3 (windup less 11): one spin, then the final on its own.
+team noelle-albedo-yelan-xingqiu
+rotation- noelle  attack:3;
+rotation+ noelle  attack:3, charge;

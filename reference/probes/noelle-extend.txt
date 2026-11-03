@@ -1,0 +1,4 @@
+# Noelle's C6 burst extension cut to 4 s.
+team noelle-albedo-yelan-xingqiu
+rotation- noelle  burst;
+rotation+ noelle  burst[extend=4];

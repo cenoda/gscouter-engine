@@ -1,0 +1,4 @@
+# Noelle's spin past its 5 s limit: the charge after it is the final.
+team noelle-albedo-yelan-xingqiu
+rotation- noelle  attack:2;
+rotation+ noelle  attack, charge:16;

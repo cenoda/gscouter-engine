@@ -1,0 +1,5 @@
+# Noelle at C1 (no C2 stamina cut) spinning with no_limit until stamina runs out.
+team noelle-albedo-yelan-xingqiu
+noelle char lvl=90/90 cons=1 talent=9,9,9;
+rotation- noelle  attack:2;
+rotation+ noelle  attack, charge[no_limit=1]:28;
