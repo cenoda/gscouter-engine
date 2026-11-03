@@ -7,13 +7,19 @@
 # No port is open, and no pull request (fork or not) reaches it.
 #
 # Each round (every POLL, default 10m) it updates to origin/main, builds
-# compare and gse, and runs, in this order:
+# compare and gse, downloads the gcsim-cache-*.tar.gz assets of every
+# release it has not (warm-host.sh's, the other servers'), and runs, in
+# this order (requests also between two batches of the others):
 #  1. requests: the team ids, one per line, in requests.txt on the branch
 #     warm-requests (which only those with write access can push), that it
 #     has not run yet: gcsim on their library builds, variants and probes,
 #     as compare.yml's "warm" input does. A porting session asks for its
 #     teams so, in place of dispatching "warm".
-#  2. the next schedule's parts: the variants, build-space and pages parts
+#  2. every library team, supported or not: its library build, the
+#     variants CI samples and its probes (as warm-host.sh), in LIB_SLICES
+#     slices, once per Gscouter commit and state of reference/, so that
+#     a port's teams are cached before its branch is pushed.
+#  3. the next schedule's parts: the variants, build-space and pages parts
 #     compare.yml's schedule will run next (its PARTS/PER_DAY formula), so
 #     that those jobs find gcsim cached. Once per schedule day. compare
 #     -supported-only takes the teams CI's compare takes, so that part k
@@ -112,7 +118,7 @@ prune_claims() {
 mkdir -p "$WORK"/{cache,logs}
 cd "$WORK"
 CACHE=$WORK/cache
-touch requests-done.txt pending.txt prewarmed.txt uploaded.txt
+touch requests-done.txt pending.txt prewarmed.txt uploaded.txt assets-done.txt own.txt
 [ -d engine ] || git clone -q https://github.com/$REPO engine
 [ -d gscouter ] || git clone -q https://github.com/cenoda/Gscouter gscouter
 JOBS=$(( $(nproc) / PER > 0 ? $(nproc) / PER : 1 ))
@@ -179,6 +185,7 @@ publish() {
 	rm -f "$WORK/gcsim-cache-$tag.tar.gz"
 	sort -m "$WORK/uploaded.txt" "$WORK/new.txt" > "$WORK/up.tmp" && mv "$WORK/up.tmp" "$WORK/uploaded.txt"
 	echo "$tag" >> "$WORK/pending.txt"
+	echo "$tag" >> "$WORK/own.txt"
 	log "$1: $n chunks uploaded as $tag"
 }
 
@@ -245,37 +252,90 @@ serve_requests() {
 	done
 }
 
+# the gcsim-cache-*.tar.gz assets of every release (warm-host.sh's,
+# other servers' gcsim-daemon-*, the coordinator's), each downloaded once
+# into the local cache, so that no server computes again what one has. A
+# daemon's chunks are imported by the daemon that made them; the chunks of
+# any other asset are imported by the one server that claims it, which
+# publishes them with its own.
+sync_releases() {
+	local page=1 rels line id name tag
+	while :; do
+		rels=$(gh "$API/releases?per_page=100&page=$page") || return 0
+		[ "$(echo "$rels" | jq length)" -gt 0 ] || break
+		echo "$rels" | jq -r '.[] | .tag_name as $t | .assets[] | select(.name|test("^gcsim-cache-.*\\.tar\\.gz$")) | "\(.id) \(.name) \($t)"' |
+		while read -r id name tag; do
+			grep -qxF "$id" "$WORK/assets-done.txt" && continue
+			# this server's own uploads
+			grep -qxF "$tag" "$WORK/own.txt" && { echo "$id" >> "$WORK/assets-done.txt"; continue; }
+			log "importing asset $name of $tag"
+			gh -H "Accept: application/octet-stream" -L "$API/releases/assets/$id" -o "$WORK/asset.tar.gz" || continue
+			tar -tzf "$WORK/asset.tar.gz" | grep '\.json$' | sed 's|^\([^.]\)|./\1|' > "$WORK/asset.txt" || true
+			tar -xzf "$WORK/asset.tar.gz" -C "$CACHE" || continue
+			# imported by its maker, or by the server whose claim succeeds
+			if [[ $tag == gcsim-daemon-* ]] || ! claim "asset-$id"; then
+				sort -u "$WORK/uploaded.txt" "$WORK/asset.txt" -o "$WORK/uploaded.txt"
+			fi
+			rm -f "$WORK/asset.tar.gz"
+			echo "$id" >> "$WORK/assets-done.txt"
+		done
+		page=$((page + 1))
+	done
+	publish "releases"
+}
+
+# the items in $WORK/todo.txt ("claim-key compare-args..." a line) that
+# this server claims, JOBS at a time, the requests looked at between
+# batches; done keys go to prewarmed.txt (whoever ran them)
+run_items() { # name
+	local key args
+	while [ -s "$WORK/todo.txt" ]; do
+		: > "$WORK/batch.txt"
+		while [ -s "$WORK/todo.txt" ] && [ "$(wc -l < "$WORK/batch.txt")" -lt "$JOBS" ]; do
+			read -r key args < "$WORK/todo.txt"
+			sed -i 1d "$WORK/todo.txt"
+			if claim "$key"; then
+				echo "$key $args" >> "$WORK/batch.txt"
+			else
+				echo "$key" >> "$WORK/prewarmed.txt"
+			fi
+		done
+		[ -s "$WORK/batch.txt" ] || break
+		cut -d' ' -f2- "$WORK/batch.txt" | warm "$1-$(head -n1 "$WORK/batch.txt" | cut -d' ' -f1)"
+		cut -d' ' -f1 "$WORK/batch.txt" >> "$WORK/prewarmed.txt"
+		import_pending || true
+		serve_requests || true
+	done
+}
+
+# few slices: every compare process dumps every team's config first
+LIB_SLICES=${LIB_SLICES:-24}
+
 while true; do
 	update || log "update failed; using ${BUILT:0:7}"
 	[ -n "$BUILT" ] || { sleep "$POLL"; continue; }
 	[ "$(cat "$WORK/pruned" 2>/dev/null)" = "$(today)" ] || { prune_claims || true; today > "$WORK/pruned"; }
 	import_pending || true
 	serve_requests || true
-	# the next schedule's parts not run yet, JOBS at a time, the requests
-	# looked at between batches
+	sync_releases || true
+	import_pending || true
+	# 1. every library team, supported or not (gcsim needs no engine):
+	# library builds, the variants CI samples and the probes, as warm-host.sh
+	# runs them, in LIB_SLICES slices, once for each Gscouter commit and
+	# state of reference/ (its probes and sampling); chunks already cached
+	# (from the releases above) are not run again
+	libkey="lib-$(git -C gscouter rev-parse --short=10 HEAD)-$(git -C engine rev-parse --short=10 HEAD:reference)"
+	for k in $(seq 0 $((LIB_SLICES - 1))); do
+		grep -qxF "$libkey-$k" "$WORK/prewarmed.txt" || echo "$libkey-$k -only library,variants,probes -sample 4 -shard $k/$LIB_SLICES"
+	done > "$WORK/todo.txt"
+	run_items library
+	# 2. the next schedule's parts
 	next_schedule | while read -r day kind n first count; do
 		for s in $(seq "$first" $((first + count - 1))); do
-			grep -qxF "$day $kind $s" "$WORK/prewarmed.txt" || echo "$day $kind $s $n"
+			grep -qxF "d$day-$kind-$s" "$WORK/prewarmed.txt" || echo "d$day-$kind-$s -supported-only -only $kind -sample 4 -shard $s/$n"
 		done
 	done > "$WORK/todo.txt"
-	while [ -s "$WORK/todo.txt" ]; do
-		# the next JOBS items this server claims; the others are another's
-		: > "$WORK/batch.txt"
-		while [ -s "$WORK/todo.txt" ] && [ "$(wc -l < "$WORK/batch.txt")" -lt "$JOBS" ]; do
-			read -r day kind s n < "$WORK/todo.txt"
-			sed -i 1d "$WORK/todo.txt"
-			if claim "d$day-$kind-$s"; then
-				echo "$day $kind $s $n" >> "$WORK/batch.txt"
-			else
-				echo "$day $kind $s" >> "$WORK/prewarmed.txt"
-			fi
-		done
-		[ -s "$WORK/batch.txt" ] || break
-		awk '{print "-supported-only -only " $2 " -sample 4 -shard " $3 "/" $4}' "$WORK/batch.txt" | warm "schedule-day$(head -c 5 "$WORK/batch.txt")"
-		cut -d' ' -f1-3 "$WORK/batch.txt" >> "$WORK/prewarmed.txt"
-		import_pending || true
-		serve_requests || true
-	done
+	run_items schedule
 	log "idle"
 	sleep "$POLL"
 done
