@@ -1,0 +1,3 @@
+# Yun Jin with Footprint of the Rainbow R1.
+team yoimiya-yunjin-xilonen-bennett
+yunjin add weapon="footprintoftherainbow" refine=1 lvl=90/90;

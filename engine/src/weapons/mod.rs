@@ -57,6 +57,7 @@ crate::weapons! {
     TidalShadow => tidalshadow,
     UltimateOverlordsMegaMagicSword => ultimateoverlordsmegamagicsword,
     EtherlightSpindlelute => etherlightspindlelute,
+    FootprintOfTheRainbow => footprintoftherainbow,
     FruitOfFulfillment => fruitoffulfillment,
     FlowingPurity => flowingpurity,
     PeakPatrolSong => peakpatrolsong,
