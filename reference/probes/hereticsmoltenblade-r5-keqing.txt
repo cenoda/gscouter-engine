@@ -1,0 +1,4 @@
+# Keqing with Heretic's Molten Blade R5.
+# Keqing's skill on field gives the ATK buff; the rotation never moves, so it stays at its minimum, and it ends when Keqing swaps out.
+team kaedeharakazuha-keqing-fischl-kirara
+keqing add weapon="hereticsmoltenblade" refine=5 lvl=90/90;

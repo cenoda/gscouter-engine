@@ -1,0 +1,4 @@
+# Yoimiya with Seasoned Hunter's Bow R1.
+# No passive in gcsim (NoEffect); refinement changes nothing, this checks base stats at max level 70.
+team yoimiya-bennett-xiangling-zhongli
+yoimiya add weapon="seasonedhuntersbow" refine=1 lvl=70/70;

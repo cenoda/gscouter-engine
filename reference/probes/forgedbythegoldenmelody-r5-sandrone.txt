@@ -1,0 +1,4 @@
+# Sandrone with Forged by the Golden Melody R5.
+# The cycling ATK, EM and Stellar buffs, and the contrapuntal buff on her Stellar-Conduct.
+team sandrone-beidou-diona-sucrose
+sandrone add weapon="forgedbythegoldenmelody" refine=5 lvl=90/90;

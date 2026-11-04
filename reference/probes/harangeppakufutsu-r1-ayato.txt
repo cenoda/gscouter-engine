@@ -1,0 +1,4 @@
+# Kamisato Ayato with Haran Geppaku Futsu R1.
+# Fischl's, Kuki's and Collei's skills off field give Wavespike stacks; Ayato's skill spends them on his Shunsuiken normal attacks.
+team fischl-kamisatoayato-kukishinobu-collei
+ayato add weapon="harangeppakufutsu" refine=1 lvl=90/90;

@@ -1,0 +1,4 @@
+# Keqing with Skyrider Sword R1.
+# Keqing's burst on field gives the ATK buff.
+team kaedeharakazuha-keqing-fischl-kirara
+keqing add weapon="skyridersword" refine=1 lvl=90/90;

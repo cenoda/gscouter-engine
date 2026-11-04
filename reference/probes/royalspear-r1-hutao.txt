@@ -1,0 +1,4 @@
+# Hu Tao with Royal Spear R1.
+# Hu Tao's non-crit hits stack it; her crits reset it.
+team furina-mona-hutao-yelan
+hutao add weapon="royalspear" refine=1 lvl=90/90;

@@ -1,0 +1,4 @@
+# Keqing with Fillet Blade R5.
+# Keqing's hits on field roll the 50% proc, then its ICD.
+team kaedeharakazuha-keqing-fischl-kirara
+keqing add weapon="filletblade" refine=5 lvl=90/90;

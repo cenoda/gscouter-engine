@@ -1,0 +1,4 @@
+# Hu Tao with Vortex Vanquisher R5.
+# Golden Majesty: ATK stacks on the holder's hits while on field, doubled while Zhongli's shield covers the active character.
+team hutao-xingqiu-zhongli-yelan
+hutao add weapon="vortexvanquisher" refine=5 lvl=90/90;

@@ -45,6 +45,6 @@ impl WeaponImpl for Weapon {
             st.stacks += 1;
         }
         s.add_status(ci, ICD, 30, true);
-        s.add_mod(ci, Mod::owned(BUFF, ModKind::Stat, Owner::Weapon(ci as u8), st::NONE, false, true, -1), 6 * 60);
+        s.add_mod(ci, Mod::owned(BUFF, ModKind::Stat, Owner::Weapon(ci as u8), st::EM, false, true, -1), 6 * 60);
     }
 }

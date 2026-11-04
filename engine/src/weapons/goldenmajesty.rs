@@ -6,6 +6,7 @@ use crate::types::*;
 
 pub const BUFF: ModKey = ModKey::new("golden-majesty");
 pub const ICD: ModKey = ModKey::new("golden-majesty-icd");
+pub const SHIELD: ModKey = ModKey::new("golden-majesty-shield");
 
 #[derive(Default)]
 pub struct State {
@@ -14,6 +15,13 @@ pub struct State {
 
 pub fn init(s: &mut Sim, ci: usize) {
     s.subscribe(EventKind::EnemyDamage, Owner::Weapon(ci as u8));
+    // gcsim's AddShieldBonusMod("golden-majesty-<char>", -1): one per wearer
+    s.shield_bonus_mods.push(ShieldBonusMod { key: SHIELD, owner: Owner::Weapon(ci as u8), expiry: -1 });
+}
+
+/// The shield strength mod: 0.15 + 0.05 r, never done.
+pub fn shield_bonus(s: &Sim, ci: usize) -> (f64, bool) {
+    (0.15 + 0.05 * s.chars[ci].refine as f64, false)
 }
 
 pub fn on_enemy_damage(s: &mut Sim, ci: usize, ev: &AttackEvent, st: &mut State) {

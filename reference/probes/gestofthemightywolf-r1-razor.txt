@@ -1,0 +1,4 @@
+# Razor with Gest of the Mighty Wolf R1.
+# Normal attacks and skills on field give stacks; Razor, Durin and Nicole are Hexerei, so the stacks also give CRIT DMG.
+team razor-chevreuse-durin-nicole
+razor add weapon="gestofthemightywolf" refine=1 lvl=90/90;

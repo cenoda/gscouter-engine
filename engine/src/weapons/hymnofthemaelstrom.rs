@@ -27,12 +27,19 @@ impl WeaponImpl for Weapon {
         let o = Owner::Weapon(ci as u8);
         let r = s.chars[ci].refine as f64;
         s.chars[ci].mods.push(Mod::stat(HEAL_PERM, st::HEAL, 0.03 + 0.01 * r, false, false, -1));
-        s.chars[ci].mods.push(Mod::owned(HP_BUFF, ModKind::Stat, o, st::NONE, false, false, -1));
-        for j in 0..s.chars.len() {
-            s.chars[j].mods.push(Mod::owned(ATK_BUFF, ModKind::Stat, o, st::NONE, false, false, -1));
-        }
+        s.chars[ci].mods.push(Mod::owned(HP_BUFF, ModKind::Stat, o, st::HPP, false, false, -1));
         s.subscribe(EventKind::Heal, o);
         s.subscribe(EventKind::Reaction, o);
+    }
+
+    /// gcsim adds the ATK mod to every member in Weapon.Init, once the
+    /// party is complete; its AffectedStat is ATKP, so the wearer's MaxHP
+    /// it reads does not sum it.
+    fn post_init(s: &mut Sim, ci: usize) {
+        let o = Owner::Weapon(ci as u8);
+        for j in 0..s.chars.len() {
+            s.chars[j].mods.push(Mod::owned(ATK_BUFF, ModKind::Stat, o, st::ATKP, false, false, -1));
+        }
     }
 
     fn mod_amount(s: &Sim, ci: usize, on: usize, m: &Mod, out: &mut Stats) -> bool {

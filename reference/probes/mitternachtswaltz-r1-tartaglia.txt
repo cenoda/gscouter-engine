@@ -1,0 +1,4 @@
+# Tartaglia with Mitternachts Waltz R1.
+# His melee normal attacks and skill hits buff each other.
+team jean-tartaglia-xiangling-bennett
+tartaglia add weapon="mitternachtswaltz" refine=1 lvl=90/90;

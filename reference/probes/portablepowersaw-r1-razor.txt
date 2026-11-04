@@ -1,0 +1,4 @@
+# Razor with Portable Power Saw R1.
+# Bennett's heals give symbols; Razor's skills and bursts on field consume them for EM and energy.
+team razor-chevreuse-xiangling-bennett
+razor add weapon="portablepowersaw" refine=1 lvl=90/90;

@@ -1,0 +1,4 @@
+# Klee with Clash of Kings R5.
+# Klee's skill gives the ATK and EM buff and her charged attacks extend it once.
+team klee-albedo-bennett-zhongli
+klee add weapon="clashofkings" refine=5 lvl=90/90;

@@ -24,11 +24,22 @@ impl WeaponImpl for Weapon {
     fn init(s: &mut Sim, ci: usize) {
         let r = s.chars[ci].refine as f64;
         s.chars[ci].mods.push(Mod::stat(ER_BUFF, st::ER, 0.15 + 0.05 * r, false, false, -1));
+        // gcsim adds the bonus to every character, the holder too, as a
+        // ReactBonusMod keyed like the holder's status. A character's mods
+        // and statuses share one slice keyed by name, so the holder's
+        // StatusIsActive(viperKey) finds that permanent mod and reads
+        // active from the start: the stacks never build and the bonus
+        // always applies. Kept as gcsim has it. gcsim makes the weapon as
+        // it adds its character, so only the characters added so far (this
+        // slot and the ones before it) get the mod.
+        for j in 0..=ci {
+            s.add_mod(j, Mod::owned(VIPER_KEY, ModKind::ReactBonus, Owner::Weapon(ci as u8), st::NONE, false, false, -1), -1);
+        }
         s.subscribe(EventKind::EnemyHit, Owner::Weapon(ci as u8));
     }
 
     fn react_bonus(s: &Sim, ci: usize, _: usize, m: &Mod, info: &AttackInfo) -> f64 {
-        if m.key == VIPER_KEY && matches!(info.tag, AttackTag::DirectStellarConduct | AttackTag::DirectStellarSwirl | AttackTag::ReactionStellarSwirl) {
+        if m.key == VIPER_KEY && s.mod_active(ci, VIPER_KEY) && matches!(info.tag, AttackTag::DirectStellarConduct | AttackTag::DirectStellarSwirl | AttackTag::ReactionStellarSwirl) {
             0.18 + 0.06 * s.chars[ci].refine as f64
         } else {
             0.0
@@ -54,8 +65,5 @@ impl WeaponImpl for Weapon {
         }
         s.weapon_st_mut::<State>(ci).stacks = 0;
         s.add_status(ci, VIPER_KEY, 12 * 60, true);
-        for j in 0..s.chars.len() {
-            s.add_mod(j, Mod::owned(VIPER_KEY, ModKind::ReactBonus, Owner::Weapon(ci as u8), st::NONE, false, true, -1), 12 * 60);
-        }
     }
 }

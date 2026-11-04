@@ -1,0 +1,4 @@
+# Albedo with Gambler 4.
+# The 4pc resets the skill on a kill; library fights have no enemy HP, so it never triggers (in either engine).
+team albedo-bennett-xiangling-noelle
+albedo add set="gambler" count=4;

@@ -23,6 +23,8 @@ impl WeaponImpl for Weapon {
             return;
         }
         let pct = 0.0075 + 0.0025 * s.chars[ci].refine as f64;
-        s.heal_info(0, Some(ci), true, pct, 0.0);
+        // gcsim's HealInfo leaves Caller and Target at 0: the heal goes to
+        // the character in the first slot, not the wearer, by caller 0
+        s.heal_info(0, Some(0), true, pct, 0.0);
     }
 }

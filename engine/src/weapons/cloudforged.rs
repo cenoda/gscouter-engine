@@ -1,48 +1,31 @@
 //! Cloudforged, from gcsim's internal/weapons/bow/cloudforged.
+//!
+//! gcsim stacks its EM (30 + 10r per stack, 2 stacks, 18 s, hitlag
+//! affected) on OnEnergyChange when the holder's energy goes down. That
+//! event is AddEnergy's, not ConsumeEnergy's (a burst's drain emits
+//! OnEnergyBurst), so only a negative AddEnergy triggers it: for a bow
+//! user, Sethos's A1 on his charged shot and Shimenawa's Reminiscence's
+//! four pieces on the skill. Without them the passive never triggers in
+//! gcsim, and does nothing here. The engine emits no OnEnergyChange, so a
+//! holder that could lose energy that way is an error.
 
-use crate::content::{Event, WeaponImpl};
+use crate::content::WeaponImpl;
 use crate::sim::*;
-use crate::types::*;
 
 pub struct Weapon;
-#[derive(Default)]
-pub struct State {
-    stacks: i32,
-}
-
-const BUFF: ModKey = ModKey::new("cloudforged-em");
+pub struct State;
 
 impl WeaponImpl for Weapon {
     const KEY: &'static str = "cloudforged";
     type State = State;
     fn new_state() -> State {
-        State::default()
+        State
     }
 
     fn init(s: &mut Sim, ci: usize) {
-        s.subscribe(EventKind::EnergyBurst, Owner::Weapon(ci as u8));
-    }
-
-    fn mod_amount(s: &Sim, ci: usize, _: usize, _: &Mod, out: &mut Stats) -> bool {
-        let r = s.chars[ci].refine as f64;
-        let st = s.weapon_st::<State>(ci);
-        out[st::EM] += (30.0 + 10.0 * r) * st.stacks as f64;
-        true
-    }
-
-    fn event(s: &mut Sim, ci: usize, e: &Event) {
-        let Event::EnergyBurst { on, .. } = *e else { return };
-        if on != ci {
-            return;
+        let shimenawa4 = s.chars[ci].sets.iter().any(|x| x.kind == SetKind::Shimenawa && x.count >= 4);
+        if s.chars[ci].kind == CharKind::Sethos || shimenawa4 {
+            s.unsupported("weapon cloudforged's EM stacks on an energy loss (gcsim's OnEnergyChange, which the engine does not emit), on Sethos or with Shimenawa's Reminiscence 4pc");
         }
-        let active = s.mod_active(ci, BUFF);
-        let st = s.weapon_st_mut::<State>(ci);
-        if !active {
-            st.stacks = 0;
-        }
-        if st.stacks < 2 {
-            st.stacks += 1;
-        }
-        s.add_mod(ci, Mod::owned(BUFF, ModKind::Stat, Owner::Weapon(ci as u8), st::NONE, false, true, -1), 18 * 60);
     }
 }

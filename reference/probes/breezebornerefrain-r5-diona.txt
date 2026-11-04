@@ -1,0 +1,4 @@
+# Diona with Breezeborne Refrain R5.
+# ER always; in gcsim the Stellar-Conduct bonus is always on for the whole team (its react mod shares the holder's status key), and Beidou and Diona make Stellar-Conduct here.
+team sandrone-beidou-diona-sucrose
+diona add weapon="breezebornerefrain" refine=5 lvl=90/90;

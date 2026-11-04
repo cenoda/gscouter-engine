@@ -101,7 +101,97 @@ fn weapon_params_known(w: WeaponKind) -> Option<&'static [&'static str]> {
         | WeaponKind::SerenitysCall
         | WeaponKind::TravelersHandySword
         | WeaponKind::TheBell
-        | WeaponKind::WolfsGravestone => &[],
+        | WeaponKind::WolfsGravestone
+        | WeaponKind::ApprenticesNotes
+        | WeaponKind::BeaconOfTheReedSea
+        | WeaponKind::BeginnersProtector
+        | WeaponKind::BlackcliffAgate
+        | WeaponKind::BlackcliffLongsword
+        | WeaponKind::BlackcliffPole
+        | WeaponKind::BlackcliffSlasher
+        | WeaponKind::BlackcliffWarbow
+        | WeaponKind::BladeOfAtonement
+        | WeaponKind::BloodtaintedGreatsword
+        | WeaponKind::BreezeborneRefrain
+        | WeaponKind::ClashOfKings
+        | WeaponKind::Cloudforged
+        | WeaponKind::CompoundBow
+        | WeaponKind::CoolSteel
+        | WeaponKind::CovenantOfFrostAndSnow
+        | WeaponKind::DarkIronSword
+        | WeaponKind::DebateClub
+        | WeaponKind::DodocoTales
+        | WeaponKind::DragonspineSpear
+        | WeaponKind::DullBlade
+        | WeaponKind::EchoesOfTheHeart
+        | WeaponKind::Emberwell
+        | WeaponKind::EmeraldOrb
+        | WeaponKind::EndOfTheLine
+        | WeaponKind::FerrousShadow
+        | WeaponKind::FilletBlade
+        | WeaponKind::FlowerWreathedFeathers
+        | WeaponKind::Frostbearer
+        | WeaponKind::Frostbreath
+        | WeaponKind::FruitfulHook
+        | WeaponKind::GestOfTheMightyWolf
+        | WeaponKind::GoldenFrostboundOath
+        | WeaponKind::Halberd
+        | WeaponKind::HaranGeppakuFutsu
+        | WeaponKind::HereticsMoltenBlade
+        | WeaponKind::HuntersBow
+        | WeaponKind::HymnOfTheMaelstrom
+        | WeaponKind::IbisPiercer
+        | WeaponKind::IronPoint
+        | WeaponKind::JadefallsSplendor
+        | WeaponKind::KingsSquire
+        | WeaponKind::MasterKey
+        | WeaponKind::MemoryOfDust
+        | WeaponKind::Messenger
+        | WeaponKind::MitternachtsWaltz
+        | WeaponKind::MountainBracingBolt
+        | WeaponKind::NewBough
+        | WeaponKind::OldMercsPal
+        | WeaponKind::OtherworldlyStory
+        | WeaponKind::PocketGrimoire
+        | WeaponKind::PortablePowerSaw
+        | WeaponKind::PrototypeArchaic
+        | WeaponKind::RangeGauge
+        | WeaponKind::RavenBow
+        | WeaponKind::ReliquaryOfTruth
+        | WeaponKind::RoyalBow
+        | WeaponKind::RoyalGreatsword
+        | WeaponKind::RoyalGrimoire
+        | WeaponKind::RoyalLongsword
+        | WeaponKind::RoyalSpear
+        | WeaponKind::SeasonedHuntersBow
+        | WeaponKind::Silverlight
+        | WeaponKind::SilvershowerHeartstrings
+        | WeaponKind::SilverSword
+        | WeaponKind::SkyriderGreatsword
+        | WeaponKind::SkyriderSword
+        | WeaponKind::SkywardSpine
+        | WeaponKind::SnareHook
+        | WeaponKind::SongOfTheVigil
+        | WeaponKind::SturdyBone
+        | WeaponKind::SummitShaper
+        | WeaponKind::SunnyMorningSleepIn
+        | WeaponKind::TheDaybreakChronicles
+        | WeaponKind::TheFlute
+        | WeaponKind::TheUnforged
+        | WeaponKind::TwinNephrite
+        | WeaponKind::VortexVanquisher
+        | WeaponKind::WasterGreatsword
+        | WeaponKind::WaveridingWhirl
+        | WeaponKind::WhiteIronGreatsword
+        | WeaponKind::WhiteLakeFrostfeather
+        | WeaponKind::WineAndSong
+        | WeaponKind::WintersHeavyHeart => &[],
+        WeaponKind::ForgedByTheGoldenMelody => &["buff_type"],
+        WeaponKind::Predator => &["passive"],
+        WeaponKind::SkywardAtlas => &["travel"],
+        WeaponKind::SwordOfDescension => &["passive"],
+        // gcsim reads arkhe only to log it
+        WeaponKind::SwordOfNarzissenkreuz => &["arkhe"],
         // gcsim reads only melusines; Gscouter's library passes stacks,
         // which gcsim ignores
         WeaponKind::UltimateOverlordsMegaMagicSword => &["melusines", "stacks"],

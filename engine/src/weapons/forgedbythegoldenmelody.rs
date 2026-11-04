@@ -28,8 +28,12 @@ impl WeaponImpl for Weapon {
     }
 
     fn init(s: &mut Sim, ci: usize) {
-        let buff_type = s.chars[ci].weapon_params.iter().find(|p| p.0 == "buff_type").map_or(0, |p| (p.1 as usize) % 3);
-        s.weapon_st_mut::<State>(ci).cur_buff = buff_type;
+        // gcsim takes buff_type % 3, and panics on a negative one
+        let buff_type = s.chars[ci].weapon_param("buff_type");
+        if buff_type < 0 {
+            s.unsupported("param forgedbythegoldenmelody buff_type < 0");
+        }
+        s.weapon_st_mut::<State>(ci).cur_buff = (buff_type.rem_euclid(3)) as usize;
         Self::apply_buff(s, ci, false, 600);
         s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_SWITCH, arg: 0 }, 600);
         s.subscribe(EventKind::Reaction, Owner::Weapon(ci as u8));

@@ -26,6 +26,12 @@ impl WeaponImpl for Weapon {
         s.subscribe(EventKind::EnemyDamage, o);
         s.subscribe(EventKind::StateChange, o);
         s.subscribe(EventKind::Skill, o);
+        // gcsim gives no stacks for a charged attack's later segments
+        // (OnStateChange's segmented), which the engine's state change
+        // does not carry; only these characters' charged attacks have them
+        if matches!(s.chars[ci].kind, CharKind::Noelle | CharKind::Itto | CharKind::Mavuika) {
+            s.unsupported("weapon gestofthemightywolf on a character with segmented charged attacks (noelle, itto, mavuika)");
+        }
     }
 
     fn mod_amount(s: &Sim, ci: usize, _: usize, _: &Mod, out: &mut Stats) -> bool {

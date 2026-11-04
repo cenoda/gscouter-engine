@@ -1,0 +1,4 @@
+# Eula with Blackcliff Slasher R5.
+# Blackcliff stacks only on an enemy kill; library fights have no kills (the target has no hp), so the passive cannot trigger and this checks base stats.
+team eula-raidenshogun-rosaria-zhongli
+eula add weapon="blackcliffslasher" refine=5 lvl=90/90;

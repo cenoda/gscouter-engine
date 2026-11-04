@@ -1,0 +1,4 @@
+# Hu Tao with Iron Point R1.
+# No passive in gcsim (NoEffect); refinement changes nothing, this checks base stats at max level 70.
+team hutao-xingqiu-zhongli-yelan
+hutao add weapon="ironpoint" refine=1 lvl=70/70;

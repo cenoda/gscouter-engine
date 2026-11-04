@@ -7,7 +7,7 @@ use crate::types::*;
 pub struct Weapon;
 pub struct State;
 
-const ICD: ModKey = ModKey::new("filletblade-icd");
+const ICD: ModKey = ModKey::new("fillet-blade-icd");
 
 impl WeaponImpl for Weapon {
     const KEY: &'static str = "filletblade";
@@ -25,16 +25,19 @@ impl WeaponImpl for Weapon {
         if ev.info.actor as usize != ci || s.player.active as usize != ci || s.mod_active(ci, ICD) {
             return;
         }
-        if s.rng.float64() >= 0.5 {
+        if s.rng.float64() > 0.5 {
+            return;
+        }
+        if ev.damage == 0.0 {
             return;
         }
         let r = s.chars[ci].refine;
-        let cd = (16 - r) * 60;
-        s.add_status(ci, ICD, cd, true);
-        let mult = 2.0 + r as f64 * 0.4;
+        let cd = 960 - 60 * r;
+        let mult = 2.0 + 0.4 * r as f64;
         let mut ai = AttackInfo::new(ci, AttackTag::Weapon, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 100.0, mult);
         ai.abil = "Fillet Blade Proc";
         ai.pattern = Pattern::Single;
         s.queue_attack(ai, 0, 0, 1);
+        s.add_status(ci, ICD, cd, true);
     }
 }

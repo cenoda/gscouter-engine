@@ -1,0 +1,4 @@
+# Kamisato Ayaka with Sturdy Bone R5.
+# Ayaka's dashes on field give the stacks her normal attacks use; the stamina reduction applies to everyone's dashes and charged attacks.
+team kamisatoayaka-charlotte-kaedeharakazuha-furina
+ayaka add weapon="sturdybone" refine=5 lvl=90/90;

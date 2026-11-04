@@ -406,6 +406,11 @@ pub trait WeaponImpl {
         0.0
     }
     fn event(_s: &mut Sim, _ci: usize, _e: &Event) {}
+    /// A shield strength mod of the weapon's: its amount, and whether it
+    /// is done (as gcsim's AddShieldBonusMod returns).
+    fn shield_bonus(_s: &Sim, _ci: usize, _key: ModKey) -> (f64, bool) {
+        (0.0, true)
+    }
 }
 
 /// An artifact set's logic, at index `si` of the sets of the character in
@@ -623,6 +628,7 @@ macro_rules! weapons {
             pub fn react_bonus(k: WeaponKind, s: &Sim, ci: usize, on: usize, m: &Mod, info: &AttackInfo) -> f64 { match k { $(WeaponKind::$kind => $m::Weapon::react_bonus(s, ci, on, m, info)),* } }
             #[inline]
             pub fn event(k: WeaponKind, s: &mut Sim, ci: usize, e: &Event) { match k { $(WeaponKind::$kind => $m::Weapon::event(s, ci, e)),* } }
+            pub fn shield_bonus(k: WeaponKind, s: &Sim, ci: usize, key: ModKey) -> (f64, bool) { match k { $(WeaponKind::$kind => $m::Weapon::shield_bonus(s, ci, key)),* } }
         }
     };
 }

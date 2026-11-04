@@ -7,8 +7,8 @@ use crate::types::*;
 pub struct Weapon;
 pub struct State;
 
-const BUFF: ModKey = ModKey::new("debateclub");
-const ICD: ModKey = ModKey::new("debateclub-icd");
+const BUFF: ModKey = ModKey::new("debate-club-effect");
+const ICD: ModKey = ModKey::new("debate-club-icd");
 
 impl WeaponImpl for Weapon {
     const KEY: &'static str = "debateclub";
@@ -27,6 +27,8 @@ impl WeaponImpl for Weapon {
         match *e {
             Event::Skill => {
                 if s.player.active as usize == ci {
+                    // a skill resets the proc's cooldown
+                    s.delete_mod(ci, ICD);
                     s.add_status(ci, BUFF, 900, true);
                 }
             }

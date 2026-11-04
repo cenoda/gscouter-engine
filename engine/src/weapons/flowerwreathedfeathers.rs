@@ -43,6 +43,9 @@ impl WeaponImpl for Weapon {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         match *e {
+            // gcsim's OnAimShoot comes before the aimed shot runs and
+            // OnActionExec after it, on the same frame; the stacks count
+            // in attack mods, which read them when the shot lands
             Event::ActionExec(Action::Aim) => {
                 if s.player.active as usize != ci || s.mod_active(ci, ICD) {
                     return;
@@ -55,7 +58,9 @@ impl WeaponImpl for Weapon {
                 }
             }
             Event::StateChange(next) => {
-                if s.player.active as usize != ci || next == AnimState::Aim {
+                // gcsim's OnStateChange carries the previous state, which
+                // is still the player's state while the event runs
+                if s.player.active as usize != ci || s.player.state != AnimState::Aim || next == AnimState::Aim {
                     return;
                 }
                 if s.weapon_st::<State>(ci).leave_src != -1 {
@@ -82,14 +87,13 @@ impl WeaponImpl for Weapon {
 
     fn task(s: &mut Sim, ci: usize, id: u8, src: i32) {
         if id == TASK_CLEAR {
-            if s.player.active as usize == ci && s.player.state == AnimState::Aim {
+            if s.weapon_st::<State>(ci).leave_src != src {
                 return;
             }
-            let st = s.weapon_st_mut::<State>(ci);
-            if st.leave_src != src {
+            if s.player.active as usize == ci && s.current_state() == AnimState::Aim {
                 return;
             }
-            st.stacks = 0;
+            s.weapon_st_mut::<State>(ci).stacks = 0;
         }
     }
 }

@@ -1,0 +1,4 @@
+# Razor with Master Key R5.
+# His reactions give the EM buff, doubled by Aino and Ineffa's Ascendant Gleam.
+team razor-aino-ineffa-durin
+razor add weapon="masterkey" refine=5 lvl=90/90;

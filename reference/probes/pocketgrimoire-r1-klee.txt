@@ -1,0 +1,4 @@
+# Klee with Pocket Grimoire R1.
+# No passive in gcsim (NoEffect); refinement changes nothing, this checks base stats at max level 70.
+team bennett-zhongli-xiangling-klee
+klee add weapon="pocketgrimoire" refine=1 lvl=70/70;

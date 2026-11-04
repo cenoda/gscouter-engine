@@ -1,0 +1,4 @@
+# Navia with White Iron Greatsword R5.
+# Its heal on defeating an enemy never triggers: library fights kill no enemy. Base stats only.
+team chongyun-navia-zhongli-yelan
+navia add weapon="whiteirongreatsword" refine=5 lvl=90/90;

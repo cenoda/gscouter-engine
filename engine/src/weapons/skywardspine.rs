@@ -40,7 +40,7 @@ impl WeaponImpl for Weapon {
         let r = s.chars[ci].refine as f64;
         let mut ai = AttackInfo::new(ci, AttackTag::Weapon, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 100.0, 0.25 + 0.15 * r);
         ai.abil = "Skyward Spine Proc";
-        ai.pattern = s.circle_on_target(2.0);
+        ai.pattern = s.box_on_enemy(0.0, 0.0, 0.1, 0.1);
         s.queue_attack(ai, 0, 0, 1);
     }
 }

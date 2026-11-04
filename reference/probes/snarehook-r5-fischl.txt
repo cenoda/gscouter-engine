@@ -1,0 +1,4 @@
+# Fischl with Snare Hook R5.
+# Her aggravates give the EM; no Moonsign characters, so it is not doubled.
+team raidenshogun-fischl-kaedeharakazuha-nahida
+fischl add weapon="snarehook" refine=5 lvl=90/90;

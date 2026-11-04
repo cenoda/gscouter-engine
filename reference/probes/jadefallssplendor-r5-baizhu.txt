@@ -1,0 +1,4 @@
+# Baizhu with Jadefall's Splendor R5.
+# Baizhu's burst and its shield give the energy and the dendro DMG bonus from his Max HP.
+team neuvillette-furina-baizhu-xilonen
+baizhu add weapon="jadefallssplendor" refine=5 lvl=90/90;

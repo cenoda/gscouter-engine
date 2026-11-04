@@ -1,0 +1,4 @@
+# Neuvillette with Otherworldly Story R5.
+# Particles Neuvillette takes on field heal the first slot (as gcsim's HealInfo, Neuvillette here), whose HP his charged attacks and Furina drain.
+team neuvillette-furina-lauma-xilonen
+neuvillette add weapon="otherworldlystory" refine=5 lvl=90/90;

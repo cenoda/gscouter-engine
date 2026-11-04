@@ -17,7 +17,9 @@ impl WeaponImpl for Weapon {
     }
 
     fn init(s: &mut Sim, ci: usize) {
-        s.subscribe(EventKind::Dash, Owner::Weapon(ci as u8));
+        let o = Owner::Weapon(ci as u8);
+        s.subscribe(EventKind::Dash, o);
+        s.subscribe(EventKind::EnemyDamage, o);
     }
 
     fn mod_amount(s: &Sim, ci: usize, _: usize, _: &Mod, out: &mut Stats) -> bool {
@@ -27,9 +29,22 @@ impl WeaponImpl for Weapon {
     }
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
-        let Event::Dash = *e else { return };
-        if s.player.active as usize == ci {
-            s.add_mod(ci, Mod::owned(BUFF, ModKind::Stat, Owner::Weapon(ci as u8), st::NONE, false, true, -1), 300);
+        match *e {
+            Event::Dash => {
+                if s.player.active as usize == ci {
+                    s.add_mod(ci, Mod::owned(BUFF, ModKind::Stat, Owner::Weapon(ci as u8), st::NONE, false, true, -1), 300);
+                }
+            }
+            Event::EnemyDamage(ev) => {
+                if s.player.active as usize != ci || ev.info.actor as usize != ci || ev.info.tag != AttackTag::Normal {
+                    return;
+                }
+                // gcsim's AddStamPercentMod("wineandsong-<char>", 300): the
+                // player's dash stamina -(0.12 + 0.02 r)
+                let r = s.chars[ci].refine as f64;
+                s.wine_stam[ci] = (s.f + 300, -(0.12 + 0.02 * r));
+            }
+            _ => {}
         }
     }
 }

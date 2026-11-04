@@ -1,0 +1,4 @@
+# Yoimiya with Raven Bow R1.
+# The bonus applies while the enemy has hydro or pyro, which the team keeps up.
+team bennett-xingqiu-yelan-yoimiya
+yoimiya add weapon="ravenbow" refine=1 lvl=90/90;

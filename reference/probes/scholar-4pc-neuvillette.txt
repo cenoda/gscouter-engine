@@ -1,0 +1,4 @@
+# Neuvillette with Scholar 4.
+# The 4pc gives energy to Neuvillette (catalyst) and Fischl (bow) when particles arrive while he is active.
+team furina-neuvillette-fischl-jean
+neuvillette add set="scholar" count=4;

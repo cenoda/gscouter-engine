@@ -1,0 +1,4 @@
+# Yoimiya with Blackcliff Warbow R5.
+# Blackcliff stacks only on an enemy kill; library fights have no kills (the target has no hp), so the passive cannot trigger and this checks base stats.
+team yoimiya-bennett-xiangling-zhongli
+yoimiya add weapon="blackcliffwarbow" refine=5 lvl=90/90;

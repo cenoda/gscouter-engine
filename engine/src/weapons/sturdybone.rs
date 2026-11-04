@@ -21,6 +21,8 @@ impl WeaponImpl for Weapon {
 
     fn init(s: &mut Sim, ci: usize) {
         let o = Owner::Weapon(ci as u8);
+        // gcsim's AddStamPercentMod("sturdy-bone", -1): -15% for every action
+        s.sturdy_bone = true;
         s.subscribe(EventKind::Dash, o);
         s.subscribe(EventKind::EnemyHit, o);
     }
@@ -44,7 +46,7 @@ impl WeaponImpl for Weapon {
                 }
                 st.stacks -= 1;
                 let r = s.chars[ci].refine as f64;
-                let dmg_added = s.total_atk(ci) * (0.12 + 0.40 * r);
+                let dmg_added = s.stat(ci, st::ATK) * (0.12 + 0.4 * r);
                 s.hit_flat += dmg_added;
             }
             _ => {}

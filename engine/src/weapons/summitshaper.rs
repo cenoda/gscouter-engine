@@ -20,7 +20,10 @@ impl WeaponImpl for Weapon {
     }
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
-        let Event::EnemyDamage(ev) = *e else { return };
+        let ev = match *e {
+            Event::EnemyDamage(ev) => ev,
+            _ => return,
+        };
         let mut inner = std::mem::take(&mut s.weapon_st_mut::<State>(ci).0);
         super::goldenmajesty::on_enemy_damage(s, ci, &ev, &mut inner);
         s.weapon_st_mut::<State>(ci).0 = inner;
@@ -29,5 +32,9 @@ impl WeaponImpl for Weapon {
     fn mod_amount(s: &Sim, ci: usize, _: usize, _: &Mod, out: &mut Stats) -> bool {
         let stacks = s.weapon_st::<State>(ci).0.stacks;
         super::goldenmajesty::mod_amount(s, ci, stacks, out)
+    }
+
+    fn shield_bonus(s: &Sim, ci: usize, _: ModKey) -> (f64, bool) {
+        super::goldenmajesty::shield_bonus(s, ci)
     }
 }

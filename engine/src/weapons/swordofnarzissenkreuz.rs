@@ -18,7 +18,25 @@ impl WeaponImpl for Weapon {
     }
 
     fn init(s: &mut Sim, ci: usize) {
-        if matches!(s.chars[ci].kind, CharKind::Clorinde | CharKind::Furina | CharKind::Lynette | CharKind::LumineHydro | CharKind::AetherHydro) {
+        // gcsim's HasArkhe, which these characters' NewChar set (it reads
+        // the param arkhe only to log it)
+        if matches!(
+            s.chars[ci].kind,
+            CharKind::Navia
+                | CharKind::Charlotte
+                | CharKind::Emilie
+                | CharKind::Freminet
+                | CharKind::Clorinde
+                | CharKind::Lynette
+                | CharKind::Lyney
+                | CharKind::Chevreuse
+                | CharKind::Wriothesley
+                | CharKind::Furina
+                | CharKind::Sigewinne
+                | CharKind::Neuvillette
+                | CharKind::LumineHydro
+                | CharKind::AetherHydro
+        ) {
             return;
         }
         s.subscribe(EventKind::EnemyDamage, Owner::Weapon(ci as u8));
@@ -41,8 +59,8 @@ impl WeaponImpl for Weapon {
             let r = s.chars[ci].refine as f64;
             let mut ai = AttackInfo::new(ci, AttackTag::Weapon, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 100.0, 1.2 + 0.4 * r);
             ai.abil = "Sword of Narzissenkreuz";
-            ai.pattern = s.circle_on_target(3.5);
-            s.queue_attack(ai, 0, 0, 1);
+            ai.pattern = s.circle_on_target(3.0);
+            s.queue_attack(ai, 0, 0, 0);
         }
     }
 }

@@ -1,0 +1,4 @@
+# Sigewinne with Silvershower Heartstrings R1.
+# Her skill, her heals and her Bond of Life give the HP stacks.
+team dehya-bennett-furina-sigewinne
+sigewinne add weapon="silvershowerheartstrings" refine=1 lvl=90/90;

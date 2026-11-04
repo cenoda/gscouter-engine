@@ -18,7 +18,10 @@ impl WeaponImpl for Weapon {
         State
     }
 
-    fn init(s: &mut Sim, ci: usize) {
+    fn init(_s: &mut Sim, _ci: usize) {}
+
+    /// gcsim subscribes in the weapon's Init, after the characters'.
+    fn post_init(s: &mut Sim, ci: usize) {
         s.subscribe(EventKind::Reaction, Owner::Weapon(ci as u8));
     }
 

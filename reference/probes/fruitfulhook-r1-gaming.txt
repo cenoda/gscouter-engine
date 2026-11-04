@@ -1,0 +1,4 @@
+# Gaming with Fruitful Hook R1.
+# His skill's plunges take the CRIT Rate and open the DMG bonus for his normal and plunging attacks.
+team gaming-chevreuse-fischl-bennett
+gaming add weapon="fruitfulhook" refine=1 lvl=90/90;

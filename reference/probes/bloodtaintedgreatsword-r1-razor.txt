@@ -1,0 +1,4 @@
+# Razor with Bloodtainted Greatsword R1.
+# The enemy carries pyro or electro most of the time on this overload team.
+team razor-chevreuse-xiangling-bennett
+razor add weapon="bloodtaintedgreatsword" refine=1 lvl=90/90;

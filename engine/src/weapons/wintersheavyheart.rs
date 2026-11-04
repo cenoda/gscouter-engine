@@ -25,7 +25,11 @@ impl WeaponImpl for Weapon {
         State { cryo: 0, electro: 0 }
     }
 
-    fn init(s: &mut Sim, ci: usize) {
+    fn init(_s: &mut Sim, _ci: usize) {}
+
+    /// gcsim counts the party and adds the mods in Weapon.Init, once the
+    /// party is complete.
+    fn post_init(s: &mut Sim, ci: usize) {
         let mut cryo = 0;
         let mut electro = 0;
         for c in &s.chars {
@@ -45,9 +49,9 @@ impl WeaponImpl for Weapon {
         st.electro = electro;
 
         let o = Owner::Weapon(ci as u8);
-        s.chars[ci].mods.push(Mod::owned(EM_KEY, ModKind::Stat, o, st::NONE, false, false, -1));
+        s.chars[ci].mods.push(Mod::owned(EM_KEY, ModKind::Stat, o, st::EM, false, false, -1));
         if electro > 0 {
-            s.chars[ci].mods.push(Mod::owned(ATK_KEY, ModKind::Stat, o, st::NONE, false, false, -1));
+            s.chars[ci].mods.push(Mod::owned(ATK_KEY, ModKind::Stat, o, st::ATKP, false, false, -1));
         }
         s.chars[ci].mods.push(Mod::owned(STELLAR_KEY, ModKind::ReactBonus, o, st::NONE, false, false, -1));
     }

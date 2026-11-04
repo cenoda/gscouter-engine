@@ -31,10 +31,12 @@ impl WeaponImpl for Weapon {
     }
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
-        let Event::Reaction(_, ev) = *e else { return };
-        if ev.info.actor as usize != ci {
+        let Event::Reaction(r, ev) = *e else { return };
+        // gcsim keeps the reactions on an enemy (args[0] an *enemy.Enemy):
+        // hyperbloom and burgeon come from the dendro core and are not
+        if matches!(r, Reaction::Hyperbloom | Reaction::Burgeon) || !ev.on_enemy() || ev.info.actor as usize != ci {
             return;
         }
-        s.add_mod(ci, Mod::owned(BUFF, ModKind::Stat, Owner::Weapon(ci as u8), st::NONE, false, true, -1), 12 * 60);
+        s.add_mod(ci, Mod::owned(BUFF, ModKind::Stat, Owner::Weapon(ci as u8), st::EM, false, true, -1), 12 * 60);
     }
 }

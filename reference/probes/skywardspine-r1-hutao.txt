@@ -1,0 +1,4 @@
+# Hu Tao with Skyward Spine R1.
+# Her normal and charged attacks proc the vacuum blade.
+team hutao-fischl-yelan-bennett
+hutao add weapon="skywardspine" refine=1 lvl=90/90;

@@ -22,12 +22,13 @@ impl WeaponImpl for Weapon {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         let Event::EnemyDamage(ev) = *e else { return };
-        if ev.info.actor as usize != ci || s.player.active as usize != ci || s.mod_active(ci, ICD) || ev.info.tag != AttackTag::Normal {
+        // unlike most procs, gcsim does not ask for the holder on field
+        if ev.info.actor as usize != ci || ev.info.tag != AttackTag::Normal || s.mod_active(ci, ICD) {
             return;
         }
         s.add_status(ci, ICD, 600, true);
         let mult = 1.2 + s.chars[ci].refine as f64 * 0.4;
-        let mut ai = AttackInfo::new(ci, AttackTag::Weapon, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 100.0, mult);
+        let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 100.0, mult);
         ai.abil = "Halberd Proc";
         ai.pattern = Pattern::Single;
         s.queue_attack(ai, 0, 0, 1);

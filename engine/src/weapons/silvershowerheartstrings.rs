@@ -18,6 +18,8 @@ const BURST_CR: ModKey = ModKey::new("heartstrings-cr");
 const BURST_CR_CANCEL: ModKey = ModKey::new("heartstrings-cr-cancel");
 
 const TASK_UPDATE: u8 = 0;
+/// The stacks' statuses, by the index the update task carries.
+const STACK_KEYS: [ModKey; 3] = [SKILL_KEY, BOND_KEY, HEAL_KEY];
 
 impl WeaponImpl for Weapon {
     const KEY: &'static str = "silvershowerheartstrings";
@@ -28,7 +30,7 @@ impl WeaponImpl for Weapon {
 
     fn init(s: &mut Sim, ci: usize) {
         let o = Owner::Weapon(ci as u8);
-        s.chars[ci].mods.push(Mod::owned(HP_BUFF, ModKind::Stat, o, st::NONE, false, false, -1));
+        s.chars[ci].mods.push(Mod::owned(HP_BUFF, ModKind::Stat, o, st::HPP, false, false, -1));
         s.chars[ci].mods.push(Mod::owned(BURST_CR, ModKind::Attack, o, st::NONE, false, false, -1));
         s.subscribe(EventKind::Skill, o);
         s.subscribe(EventKind::HpDebt, o);
@@ -65,37 +67,42 @@ impl WeaponImpl for Weapon {
         match *e {
             Event::Skill => {
                 if s.player.active as usize == ci {
-                    s.add_status(ci, SKILL_KEY, 25 * 60, true);
-                    s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_UPDATE, arg: 0 }, 25 * 60 + 1);
-                    Self::on_update_stacks(s, ci);
+                    Self::add_stack(s, ci, 0, 25 * 60);
                 }
             }
+            // gcsim adds the stack unless the Bond of Life went down (an
+            // unchanged one, at its cap, counts)
             Event::HpDebt { on, change } => {
-                if on == ci && change < 0.0 {
-                    s.add_status(ci, BOND_KEY, 25 * 60, true);
-                    s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_UPDATE, arg: 0 }, 25 * 60 + 1);
-                    Self::on_update_stacks(s, ci);
+                if on == ci && change <= 0.0 {
+                    Self::add_stack(s, ci, 1, 25 * 60);
                 }
             }
             Event::Heal { caller, .. } => {
                 if caller == ci {
-                    s.add_status(ci, HEAL_KEY, 20 * 60, true);
-                    s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_UPDATE, arg: 0 }, 20 * 60 + 1);
-                    Self::on_update_stacks(s, ci);
+                    Self::add_stack(s, ci, 2, 20 * 60);
                 }
             }
             _ => {}
         }
     }
 
-    fn task(s: &mut Sim, ci: usize, id: u8, _: i32) {
-        if id == TASK_UPDATE {
+    fn task(s: &mut Sim, ci: usize, id: u8, which: i32) {
+        // gcsim's AddStack task: updates only when that stack's status is
+        // no longer active
+        if id == TASK_UPDATE && !s.mod_active(ci, STACK_KEYS[which as usize]) {
             Self::on_update_stacks(s, ci);
         }
     }
 }
 
 impl Weapon {
+    /// gcsim's AddStack.
+    fn add_stack(s: &mut Sim, ci: usize, which: i32, dur: i32) {
+        s.add_status(ci, STACK_KEYS[which as usize], dur, true);
+        s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_UPDATE, arg: which }, dur + 1);
+        Self::on_update_stacks(s, ci);
+    }
+
     fn stacks(s: &Sim, ci: usize) -> i32 {
         let mut count = 0;
         if s.mod_active(ci, SKILL_KEY) {

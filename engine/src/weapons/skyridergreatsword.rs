@@ -11,7 +11,7 @@ pub struct State {
 }
 
 const BUFF: ModKey = ModKey::new("skyrider");
-const ICD: ModKey = ModKey::new("skyrider-greatsword-icd");
+const ICD: ModKey = ModKey::new("skyrider-icd");
 
 impl WeaponImpl for Weapon {
     const KEY: &'static str = "skyridergreatsword";

@@ -62,7 +62,8 @@ impl Weapon {
         let r = s.chars[ci].refine as f64;
         let mut ai = AttackInfo::new(ci, AttackTag::Weapon, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Physical, 0.0, 0.8 + 0.2 * r);
         ai.abil = "King's Squire Proc";
-        ai.pattern = s.circle_on_target(1.6);
+        // on the closest enemy within 15 of the player, else on the player
+        ai.pattern = if s.enemy_within(s.circle_on_player(0.0, 0.0, 15.0)) { s.circle_on_target(1.6) } else { s.circle_on_player(0.0, 0.0, 1.6) };
         s.queue_attack(ai, 0, 0, 1);
     }
 }

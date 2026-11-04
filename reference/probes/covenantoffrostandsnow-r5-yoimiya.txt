@@ -1,0 +1,4 @@
+# Yoimiya with Covenant of Frost and Snow R5.
+# Her skill on field gives the EM, which her vaporizes use.
+team bennett-xingqiu-yelan-yoimiya
+yoimiya add weapon="covenantoffrostandsnow" refine=5 lvl=90/90;

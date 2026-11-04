@@ -38,9 +38,11 @@ impl WeaponImpl for Weapon {
         let o = Owner::Weapon(ci as u8);
         s.chars[ci].mods.push(Mod::owned(BUFF, ModKind::Attack, o, st::NONE, false, false, -1));
         s.subscribe(EventKind::EnemyHit, o);
-        s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_DEC_NA, arg: 0 }, 60);
-        s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_DEC_SKILL, arg: 0 }, 60);
-        s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_DEC_BURST, arg: 0 }, 60);
+        // the sources start at 0, the tasks carry the frame (0 at init)
+        let f = s.f;
+        s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_DEC_NA, arg: f }, 60);
+        s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_DEC_SKILL, arg: f }, 60);
+        s.queue_char_task(ci, Task::Weapon { c: ci as u8, id: TASK_DEC_BURST, arg: f }, 60);
     }
 
     fn attack_mod(s: &Sim, ci: usize, _: usize, m: &Mod, ev: &mut AttackEvent) {

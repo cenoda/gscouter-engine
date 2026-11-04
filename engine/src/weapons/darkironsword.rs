@@ -22,6 +22,11 @@ impl WeaponImpl for Weapon {
 
     fn event(s: &mut Sim, ci: usize, e: &Event) {
         let Event::Reaction(rx, atk) = *e else { return };
+        // gcsim's buffNoGadget: only a reaction on an enemy, except
+        // hyperbloom, which subscribes without that check
+        if rx != Reaction::Hyperbloom && !atk.on_enemy() {
+            return;
+        }
         if atk.info.actor as usize != ci || s.player.active as usize != ci {
             return;
         }

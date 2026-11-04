@@ -1,0 +1,4 @@
+# Kokomi with Hymn of the Maelstrom R1.
+# Kokomi's heals give stacks (her Max HP, and the active member's ATK above 40,000 Max HP), stronger after Ayaka's freezes.
+team kamisatoayaka-sangonomiyakokomi-kaedeharakazuha-shenhe
+kokomi add weapon="hymnofthemaelstrom" refine=1 lvl=90/90;

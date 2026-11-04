@@ -1,0 +1,4 @@
+# Kamisato Ayaka with Cool Steel R1.
+# Furina's hydro and Ayaka's freezes keep a hydro or cryo aura on the enemy for most of Ayaka's hits.
+team kamisatoayaka-charlotte-kaedeharakazuha-furina
+ayaka add weapon="coolsteel" refine=1 lvl=90/90;

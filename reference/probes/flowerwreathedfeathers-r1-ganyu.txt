@@ -1,0 +1,4 @@
+# Ganyu with Flower-Wreathed Feathers R1.
+# Her aimed shots build the charged attack stacks; they clear 10 s after she leaves aiming or the field.
+team chongyun-shenhe-venti-ganyu
+ganyu add weapon="flowerwreathedfeathers" refine=1 lvl=90/90;

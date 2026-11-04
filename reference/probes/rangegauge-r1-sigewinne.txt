@@ -1,0 +1,4 @@
+# Sigewinne with Range Gauge R1.
+# Her heals build the stacks, which her skill on field turns into the buff.
+team dehya-bennett-furina-sigewinne
+sigewinne add weapon="rangegauge" refine=1 lvl=90/90;

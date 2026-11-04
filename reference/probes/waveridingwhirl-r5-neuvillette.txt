@@ -1,0 +1,4 @@
+# Neuvillette with Waveriding Whirl R5.
+# Neuvillette's skill on field gives Max HP, more with two hydro members (Neuvillette, Furina).
+team neuvillette-furina-lauma-xilonen
+neuvillette add weapon="waveridingwhirl" refine=5 lvl=90/90;

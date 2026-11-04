@@ -13,7 +13,7 @@ pub struct State {
 
 const ELE_BUFF: ModKey = ModKey::new("haran-ele-bonus");
 const ICD: ModKey = ModKey::new("haran-icd");
-const NA_BUFF: ModKey = ModKey::new("haran-na");
+const NA_BUFF: ModKey = ModKey::new("ripping-upheaval");
 
 impl WeaponImpl for Weapon {
     const KEY: &'static str = "harangeppakufutsu";
@@ -24,12 +24,19 @@ impl WeaponImpl for Weapon {
 
     fn init(s: &mut Sim, ci: usize) {
         let o = Owner::Weapon(ci as u8);
-        let r = s.chars[ci].refine as f64;
-        let base = 0.09 + 0.03 * r;
-        for i in st::PYROP..=st::DENDROP {
-            s.chars[ci].mods.push(Mod::stat(ELE_BUFF, i, base, false, false, -1));
-        }
+        s.chars[ci].mods.push(Mod::owned(ELE_BUFF, ModKind::Stat, o, st::NONE, false, false, -1));
         s.subscribe(EventKind::Skill, o);
+    }
+
+    fn mod_amount(s: &Sim, ci: usize, _: usize, m: &Mod, out: &mut Stats) -> bool {
+        if m.key != ELE_BUFF {
+            return false;
+        }
+        let base = 0.09 + 0.03 * s.chars[ci].refine as f64;
+        for i in st::PYROP..=st::DENDROP {
+            out[i] += base;
+        }
+        true
     }
 
     fn attack_mod(s: &Sim, ci: usize, _: usize, m: &Mod, ev: &mut AttackEvent) {

@@ -1,0 +1,4 @@
+# Sucrose with Wine and Song R1.
+# Sucrose dashes before her burst: ATK for 5 s. She never normal attacks, so the dash stamina reduction (an error in the engine) never applies.
+team arlecchino-xiangling-sucrose-bennett
+sucrose add weapon="wineandsong" refine=1 lvl=90/90;

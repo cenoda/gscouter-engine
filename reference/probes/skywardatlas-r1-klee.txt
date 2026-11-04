@@ -1,0 +1,4 @@
+# Klee with Skyward Atlas R1.
+# Klee's normal attack hits on field proc the cloud (50%, 30 s ICD); the elemental DMG bonus is always on.
+team klee-albedo-bennett-zhongli
+klee add weapon="skywardatlas" refine=1 lvl=90/90;
