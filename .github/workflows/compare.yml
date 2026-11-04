@@ -79,7 +79,9 @@
 # "engine-release". Dispatch it on main. With "release_teams" (ids, or a
 # .txt file of them such as reference/release-batch-1.txt) every kind runs
 # on those teams alone, in fewer parts, and the manifest has only them: a
-# release in batches, the other teams unverified and on gcsim.
+# release in batches, the other teams unverified and on gcsim. With
+# "release_kinds" (library for a library-only release) it runs and judges
+# only those kinds; the manifest records them (kinds, verified_kinds).
 #
 # A run on a branch saves its chunks in that branch's cache, which main
 # cannot read. A manual run on main with "import_run" set to that run's id
@@ -132,6 +134,9 @@ on:
       release:
         description: 'true runs every kind of build at this commit and writes the manifest of verified teams with the WebAssembly module (artifact engine-release). Dispatch on main.'
         default: "false"
+      release_kinds:
+        description: 'With release: the kinds of build to run and judge, comma-separated from library, variants, buildspace, pages ("library" for a library-only release, whose teams are verified on the others after it); empty for every kind.'
+        default: ""
       release_teams:
         description: 'With release: only these teams, comma-separated ids or the path of a file in this repository listing one per line (reference/release-batch-1.txt); every kind runs on them alone, in fewer parts, and the manifest has only them. Empty for every team.'
         default: ""
@@ -139,7 +144,7 @@ on:
         description: 'A run id of this workflow, on any branch, whose gcsim chunks (artifacts gcsim-new-*, kept a day) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
       import_release:
-        description: 'A release tag of this repository whose gcsim-cache-*.tar.gz assets (gcsim run outside CI, reference/warm-host.sh) to add to this branch''s cache; runs nothing else. Dispatch on main.'
+        description: 'Release tags of this repository, comma-separated, whose gcsim-cache-*.tar.gz assets (gcsim run outside CI, reference/warm-host.sh, reference/warm-daemon.sh) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
 
 env:
@@ -171,6 +176,7 @@ jobs:
       n_parts: ${{ steps.plan.outputs.n_parts }}
       n_bs: ${{ steps.plan.outputs.n_bs }}
       n_pg: ${{ steps.plan.outputs.n_pg }}
+      kinds: ${{ steps.plan.outputs.kinds }}
     steps:
       # for release_teams given as a file
       - uses: actions/checkout@v4
@@ -184,6 +190,7 @@ jobs:
           PG_INPUT: ${{ inputs.pages }}
           RELEASE: ${{ inputs.release }}
           RELEASE_TEAMS: ${{ inputs.release_teams }}
+          RELEASE_KINDS: ${{ inputs.release_kinds }}
           WARM: ${{ inputs.warm }}
           IMPORT: ${{ inputs.import_run }}
           IMPORT_RELEASE: ${{ inputs.import_release }}
@@ -248,7 +255,7 @@ jobs:
           echo "rerun_shards=[]" >> "$GITHUB_OUTPUT"
           IMPORT_RELEASE=$(printf %s "$IMPORT_RELEASE" | tr -d "[:space:]")
           if [ "$EVENT" = workflow_dispatch ] && [ -n "$IMPORT_RELEASE" ]; then
-            [[ $IMPORT_RELEASE =~ ^[A-Za-z0-9._-]+$ ]] || { echo "import_release: want a tag, got $IMPORT_RELEASE"; exit 1; }
+            [[ $IMPORT_RELEASE =~ ^[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*$ ]] || { echo "import_release: want tags, comma-separated, got $IMPORT_RELEASE"; exit 1; }
           fi
           if [ "$EVENT" = workflow_dispatch ] && { [ -n "$IMPORT" ] || [ -n "$IMPORT_RELEASE" ]; }; then
             [ -z "$IMPORT" ] || [[ $IMPORT =~ ^[0-9]+$ ]] || { echo "import_run: want a run id, got $IMPORT"; exit 1; }
@@ -295,13 +302,17 @@ jobs:
               echo "release_teams: $n teams; parts: variants $np, build space $nb, pages $ng"
               echo "teams=$RELEASE_TEAMS" >> "$GITHUB_OUTPUT"
             fi
+            RELEASE_KINDS=$(printf %s "${RELEASE_KINDS:-library,variants,buildspace,pages}" | tr -d "[:space:]")
+            [[ $RELEASE_KINDS =~ ^(library|variants|buildspace|pages)(,(library|variants|buildspace|pages))*$ ]] || { echo "release_kinds: want kinds from library, variants, buildspace, pages separated by commas, got $RELEASE_KINDS"; exit 1; }
+            has() { [[ ,$RELEASE_KINDS, == *,$1,* ]]; }
+            echo "kinds=$RELEASE_KINDS" >> "$GITHUB_OUTPUT"
             echo "n_parts=$np" >> "$GITHUB_OUTPUT"
             echo "n_bs=$nb" >> "$GITHUB_OUTPUT"
             echo "n_pg=$ng" >> "$GITHUB_OUTPUT"
-            echo "parts=[$(seq -s, 0 $(( np - 1 )))]" >> "$GITHUB_OUTPUT"
-            echo "bs_parts=[$(seq -s, 0 $(( nb - 1 )))]" >> "$GITHUB_OUTPUT"
-            echo "pg_parts=[$(seq -s, 0 $(( ng - 1 )))]" >> "$GITHUB_OUTPUT"
-            echo "library=true" >> "$GITHUB_OUTPUT"
+            if has variants; then echo "parts=[$(seq -s, 0 $(( np - 1 )))]" >> "$GITHUB_OUTPUT"; else echo "parts=[]" >> "$GITHUB_OUTPUT"; fi
+            if has buildspace; then echo "bs_parts=[$(seq -s, 0 $(( nb - 1 )))]" >> "$GITHUB_OUTPUT"; else echo "bs_parts=[]" >> "$GITHUB_OUTPUT"; fi
+            if has pages; then echo "pg_parts=[$(seq -s, 0 $(( ng - 1 )))]" >> "$GITHUB_OUTPUT"; else echo "pg_parts=[]" >> "$GITHUB_OUTPUT"; fi
+            if has library; then echo "library=true" >> "$GITHUB_OUTPUT"; else echo "library=false" >> "$GITHUB_OUTPUT"; fi
             exit 0
           fi
           if [ "$EVENT" = schedule ]; then
@@ -340,7 +351,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: [0, 1, 2, 3]
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -377,7 +388,7 @@ jobs:
         # work branches take the stored verdict of a build whose engine
         # output on its first 500 seeds has not moved (compare -reuse);
         # main runs every build in full and stores what it finds
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes ${{ needs.plan.outputs.teams != '' && format('-teams {0}', needs.plan.outputs.teams) || '' }} -shard ${{ matrix.part }}/4 -cache "$GCSIM_CACHE" ${{ github.ref != 'refs/heads/main' && '-reuse' || '' }} -json ../compare.json -md ../compare.md
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes ${{ needs.plan.outputs.teams != '' && format('-teams {0}', needs.plan.outputs.teams) || '' }} -shard ${{ matrix.part }}/16 -cache "$GCSIM_CACHE" ${{ github.ref != 'refs/heads/main' && '-reuse' || '' }} -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && cat compare.md >> "$GITHUB_STEP_SUMMARY" || true
@@ -799,7 +810,7 @@ jobs:
 
   # the release's manifest: the verified teams and the module they hold for
   manifest:
-    needs: [library, variants, buildspace, pages]
+    needs: [plan, library, variants, buildspace, pages]
     if: always() && !cancelled() && github.event_name == 'workflow_dispatch' && inputs.release == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -831,7 +842,7 @@ jobs:
         run: |
           mkdir -p release
           cp wasm/target/wasm32-unknown-unknown/release/gse_wasm.wasm release/
-          cd reference && go run ./manifest -wasm ../release/gse_wasm.wasm -commit "$GITHUB_SHA" -out ../release/manifest.json -approval ../release/approval.md -summary ../release/approval-summary.md -candidates ../release/approved-candidates.txt -approved ../gscouter-main/internal/engine/approved.txt ../reports/compare-*/compare.json | tee -a "$GITHUB_STEP_SUMMARY"
+          cd reference && go run ./manifest -kinds "${{ needs.plan.outputs.kinds }}" -wasm ../release/gse_wasm.wasm -commit "$GITHUB_SHA" -out ../release/manifest.json -approval ../release/approval.md -summary ../release/approval-summary.md -candidates ../release/approved-candidates.txt -approved ../gscouter-main/internal/engine/approved.txt ../reports/compare-*/compare.json | tee -a "$GITHUB_STEP_SUMMARY"
           # approval.md has every verified team, past the job summary's
           # 1 MiB; the summary page is what the owner answers
           cat ../release/approval-summary.md >> "$GITHUB_STEP_SUMMARY"
@@ -880,8 +891,14 @@ jobs:
           TAG: ${{ inputs.import_release }}
         run: |
           mkdir -p "$RUNNER_TEMP/release" "$RUNNER_TEMP/gcsim-new"
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern 'gcsim-cache-*.tar.gz' --dir "$RUNNER_TEMP/release"
-          for f in "$RUNNER_TEMP"/release/*.tar.gz; do tar -xzf "$f" -C "$RUNNER_TEMP/gcsim-new"; done
+          # one tag or several, comma-separated, each into its own directory
+          # (two releases can carry assets of the same name)
+          for t in $(printf %s "$TAG" | tr -d "[:space:]" | tr , ' '); do
+            mkdir -p "$RUNNER_TEMP/release/$t"
+            gh release download "$t" --repo "$GITHUB_REPOSITORY" --pattern 'gcsim-cache-*.tar.gz' --dir "$RUNNER_TEMP/release/$t"
+            for f in "$RUNNER_TEMP/release/$t"/*.tar.gz; do tar -xzf "$f" -C "$RUNNER_TEMP/gcsim-new"; done
+            echo "imported $t"
+          done
       - id: new
         run: echo "chunks=$(find "$RUNNER_TEMP/gcsim-new" -type f 2>/dev/null | wc -l)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
