@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -20,8 +21,10 @@ const groupALimit = 0.005
 // judgedLimit is compare's bound on a judged character's difference.
 const judgedLimit = 0.01
 
-// group puts a verified team in A or B, with why for B.
-func group(t Team) (string, []string) {
+// group puts a verified team in A or B, with why for B. pages is set
+// when the release judged the page configs: a library-only release has
+// no one-pass score to need.
+func group(t Team, pages bool) (string, []string) {
 	var why []string
 	has := map[string]bool{}
 	for _, s := range t.Scores {
@@ -33,7 +36,11 @@ func group(t Team) (string, []string) {
 			why = append(why, fmt.Sprintf("%s: %s %+.2f%%", s.Build, s.WorstChar, 100*s.WorstDiff))
 		}
 	}
-	for _, b := range []string{"library", "page:once"} {
+	wantScores := []string{"library"}
+	if pages {
+		wantScores = append(wantScores, "page:once")
+	}
+	for _, b := range wantScores {
 		if !has[b] {
 			why = append(why, "no "+b+" score")
 		}
@@ -241,7 +248,17 @@ func approvalSummary(m *Manifest, approved []approvedTeam) string {
 		b.WriteString(" Groups count only the teams not approved before.")
 	}
 	b.WriteString("\n")
-	fmt.Fprintf(&b, "- Group A: both the library build's and the one-pass page config's team DPS within ±%.2f%% of gcsim, no build with a settled verdict, every judged character within ±%.0f%%. Every verified team passed compare at 1%%; the groups only decide how closely each is read.\n", 100*groupALimit, 100*judgedLimit)
+	pagesRun := slices.Contains(m.Kinds, "pages")
+	fmt.Fprintf(&b, "- Kinds judged: %s.", strings.Join(m.Kinds, ", "))
+	if !slices.Equal(m.Kinds, kinds) {
+		b.WriteString(" **A partial release**: a team is verified on these kinds alone; the others are verified after it, and a team that fails one goes back to gcsim and back to the owner (the owner, 2026-11-04).")
+	}
+	b.WriteString("\n")
+	if pagesRun {
+		fmt.Fprintf(&b, "- Group A: both the library build's and the one-pass page config's team DPS within ±%.2f%% of gcsim, no build with a settled verdict, every judged character within ±%.0f%%. Every verified team passed compare at 1%%; the groups only decide how closely each is read.\n", 100*groupALimit, 100*judgedLimit)
+	} else {
+		fmt.Fprintf(&b, "- Group A: the library build's team DPS within ±%.2f%% of gcsim, no build with a settled verdict, every judged character within ±%.0f%%. No one-pass page score: the page configs were not run in this release. Every verified team passed compare at 1%%; the groups only decide how closely each is read.\n", 100*groupALimit, 100*judgedLimit)
+	}
 	if m.Drift.Builds > 0 {
 		fmt.Fprintf(&b, "- Drift: %s.", driftLine(m.Drift))
 		if math.Abs(m.Drift.Mean) > driftLimit {
@@ -361,7 +378,7 @@ func candidateList(m *Manifest, approved []approvedTeam) string {
 		listed[a.team] = true
 	}
 	var b strings.Builder
-	fmt.Fprintf(&b, "# Group A of %s\n# Team DPS within ±%.2f%% of gcsim on the library build and the one-pass\n# page config, no settled verdict (docs/phase4-approval.md).\n# NOT APPROVED. Only the owner approves: add these to Gscouter's\n# internal/engine/approved.txt with the date of the owner's answer, after it.\n", header(m), 100*groupALimit)
+	fmt.Fprintf(&b, "# Group A of %s\n# Team DPS within ±%.2f%% of gcsim on the library build (and the one-pass\n# page config when the release ran the pages), no settled verdict (docs/phase4-approval.md).\n# NOT APPROVED. Only the owner approves: add these to Gscouter's\n# internal/engine/approved.txt with the date of the owner's answer, after it.\n", header(m), 100*groupALimit)
 	var ids []string
 	for _, id := range verifiedIDs(m, "A") {
 		if !listed[id] {
