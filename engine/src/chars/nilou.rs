@@ -309,7 +309,7 @@ impl Character for Char {
                     s.make_bountiful(key);
                 }
             }
-            Event::PlayerHit { on, ele } => {
+            Event::PlayerHit { on, ele, .. } => {
                 if !s.mod_active(on, A1) || ele != Element::Dendro {
                     return;
                 }
