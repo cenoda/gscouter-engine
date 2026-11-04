@@ -32,7 +32,7 @@ func TestBuild(t *testing.T) {
 		{"team": "a", "variant": "page:looped:1.0", "verdict": "unsupported", "error": "unsupported: y"},
 		{"team": "b", "variant": "er-0", "verdict": "pass"},
 		{"team": "b", "variant": "page:once", "verdict": "inconclusive"}], `+census+`}`)
-	m, err := build(wasm, "e", []string{lib, rest})
+	m, err := build(wasm, "e", kinds, []string{lib, rest})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -62,11 +62,11 @@ func TestBuild(t *testing.T) {
 	if strings.Contains(table, "| b |") {
 		t.Error("an unverified team in the approval table")
 	}
-	if _, err := build(wasm, "e", []string{lib}); err == nil {
+	if _, err := build(wasm, "e", kinds, []string{lib}); err == nil {
 		t.Fatal("a manifest from the library run alone")
 	}
 	other := write(t, dir, "other.json", `{"gscouter_commit": "h", "only": ["pages"], "results": []}`)
-	if _, err := build(wasm, "e", []string{lib, rest, other}); err == nil {
+	if _, err := build(wasm, "e", kinds, []string{lib, rest, other}); err == nil {
 		t.Fatal("reports of two Gscouter commits")
 	}
 }
@@ -91,7 +91,7 @@ func TestGroups(t *testing.T) {
 		{"team": "c", "variant": "er-0", "verdict": "pass", "metrics": [{"name": "team", "diff": 0.004, "diff_se": 0.003, "settled": true}]},
 		`+once("c", 0.001)+`,
 		{"team": "d", "variant": "library", "verdict": "fail"}], `+census+`}`)
-	m, err := build(wasm, "e", []string{lib})
+	m, err := build(wasm, "e", kinds, []string{lib})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,5 +152,44 @@ func TestCarryForward(t *testing.T) {
 	}
 	if cand := candidateList(m, approved); !strings.HasSuffix(cand, "\nnew\n") || strings.Contains(cand, "kept") {
 		t.Errorf("candidates:\n%s", cand)
+	}
+}
+
+// A library-only release verifies a team on its library build alone, and
+// groups it without a one-pass score.
+func TestLibraryOnly(t *testing.T) {
+	dir := t.TempDir()
+	wasm := write(t, dir, "m.wasm", "module")
+	census := `"census": {"status": [{"id": "a", "status": "supported"}, {"id": "b", "status": "supported"}]}`
+	lib := write(t, dir, "lib.json", `{"gscouter_commit": "g", "only": ["library", "probes"], "results": [
+		{"team": "a", "variant": "library", "verdict": "pass", "iterations": 4000, "metrics": [{"name": "team", "gcsim": 200, "gse": 200.4, "diff": 0.002, "diff_se": 0.001}]},
+		{"team": "a", "variant": "probe:x", "verdict": "fail"},
+		{"team": "b", "variant": "library", "verdict": "fail", "metrics": [{"name": "team", "diff": 0.02, "diff_se": 0.002}]}], `+census+`}`)
+	if _, err := build(wasm, "e", kinds, []string{lib}); err == nil {
+		t.Fatal("a manifest of every kind from the library run alone")
+	}
+	need, err := parseKinds("library")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := build(wasm, "e", need, []string{lib})
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := m.Teams["a"]
+	if !a.Verified || a.Group != "A" || len(a.VerifiedKinds) != 1 || a.VerifiedKinds[0] != "library" || len(a.Builds) != 1 {
+		t.Errorf("a: %+v", a)
+	}
+	if m.Teams["b"].Verified || m.Verified != 1 || len(m.Kinds) != 1 {
+		t.Errorf("b: %+v, verified %d, kinds %v", m.Teams["b"], m.Verified, m.Kinds)
+	}
+	sum := approvalSummary(m, nil)
+	for _, want := range []string{"Kinds judged: library. Verification is the library build and the probes", "No one-pass page score", "**Group A to answer: 1**"} {
+		if !strings.Contains(sum, want) {
+			t.Errorf("summary lacks %q:\n%s", want, sum)
+		}
+	}
+	if _, err := parseKinds("library,nope"); err == nil {
+		t.Error("an unknown kind")
 	}
 }
