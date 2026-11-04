@@ -149,5 +149,15 @@ crate::weapons! {
     WhiteTassel => whitetassel,
     SnowTombedStarsilver => snowtombedstarsilver,
     TalkingStick => talkingstick,
+    AstralVulturesCrimsonPlumage => astralvulturescrimsonplumage,
+    SkywardHarp => skywardharp,
+    HuntersPath => hunterspath,
+    PolarStar => polarstar,
+    SharpshootersOath => sharpshootersoath,
+    TheFirstGreatMagic => thefirstgreatmagic,
+    SerenitysCall => serenityscall,
+    TravelersHandySword => travelershandysword,
+    TheBell => thebell,
+    WolfsGravestone => wolfsgravestone,
 }
 

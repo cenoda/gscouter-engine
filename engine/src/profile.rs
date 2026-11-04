@@ -91,7 +91,17 @@ fn weapon_params_known(w: WeaponKind) -> Option<&'static [&'static str]> {
         | WeaponKind::SacrificersStaff
         | WeaponKind::WhiteTassel
         | WeaponKind::SnowTombedStarsilver
-        | WeaponKind::TalkingStick => &[],
+        | WeaponKind::TalkingStick
+        | WeaponKind::AstralVulturesCrimsonPlumage
+        | WeaponKind::SkywardHarp
+        | WeaponKind::HuntersPath
+        | WeaponKind::PolarStar
+        | WeaponKind::SharpshootersOath
+        | WeaponKind::TheFirstGreatMagic
+        | WeaponKind::SerenitysCall
+        | WeaponKind::TravelersHandySword
+        | WeaponKind::TheBell
+        | WeaponKind::WolfsGravestone => &[],
         // gcsim reads only melusines; Gscouter's library passes stacks,
         // which gcsim ignores
         WeaponKind::UltimateOverlordsMegaMagicSword => &["melusines", "stacks"],
