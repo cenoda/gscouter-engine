@@ -173,5 +173,25 @@ impl<'a> Walker<'a> {
         if *kind == CharKind::Dahlia && action == Action::Burst && self.chars.iter().any(|c| c.key == key && c.max_level < 70) {
             self.found.push("unsupported: dahlia's burst below ascension 4".into());
         }
+        // Nefer's held charged attack moves the player (Slither): every
+        // member needs its module checked for it. A hold that is not a
+        // constant counts as one that may be held.
+        if *kind == CharKind::Nefer && action == crate::types::Action::Charge {
+            let hold = match args.get(2) {
+                Some(Expr::Map(fields)) => match fields.iter().find(|(k, _)| k == "hold") {
+                    Some((_, Expr::Num(n))) => Some(n.f() as i64),
+                    Some(_) => None,
+                    None => Some(0),
+                },
+                _ => Some(0),
+            };
+            if crate::chars::nefer::may_slither(hold) {
+                for (k, kd) in self.kinds {
+                    if kd.is_some_and(|x| !crate::chars::MOVES_WITH_PLAYER.contains(&x)) {
+                        self.found.push(format!("unsupported: nefer charge[hold] (Slither moves the player) with {}", char_name(*k)));
+                    }
+                }
+            }
+        }
     }
 }

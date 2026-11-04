@@ -1,0 +1,26 @@
+# Moved-player geometry audit of Nefer (with Lauma and Kokomi for Lunar-Bloom, Verdant Dew and Seeds of Deceit). Replace only the marked position for distance checks.
+# Deterministic: crits certain, energy never short; positions keep every seed (1.5 from the enemy) inside or outside the 6 of the absorb.
+options iteration=1000 duration=40 swap_delay=12;
+target lvl=100 resist=0.1 radius=1 pos=0,0;
+
+nefer char lvl=90/90 cons=6 talent=10,10,10;
+nefer add weapon="favoniuscodex" refine=1 lvl=90/90;
+nefer add stats atk=311 em=600 er=10 cr=1 cd=0.8;
+lauma char lvl=90/90 cons=0 talent=9,9,9;
+lauma add weapon="favoniuscodex" refine=1 lvl=90/90;
+lauma add stats atk=311 em=600 er=10 cr=1;
+kokomi char lvl=90/90 cons=0 talent=9,9,9;
+kokomi add weapon="prototypeamber" refine=1 lvl=90/90;
+kokomi add stats atk=311 hp%=0.466 hydro%=0.466 er=10 cr=2;
+
+active kokomi;
+set_player_pos(0,-1.5); # audit position
+kokomi skill;
+lauma skill;
+kokomi attack:3;
+nefer burst, attack:4, skill, charge, charge, attack:2, charge;
+kokomi attack:3;
+lauma attack:3;
+wait(300);
+nefer skill, charge, charge, charge, charge[hold=60], dash, charge, burst;
+wait(1800);

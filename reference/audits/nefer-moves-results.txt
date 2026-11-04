@@ -1,0 +1,379 @@
+## nefer-moves.txt @ 0,-1.5: gcsim 35222.7983 engine 35222.7983
+  lauma/Frostgrove Sanctuary: hits 8 / 8  dmg 41172.571237 / 41172.571237
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 1930.269333 / 1930.269333
+  lauma/Normal 0: hits 1 / 1  dmg 523.506209 / 523.506209
+  lauma/Normal 1: hits 1 / 1  dmg 494.030597 / 494.030597
+  lauma/Normal 2: hits 1 / 1  dmg 691.177936 / 691.177936
+  lauma/bloom: hits 1 / 1  dmg 18518.255712 / 18518.255712
+  nefer/Charge Attack: hits 1 / 1  dmg 3768.261450 / 3768.261450
+  nefer/Normal 1: hits 2 / 2  dmg 2322.765019 / 2322.765019
+  nefer/Normal 2: hits 2 / 2  dmg 2291.818861 / 2291.818861
+  nefer/Normal 3: hits 2 / 2  dmg 1470.708922 / 1470.708922
+  nefer/Normal 4: hits 1 / 1  dmg 1777.040252 / 1777.040252
+  nefer/Phantasm Performance (C6 End Hit): hits 6 / 6  dmg 125200.790454 / 125200.790454
+  nefer/Phantasm Performance (Nefer 1): hits 6 / 6  dmg 18396.886718 / 18396.886718
+  nefer/Phantasm Performance (Nefer 2): hits 6 / 6  dmg 88683.893238 / 88683.893238
+  nefer/Phantasm Performance (Shade 1): hits 6 / 6  dmg 275441.738999 / 275441.738999
+  nefer/Phantasm Performance (Shade 2): hits 6 / 6  dmg 275441.738999 / 275441.738999
+  nefer/Phantasm Performance (Shade 3): hits 6 / 6  dmg 346388.853590 / 346388.853590
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 1): hits 2 / 2  dmg 65010.267213 / 65010.267213
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 2): hits 2 / 2  dmg 97515.400820 / 97515.400820
+  nefer/Senet Strategy: Dance of a Thousand Nights: hits 2 / 2  dmg 12657.473513 / 12657.473513
+  sangonomiyakokomi/Bake-Kurage: hits 7 / 7  dmg 18261.188502 / 18261.188502
+  sangonomiyakokomi/Normal 0: hits 2 / 2  dmg 3340.213011 / 3340.213011
+  sangonomiyakokomi/Normal 1: hits 2 / 2  dmg 3006.192285 / 3006.192285
+  sangonomiyakokomi/Normal 2: hits 2 / 2  dmg 4606.890618 / 4606.890618
+  waits gcsim {'lauma': {'swap_cd': 0.40000000000000324}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'nefer': {}, 'lauma': {'swap_cd': 0.4}, 'sangonomiyakokomi': {}}
+## nefer-moves.txt @ 0,-3: gcsim 35222.7983 engine 35222.7983
+  lauma/Frostgrove Sanctuary: hits 8 / 8  dmg 41172.571237 / 41172.571237
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 1930.269333 / 1930.269333
+  lauma/Normal 0: hits 1 / 1  dmg 523.506209 / 523.506209
+  lauma/Normal 1: hits 1 / 1  dmg 494.030597 / 494.030597
+  lauma/Normal 2: hits 1 / 1  dmg 691.177936 / 691.177936
+  lauma/bloom: hits 1 / 1  dmg 18518.255712 / 18518.255712
+  nefer/Charge Attack: hits 1 / 1  dmg 3768.261450 / 3768.261450
+  nefer/Normal 1: hits 2 / 2  dmg 2322.765019 / 2322.765019
+  nefer/Normal 2: hits 2 / 2  dmg 2291.818861 / 2291.818861
+  nefer/Normal 3: hits 2 / 2  dmg 1470.708922 / 1470.708922
+  nefer/Normal 4: hits 1 / 1  dmg 1777.040252 / 1777.040252
+  nefer/Phantasm Performance (C6 End Hit): hits 6 / 6  dmg 125200.790454 / 125200.790454
+  nefer/Phantasm Performance (Nefer 1): hits 6 / 6  dmg 18396.886718 / 18396.886718
+  nefer/Phantasm Performance (Nefer 2): hits 6 / 6  dmg 88683.893238 / 88683.893238
+  nefer/Phantasm Performance (Shade 1): hits 6 / 6  dmg 275441.738999 / 275441.738999
+  nefer/Phantasm Performance (Shade 2): hits 6 / 6  dmg 275441.738999 / 275441.738999
+  nefer/Phantasm Performance (Shade 3): hits 6 / 6  dmg 346388.853590 / 346388.853590
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 1): hits 2 / 2  dmg 65010.267213 / 65010.267213
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 2): hits 2 / 2  dmg 97515.400820 / 97515.400820
+  nefer/Senet Strategy: Dance of a Thousand Nights: hits 2 / 2  dmg 12657.473513 / 12657.473513
+  sangonomiyakokomi/Bake-Kurage: hits 7 / 7  dmg 18261.188502 / 18261.188502
+  sangonomiyakokomi/Normal 0: hits 2 / 2  dmg 3340.213011 / 3340.213011
+  sangonomiyakokomi/Normal 1: hits 2 / 2  dmg 3006.192285 / 3006.192285
+  sangonomiyakokomi/Normal 2: hits 2 / 2  dmg 4606.890618 / 4606.890618
+  waits gcsim {'lauma': {'swap_cd': 0.40000000000000324}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'nefer': {}, 'lauma': {'swap_cd': 0.4}, 'sangonomiyakokomi': {}}
+## nefer-moves.txt @ 2.4,3.2: gcsim 35222.7983 engine 35222.7983
+  lauma/Frostgrove Sanctuary: hits 8 / 8  dmg 41172.571237 / 41172.571237
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 1930.269333 / 1930.269333
+  lauma/Normal 0: hits 1 / 1  dmg 523.506209 / 523.506209
+  lauma/Normal 1: hits 1 / 1  dmg 494.030597 / 494.030597
+  lauma/Normal 2: hits 1 / 1  dmg 691.177936 / 691.177936
+  lauma/bloom: hits 1 / 1  dmg 18518.255712 / 18518.255712
+  nefer/Charge Attack: hits 1 / 1  dmg 3768.261450 / 3768.261450
+  nefer/Normal 1: hits 2 / 2  dmg 2322.765019 / 2322.765019
+  nefer/Normal 2: hits 2 / 2  dmg 2291.818861 / 2291.818861
+  nefer/Normal 3: hits 2 / 2  dmg 1470.708922 / 1470.708922
+  nefer/Normal 4: hits 1 / 1  dmg 1777.040252 / 1777.040252
+  nefer/Phantasm Performance (C6 End Hit): hits 6 / 6  dmg 125200.790454 / 125200.790454
+  nefer/Phantasm Performance (Nefer 1): hits 6 / 6  dmg 18396.886718 / 18396.886718
+  nefer/Phantasm Performance (Nefer 2): hits 6 / 6  dmg 88683.893238 / 88683.893238
+  nefer/Phantasm Performance (Shade 1): hits 6 / 6  dmg 275441.738999 / 275441.738999
+  nefer/Phantasm Performance (Shade 2): hits 6 / 6  dmg 275441.738999 / 275441.738999
+  nefer/Phantasm Performance (Shade 3): hits 6 / 6  dmg 346388.853590 / 346388.853590
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 1): hits 2 / 2  dmg 65010.267213 / 65010.267213
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 2): hits 2 / 2  dmg 97515.400820 / 97515.400820
+  nefer/Senet Strategy: Dance of a Thousand Nights: hits 2 / 2  dmg 12657.473513 / 12657.473513
+  sangonomiyakokomi/Bake-Kurage: hits 7 / 7  dmg 18261.188502 / 18261.188502
+  sangonomiyakokomi/Normal 0: hits 2 / 2  dmg 3340.213011 / 3340.213011
+  sangonomiyakokomi/Normal 1: hits 2 / 2  dmg 3006.192285 / 3006.192285
+  sangonomiyakokomi/Normal 2: hits 2 / 2  dmg 4606.890618 / 4606.890618
+  waits gcsim {'lauma': {'swap_cd': 0.40000000000000324}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'nefer': {}, 'lauma': {'swap_cd': 0.4}, 'sangonomiyakokomi': {}}
+## nefer-moves.txt @ 0,-25: gcsim 3898.6768 engine 3898.6768
+  lauma/Normal 0: hits 1 / 1  dmg 405.295130 / 405.295130
+  lauma/Normal 1: hits 1 / 1  dmg 382.475301 / 382.475301
+  lauma/Normal 2: hits 1 / 1  dmg 535.105499 / 535.105499
+  nefer/Charge Attack: hits 5 / 5  dmg 16149.691930 / 16149.691930
+  nefer/Normal 1: hits 2 / 2  dmg 1879.090802 / 1879.090802
+  nefer/Normal 2: hits 2 / 2  dmg 1854.055708 / 1854.055708
+  nefer/Normal 3: hits 2 / 2  dmg 1245.776969 / 1245.776969
+  nefer/Normal 4: hits 1 / 1  dmg 1505.257625 / 1505.257625
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 1): hits 2 / 2  dmg 45165.160334 / 45165.160334
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 2): hits 2 / 2  dmg 67747.740500 / 67747.740500
+  nefer/Senet Strategy: Dance of a Thousand Nights: hits 2 / 2  dmg 9799.334333 / 9799.334333
+  sangonomiyakokomi/Normal 0: hits 2 / 2  dmg 2829.356904 / 2829.356904
+  sangonomiyakokomi/Normal 1: hits 2 / 2  dmg 2546.421700 / 2546.421700
+  sangonomiyakokomi/Normal 2: hits 2 / 2  dmg 3902.307347 / 3902.307347
+  waits gcsim {'lauma': {'swap_cd': 0.40000000000000324}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'nefer': {}, 'lauma': {'swap_cd': 0.4}, 'sangonomiyakokomi': {}}
+TOTAL DIFFS 0
+## nefer-moves-c4.txt @ 0,-11: gcsim 3592.8357 engine 3592.8357
+  lauma/Normal 0: hits 1 / 1  dmg 472.844318 / 472.844318
+  lauma/Normal 1: hits 1 / 1  dmg 446.221184 / 446.221184
+  lauma/Normal 2: hits 1 / 1  dmg 624.289749 / 624.289749
+  nefer/Charge Attack: hits 4 / 4  dmg 15073.045801 / 15073.045801
+  nefer/Normal 1: hits 2 / 2  dmg 2035.681702 / 2035.681702
+  nefer/Normal 2: hits 2 / 2  dmg 2008.560350 / 2008.560350
+  nefer/Normal 3: hits 2 / 2  dmg 1245.776969 / 1245.776969
+  nefer/Normal 4: hits 1 / 1  dmg 1505.257625 / 1505.257625
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 1): hits 2 / 2  dmg 39836.443764 / 39836.443764
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 2): hits 2 / 2  dmg 59754.665647 / 59754.665647
+  nefer/Senet Strategy: Dance of a Thousand Nights: hits 2 / 2  dmg 11432.556722 / 11432.556722
+  sangonomiyakokomi/Normal 0: hits 2 / 2  dmg 2829.356904 / 2829.356904
+  sangonomiyakokomi/Normal 1: hits 2 / 2  dmg 2546.421700 / 2546.421700
+  sangonomiyakokomi/Normal 2: hits 2 / 2  dmg 3902.307347 / 3902.307347
+  waits gcsim {'lauma': {'swap_cd': 0.40000000000000324}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'nefer': {}, 'lauma': {'swap_cd': 0.4}, 'sangonomiyakokomi': {}}
+## nefer-moves-c4.txt @ 0,-11.0001: gcsim 3238.1810 engine 3238.1810
+  lauma/Normal 0: hits 1 / 1  dmg 405.295130 / 405.295130
+  lauma/Normal 1: hits 1 / 1  dmg 382.475301 / 382.475301
+  lauma/Normal 2: hits 1 / 1  dmg 535.105499 / 535.105499
+  nefer/Charge Attack: hits 4 / 4  dmg 12919.753544 / 12919.753544
+  nefer/Normal 1: hits 2 / 2  dmg 1879.090802 / 1879.090802
+  nefer/Normal 2: hits 2 / 2  dmg 1854.055708 / 1854.055708
+  nefer/Normal 3: hits 2 / 2  dmg 1245.776969 / 1245.776969
+  nefer/Normal 4: hits 1 / 1  dmg 1505.257625 / 1505.257625
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 1): hits 2 / 2  dmg 35889.203295 / 35889.203295
+  nefer/Sacred Vow: True Eye's Phantasm (Hit 2): hits 2 / 2  dmg 53833.804943 / 53833.804943
+  nefer/Senet Strategy: Dance of a Thousand Nights: hits 2 / 2  dmg 9799.334333 / 9799.334333
+  sangonomiyakokomi/Normal 0: hits 2 / 2  dmg 2829.356904 / 2829.356904
+  sangonomiyakokomi/Normal 1: hits 2 / 2  dmg 2546.421700 / 2546.421700
+  sangonomiyakokomi/Normal 2: hits 2 / 2  dmg 3902.307347 / 3902.307347
+  waits gcsim {'lauma': {'swap_cd': 0.40000000000000324}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'nefer': {}, 'lauma': {'swap_cd': 0.4}, 'sangonomiyakokomi': {}}
+TOTAL DIFFS 0
+## lauma-kokomi-moves.txt @ 0,-1.5: gcsim 44246.9366 engine 44246.9366
+  lauma/Charge Attack: hits 1 / 1  dmg 3135.237414 / 3135.237414
+  lauma/Frostgrove Sanctuary: hits 16 / 16  dmg 157126.731119 / 157126.731119
+  lauma/Frostgrove Sanctuary C6: hits 16 / 16  dmg 731932.107984 / 731932.107984
+  lauma/Hymn of Eternal Rest (Hold): hits 1 / 1  dmg 5985.264762 / 5985.264762
+  lauma/Hymn of Eternal Rest (Hold) (Lunar-Bloom): hits 1 / 1  dmg 123431.170822 / 123431.170822
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 3699.682889 / 3699.682889
+  lauma/Normal 0: hits 2 / 2  dmg 1637.709092 / 1637.709092
+  lauma/Normal 1: hits 1 / 1  dmg 772.748987 / 772.748987
+  lauma/Normal 2: hits 1 / 1  dmg 1081.121842 / 1081.121842
+  lauma/Normal C6 Pale Hymn: hits 7 / 7  dmg 328485.752483 / 328485.752483
+  lauma/bloom: hits 7 / 7  dmg 214869.492572 / 214869.492572
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 21807.002703 / 21807.002703
+  sangonomiyakokomi/Bake-Kurage: hits 9 / 9  dmg 47379.489570 / 47379.489570
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 10639.712169 / 10639.712169
+  sangonomiyakokomi/Nereid's Ascension: hits 1 / 1  dmg 8044.603297 / 8044.603297
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 15794.183469 / 15794.183469
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 15234.968490 / 15234.968490
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 17914.840333 / 17914.840333
+  sangonomiyakokomi/bloom: hits 5 / 5  dmg 60905.645830 / 60905.645830
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 0,-5.9: gcsim 44246.9366 engine 44246.9366
+  lauma/Charge Attack: hits 1 / 1  dmg 3135.237414 / 3135.237414
+  lauma/Frostgrove Sanctuary: hits 16 / 16  dmg 157126.731119 / 157126.731119
+  lauma/Frostgrove Sanctuary C6: hits 16 / 16  dmg 731932.107984 / 731932.107984
+  lauma/Hymn of Eternal Rest (Hold): hits 1 / 1  dmg 5985.264762 / 5985.264762
+  lauma/Hymn of Eternal Rest (Hold) (Lunar-Bloom): hits 1 / 1  dmg 123431.170822 / 123431.170822
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 3699.682889 / 3699.682889
+  lauma/Normal 0: hits 2 / 2  dmg 1637.709092 / 1637.709092
+  lauma/Normal 1: hits 1 / 1  dmg 772.748987 / 772.748987
+  lauma/Normal 2: hits 1 / 1  dmg 1081.121842 / 1081.121842
+  lauma/Normal C6 Pale Hymn: hits 7 / 7  dmg 328485.752483 / 328485.752483
+  lauma/bloom: hits 7 / 7  dmg 214869.492572 / 214869.492572
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 21807.002703 / 21807.002703
+  sangonomiyakokomi/Bake-Kurage: hits 9 / 9  dmg 47379.489570 / 47379.489570
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 10639.712169 / 10639.712169
+  sangonomiyakokomi/Nereid's Ascension: hits 1 / 1  dmg 8044.603297 / 8044.603297
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 15794.183469 / 15794.183469
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 15234.968490 / 15234.968490
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 17914.840333 / 17914.840333
+  sangonomiyakokomi/bloom: hits 5 / 5  dmg 60905.645830 / 60905.645830
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 0,-6: gcsim 44246.9366 engine 44246.9366
+  lauma/Charge Attack: hits 1 / 1  dmg 3135.237414 / 3135.237414
+  lauma/Frostgrove Sanctuary: hits 16 / 16  dmg 157126.731119 / 157126.731119
+  lauma/Frostgrove Sanctuary C6: hits 16 / 16  dmg 731932.107984 / 731932.107984
+  lauma/Hymn of Eternal Rest (Hold): hits 1 / 1  dmg 5985.264762 / 5985.264762
+  lauma/Hymn of Eternal Rest (Hold) (Lunar-Bloom): hits 1 / 1  dmg 123431.170822 / 123431.170822
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 3699.682889 / 3699.682889
+  lauma/Normal 0: hits 2 / 2  dmg 1637.709092 / 1637.709092
+  lauma/Normal 1: hits 1 / 1  dmg 772.748987 / 772.748987
+  lauma/Normal 2: hits 1 / 1  dmg 1081.121842 / 1081.121842
+  lauma/Normal C6 Pale Hymn: hits 7 / 7  dmg 328485.752483 / 328485.752483
+  lauma/bloom: hits 7 / 7  dmg 214869.492572 / 214869.492572
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 21807.002703 / 21807.002703
+  sangonomiyakokomi/Bake-Kurage: hits 9 / 9  dmg 47379.489570 / 47379.489570
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 10639.712169 / 10639.712169
+  sangonomiyakokomi/Nereid's Ascension: hits 1 / 1  dmg 8044.603297 / 8044.603297
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 15794.183469 / 15794.183469
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 15234.968490 / 15234.968490
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 17914.840333 / 17914.840333
+  sangonomiyakokomi/bloom: hits 5 / 5  dmg 60905.645830 / 60905.645830
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 0,-6.0001: gcsim 43999.2392 engine 43999.2392
+  lauma/Charge Attack: hits 1 / 1  dmg 3135.237414 / 3135.237414
+  lauma/Frostgrove Sanctuary: hits 16 / 16  dmg 157126.731119 / 157126.731119
+  lauma/Frostgrove Sanctuary C6: hits 16 / 16  dmg 731932.107984 / 731932.107984
+  lauma/Hymn of Eternal Rest (Hold): hits 1 / 1  dmg 5985.264762 / 5985.264762
+  lauma/Hymn of Eternal Rest (Hold) (Lunar-Bloom): hits 1 / 1  dmg 123431.170822 / 123431.170822
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 3699.682889 / 3699.682889
+  lauma/Normal 0: hits 2 / 2  dmg 1637.709092 / 1637.709092
+  lauma/Normal 1: hits 1 / 1  dmg 772.748987 / 772.748987
+  lauma/Normal 2: hits 1 / 1  dmg 1081.121842 / 1081.121842
+  lauma/Normal C6 Pale Hymn: hits 7 / 7  dmg 328485.752483 / 328485.752483
+  lauma/bloom: hits 6 / 6  dmg 184173.850776 / 184173.850776
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 21807.002703 / 21807.002703
+  sangonomiyakokomi/Bake-Kurage: hits 9 / 9  dmg 47379.489570 / 47379.489570
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 10639.712169 / 10639.712169
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 15794.183469 / 15794.183469
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 15234.968490 / 15234.968490
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 17914.840333 / 17914.840333
+  sangonomiyakokomi/bloom: hits 7 / 7  dmg 89737.992826 / 89737.992826
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 0,-7: gcsim 43999.2392 engine 43999.2392
+  lauma/Charge Attack: hits 1 / 1  dmg 3135.237414 / 3135.237414
+  lauma/Frostgrove Sanctuary: hits 16 / 16  dmg 157126.731119 / 157126.731119
+  lauma/Frostgrove Sanctuary C6: hits 16 / 16  dmg 731932.107984 / 731932.107984
+  lauma/Hymn of Eternal Rest (Hold): hits 1 / 1  dmg 5985.264762 / 5985.264762
+  lauma/Hymn of Eternal Rest (Hold) (Lunar-Bloom): hits 1 / 1  dmg 123431.170822 / 123431.170822
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 3699.682889 / 3699.682889
+  lauma/Normal 0: hits 2 / 2  dmg 1637.709092 / 1637.709092
+  lauma/Normal 1: hits 1 / 1  dmg 772.748987 / 772.748987
+  lauma/Normal 2: hits 1 / 1  dmg 1081.121842 / 1081.121842
+  lauma/Normal C6 Pale Hymn: hits 7 / 7  dmg 328485.752483 / 328485.752483
+  lauma/bloom: hits 6 / 6  dmg 184173.850776 / 184173.850776
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 21807.002703 / 21807.002703
+  sangonomiyakokomi/Bake-Kurage: hits 9 / 9  dmg 47379.489570 / 47379.489570
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 10639.712169 / 10639.712169
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 15794.183469 / 15794.183469
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 15234.968490 / 15234.968490
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 17914.840333 / 17914.840333
+  sangonomiyakokomi/bloom: hits 7 / 7  dmg 89737.992826 / 89737.992826
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 0,-7.0001: gcsim 9429.0963 engine 9429.0963
+  lauma/Charge Attack: hits 1 / 1  dmg 2519.387208 / 2519.387208
+  lauma/Normal 0: hits 2 / 2  dmg 1316.016234 / 1316.016234
+  lauma/Normal 1: hits 2 / 2  dmg 1241.918014 / 1241.918014
+  lauma/Normal 2: hits 1 / 1  dmg 868.758623 / 868.758623
+  lauma/Normal C6 Pale Hymn: hits 6 / 6  dmg 226834.833410 / 226834.833410
+  lauma/bloom: hits 2 / 2  dmg 40352.192626 / 40352.192626
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 17523.484315 / 17523.484315
+  sangonomiyakokomi/Bake-Kurage: hits 9 / 9  dmg 38627.497745 / 38627.497745
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 8549.768707 / 8549.768707
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 12691.754573 / 12691.754573
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 12242.385393 / 12242.385393
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 14395.853839 / 14395.853839
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 0,-10: gcsim 9429.0963 engine 9429.0963
+  lauma/Charge Attack: hits 1 / 1  dmg 2519.387208 / 2519.387208
+  lauma/Normal 0: hits 2 / 2  dmg 1316.016234 / 1316.016234
+  lauma/Normal 1: hits 2 / 2  dmg 1241.918014 / 1241.918014
+  lauma/Normal 2: hits 1 / 1  dmg 868.758623 / 868.758623
+  lauma/Normal C6 Pale Hymn: hits 6 / 6  dmg 226834.833410 / 226834.833410
+  lauma/bloom: hits 2 / 2  dmg 40352.192626 / 40352.192626
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 17523.484315 / 17523.484315
+  sangonomiyakokomi/Bake-Kurage: hits 9 / 9  dmg 38627.497745 / 38627.497745
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 8549.768707 / 8549.768707
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 12691.754573 / 12691.754573
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 12242.385393 / 12242.385393
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 14395.853839 / 14395.853839
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 0,-10.0001: gcsim 8463.4088 engine 8463.4088
+  lauma/Charge Attack: hits 1 / 1  dmg 2519.387208 / 2519.387208
+  lauma/Normal 0: hits 2 / 2  dmg 1316.016234 / 1316.016234
+  lauma/Normal 1: hits 2 / 2  dmg 1241.918014 / 1241.918014
+  lauma/Normal 2: hits 1 / 1  dmg 868.758623 / 868.758623
+  lauma/Normal C6 Pale Hymn: hits 6 / 6  dmg 226834.833410 / 226834.833410
+  lauma/bloom: hits 2 / 2  dmg 40352.192626 / 40352.192626
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 17523.484315 / 17523.484315
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 8549.768707 / 8549.768707
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 12691.754573 / 12691.754573
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 12242.385393 / 12242.385393
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 14395.853839 / 14395.853839
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 3,4: gcsim 44246.9366 engine 44246.9366
+  lauma/Charge Attack: hits 1 / 1  dmg 3135.237414 / 3135.237414
+  lauma/Frostgrove Sanctuary: hits 16 / 16  dmg 157126.731119 / 157126.731119
+  lauma/Frostgrove Sanctuary C6: hits 16 / 16  dmg 731932.107984 / 731932.107984
+  lauma/Hymn of Eternal Rest (Hold): hits 1 / 1  dmg 5985.264762 / 5985.264762
+  lauma/Hymn of Eternal Rest (Hold) (Lunar-Bloom): hits 1 / 1  dmg 123431.170822 / 123431.170822
+  lauma/Hymn of Hunting (Press): hits 1 / 1  dmg 3699.682889 / 3699.682889
+  lauma/Normal 0: hits 2 / 2  dmg 1637.709092 / 1637.709092
+  lauma/Normal 1: hits 1 / 1  dmg 772.748987 / 772.748987
+  lauma/Normal 2: hits 1 / 1  dmg 1081.121842 / 1081.121842
+  lauma/Normal C6 Pale Hymn: hits 7 / 7  dmg 328485.752483 / 328485.752483
+  lauma/bloom: hits 7 / 7  dmg 214869.492572 / 214869.492572
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 21807.002703 / 21807.002703
+  sangonomiyakokomi/Bake-Kurage: hits 9 / 9  dmg 47379.489570 / 47379.489570
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 10639.712169 / 10639.712169
+  sangonomiyakokomi/Nereid's Ascension: hits 1 / 1  dmg 8044.603297 / 8044.603297
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 15794.183469 / 15794.183469
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 15234.968490 / 15234.968490
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 17914.840333 / 17914.840333
+  sangonomiyakokomi/bloom: hits 5 / 5  dmg 60905.645830 / 60905.645830
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+## lauma-kokomi-moves.txt @ 0,-15: gcsim 8463.4088 engine 8463.4088
+  lauma/Charge Attack: hits 1 / 1  dmg 2519.387208 / 2519.387208
+  lauma/Normal 0: hits 2 / 2  dmg 1316.016234 / 1316.016234
+  lauma/Normal 1: hits 2 / 2  dmg 1241.918014 / 1241.918014
+  lauma/Normal 2: hits 1 / 1  dmg 868.758623 / 868.758623
+  lauma/Normal C6 Pale Hymn: hits 6 / 6  dmg 226834.833410 / 226834.833410
+  lauma/bloom: hits 2 / 2  dmg 40352.192626 / 40352.192626
+  sangonomiyakokomi/At Water's Edge (C1): hits 2 / 2  dmg 17523.484315 / 17523.484315
+  sangonomiyakokomi/Charge: hits 1 / 1  dmg 8549.768707 / 8549.768707
+  sangonomiyakokomi/Normal 0: hits 3 / 3  dmg 12691.754573 / 12691.754573
+  sangonomiyakokomi/Normal 1: hits 3 / 3  dmg 12242.385393 / 12242.385393
+  sangonomiyakokomi/Normal 2: hits 3 / 3  dmg 14395.853839 / 14395.853839
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+TOTAL DIFFS 0
+## lauma-kokomi-moves-timing.txt: gcsim 18253.7841 engine 18253.7841
+  lauma/Frostgrove Sanctuary: hits 6 / 6  dmg 56993.512962 / 56993.512962
+  lauma/Frostgrove Sanctuary C6: hits 6 / 6  dmg 281092.905266 / 281092.905266
+  lauma/Hymn of Eternal Rest (Hold): hits 1 / 1  dmg 4809.587755 / 4809.587755
+  lauma/Hymn of Eternal Rest (Hold) (Lunar-Bloom): hits 1 / 1  dmg 99185.762268 / 99185.762268
+  lauma/bloom: hits 7 / 7  dmg 203694.270914 / 203694.270914
+  sangonomiyakokomi/Bake-Kurage: hits 11 / 11  dmg 76330.720601 / 76330.720601
+  sangonomiyakokomi/Nereid's Ascension: hits 1 / 1  dmg 8044.603297 / 8044.603297
+  waits gcsim {'lauma': {}, 'nefer': {}, 'sangonomiyakokomi': {}} engine {'lauma': {}, 'sangonomiyakokomi': {}, 'nefer': {}}
+TOTAL DIFFS 0
+## linnea-moves.txt @ 0,-1.5: gcsim 10188.0375 engine 10188.0375
+  linnea/Fully-Charged Aimed Shot: hits 2 / 2  dmg 5090.825158 / 5090.825158
+  linnea/Lumi Heavy Overdrive Hammer: hits 3 / 3  dmg 122554.261125 / 122554.261125
+  linnea/Lumi Pound-Pound Pummeler 1: hits 24 / 24  dmg 92818.533707 / 92818.533707
+  linnea/Lumi Pound-Pound Pummeler 2: hits 24 / 24  dmg 93000.386807 / 93000.386807
+  linnea/Normal 0: hits 4 / 4  dmg 4521.483281 / 4521.483281
+  linnea/Normal 1: hits 2 / 2  dmg 1960.126704 / 1960.126704
+  linnea/Normal 2: hits 2 / 2  dmg 3179.847591 / 3179.847591
+  linnea/lunarcrystallize: hits 3 / 3  dmg 55938.853942 / 55938.853942
+  yelan/Depth-Clarion Dice: hits 1 / 1  dmg 3317.815635 / 3317.815635
+  yelan/Exquisite Throw: hits 6 / 6  dmg 13271.262539 / 13271.262539
+  yelan/Lingering Lifeline: hits 1 / 1  dmg 10266.518419 / 10266.518419
+  yelan/Normal 0: hits 1 / 1  dmg 496.103241 / 496.103241
+  yelan/Normal 1: hits 1 / 1  dmg 476.175204 / 476.175204
+  yelan/Normal 2: hits 1 / 1  dmg 629.306437 / 629.306437
+  waits gcsim {'linnea': {'skill_cd': 12.550000000000047}, 'yelan': {'swap_cd': 0.10000000000000081}} engine {'linnea': {'skill_cd': 12.55}, 'yelan': {'swap_cd': 0.1}}
+## linnea-moves.txt @ 3,4: gcsim 10188.0375 engine 10188.0375
+  linnea/Fully-Charged Aimed Shot: hits 2 / 2  dmg 5090.825158 / 5090.825158
+  linnea/Lumi Heavy Overdrive Hammer: hits 3 / 3  dmg 122554.261125 / 122554.261125
+  linnea/Lumi Pound-Pound Pummeler 1: hits 24 / 24  dmg 92818.533707 / 92818.533707
+  linnea/Lumi Pound-Pound Pummeler 2: hits 24 / 24  dmg 93000.386807 / 93000.386807
+  linnea/Normal 0: hits 4 / 4  dmg 4521.483281 / 4521.483281
+  linnea/Normal 1: hits 2 / 2  dmg 1960.126704 / 1960.126704
+  linnea/Normal 2: hits 2 / 2  dmg 3179.847591 / 3179.847591
+  linnea/lunarcrystallize: hits 3 / 3  dmg 55938.853942 / 55938.853942
+  yelan/Depth-Clarion Dice: hits 1 / 1  dmg 3317.815635 / 3317.815635
+  yelan/Exquisite Throw: hits 6 / 6  dmg 13271.262539 / 13271.262539
+  yelan/Lingering Lifeline: hits 1 / 1  dmg 10266.518419 / 10266.518419
+  yelan/Normal 0: hits 1 / 1  dmg 496.103241 / 496.103241
+  yelan/Normal 1: hits 1 / 1  dmg 476.175204 / 476.175204
+  yelan/Normal 2: hits 1 / 1  dmg 629.306437 / 629.306437
+  waits gcsim {'linnea': {'skill_cd': 12.550000000000047}, 'yelan': {'swap_cd': 0.10000000000000081}} engine {'linnea': {'skill_cd': 12.55}, 'yelan': {'swap_cd': 0.1}}
+## linnea-moves.txt @ 0,-15: gcsim 10105.0921 engine 10105.0921
+  linnea/Fully-Charged Aimed Shot: hits 2 / 2  dmg 5090.825158 / 5090.825158
+  linnea/Lumi Heavy Overdrive Hammer: hits 3 / 3  dmg 122554.261125 / 122554.261125
+  linnea/Lumi Pound-Pound Pummeler 1: hits 24 / 24  dmg 92818.533707 / 92818.533707
+  linnea/Lumi Pound-Pound Pummeler 2: hits 24 / 24  dmg 93000.386807 / 93000.386807
+  linnea/Normal 0: hits 4 / 4  dmg 4521.483281 / 4521.483281
+  linnea/Normal 1: hits 2 / 2  dmg 1960.126704 / 1960.126704
+  linnea/Normal 2: hits 2 / 2  dmg 3179.847591 / 3179.847591
+  linnea/lunarcrystallize: hits 3 / 3  dmg 55938.853942 / 55938.853942
+  yelan/Exquisite Throw: hits 6 / 6  dmg 13271.262539 / 13271.262539
+  yelan/Lingering Lifeline: hits 1 / 1  dmg 10266.518419 / 10266.518419
+  yelan/Normal 0: hits 1 / 1  dmg 496.103241 / 496.103241
+  yelan/Normal 1: hits 1 / 1  dmg 476.175204 / 476.175204
+  yelan/Normal 2: hits 1 / 1  dmg 629.306437 / 629.306437
+  waits gcsim {'linnea': {'skill_cd': 12.550000000000047}, 'yelan': {'swap_cd': 0.10000000000000081}} engine {'linnea': {'skill_cd': 12.55}, 'yelan': {'swap_cd': 0.1}}
+## linnea-moves.txt @ 0,-25: gcsim 7116.3518 engine 7116.3518
+  linnea/Fully-Charged Aimed Shot: hits 2 / 2  dmg 5090.825158 / 5090.825158
+  linnea/Lumi Heavy Overdrive Hammer: hits 3 / 3  dmg 71720.414136 / 71720.414136
+  linnea/Lumi Pound-Pound Pummeler 1: hits 24 / 24  dmg 86462.141794 / 86462.141794
+  linnea/Lumi Pound-Pound Pummeler 2: hits 24 / 24  dmg 86579.868888 / 86579.868888
+  linnea/Normal 0: hits 4 / 4  dmg 4521.483281 / 4521.483281
+  linnea/Normal 1: hits 2 / 2  dmg 1960.126704 / 1960.126704
+  linnea/Normal 2: hits 2 / 2  dmg 3179.847591 / 3179.847591
+  yelan/Exquisite Throw: hits 6 / 6  dmg 13271.262539 / 13271.262539
+  yelan/Lingering Lifeline: hits 1 / 1  dmg 10266.518419 / 10266.518419
+  yelan/Normal 0: hits 1 / 1  dmg 496.103241 / 496.103241
+  yelan/Normal 1: hits 1 / 1  dmg 476.175204 / 476.175204
+  yelan/Normal 2: hits 1 / 1  dmg 629.306437 / 629.306437
+  waits gcsim {'linnea': {'skill_cd': 12.550000000000047}, 'yelan': {'swap_cd': 0.10000000000000081}} engine {'linnea': {'skill_cd': 12.55}, 'yelan': {'swap_cd': 0.1}}
+TOTAL DIFFS 0

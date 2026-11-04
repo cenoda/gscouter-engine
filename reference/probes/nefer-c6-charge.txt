@@ -1,0 +1,7 @@
+# Nefer at C6 with tapped and briefly held charged attacks (C6's Phantasm hits on both routes, C2's and C4's Verdant Dew and Veil).
+team nefer-lauma-columbina-nahida
+nefer char lvl=90/90 cons=6 talent=9,9,9;
+rotation- nefer skill, charge[hold=150], dash, charge[hold=150], dash, charge[hold=150], dash,
+rotation-       skill, charge[hold=150], dash, charge[hold=150], dash, charge[hold=150];
+rotation+ nefer skill, attack:4, charge, charge[hold=30], dash, charge[hold=150], dash, charge, charge[hold=30], dash,
+rotation+       skill, charge, attack:2, charge[hold=150], dash, charge[hold=150];

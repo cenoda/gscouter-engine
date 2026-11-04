@@ -1365,6 +1365,12 @@ pub struct Gadget {
 pub const CORE: u8 = u8::MAX;
 /// Gadget id of a core Nilou's A1 made Bountiful (owner CORE).
 pub const BOUNTIFUL_CORE: u8 = 1;
+/// Gadget id of Nefer's Seed of Deceit (owner CORE): gcsim's seedGadget, of
+/// the dendro core type (it counts toward their limit of five and abilities
+/// that pick dendro cores pick it), which reacts to nothing, never
+/// explodes, and is not one of gcsim's dendrocore.Gadget (Kaveh's rupture
+/// and the dendrocore count skip it).
+pub const SEED_CORE: u8 = 2;
 
 /// gcsim's shield.Type, for the shields the engine makes: a new shield
 /// replaces the one of its type with the same target.
@@ -1509,6 +1515,9 @@ pub struct Sim {
     pub pre_drain_subs: Vec<u8>,
     /// The characters subscribed to OnTick, in order.
     pub tick_subs: Vec<u8>,
+    /// gcsim's VerdantDewRateMods, in the order added: (Nefer's slot, the
+    /// mod's id in `chars::nefer`).
+    pub dew_rate_mods: Vec<(u8, u8)>,
     /// Diona's A1: stamina -10% while her shield is up.
     pub diona_a1: bool,
     /// Noelle's C2 -20% charged attack stamina, from her slot.
@@ -1720,6 +1729,7 @@ impl Sim {
             utility_dash: None,
             pre_drain_subs: Vec::new(),
             tick_subs: Vec::new(),
+            dew_rate_mods: Vec::new(),
             diona_a1: false,
             noelle_c2: None,
             barbara_a1: 0,
@@ -3631,10 +3641,15 @@ impl Sim {
         Reaction::LunarBloom
     }
 
-    /// gcsim's verdantDewGen: a dew every 146 frames of build-up. No
-    /// content the engine has changes the rate (AddVerdantDewRateMod).
+    /// gcsim's verdantDewGen: a dew every 146 frames of build-up, faster
+    /// by the rate mods (AddVerdantDewRateMod; only Nefer's A4 and C4).
     fn verdant_dew_gen(&mut self) {
-        self.player.partial_dew += 1.0;
+        let mut rate = 0.0;
+        for i in 0..self.dew_rate_mods.len() {
+            let (c, id) = self.dew_rate_mods[i];
+            rate += crate::chars::nefer::dew_rate(self, c as usize, id);
+        }
+        self.player.partial_dew += 1.0 + rate;
         if self.player.partial_dew >= MAX_PARTIAL_DEW {
             self.add_verdant_dew();
             self.player.partial_dew = 0.0;
@@ -3820,7 +3835,10 @@ impl Sim {
         }
         if count == 5 {
             let g = self.gadgets.remove(oldest.unwrap());
-            self.core_explode(g.actor, g.x, g.y, g.id == BOUNTIFUL_CORE);
+            // a Seed of Deceit has no OnKill
+            if g.id != SEED_CORE {
+                self.core_explode(g.actor, g.x, g.y, g.id == BOUNTIFUL_CORE);
+            }
         }
         let f = self.f;
         self.push_gadget(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true, collides_player: false, key: 0 });
@@ -3856,7 +3874,7 @@ impl Sim {
     pub fn rupture_cores(&mut self, p: Pattern, ci: usize, abil: &str) {
         for k in 0..self.gadgets.len() {
             let g = self.gadgets[k];
-            if g.owner != CORE || g.id == BOUNTIFUL_CORE {
+            if g.owner != CORE || g.id == BOUNTIFUL_CORE || g.id == SEED_CORE {
                 continue;
             }
             match p.hits_gadget(&g, g.r) {
@@ -3869,6 +3887,79 @@ impl Sim {
                 Some(false) => {}
             }
         }
+    }
+
+    /// The end of gcsim's AddGadget for a gadget of the dendro core type:
+    /// with five of the type there, the oldest (by the frame it appeared)
+    /// is killed first, a core exploding and a Seed of Deceit not.
+    fn core_type_limit(&mut self) {
+        let mut oldest: Option<usize> = None;
+        let mut count = 0;
+        for (i, g) in self.gadgets.iter().enumerate() {
+            if g.owner == CORE {
+                count += 1;
+                if oldest.is_none_or(|o| g.src < self.gadgets[o].src) {
+                    oldest = Some(i);
+                }
+            }
+        }
+        if count == 5 {
+            let g = self.gadgets.remove(oldest.unwrap());
+            if g.id != SEED_CORE {
+                self.core_explode(g.actor, g.x, g.y, g.id == BOUNTIFUL_CORE);
+            }
+        }
+    }
+
+    /// Nefer's replaceDendroCoreWithSeed: the dendro core or Bountiful
+    /// Core with this key leaves without exploding (RemoveGadget), and a
+    /// Seed of Deceit is added where it was, as a new gadget (the next key,
+    /// at the end of the list) that lasts 12 s. Nothing when the key is not
+    /// a core's (a Seed of Deceit, or gone).
+    pub fn replace_core_with_seed(&mut self, key: u32) {
+        let Some(k) = self.gadgets.iter().position(|g| g.key == key && g.owner == CORE && g.id != SEED_CORE) else { return };
+        let g = self.gadgets.remove(k);
+        self.core_type_limit();
+        let f = self.f;
+        self.push_gadget(Gadget { owner: CORE, id: SEED_CORE, timer: 0, duration: crate::gcsimdata::chars::nefer::SEED_DURATION, aura: Aura::new(), src: f, x: g.x, y: g.y, r: 2.0, actor: 0, takes_hits: false, enemy_camp: true, collides_player: false, key: 0 });
+    }
+
+    /// Nefer's convertExistingDendroCores: every dendro core and Bountiful
+    /// Core there now becomes a Seed of Deceit, in their order.
+    pub fn convert_cores_to_seeds(&mut self) {
+        let end = self.gadget_key;
+        let mut key = 0;
+        loop {
+            let Some(g) = self.gadgets.iter().find(|g| g.key >= key && g.key < end && g.owner == CORE && g.id != SEED_CORE) else { break };
+            key = g.key + 1;
+            self.replace_core_with_seed(g.key);
+        }
+    }
+
+    /// Nefer's absorbSeedsOfDeceit: the Seeds of Deceit whose centers are
+    /// within r of the player (GadgetsWithinArea of a circle on the player)
+    /// are removed; returns how many.
+    pub fn absorb_seeds(&mut self, r: f64) -> i32 {
+        let area = Pattern::Circle { x: self.player_pos.0, y: self.player_pos.1, r };
+        let before = self.gadgets.len();
+        self.gadgets.retain(|g| !(g.owner == CORE && g.id == SEED_CORE && area.contains_point(g.x, g.y) == Some(true)));
+        (before - self.gadgets.len()) as i32
+    }
+
+    /// One step of Nefer's Slither: the player turns to the enemy
+    /// (SetDirection) and moves `dist` forward (SetPlayerPos, which keeps
+    /// the direction). Moving the player with a member not checked for it
+    /// is an error.
+    pub fn slither_step(&mut self, dist: f64) {
+        self.player_dir = calc_direction(self.player_pos, self.enemy_pos);
+        let next = offset_point(self.player_pos, (0.0, dist), self.player_dir);
+        if next != (0.0, 0.0) {
+            if let Some(name) = self.not_ported_for_player_moves() {
+                self.unsupported(&format!("nefer's Slither moving the player with {name}"));
+            }
+            self.player_moved = true;
+        }
+        self.player_pos = next;
     }
 
     /// A slot holding a core attack's area until it lands.
@@ -3949,8 +4040,9 @@ impl Sim {
         while k < self.gadgets.len() {
             let g = self.gadgets[k];
             if g.owner == CORE {
-                // a Bountiful Core's HandleAttack only emits OnGadgetHit
-                if cores_react && g.id != BOUNTIFUL_CORE {
+                // a Bountiful Core's and a Seed of Deceit's HandleAttack
+                // only emits OnGadgetHit
+                if cores_react && g.id != BOUNTIFUL_CORE && g.id != SEED_CORE {
                     match ev.info.pattern.hits_gadget(&g, 2.0) {
                         None => {
                             let who = crate::gcsl::char_name(self.chars[ev.info.actor as usize].key);
@@ -4766,7 +4858,8 @@ impl Sim {
                 self.gadgets.remove(k);
             }
             if core {
-                if expired {
+                // a Seed of Deceit has no OnExpiry
+                if expired && id != SEED_CORE {
                     self.core_explode(actor, gx, gy, id == BOUNTIFUL_CORE);
                 }
             } else {
@@ -6141,7 +6234,9 @@ impl Sim {
                 need(3, "gadgets")?;
                 let f = self.f;
                 match (fields[1].as_str(), fields[2].as_str()) {
-                    ("dendrocore", "count") => Ok(int(self.gadgets.iter().filter(|g| g.owner == CORE).count() as i64)),
+                    // gcsim counts its *dendrocore.Gadget only: not Bountiful Cores
+                    // or Seeds of Deceit
+                    ("dendrocore", "count") => Ok(int(self.gadgets.iter().filter(|g| g.owner == CORE && g.id == 0).count() as i64)),
                     // the hydro Traveler's droplets are in gcsim's list twice
                     ("sourcewaterdroplet", "count") => Ok(int(self
                         .gadgets

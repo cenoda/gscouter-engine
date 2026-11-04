@@ -146,16 +146,17 @@ crate::chars! {
     Lumineanemo => lumineanemo,
     Aetherdendro => aetherdendro,
     Luminedendro => luminedendro,
+    Nefer => nefer,
 }
 
 /// The characters whose modules have been checked against gcsim for a
-/// player that set_player_pos moved away from the origin: every pattern,
+/// player that set_player_pos or Nefer's Slither moved away from the origin: every pattern,
 /// area and point taken from the player's position or direction, and at
 /// the time gcsim takes it. Moving the player with anyone else on the team
 /// is an error that names them.
 pub const MOVES_WITH_PLAYER: &[CharKind] = &[
     CharKind::Barbara,
-    CharKind::Bennett, CharKind::Diluc, CharKind::Gaming, CharKind::Sucrose, CharKind::Xingqiu, CharKind::Yoimiya, CharKind::Sandrone, CharKind::Arlecchino, CharKind::Ayaka, CharKind::Ayato, CharKind::Baizhu, CharKind::Beidou, CharKind::Charlotte, CharKind::Chasca, CharKind::Chevreuse, CharKind::Chongyun, CharKind::Citlali, CharKind::Clorinde, CharKind::Columbina, CharKind::Durin, CharKind::Fischl, CharKind::Furina, CharKind::Hutao, CharKind::Ineffa, CharKind::Kazuha, CharKind::Kinich, CharKind::KujouSara, CharKind::Kuki, CharKind::Lanyan, CharKind::Layla, CharKind::Mavuika, CharKind::Nahida, CharKind::Navia, CharKind::Nilou, CharKind::Noelle, CharKind::Ororon, CharKind::Raiden, CharKind::Rosaria, CharKind::Thoma, CharKind::Xiangling, CharKind::Xianyun, CharKind::Yaemiko, CharKind::Yaoyao, CharKind::Yelan, CharKind::Yunjin, CharKind::LuminePyro, CharKind::AetherPyro, CharKind::Aetherdendro, CharKind::Luminedendro, CharKind::Aethergeo, CharKind::Luminegeo, CharKind::Aetheranemo, CharKind::Lumineanemo,
+    CharKind::Bennett, CharKind::Diluc, CharKind::Gaming, CharKind::Sucrose, CharKind::Xingqiu, CharKind::Yoimiya, CharKind::Sandrone, CharKind::Arlecchino, CharKind::Ayaka, CharKind::Ayato, CharKind::Baizhu, CharKind::Beidou, CharKind::Charlotte, CharKind::Chasca, CharKind::Chevreuse, CharKind::Chongyun, CharKind::Citlali, CharKind::Clorinde, CharKind::Columbina, CharKind::Durin, CharKind::Fischl, CharKind::Furina, CharKind::Hutao, CharKind::Ineffa, CharKind::Kazuha, CharKind::Kinich, CharKind::KujouSara, CharKind::Kuki, CharKind::Lanyan, CharKind::Layla, CharKind::Mavuika, CharKind::Nahida, CharKind::Navia, CharKind::Nilou, CharKind::Noelle, CharKind::Ororon, CharKind::Raiden, CharKind::Rosaria, CharKind::Thoma, CharKind::Xiangling, CharKind::Xianyun, CharKind::Yaemiko, CharKind::Yaoyao, CharKind::Yelan, CharKind::Yunjin, CharKind::LuminePyro, CharKind::AetherPyro, CharKind::Aetherdendro, CharKind::Luminedendro, CharKind::Aethergeo, CharKind::Luminegeo, CharKind::Aetheranemo, CharKind::Lumineanemo, CharKind::Nefer, CharKind::Lauma, CharKind::Linnea, CharKind::Kokomi,
 ];
 
 impl CharKind {
