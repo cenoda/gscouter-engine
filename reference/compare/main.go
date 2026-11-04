@@ -19,8 +19,10 @@
 // about 0.1% on the team's difference), and a build that fails or is
 // inconclusive there grows, by twice to four times a step, to -max-iter
 // (32,000), since a team whose energy waits spiral is heavy-tailed. A
-// verdict still inconclusive at -max-iter is decided by its estimate
-// (-settle): pass inside the bound, fail outside it. A port's systematic
+// verdict still inconclusive at -max-iter grows on the seeds gcsim's cache
+// already holds past it (a rerun's), running only the engine, and what is
+// still inconclusive then is decided by its estimate (-settle): pass inside
+// the bound, fail outside it. A port's systematic
 // error shows as a difference far above that noise; small ones that add up
 // over a team's items show in its team DPS, and small ones the whole
 // engine shares show in the report's drift, the mean difference over every
@@ -112,7 +114,7 @@ var (
 	iter0         = flag.Int("iter", 4000, "iterations of the first batch")
 	maxIter       = flag.Int("max-iter", 32000, "most iterations gcsim runs to for a build that fails or is inconclusive at -iter; with -settle=false, a build still inconclusive there grows further on the seeds gcsim's cache already holds for its config (whole chunks from seed 1), running only the engine")
 	targetSE      = flag.Float64("target-se", 0, "standard error, relative to the mean, each engine must reach (0: none)")
-	settle        = flag.Bool("settle", true, "decide a verdict still inconclusive at -max-iter by its estimate: pass inside the bound, fail outside it")
+	settle        = flag.Bool("settle", true, "decide a verdict still inconclusive at -max-iter, and on the seeds past it that gcsim's cache holds, by its estimate: pass inside the bound, fail outside it")
 	charShare     = flag.Float64("char-share", 0.10, "characters below this share of gcsim's team DPS are reported, not judged")
 	sampleN       = flag.Int("sample", 0, "variants, build space and pages: run at most this many builds of each kind per team, chosen by a hash of team and build (0: every one); the page's one-pass configs are always run, and builds the engine cannot run are all reported")
 	warmup        = flag.Float64("warmup", 150, "seconds of the looped fight excluded from the window")
@@ -1185,23 +1187,24 @@ func compare(gse, tmp, id string, v variant, cfg string) Result {
 			break
 		}
 		if n >= limit {
-			if *settle {
-				res.Metrics = settled(res.Metrics)
-				res.Verdict = overall(res.Metrics)
-				break
-			}
-			if extended {
-				break
-			}
-			// inconclusive at -max-iter: grow on the seeds gcsim's cache
-			// already holds, if any, running only the engine
-			extended = true
-			c, cerr := cachedLimit(cfg, n, v.warm())
-			if cerr != nil {
-				err = cerr
-				break
+			// inconclusive at -max-iter: first grow on the seeds gcsim's
+			// cache already holds, if any, running only the engine (a
+			// rerun's seeds, once in the cache, decide the build on every
+			// later run); only then settle by the estimate
+			c := n
+			if !extended {
+				extended = true
+				var cerr error
+				if c, cerr = cachedLimit(cfg, n, v.warm()); cerr != nil {
+					err = cerr
+					break
+				}
 			}
 			if c <= n {
+				if *settle {
+					res.Metrics = settled(res.Metrics)
+					res.Verdict = overall(res.Metrics)
+				}
 				break
 			}
 			limit = c
