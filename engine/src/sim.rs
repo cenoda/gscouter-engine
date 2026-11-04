@@ -4639,7 +4639,7 @@ impl Sim {
     /// The Moondrifts within `r` of the player (gcsim's Distance < r), not
     /// the other constructs of gcsim's consNoLimit (the geo traveler's
     /// walls).
-    fn moondrifts_near(&self, r: f64) -> usize {
+    pub fn moondrifts_near(&self, r: f64) -> usize {
         let (px, py) = self.player_pos;
         self.constructs.iter().filter(|c| c.key == MOONDRIFT && c.pos.is_some_and(|p| ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() < r)).count()
     }
