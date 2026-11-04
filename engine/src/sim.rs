@@ -518,6 +518,8 @@ pub mod add_tag {
     pub const WRIO_SSC_CA: u8 = 1 << 2;
     /// AttackTagKinichCannon: Kinich's Scalespiker Cannon (his C1).
     pub const KINICH_CANNON: u8 = 1 << 3;
+    /// AttackTagVarkaSpecial: Varka's Four Winds' Ascension.
+    pub const VARKA_SPECIAL: u8 = 1 << 4;
 }
 
 impl AttackInfo {
@@ -5092,14 +5094,15 @@ impl Sim {
         }
     }
 
-    pub fn set_cd(&mut self, ci: usize, a: Action, dur: i32) {
-        // CDReduction: anemo resonance's mod (added at setup, so first),
-        // then the character's cooldown mods in effect, in their order
+    /// gcsim's CDReduction: anemo resonance's mod (added at setup, so
+    /// first), then, for the skill, burst or special skill (`skill_like`),
+    /// the character's cooldown mods in effect, in their order.
+    pub fn cd_reduction(&self, ci: usize, skill_like: bool, dur: i32) -> i32 {
         let mut cd = 1.0;
         if self.anemo_res {
             cd += -0.05;
         }
-        if matches!(a, Action::Skill | Action::Burst) {
+        if skill_like {
             let f = self.f;
             for m in &self.chars[ci].mods {
                 if m.kind == ModKind::Cooldown && (m.expiry() == -1 || m.expiry() > f) {
@@ -5107,7 +5110,11 @@ impl Sim {
                 }
             }
         }
-        let dur = if cd == 1.0 { dur } else { (dur as f64 * cd) as i32 };
+        if cd == 1.0 { dur } else { (dur as f64 * cd) as i32 }
+    }
+
+    pub fn set_cd(&mut self, ci: usize, a: Action, dur: i32) {
+        let dur = self.cd_reduction(ci, matches!(a, Action::Skill | Action::Burst), dur);
         let cd = &mut self.chars[ci].cd[Char::cd_index(a)];
         cd.queue[cd.len] = dur;
         cd.len += 1;
@@ -5153,6 +5160,9 @@ impl Sim {
 
     /// gcsim's ReduceActionCooldown.
     pub fn reduce_cd(&mut self, ci: usize, a: Action, v: i32) {
+        if a == Action::Skill {
+            crate::chars::dispatch::skill_cd_changed(self.chars[ci].kind, self, ci, Some(v));
+        }
         self.reduce_cd_one(ci, a, v);
         if a == Action::Skill && self.chars[ci].skill_cd_twin {
             self.reduce_cd_one(ci, Action::LowPlunge, v);
@@ -5161,6 +5171,9 @@ impl Sim {
 
     /// gcsim's ResetActionCooldown.
     pub fn reset_cd(&mut self, ci: usize, a: Action) {
+        if a == Action::Skill {
+            crate::chars::dispatch::skill_cd_changed(self.chars[ci].kind, self, ci, None);
+        }
         self.reset_cd_one(ci, a);
         if a == Action::Skill && self.chars[ci].skill_cd_twin {
             self.reset_cd_one(ci, Action::LowPlunge);
@@ -6001,6 +6014,13 @@ impl Sim {
                 if let Some(a) = action_key(typ) {
                     need(3, "character ability")?;
                     let active = self.player.active as usize == ci;
+                    if let Some((cd, charges)) = crate::chars::dispatch::cd_view(c.kind, self, ci, a) {
+                        match fields[2].as_str() {
+                            "cd" => return Ok(int(cd as i64)),
+                            "charge" => return Ok(int(charges as i64)),
+                            _ => {}
+                        }
+                    }
                     return match fields[2].as_str() {
                         "cd" => Ok(int(match a {
                             Action::Swap => self.player.swap_cd as i64,

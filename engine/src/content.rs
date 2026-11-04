@@ -360,6 +360,15 @@ pub trait Character {
     fn keeps_normal_counter(_s: &Sim, _ci: usize) -> bool {
         false
     }
+    /// Its override of ReduceActionCooldown and ResetActionCooldown for
+    /// the skill, run before the template's: Some(v) reduces by v, None
+    /// resets (Varka's Four Winds' Ascension cooldown follows them).
+    fn skill_cd_changed(_s: &mut Sim, _ci: usize, _reduce: Option<i32>) {}
+    /// Its override of Cooldown and Charges, for conditions: Some((the
+    /// cooldown left, the charges)) when it is not the template's.
+    fn cd_view(_s: &Sim, _ci: usize, _a: Action) -> Option<(i32, i32)> {
+        None
+    }
 }
 
 /// gcsim's template NextQueueItemIsValid: swords and polearms charge
@@ -546,6 +555,8 @@ macro_rules! chars {
             pub fn receives_heal(k: CharKind, s: &Sim, ci: usize, caller: usize) -> bool { match k { $(CharKind::$kind => $m::Char::receives_heal(s, ci, caller)),* } }
             pub fn receive_heal(k: CharKind, s: &mut Sim, ci: usize, caller: usize, amount: f64) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::receive_heal(s, ci, caller, amount)),* } }
             pub fn keeps_normal_counter(k: CharKind, s: &Sim, ci: usize) -> bool { match k { $(CharKind::$kind => $m::Char::keeps_normal_counter(s, ci)),* } }
+            pub fn skill_cd_changed(k: CharKind, s: &mut Sim, ci: usize, reduce: Option<i32>) { match k { $(CharKind::$kind => $m::Char::skill_cd_changed(s, ci, reduce)),* } }
+            pub fn cd_view(k: CharKind, s: &Sim, ci: usize, a: Action) -> Option<(i32, i32)> { match k { $(CharKind::$kind => $m::Char::cd_view(s, ci, a)),* } }
         }
     };
 }
