@@ -56,6 +56,9 @@ const TASK_STONE: u8 = 0;
 const TASK_WALLS: u8 = 1;
 // arg: the tick number
 const TASK_C1: u8 = 2;
+/// A4's collapse, on the char queue: its area is taken where the player
+/// is at its hitmark, as gcsim's QueueCharTask builds it.
+const TASK_A4: u8 = 3;
 
 fn st(s: &Sim, ci: usize) -> &Inner {
     match &s.chars[ci].state {
@@ -208,6 +211,14 @@ impl<const G: usize> Character for Traveler<G> {
                     s.new_construct(Construct { owner: ci as u8, key: WALL, src: f, expiry: f + dur, pos: Some([x, y, dx, dy]), limited: false }, false);
                 }
             }
+            TASK_A4 => {
+                let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Geo, 25.0, 0.6);
+                ai.abil = "Frenzied Rockslide (A4)";
+                ai.blunt = true;
+                ai.poise = 13.5;
+                ai.pattern = s.circle_on_player(0.0, 1.2, 2.4);
+                s.queue_attack(ai, 0, 0, 0);
+            }
             TASK_C1 => {
                 if !s.constructs.iter().any(|c| c.owner as usize == ci && c.key == WALL) {
                     return;
@@ -293,10 +304,5 @@ fn a4(s: &mut Sim, ci: usize, gender: usize) {
     if s.chars[ci].ascension < 4 || s.chars[ci].normal_counter != s.chars[ci].normal_hit_num - 1 {
         return;
     }
-    let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Geo, 25.0, 0.6);
-    ai.abil = "Frenzied Rockslide (A4)";
-    ai.blunt = true;
-    ai.poise = 13.5;
-    ai.pattern = s.circle_on_player(0.0, 1.2, 2.4);
-    s.queue_attack_at(ci, ai, 0, g::A4_HITMARK[gender]);
+    s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_A4, arg: 0 }, g::A4_HITMARK[gender]);
 }

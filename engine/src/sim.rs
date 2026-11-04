@@ -3634,7 +3634,7 @@ impl Sim {
             let (px, py) = self.player_pos;
             let f = self.f;
             for c in self.constructs.iter_mut() {
-                if let (false, Some(p)) = (c.limited, c.pos) {
+                if let (true, Some(p)) = (c.key == MOONDRIFT, c.pos) {
                     if ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() <= 20.0 {
                         c.expiry = f + LCR_DUR;
                     }
@@ -4527,10 +4527,12 @@ impl Sim {
         self.emit(Event::ConstructSpawned);
     }
 
-    /// The Moondrifts within `r` of the player (gcsim's Distance < r).
+    /// The Moondrifts within `r` of the player (gcsim's Distance < r), not
+    /// the other constructs of gcsim's consNoLimit (the geo traveler's
+    /// walls).
     fn moondrifts_near(&self, r: f64) -> usize {
         let (px, py) = self.player_pos;
-        self.constructs.iter().filter(|c| !c.limited && c.pos.is_some_and(|p| ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() < r)).count()
+        self.constructs.iter().filter(|c| c.key == MOONDRIFT && c.pos.is_some_and(|p| ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() < r)).count()
     }
 
     /// gcsim's Player.Exec of a swap from inside the fight (a character
