@@ -1557,6 +1557,9 @@ pub struct Sim {
     /// Elevation (thousandths) EnemyHit subscribers add to the hit
     /// (Lauma's C6 on direct Lunar-Bloom).
     pub hit_elevation: u16,
+    /// Elevation (thousandths) ApplyAttack subscribers add to the attack
+    /// (Flins's C6 on direct Lunar-Charged).
+    pub apply_elevation: u16,
     /// BaseDmgBonus SpecialReactionAttack subscribers add to a lunar
     /// contribution (Ineffa on Lunar-Charged).
     pub special_base_bonus: f64,
@@ -1712,6 +1715,7 @@ impl Sim {
             stellar: Default::default(),
             hit_crit: None,
             hit_elevation: 0,
+            apply_elevation: 0,
             special_base_bonus: 0.0,
             emit_sub: 0,
             special_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0), 0),
@@ -2727,7 +2731,9 @@ impl Sim {
         // OnApplyAttack, before anything else
         if !self.subs[EventKind::ApplyAttack as usize].is_empty() {
             let ev = self.slots[slot as usize];
+            self.apply_elevation = 0;
             self.emit(Event::ApplyAttack(&ev));
+            self.slots[slot as usize].elevation += self.apply_elevation;
         }
         // Columbina's constellations elevate direct lunar DMG (her
         // OnApplyAttack subscription)
