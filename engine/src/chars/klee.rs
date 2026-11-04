@@ -149,6 +149,7 @@ impl Character for Char {
         ai.abil = NORMAL_NAMES[n];
         ai.blunt = true;
         ai.poise = g::ATTACK_POISE_DMG[n];
+        ai.pattern = s.circle_on_target(g::ATTACK_RADIUS[n]);
         s.st_mut::<State>(ci).pending = Some((ai, travel));
         let lag = matches!(s.current_state(), AnimState::Dash | AnimState::Skill | AnimState::Burst);
         let (table, h) = if lag { (&g::ATTACK_FRAMES_WITH_LAG[n], g::ATTACK_HITMARKS_WITH_LAG[n]) } else { (&g::ATTACK_FRAMES[n], g::ATTACK_HITMARKS[n]) };
@@ -184,7 +185,7 @@ impl Character for Char {
     }
 
     fn skill(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
-        let bounce = p.get("bounce").unwrap_or(1) as usize;
+        let bounce = p.get("bounce").unwrap_or(1).max(0) as usize;
         let mines = p.get("mine").unwrap_or(2) as i32;
         let mine_delay = p.get("mine_delay").map_or(240, |d| d as i32);
         let release = p.get("release").unwrap_or(1);

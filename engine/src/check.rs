@@ -2,9 +2,10 @@
 //! running it: characters, weapons, sets, params, targets, and the actions
 //! and built-ins its program calls.
 
-use crate::gcsl::{char_name, Block, Expr, Num, ParsedConfig, Stmt};
+use crate::gcsl::{char_name, Block, CharProfile, Expr, Num, ParsedConfig, Stmt};
 use crate::profile;
 use crate::sim::{unsupported_action, CharKind, Params};
+use crate::types::Action;
 
 /// Every unsupported feature of the config, each named once, in the order
 /// found.
@@ -24,7 +25,7 @@ pub fn unsupported(p: &ParsedConfig) -> Vec<String> {
             p.chars.iter().map(|c| (c.key, profile::char_kind(char_name(c.key)))).collect()
         }
     };
-    let mut w = Walker { kinds: &kinds, found: Vec::new(), fns: Vec::new() };
+    let mut w = Walker { kinds: &kinds, chars: &p.chars, found: Vec::new(), fns: Vec::new() };
     w.block(&p.program);
     for s in w.found {
         add(s);
@@ -34,6 +35,7 @@ pub fn unsupported(p: &ParsedConfig) -> Vec<String> {
 
 struct Walker<'a> {
     kinds: &'a [(u16, Option<CharKind>)],
+    chars: &'a [CharProfile],
     found: Vec<String>,
     /// The functions declared so far, by name, for set_on_tick's.
     fns: Vec<(&'a str, &'a Block)>,
@@ -167,6 +169,9 @@ impl<'a> Walker<'a> {
         let Some((_, Some(kind))) = self.kinds.iter().find(|k| k.0 == key) else { return };
         if let Some(what) = unsupported_action(*kind, action, &params) {
             self.found.push(format!("unsupported: action {} {what}", char_name(key)));
+        }
+        if *kind == CharKind::Dahlia && action == Action::Burst && self.chars.iter().any(|c| c.key == key && c.max_level < 70) {
+            self.found.push("unsupported: dahlia's burst below ascension 4".into());
         }
     }
 }

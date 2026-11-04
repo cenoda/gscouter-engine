@@ -260,6 +260,7 @@ fn skill_radish(s: &Sim, ci: usize) -> AttackInfo {
     ai.abil = "Radish (Skill)";
     ai.def_halt = true;
     ai.deployable = true;
+    ai.pattern = s.circle_on_target(g::RADISH_RAD);
     ai
 }
 
@@ -269,6 +270,7 @@ fn burst_radish(s: &Sim, ci: usize) -> AttackInfo {
     ai.abil = "Radish (Burst)";
     ai.def_halt = true;
     ai.deployable = true;
+    ai.pattern = s.circle_on_target(g::RADISH_RAD);
     ai
 }
 
@@ -286,7 +288,8 @@ fn spawn_throwing(s: &mut Sim, ci: usize) {
     let (x, y) = s.point_from_player(0.0, 2.0);
     let slot = s.st::<State>(ci).next_throwing;
     if s.gadget_index(ci, slot as u8).is_some() {
-        panic!("yaoyao: a third throwing Yuegui at once (the skill's cooldown cut below 600 frames) is not ported");
+        s.unsupported("yaoyao: a third throwing Yuegui at once (the skill's cooldown cut below 600 frames)");
+        return;
     }
     let st = s.st_mut::<State>(ci);
     st.next_throwing ^= 1;
@@ -334,8 +337,8 @@ fn enemy_in(s: &mut Sim, area: Pattern) -> bool {
     false
 }
 
-fn free_slot<T>(a: &[Option<T>; SLOTS]) -> usize {
-    a.iter().position(|x| x.is_none()).expect("yaoyao: more radishes in the air than the engine keeps")
+fn free_slot<T>(a: &[Option<T>; SLOTS]) -> Option<usize> {
+    a.iter().position(|x| x.is_none())
 }
 
 /// gcsim's yuegui.throw.
@@ -345,9 +348,11 @@ fn throw(s: &mut Sim, ci: usize, id: u8) {
     let hp_ratio = s.chars[active].hp_ratio;
     let found = enemy_in(s, Pattern::Circle { x: y.x, y: y.y, r: g::SKILL_TARGETING_RAD as f64 });
     let (tx, ty) = if hp_ratio > 0.7 && found { s.enemy_pos } else { s.player_pos };
-    let st = s.st_mut::<State>(ci);
-    let k = free_slot(&st.throws);
-    st.throws[k] = Some(Throw { x: tx, y: ty, ev: Some(y.ev), throwing: y.throwing });
+    let Some(k) = free_slot(&s.st::<State>(ci).throws) else {
+        s.unsupported("yaoyao: more radishes in the air than the engine keeps");
+        return;
+    };
+    s.st_mut::<State>(ci).throws[k] = Some(Throw { x: tx, y: ty, ev: Some(y.ev), throwing: y.throwing });
     s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_THROW, arg: k as i32 }, g::TRAVEL_DELAY - 1);
     if y.throwing && s.chars[ci].cons >= 6 && (y.throws == 2 || y.throws == 5) {
         c6(s, ci, &y.ev, tx, ty);
@@ -378,9 +383,11 @@ fn send_radish(s: &mut Sim, ci: usize, k: usize) {
     let area = Pattern::Circle { x: t.x, y: t.y, r: g::RADISH_RAD };
     ev.info.pattern = area;
     let (src, bonus) = radish_heal_info(s, ci, &ev.stats, burst);
-    let st = s.st_mut::<State>(ci);
-    let h = free_slot(&st.heals);
-    st.heals[h] = Some(Heal { area, src, bonus, party: burst, c6: false });
+    let Some(h) = free_slot(&s.st::<State>(ci).heals) else {
+        s.unsupported("yaoyao: more radishes in the air than the engine keeps");
+        return;
+    };
+    s.st_mut::<State>(ci).heals[h] = Some(Heal { area, src, bonus, party: burst, c6: false });
     s.add_task(Task::Char { c: ci as u8, id: TASK_HEAL, arg: h as i32 }, 1);
     let mut cbs = if t.throwing { CB_PARTICLE } else { 0 };
     if s.chars[ci].cons >= 2 && burst {
@@ -426,9 +433,11 @@ fn a1_throw(s: &mut Sim, ci: usize) {
         return;
     }
     let (x, y) = s.enemy_pos;
-    let st = s.st_mut::<State>(ci);
-    let k = free_slot(&st.throws);
-    st.throws[k] = Some(Throw { x, y, ev: None, throwing: false });
+    let Some(k) = free_slot(&s.st::<State>(ci).throws) else {
+        s.unsupported("yaoyao: more radishes in the air than the engine keeps");
+        return;
+    };
+    s.st_mut::<State>(ci).throws[k] = Some(Throw { x, y, ev: None, throwing: false });
     s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_THROW, arg: k as i32 }, g::TRAVEL_DELAY - 1);
 }
 
@@ -455,9 +464,11 @@ fn c6(s: &mut Sim, ci: usize, yev: &AttackEvent, x: f64, y: f64) {
     ai.pattern = area;
     let src = s.max_hp(ci) * 0.075;
     let bonus = s.stat(ci, st::HEAL);
-    let st = s.st_mut::<State>(ci);
-    let h = free_slot(&st.heals);
-    st.heals[h] = Some(Heal { area, src, bonus, party: false, c6: true });
+    let Some(h) = free_slot(&s.st::<State>(ci).heals) else {
+        s.unsupported("yaoyao: more radishes in the air than the engine keeps");
+        return;
+    };
+    s.st_mut::<State>(ci).heals[h] = Some(Heal { area, src, bonus, party: false, c6: true });
     s.add_task(Task::Char { c: ci as u8, id: TASK_HEAL, arg: h as i32 }, g::C6_TRAVEL_DELAY);
     let mut ev = *yev;
     ev.info = ai;
