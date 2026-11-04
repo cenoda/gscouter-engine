@@ -131,4 +131,15 @@ crate::weapons! {
     PrototypeRancour => prototyperancour,
     RedhornStonethresher => redhornstonethresher,
     Whiteblind => whiteblind,
+    BlackTassel => blacktassel,
+    CalamityQueller => calamityqueller,
+    PrimordialJadeWingedSpear => primordialjadewingedspear,
+    PrototypeStarglitter => prototypestarglitter,
+    SymphonistOfScents => symphonistofscents,
+    ProspectorsShovel => prospectorsshovel,
+    SacrificersStaff => sacrificersstaff,
+    WhiteTassel => whitetassel,
+    SnowTombedStarsilver => snowtombedstarsilver,
+    TalkingStick => talkingstick,
 }
+
