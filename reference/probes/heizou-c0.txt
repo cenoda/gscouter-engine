@@ -1,0 +1,3 @@
+# Shikanoin Heizou C0: no constellation.
+team shikanoinheizou-nahida-fischl-xingqiu
+heizou char lvl=90/90 cons=0 talent=9,9,9;

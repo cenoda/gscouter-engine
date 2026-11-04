@@ -1,0 +1,3 @@
+# Sayu C1: the Daruma heals and attacks at once, at any HP.
+team sayu-fischl-nahida-furina
+sayu char lvl=90/90 cons=1 talent=9,9,9;
