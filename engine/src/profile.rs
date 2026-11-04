@@ -108,6 +108,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("start_energy", _) => start_energy = *v as f64,
             ("start_serpents_subtlety", Some(CharKind::Skirk)) => {}
             ("breakthrough", Some(CharKind::Yelan)) => {}
+            (k, Some(kind)) if kind.traveler() && crate::chars::traveler_common::PARAMS.contains(&k) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             ("hexerei", Some(CharKind::Sucrose | CharKind::Mona | CharKind::Razor | CharKind::Durin | CharKind::Nicole)) => {}
             ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno)) => {}
@@ -193,6 +194,11 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
     // too (NewBoxHitOnTarget on the primary target)
     if p.chars.iter().any(|c| char_name(c.key) == "chevreuse") && p.targets.iter().any(|t| t.pos.0 != 0.0 || t.pos.1 <= 0.0) {
         errs.push("unsupported: chevreuse with the target off the y axis".into());
+    }
+    // Neuvillette (and Sigewinne) take any Sourcewater Droplet, the hydro
+    // Traveler's too, and the Traveler takes theirs
+    if p.chars.iter().any(|c| matches!(char_name(c.key), "neuvillette" | "sigewinne")) && p.chars.iter().any(|c| matches!(char_name(c.key), "luminehydro" | "aetherhydro")) {
+        errs.push("unsupported: the hydro Traveler with neuvillette or sigewinne (their Sourcewater Droplets)".into());
     }
     if p.hurt {
         errs.push("unsupported: hurt".into());

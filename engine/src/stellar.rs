@@ -37,7 +37,7 @@
 //!
 //! Stellar Swirl, from gcsim's pkg/reactable/stellarswirl.go and
 //! stellarswirl_gadget.go. While a character that enables it is in the
-//! team (StellarSwirlEnableKey: Sandrone, Vesna), an anemo hit on the
+//! team (StellarSwirlEnableKey: Sandrone, Vesna, the cryo Traveler), an anemo hit on the
 //! enemy's cryo or frozen aura reacts as Stellar Swirl instead of a cryo
 //! swirl: it emits OnStellarSwirl, gives every character Radiance: Stellar
 //! Swirl for 8 s (not hitlag), hits the enemy 3 frames later with the
@@ -85,12 +85,12 @@ pub const MULT: [f64; 13] = [1.0, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.
 
 /// Whether gcsim's Init of this character sets StellarConductEnableKey.
 pub fn enables_stellar(k: CharKind) -> bool {
-    matches!(k, CharKind::Sandrone)
+    matches!(k, CharKind::Sandrone | CharKind::LumineCryo | CharKind::AetherCryo)
 }
 
 /// Whether gcsim's Init of this character sets StellarSwirlEnableKey.
 pub fn enables_stellar_swirl(k: CharKind) -> bool {
-    matches!(k, CharKind::Sandrone | CharKind::Vesna)
+    matches!(k, CharKind::Sandrone | CharKind::Vesna | CharKind::LumineCryo | CharKind::AetherCryo)
 }
 
 /// gcsim's RadianceSwirlKey: the status of Radiance: Stellar Swirl.

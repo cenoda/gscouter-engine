@@ -1370,6 +1370,7 @@ pub enum ShieldType {
     NoelleSkill,
     NoelleA1,
     XinyanSkill,
+    TravelerHydroC4,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -5953,7 +5954,13 @@ impl Sim {
                 let f = self.f;
                 match (fields[1].as_str(), fields[2].as_str()) {
                     ("dendrocore", "count") => Ok(int(self.gadgets.iter().filter(|g| g.owner == CORE).count() as i64)),
-                    ("sourcewaterdroplet", "count") => Ok(int(self.gadgets.iter().filter(|g| g.owner != CORE && crate::chars::neuvillette::is_droplet(self, g)).count() as i64)),
+                    // the hydro Traveler's droplets are in gcsim's list twice
+                    ("sourcewaterdroplet", "count") => Ok(int(self
+                        .gadgets
+                        .iter()
+                        .filter(|g| g.owner != CORE)
+                        .map(|g| if crate::chars::neuvillette::is_droplet(self, g) { 1 } else if crate::chars::traveler_hydro::is_droplet(self, g) { 2 } else { 0 })
+                        .sum::<i64>())),
                     ("crystallizeshard", e) => {
                         let ele = match e {
                             "all" => None,
