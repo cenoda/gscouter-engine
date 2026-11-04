@@ -32,7 +32,9 @@ impl WeaponImpl for Weapon {
         if !matches!(r, Reaction::Burning | Reaction::Quicken | Reaction::Aggravate | Reaction::Spread | Reaction::Bloom | Reaction::LunarBloom | Reaction::Hyperbloom | Reaction::Burgeon) {
             return;
         }
-        if ev.info.actor as usize != ci || s.mod_active(ci, ICD) {
+        // an enemy's reactions only, but hyperbloom and burgeon from
+        // anywhere (gcsim's subscriptions)
+        if ev.info.actor as usize != ci || s.mod_active(ci, ICD) || (!matches!(r, Reaction::Hyperbloom | Reaction::Burgeon) && !ev.on_enemy()) {
             return;
         }
         s.add_status(ci, ICD, 1200, true);

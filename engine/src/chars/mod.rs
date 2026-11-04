@@ -2,6 +2,10 @@
 //! implementing `content::Character`; a line here registers it.
 
 pub mod plunge;
+pub mod traveler;
+pub mod traveleranemo;
+pub mod travelerdendro;
+pub mod travelergeo;
 pub mod traveler_common;
 pub mod traveler_pyro;
 pub mod traveler_cryo;
@@ -133,6 +137,12 @@ crate::chars! {
     Heizou => heizou,
     Sayu => sayu,
     Yanfei => yanfei,
+    Aethergeo => aethergeo,
+    Luminegeo => luminegeo,
+    Aetheranemo => aetheranemo,
+    Lumineanemo => lumineanemo,
+    Aetherdendro => aetherdendro,
+    Luminedendro => luminedendro,
 }
 
 /// The characters whose modules have been checked against gcsim for a
@@ -141,14 +151,14 @@ crate::chars! {
 /// the time gcsim takes it. Moving the player with anyone else on the team
 /// is an error that names them.
 pub const MOVES_WITH_PLAYER: &[CharKind] = &[
-    CharKind::Bennett, CharKind::Diluc, CharKind::Gaming, CharKind::Sucrose, CharKind::Xingqiu, CharKind::Yoimiya, CharKind::Sandrone, CharKind::Arlecchino, CharKind::Ayaka, CharKind::Ayato, CharKind::Baizhu, CharKind::Beidou, CharKind::Charlotte, CharKind::Chasca, CharKind::Chevreuse, CharKind::Chongyun, CharKind::Citlali, CharKind::Clorinde, CharKind::Columbina, CharKind::Durin, CharKind::Fischl, CharKind::Furina, CharKind::Hutao, CharKind::Ineffa, CharKind::Kazuha, CharKind::Kinich, CharKind::KujouSara, CharKind::Kuki, CharKind::Lanyan, CharKind::Layla, CharKind::Mavuika, CharKind::Nahida, CharKind::Navia, CharKind::Nilou, CharKind::Noelle, CharKind::Ororon, CharKind::Raiden, CharKind::Rosaria, CharKind::Thoma, CharKind::Xiangling, CharKind::Xianyun, CharKind::Yaemiko, CharKind::Yaoyao, CharKind::Yelan, CharKind::Yunjin, CharKind::LuminePyro, CharKind::AetherPyro,
+    CharKind::Bennett, CharKind::Diluc, CharKind::Gaming, CharKind::Sucrose, CharKind::Xingqiu, CharKind::Yoimiya, CharKind::Sandrone, CharKind::Arlecchino, CharKind::Ayaka, CharKind::Ayato, CharKind::Baizhu, CharKind::Beidou, CharKind::Charlotte, CharKind::Chasca, CharKind::Chevreuse, CharKind::Chongyun, CharKind::Citlali, CharKind::Clorinde, CharKind::Columbina, CharKind::Durin, CharKind::Fischl, CharKind::Furina, CharKind::Hutao, CharKind::Ineffa, CharKind::Kazuha, CharKind::Kinich, CharKind::KujouSara, CharKind::Kuki, CharKind::Lanyan, CharKind::Layla, CharKind::Mavuika, CharKind::Nahida, CharKind::Navia, CharKind::Nilou, CharKind::Noelle, CharKind::Ororon, CharKind::Raiden, CharKind::Rosaria, CharKind::Thoma, CharKind::Xiangling, CharKind::Xianyun, CharKind::Yaemiko, CharKind::Yaoyao, CharKind::Yelan, CharKind::Yunjin, CharKind::LuminePyro, CharKind::AetherPyro, CharKind::Aetherdendro, CharKind::Luminedendro, CharKind::Aethergeo, CharKind::Luminegeo, CharKind::Aetheranemo, CharKind::Lumineanemo,
 ];
 
 impl CharKind {
     /// One of gcsim's Travelers, whose NewTraveler reads the story quest
     /// params (`traveler_common::PARAMS`).
     pub fn traveler(self) -> bool {
-        matches!(self, CharKind::LuminePyro | CharKind::AetherPyro | CharKind::LumineCryo | CharKind::AetherCryo | CharKind::LumineHydro | CharKind::AetherHydro | CharKind::LumineElectro | CharKind::AetherElectro)
+        matches!(self, CharKind::LuminePyro | CharKind::AetherPyro | CharKind::LumineCryo | CharKind::AetherCryo | CharKind::LumineHydro | CharKind::AetherHydro | CharKind::LumineElectro | CharKind::AetherElectro | CharKind::Aetherdendro | CharKind::Luminedendro | CharKind::Aethergeo | CharKind::Luminegeo | CharKind::Aetheranemo | CharKind::Lumineanemo)
     }
 
     /// The hydro Traveler, whose Sourcewater Droplets are gadgets.

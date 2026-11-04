@@ -121,7 +121,7 @@ impl WeaponImpl for Weapon {
             | Reaction::LunarCrystallize => return,
         };
         // gcsim's target check: an enemy, or a gadget for hyperbloom
-        if !gadget && ev.on_player {
+        if !gadget && !ev.on_enemy() {
             return;
         }
         if s.player.active as usize != ci || ev.info.actor as usize != ci {

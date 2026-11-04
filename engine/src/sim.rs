@@ -2047,11 +2047,12 @@ impl Sim {
                     }
                 }
             }
-            Event::Reaction(r, _) => {
-                // electro resonance: an electro reaction gives a particle,
-                // once every 5 s (hyperbloom's comes from the dendro core)
+            Event::Reaction(r, ev) => {
+                // electro resonance: an electro reaction on the enemy gives
+                // a particle, once every 5 s (hyperbloom's comes from the
+                // dendro core; gcsim's recoverNoGadget for the others)
                 if let Some(last) = self.electro_res {
-                    if matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::StellarConduct | Reaction::ElectroCharged | Reaction::LunarCharged | Reaction::Quicken | Reaction::Aggravate | Reaction::Hyperbloom) && (self.f - last >= 300 || last == 0) {
+                    if (r == Reaction::Hyperbloom || (ev.on_enemy() && matches!(r, Reaction::Overload | Reaction::Superconduct | Reaction::StellarConduct | Reaction::ElectroCharged | Reaction::LunarCharged | Reaction::Quicken | Reaction::Aggravate))) && (self.f - last >= 300 || last == 0) {
                         self.distribute_particle(1.0, Element::Electro);
                         self.electro_res = Some(self.f);
                     }
@@ -2059,7 +2060,8 @@ impl Sim {
                 // dendro resonance: EM to the party for 6 s
                 if self.dendro_res {
                     let em = match r {
-                        Reaction::Burning | Reaction::Bloom | Reaction::LunarBloom | Reaction::Quicken => Some((DENDRO_RESONANCE_30, 30.0)),
+                        // an enemy's only (gcsim's twoEl)
+                        Reaction::Burning | Reaction::Bloom | Reaction::LunarBloom | Reaction::Quicken if ev.on_enemy() => Some((DENDRO_RESONANCE_30, 30.0)),
                         Reaction::Aggravate | Reaction::Spread | Reaction::Hyperbloom | Reaction::Burgeon => Some((DENDRO_RESONANCE_20, 20.0)),
                         _ => None,
                     };
@@ -3621,7 +3623,7 @@ impl Sim {
     /// still makes its core, but is OnLunarBloom instead of OnBloom, and
     /// Verdant Dew builds up for 149 frames from the next one
     /// (Player.OnLunarBloom). Returns the reaction to emit.
-    fn bloom_kind(&mut self) -> Reaction {
+    pub fn bloom_kind(&mut self) -> Reaction {
         if self.flag(LUNAR_BLOOM) == 0.0 {
             return Reaction::Bloom;
         }
@@ -3707,7 +3709,7 @@ impl Sim {
             let (px, py) = self.player_pos;
             let f = self.f;
             for c in self.constructs.iter_mut() {
-                if let (false, Some(p)) = (c.limited, c.pos) {
+                if let (true, Some(p)) = (c.key == MOONDRIFT, c.pos) {
                     if ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() <= 20.0 {
                         c.expiry = f + LCR_DUR;
                     }
@@ -3784,10 +3786,18 @@ impl Sim {
     /// dendrocore.New: a core at a random point 0.5 beyond the enemy's
     /// edge, for 5 s. A sixth core makes the oldest explode.
     fn spawn_core(&mut self, slot: u16) {
+        let (r, c) = (self.target_radius, self.enemy_pos);
+        self.spawn_core_around(slot, c, r);
+    }
+
+    /// dendrocore.New on a target's circle of radius `tr` at `c` (the
+    /// enemy's, or a gadget's such as the dendro traveler's lamp), for the
+    /// bloom attack in `slot`.
+    pub fn spawn_core_around(&mut self, slot: u16, c: (f64, f64), tr: f64) {
         let actor = self.slots[slot as usize].info.actor;
         self.free.push(slot);
         // CalcRandomPointFromCenter, between r and r away
-        let r = self.target_radius + 0.5;
+        let r = tr + 0.5;
         let (px, py) = loop {
             let x = -1.0 + self.rng.float64() * 2.0;
             let y = -1.0 + self.rng.float64() * 2.0;
@@ -3795,7 +3805,7 @@ impl Sim {
                 let rr = (r * r + self.rng.float64() * (r * r - r * r)).sqrt();
                 let (x, y) = if x == 0.0 && y == 0.0 { (0.0, 1.0) } else { (x, y) };
                 let factor = rr / (x * x + y * y).sqrt();
-                break (x * factor + self.enemy_pos.0, y * factor + self.enemy_pos.1);
+                break (x * factor + c.0, y * factor + c.1);
             }
         };
         let mut oldest: Option<usize> = None;
@@ -4597,10 +4607,21 @@ impl Sim {
         if ok {
             return true;
         }
-        // Moondrifts: their OnDestruct does nothing
-        let n = self.constructs.len();
-        self.constructs.retain(|c| c.limited || c.src != src);
-        self.constructs.len() != n
+        // then gcsim's consNoLimit: the geo traveler's walls, and the
+        // Moondrifts, whose OnDestruct does nothing
+        let mut k = 0;
+        while k < self.constructs.len() {
+            if !self.constructs[k].limited && self.constructs[k].src == src {
+                let c = self.constructs.remove(k);
+                ok = true;
+                if c.owner != u8::MAX {
+                    crate::chars::dispatch::construct_expired(self.chars[c.owner as usize].kind, self, c.owner as usize, c.key);
+                }
+            } else {
+                k += 1;
+            }
+        }
+        ok
     }
 
     /// gcsim's NewNoLimitCons of a Moondrift (OnDestruct does nothing).
@@ -4615,10 +4636,12 @@ impl Sim {
         self.constructs.iter().filter(|c| c.key == MOONDRIFT).count()
     }
 
-    /// The Moondrifts within `r` of the player (gcsim's Distance < r).
+    /// The Moondrifts within `r` of the player (gcsim's Distance < r), not
+    /// the other constructs of gcsim's consNoLimit (the geo traveler's
+    /// walls).
     fn moondrifts_near(&self, r: f64) -> usize {
         let (px, py) = self.player_pos;
-        self.constructs.iter().filter(|c| !c.limited && c.pos.is_some_and(|p| ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() < r)).count()
+        self.constructs.iter().filter(|c| c.key == MOONDRIFT && c.pos.is_some_and(|p| ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() < r)).count()
     }
 
     /// gcsim's Player.Exec of a swap from inside the fight (a character
@@ -5640,7 +5663,9 @@ impl Sim {
         while k < self.constructs.len() {
             if self.constructs[k].expiry == f {
                 let c = self.constructs.remove(k);
-                if c.limited {
+                // every construct's OnDestruct but the Moondrifts' (which
+                // do nothing and have no owner)
+                if c.owner != u8::MAX {
                     crate::chars::dispatch::construct_expired(self.chars[c.owner as usize].kind, self, c.owner as usize, c.key);
                 }
             } else {

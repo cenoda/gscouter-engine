@@ -57,7 +57,7 @@ impl SetImpl for Set {
 
     fn event(s: &mut Sim, ci: usize, si: usize, e: &Event) {
         let Event::Reaction(r, ev) = *e else { return };
-        if !matches!(r, Reaction::LunarCharged | Reaction::LunarBloom | Reaction::LunarCrystallize) || ev.on_player || s.player.active as usize != ci {
+        if !matches!(r, Reaction::LunarCharged | Reaction::LunarBloom | Reaction::LunarCrystallize) || !ev.on_enemy() || s.player.active as usize != ci {
             return;
         }
         let cr = s.set_st::<State>(ci, si).cr;
