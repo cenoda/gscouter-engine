@@ -64,8 +64,9 @@ pub enum EventKind {
     DendroCore,
     TargetDied,
     ActionExec,
+    Movement,
 }
-pub const N_EVENTS: usize = 27;
+pub const N_EVENTS: usize = 28;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -136,6 +137,8 @@ pub enum Event<'a> {
     /// OnActionExec: the active character executed this action (after
     /// it ran).
     ActionExec(Action),
+    /// OnMovement: the distance the rotation reports with `movement`.
+    Movement(f64),
 }
 
 impl Event<'_> {
@@ -168,6 +171,7 @@ impl Event<'_> {
             Event::DendroCore { .. } => EventKind::DendroCore,
             Event::TargetDied(_) => EventKind::TargetDied,
             Event::ActionExec(_) => EventKind::ActionExec,
+            Event::Movement(_) => EventKind::Movement,
         }
     }
 }
