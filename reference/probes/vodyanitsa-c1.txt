@@ -1,0 +1,3 @@
+# Vodyanitsa C1: each Song of Ages Past heal raises the party's ATK by 0.8% of her Max HP.
+team neuvillette-furina-escoffier-vodyanitsa
+vodyanitsa char lvl=90/90 cons=1 talent=9,9,9;

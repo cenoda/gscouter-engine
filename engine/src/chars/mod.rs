@@ -118,6 +118,8 @@ crate::chars! {
     Linnea => linnea,
     Dahlia => dahlia,
     Sigewinne => sigewinne,
+    Vodyanitsa => vodyanitsa,
+    Odette => odette,
 }
 
 /// The characters whose modules have been checked against gcsim for a

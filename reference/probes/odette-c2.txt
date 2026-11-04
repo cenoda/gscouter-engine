@@ -1,0 +1,3 @@
+# Odette C2: Marvelous Splendor raises ATK and the Dance Double shreds Cryo and Anemo RES in Radiance.
+team vesna-odette-diona-faruzan
+odette char lvl=90/90 cons=2 talent=9,9,9;
