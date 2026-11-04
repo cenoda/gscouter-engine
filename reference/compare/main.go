@@ -819,7 +819,10 @@ func main() {
 		}
 	}
 	if *jsonOut != "" {
-		b, _ := json.MarshalIndent(rep, "", "  ")
+		b, err := json.MarshalIndent(rep, "", "  ")
+		if err != nil {
+			fail(fmt.Errorf("-json: %w", err))
+		}
 		if err := os.WriteFile(*jsonOut, b, 0o644); err != nil {
 			fail(err)
 		}
