@@ -100,6 +100,7 @@ crate::chars! {
     Iansan => iansan,
     Ifa => ifa,
     Aloy => aloy,
+    Alyosha => alyosha,
 }
 
 /// The characters whose modules have been checked against gcsim for a

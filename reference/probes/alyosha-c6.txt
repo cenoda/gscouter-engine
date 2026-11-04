@@ -1,0 +1,3 @@
+# Alyosha C6: C1 energy on electro reactions, C2 marks from the field and a longer burst, C4 heals, C6 two stacks of Hunter's Precision and EM.
+team sandrone-alyosha-diona-sucrose
+alyosha char lvl=90/90 cons=6 talent=9,9,9;
