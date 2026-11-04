@@ -1,0 +1,5 @@
+# Neuvillette with Scholar 2 and Gladiator's Finale 2.
+# The 2pc is a flat Energy Recharge stat mod.
+team furina-neuvillette-fischl-jean
+neuvillette add set="scholar" count=2;
+neuvillette add set="gladiatorsfinale" count=2;

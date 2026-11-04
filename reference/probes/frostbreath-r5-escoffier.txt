@@ -1,0 +1,4 @@
+# Escoffier with Frostbreath R5.
+# Her cryo reactions with Furina's hydro give the ATK buff and the party's energy.
+team bennett-furina-rosaria-escoffier
+escoffier add weapon="frostbreath" refine=5 lvl=90/90;

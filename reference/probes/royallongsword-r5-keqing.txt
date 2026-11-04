@@ -1,0 +1,4 @@
+# Keqing with Royal Longsword R5.
+# Keqing's non-crit hits stack it; her crits reset it.
+team fischl-nahida-sucrose-keqing
+keqing add weapon="royallongsword" refine=5 lvl=90/90;

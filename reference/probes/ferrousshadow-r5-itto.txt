@@ -1,0 +1,4 @@
+# Itto with Ferrous Shadow R5.
+# Furina's Salon drains Itto's HP below the threshold, and his charged attacks take the bonus.
+team aratakiitto-albedo-gorou-furina
+itto add weapon="ferrousshadow" refine=5 lvl=90/90;

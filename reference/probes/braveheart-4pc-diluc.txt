@@ -1,0 +1,4 @@
+# Diluc with Brave Heart 4.
+# The 4pc works only in damage mode (an enemy with HP); library fights have none, so only the 2pc acts, as in gcsim.
+team diluc-bennett-xiangling-kaedeharakazuha
+diluc add set="braveheart" count=4;

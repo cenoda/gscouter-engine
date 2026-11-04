@@ -1,0 +1,4 @@
+# Heizou with Sunny Morning Sleep-in R5.
+# Heizou on field swirls with his skill and burst: EM on swirl, on skill hits and on burst hits.
+team chongyun-shikanoinheizou-xingqiu-yelan
+heizou add weapon="sunnymorningsleepin" refine=5 lvl=90/90;

@@ -1,0 +1,4 @@
+# Keqing with The Flute R5.
+# Keqing's normal and charged attacks on field build the stacks; the fifth releases the proc.
+team kaedeharakazuha-keqing-fischl-kirara
+keqing add weapon="theflute" refine=5 lvl=90/90;

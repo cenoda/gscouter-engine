@@ -1,0 +1,4 @@
+# Noelle with Defender's Will 4.
+# gcsim does not implement the 4pc (elemental RES for the player), so only the 2pc acts.
+team albedo-bennett-xiangling-noelle
+noelle add set="defenderswill" count=4;

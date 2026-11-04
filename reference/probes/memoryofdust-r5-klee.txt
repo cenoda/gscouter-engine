@@ -1,0 +1,4 @@
+# Klee with Memory of Dust R5.
+# Golden Majesty: ATK stacks on the holder's hits while on field, doubled while Zhongli's shield covers the active character.
+team bennett-zhongli-xiangling-klee
+klee add weapon="memoryofdust" refine=5 lvl=90/90;

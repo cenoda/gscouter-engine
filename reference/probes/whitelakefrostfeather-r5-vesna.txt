@@ -1,0 +1,4 @@
+# Vesna with White Lake Frostfeather R5.
+# Vesna's skill hits give ATK stacks and the third the CRIT DMG on Stellar Swirl; her Stellar Swirl damage refunds energy.
+team vesna-diona-faruzan-sucrose
+vesna add weapon="whitelakefrostfeather" refine=5 lvl=90/90;

@@ -1,0 +1,4 @@
+# Klee with Royal Grimoire R5.
+# Klee's non-crit hits stack it; her crits reset it.
+team bennett-zhongli-xiangling-klee
+klee add weapon="royalgrimoire" refine=5 lvl=90/90;

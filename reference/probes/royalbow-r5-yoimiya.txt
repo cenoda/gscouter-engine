@@ -1,0 +1,4 @@
+# Yoimiya with Royal Bow R5.
+# Yoimiya's non-crit normal attacks stack it; her crits reset it.
+team bennett-furina-xiangling-yoimiya
+yoimiya add weapon="royalbow" refine=5 lvl=90/90;

@@ -1,0 +1,4 @@
+# Eula with The Unforged R1.
+# Golden Majesty: ATK stacks on the holder's hits while on field, doubled while Zhongli's shield covers the active character.
+team eula-raidenshogun-rosaria-zhongli
+eula add weapon="theunforged" refine=1 lvl=90/90;

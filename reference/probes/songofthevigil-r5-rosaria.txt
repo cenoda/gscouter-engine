@@ -1,0 +1,4 @@
+# Rosaria with Song of the Vigil R5.
+# Her reactions with Furina's hydro and Bennett's pyro refund energy toward the bursts she waits for. Its Stellar-Conduct and Stellar Swirl ATK buff cannot trigger: no spear holder in a library Stellar team triggers them (on Sandrone / Alyosha / Odette / Escoffier only Sandrone and Odette do).
+team bennett-furina-rosaria-escoffier
+rosaria add weapon="songofthevigil" refine=5 lvl=90/90;

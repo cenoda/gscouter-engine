@@ -1525,6 +1525,12 @@ pub struct Sim {
     /// Barbara's A1 ("barb-a1-stam"): stamina -12% until this frame,
     /// added at her skill, after the mods of every Init.
     pub barbara_a1: i32,
+    /// Sturdy Bone's "sturdy-bone": stamina -15% for every action, added
+    /// in its NewWeapon (one key, so two wearers give one).
+    pub sturdy_bone: bool,
+    /// Wine and Song's "wineandsong-<char>": dash stamina reduction and
+    /// the frame it ends, by wearer.
+    pub wine_stam: [(i32, f64); 4],
     /// Electro resonance, with the frame of its last particle (0 before
     /// the first).
     pub electro_res: Option<i32>,
@@ -1733,6 +1739,8 @@ impl Sim {
             diona_a1: false,
             noelle_c2: None,
             barbara_a1: 0,
+            sturdy_bone: false,
+            wine_stam: [(-1, 0.0); 4],
             electro_res: None,
             dendro_res: false,
             anemo_res: false,
@@ -4172,6 +4180,7 @@ impl Sim {
                         let kind = self.chars[o as usize].sets[si as usize].kind;
                         crate::sets::dispatch::shield_bonus(kind, self, o as usize, si as usize, m.key)
                     }
+                    Owner::Weapon(o) => crate::weapons::dispatch::shield_bonus(self.chars[o as usize].weapon, self, o as usize, m.key),
                     _ => (0.15, true), // geo resonance
                 };
                 amt += a;
@@ -4731,7 +4740,7 @@ impl Sim {
     /// The Moondrifts within `r` of the player (gcsim's Distance < r), not
     /// the other constructs of gcsim's consNoLimit (the geo traveler's
     /// walls).
-    fn moondrifts_near(&self, r: f64) -> usize {
+    pub fn moondrifts_near(&self, r: f64) -> usize {
         let (px, py) = self.player_pos;
         self.constructs.iter().filter(|c| c.key == MOONDRIFT && c.pos.is_some_and(|p| ((p[0] - px).powi(2) + (p[1] - py).powi(2)).sqrt() < r)).count()
     }
@@ -5527,6 +5536,9 @@ impl Sim {
     /// (Kazuha's and others') -20% on dashes, then Diona's A1.
     pub fn stam_percent_mod(&self, a: Action) -> f64 {
         let mut pct = 0.0;
+        if self.sturdy_bone {
+            pct += -0.15;
+        }
         if self.anemo_res {
             pct += -0.15;
         }
@@ -5549,6 +5561,13 @@ impl Sim {
         }
         if self.barbara_a1 > self.f {
             pct += -0.12;
+        }
+        if a == Action::Dash {
+            for &(exp, amt) in &self.wine_stam {
+                if exp > self.f {
+                    pct += amt;
+                }
+            }
         }
         pct
     }

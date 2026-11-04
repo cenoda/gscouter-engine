@@ -1,0 +1,4 @@
+# Ganyu with Predator R1.
+# Her cryo hits on field build the normal and charged attack stacks (the ATK part is Aloy's only).
+team chongyun-shenhe-venti-ganyu
+ganyu add weapon="predator" refine=1 lvl=90/90;

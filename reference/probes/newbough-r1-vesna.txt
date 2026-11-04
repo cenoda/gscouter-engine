@@ -1,0 +1,4 @@
+# Vesna with New Bough R1.
+# Vesna's skill opens the window and her hits give Verdant stacks; with Radiance (her Stellar Swirl) the ATK and Stellar Swirl DMG part applies instead of the EM.
+team vesna-diona-faruzan-sucrose
+vesna add weapon="newbough" refine=1 lvl=90/90;

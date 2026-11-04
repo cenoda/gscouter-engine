@@ -1,0 +1,4 @@
+# Razor with Debate Club R1.
+# His skills on field open the window; his normal attacks proc it.
+team razor-chevreuse-xiangling-bennett
+razor add weapon="debateclub" refine=1 lvl=90/90;

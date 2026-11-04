@@ -1,0 +1,4 @@
+# Keqing with Martial Artist 4.
+# The 4pc triggers on her own skill while she is active, then her attacks and charges use it.
+team fischl-nahida-sucrose-keqing
+keqing add set="martialartist" count=4;

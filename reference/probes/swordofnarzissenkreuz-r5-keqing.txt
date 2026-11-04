@@ -1,0 +1,4 @@
+# Keqing with Sword of Narzissenkreuz R5.
+# Keqing (no Arkhe) procs it with normal and charged attacks on field, once per 12 s.
+team kaedeharakazuha-keqing-fischl-kirara
+keqing add weapon="swordofnarzissenkreuz" refine=5 lvl=90/90;

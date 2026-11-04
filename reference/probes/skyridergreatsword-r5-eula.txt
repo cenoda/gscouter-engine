@@ -1,0 +1,4 @@
+# Eula with Skyrider Greatsword R5.
+# Her normal attacks on field give the ATK stacks.
+team eula-fischl-rosaria-bennett
+eula add weapon="skyridergreatsword" refine=5 lvl=90/90;

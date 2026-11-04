@@ -1,0 +1,4 @@
+# Alhaitham with Silverlight R1.
+# Alhaitham's skill on field gives an EM stack, once a rotation.
+team alhaitham-raidenshogun-xingqiu-zhongli
+alhaitham add weapon="silverlight" refine=1 lvl=90/90;

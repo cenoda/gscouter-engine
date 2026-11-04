@@ -1,0 +1,4 @@
+# Yoimiya with Cloudforged R5.
+# Cannot trigger: gcsim stacks it on a negative AddEnergy (OnEnergyChange), which only Sethos's A1 and Shimenawa 4pc make; base stats only.
+team bennett-furina-xiangling-yoimiya
+yoimiya add weapon="cloudforged" refine=5 lvl=90/90;

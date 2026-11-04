@@ -1,0 +1,4 @@
+# Eula with Prototype Archaic R1.
+# Her normal attacks on field proc it.
+team eula-fischl-rosaria-bennett
+eula add weapon="prototypearchaic" refine=1 lvl=90/90;

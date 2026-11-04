@@ -1,0 +1,4 @@
+# Yae Miko with Echoes of the Heart R1.
+# Yae's turrets trigger superconduct and Stellar-Conduct on Qiqi's cryo: EM on any reaction, and the Stellar-Conduct DMG bonus.
+team sandrone-yaemiko-odette-qiqi
+yaemiko add weapon="echoesoftheheart" refine=1 lvl=90/90;

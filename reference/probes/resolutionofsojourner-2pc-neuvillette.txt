@@ -1,0 +1,5 @@
+# Neuvillette with Resolution of Sojourner 2 and Gladiator's Finale 2.
+# The 2pc is a flat ATK% stat mod (Neuvillette scales on HP, so ATK matters little).
+team furina-neuvillette-fischl-jean
+neuvillette add set="resolutionofsojourner" count=2;
+neuvillette add set="gladiatorsfinale" count=2;

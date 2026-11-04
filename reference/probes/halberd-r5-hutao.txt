@@ -1,0 +1,4 @@
+# Hu Tao with Halberd R5.
+# Her normal attacks proc it once every 10 s.
+team hutao-fischl-yelan-bennett
+hutao add weapon="halberd" refine=5 lvl=90/90;

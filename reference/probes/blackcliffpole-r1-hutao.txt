@@ -1,0 +1,4 @@
+# Hu Tao with Blackcliff Pole R1.
+# Blackcliff stacks only on an enemy kill; library fights have no kills (the target has no hp), so the passive cannot trigger and this checks base stats.
+team hutao-xingqiu-zhongli-yelan
+hutao add weapon="blackcliffpole" refine=1 lvl=90/90;

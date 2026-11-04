@@ -1,0 +1,4 @@
+# Klee with Apprentice's Notes R5.
+# No passive in gcsim (NoEffect); refinement changes nothing, this checks base stats at max level 70.
+team bennett-zhongli-xiangling-klee
+klee add weapon="apprenticesnotes" refine=5 lvl=70/70;

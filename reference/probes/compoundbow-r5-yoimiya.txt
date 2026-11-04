@@ -1,0 +1,4 @@
+# Yoimiya with Compound Bow R5.
+# Her normal attacks on field build its ATK and ATK SPD stacks.
+team bennett-furina-xiangling-yoimiya
+yoimiya add weapon="compoundbow" refine=5 lvl=90/90;

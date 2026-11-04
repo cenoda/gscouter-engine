@@ -1,0 +1,4 @@
+# Eula with Old Merc's Pal R1.
+# No passive in gcsim (NoEffect); refinement changes nothing, this checks base stats at max level 70.
+team eula-raidenshogun-rosaria-zhongli
+eula add weapon="oldmercspal" refine=1 lvl=70/70;

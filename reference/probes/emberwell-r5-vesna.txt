@@ -1,0 +1,4 @@
+# Vesna with Emberwell R5.
+# Vesna's swirls and Stellar Swirls give the ATK buff and the Stellar Swirl DMG bonus.
+team vesna-diona-faruzan-sucrose
+vesna add weapon="emberwell" refine=5 lvl=90/90;

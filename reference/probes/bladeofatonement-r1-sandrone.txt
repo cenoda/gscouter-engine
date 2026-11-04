@@ -1,0 +1,4 @@
+# Sandrone with Blade of Atonement R1.
+# Reactions she triggers give the EM buff, Stellar-Conduct and Stellar Swirl the ATK buff as well.
+team sandrone-beidou-diona-sucrose
+sandrone add weapon="bladeofatonement" refine=1 lvl=90/90;

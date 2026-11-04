@@ -1,0 +1,4 @@
+# Klee with Blackcliff Agate R5.
+# Blackcliff stacks only on an enemy kill; library fights have no kills (the target has no hp), so the passive cannot trigger and this checks base stats.
+team bennett-zhongli-xiangling-klee
+klee add weapon="blackcliffagate" refine=5 lvl=90/90;

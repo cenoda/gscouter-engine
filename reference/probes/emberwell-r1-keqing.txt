@@ -1,0 +1,4 @@
+# Keqing with Emberwell R1.
+# Keqing's own aggravates give the ATK buff; this team has no Stellar reaction, so the Stellar bonus is in emberwell-r5-vesna.
+team kaedeharakazuha-keqing-fischl-kirara
+keqing add weapon="emberwell" refine=1 lvl=90/90;

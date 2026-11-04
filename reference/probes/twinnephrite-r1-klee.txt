@@ -1,0 +1,4 @@
+# Klee with Twin Nephrite R1.
+# The passive needs an enemy defeated; library fights have no kills (the target has no HP), so it never triggers: only base stats are checked.
+team klee-albedo-bennett-zhongli
+klee add weapon="twinnephrite" refine=1 lvl=90/90;

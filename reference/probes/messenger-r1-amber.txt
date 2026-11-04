@@ -1,0 +1,4 @@
+# Amber with Messenger R1.
+# Her aimed shots hit the weak point (weakspot=1), which makes the proc.
+team amber-bennett-ganyu-sucrose
+amber add weapon="messenger" refine=1 lvl=90/90;

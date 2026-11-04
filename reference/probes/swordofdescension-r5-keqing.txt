@@ -1,0 +1,4 @@
+# Keqing with Sword of Descension R5.
+# Keqing's normal and charged attacks on field roll the 50% proc (no refinement scaling; not a Traveler, so no ATK).
+team kaedeharakazuha-keqing-fischl-kirara
+keqing add weapon="swordofdescension" refine=5 lvl=90/90;

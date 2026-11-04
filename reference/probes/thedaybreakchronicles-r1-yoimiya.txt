@@ -1,0 +1,4 @@
+# Yoimiya with The Daybreak Chronicles R1.
+# Her normal attacks and burst hits keep their stacks up; no Hexerei pair here.
+team bennett-furina-xiangling-yoimiya
+yoimiya add weapon="thedaybreakchronicles" refine=1 lvl=90/90;

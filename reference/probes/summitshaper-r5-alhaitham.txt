@@ -1,0 +1,4 @@
+# Alhaitham with Summit Shaper R5.
+# Golden Majesty: ATK stacks on the holder's hits while on field, doubled while Zhongli's shield covers the active character.
+team alhaitham-raidenshogun-xingqiu-zhongli
+alhaitham add weapon="summitshaper" refine=5 lvl=90/90;

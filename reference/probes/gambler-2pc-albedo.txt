@@ -1,0 +1,5 @@
+# Albedo with Gambler 2 and Gladiator's Finale 2.
+# The 2pc raises Elemental Skill DMG; Albedo's damage is almost all his skill's blossoms.
+team albedo-bennett-xiangling-noelle
+albedo add set="gambler" count=2;
+albedo add set="gladiatorsfinale" count=2;

@@ -1,0 +1,4 @@
+# Dendro Traveler with Sword of Descension R1.
+# The Traveler gets the flat ATK, and her normal attacks on field roll the 50% proc.
+team kukishinobu-yelan-xingqiu-travelerdendro
+luminedendro add weapon="swordofdescension" refine=1 lvl=90/90;

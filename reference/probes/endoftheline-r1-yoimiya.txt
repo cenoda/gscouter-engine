@@ -1,0 +1,4 @@
+# Yoimiya with End of the Line R1.
+# Her skill on field starts the effect, and her hits then make its three physical procs.
+team bennett-xingqiu-yelan-yoimiya
+yoimiya add weapon="endoftheline" refine=1 lvl=90/90;

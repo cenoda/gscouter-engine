@@ -1,0 +1,4 @@
+# Amber with Ibis Piercer R5.
+# Her aimed shots (charged attack hits) build the EM stacks.
+team amber-bennett-ganyu-sucrose
+amber add weapon="ibispiercer" refine=5 lvl=90/90;

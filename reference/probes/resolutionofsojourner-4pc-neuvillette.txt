@@ -1,0 +1,4 @@
+# Neuvillette with Resolution of Sojourner 4.
+# The 4pc adds CRIT Rate to Charged Attacks; Neuvillette's damage is mostly his charged attack.
+team furina-neuvillette-fischl-jean
+neuvillette add set="resolutionofsojourner" count=4;

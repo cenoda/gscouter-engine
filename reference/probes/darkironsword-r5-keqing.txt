@@ -1,0 +1,4 @@
+# Keqing with Dark Iron Sword R5.
+# Keqing's own aggravates and quickens (Kirara's dendro) on field give the ATK buff.
+team kaedeharakazuha-keqing-fischl-kirara
+keqing add weapon="darkironsword" refine=5 lvl=90/90;

@@ -1,0 +1,4 @@
+# Navia with Beacon of the Reed Sea R5.
+# Her skill hits give the ATK buff; the HP buff drops while Zhongli's shield is up. No enemy attacks, so the damage-taken buff never triggers.
+team chongyun-navia-zhongli-yelan
+navia add weapon="beaconofthereedsea" refine=5 lvl=90/90;

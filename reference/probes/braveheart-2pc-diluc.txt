@@ -1,0 +1,5 @@
+# Diluc with Brave Heart 2 and Gladiator's Finale 2.
+# The 2pc is a flat ATK% stat mod, always on.
+team diluc-bennett-xiangling-kaedeharakazuha
+diluc add set="braveheart" count=2;
+diluc add set="gladiatorsfinale" count=2;

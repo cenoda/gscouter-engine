@@ -1,0 +1,4 @@
+# Diluc with Royal Greatsword R1.
+# Diluc's non-crit attacks and skills stack it; his crits reset it.
+team diluc-bennett-xiangling-kaedeharakazuha
+diluc add weapon="royalgreatsword" refine=1 lvl=90/90;

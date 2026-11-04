@@ -1,0 +1,4 @@
+# Lauma with Reliquary of Truth R5.
+# Lauma's skill gives Secret of Lies (EM), her Lunar-Bloom DMG Moon of Truth (CRIT DMG); both together are 50% stronger.
+team neuvillette-furina-lauma-xilonen
+lauma add weapon="reliquaryoftruth" refine=5 lvl=90/90;

@@ -1,0 +1,4 @@
+# Xiangling with Mountain-Bracing Bolt R5.
+# Guoba takes the skill bonus, and Bennett's and Chevreuse's skills while she is off field the second one.
+team razor-chevreuse-xiangling-bennett
+xiangling add weapon="mountainbracingbolt" refine=5 lvl=90/90;

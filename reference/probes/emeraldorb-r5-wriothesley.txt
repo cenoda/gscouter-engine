@@ -1,0 +1,4 @@
+# Wriothesley with Emerald Orb R5.
+# Wriothesley on field freezes the enemy with Furina's hydro (frozen gives the ATK buff).
+team wriothesley-furina-xilonen-bennett
+wriothesley add weapon="emeraldorb" refine=5 lvl=90/90;

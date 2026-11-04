@@ -1,0 +1,5 @@
+# Noelle with Defender's Will 2 and Gladiator's Finale 2.
+# The 2pc is a flat DEF% stat mod; Noelle's damage scales on DEF.
+team albedo-bennett-xiangling-noelle
+noelle add set="defenderswill" count=2;
+noelle add set="gladiatorsfinale" count=2;

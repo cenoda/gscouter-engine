@@ -1,0 +1,4 @@
+# Wriothesley with Frostbearer R5.
+# Wriothesley's normal and charged attack hits proc the icicle, with the higher multiplier on a cryo or frozen enemy.
+team wriothesley-furina-xilonen-bennett
+wriothesley add weapon="frostbearer" refine=5 lvl=90/90;

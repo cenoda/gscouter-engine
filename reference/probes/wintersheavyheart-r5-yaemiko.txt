@@ -1,0 +1,4 @@
+# Yae Miko with Winter's Heavy Heart R5.
+# The party's cryo and electro members give EM and ATK, replaced by EM and Stellar-Conduct DMG inside Odette's Polestar Field.
+team sandrone-yaemiko-odette-qiqi
+yaemiko add weapon="wintersheavyheart" refine=5 lvl=90/90;

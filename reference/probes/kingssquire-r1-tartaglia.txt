@@ -1,0 +1,4 @@
+# Tartaglia with King's Squire R1.
+# His skill and burst on field give the EM; the proc hits when he swaps out or the buff ends.
+team jean-tartaglia-xiangling-bennett
+tartaglia add weapon="kingssquire" refine=1 lvl=90/90;

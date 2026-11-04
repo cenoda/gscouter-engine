@@ -1,0 +1,5 @@
+# Keqing with Martial Artist 2 and Gladiator's Finale 2.
+# The 2pc raises Normal and Charged Attack DMG; Keqing attacks and charges on field.
+team fischl-nahida-sucrose-keqing
+keqing add set="martialartist" count=2;
+keqing add set="gladiatorsfinale" count=2;

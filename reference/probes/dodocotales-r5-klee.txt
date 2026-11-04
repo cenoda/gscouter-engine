@@ -1,0 +1,4 @@
+# Klee with Dodoco Tales R5.
+# Klee's normal attack hits buff her charged attacks, and charged attack hits her ATK.
+team klee-albedo-bennett-zhongli
+klee add weapon="dodocotales" refine=5 lvl=90/90;

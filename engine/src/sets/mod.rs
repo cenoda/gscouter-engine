@@ -51,4 +51,10 @@ crate::sets! {
     Scarletproof => scarletproof,
     DisenchantmentInDeepShadow => disenchantmentindeepshadow,
     VermillionHereafter => vermillionhereafter,
+    BraveHeart => braveheart,
+    DefendersWill => defenderswill,
+    Gambler => gambler,
+    MartialArtist => martialartist,
+    ResolutionOfSojourner => resolutionofsojourner,
+    Scholar => scholar,
 }

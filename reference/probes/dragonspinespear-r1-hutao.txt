@@ -1,0 +1,4 @@
+# Hu Tao with Dragonspine Spear R1.
+# Her normal and charged attacks proc it, the larger hit while Escoffier's cryo is on the enemy.
+team hutao-furina-yelan-escoffier
+hutao add weapon="dragonspinespear" refine=1 lvl=90/90;

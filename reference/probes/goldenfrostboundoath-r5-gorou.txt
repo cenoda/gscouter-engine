@@ -1,0 +1,4 @@
+# Gorou with Golden Frostbound Oath R5.
+# DEF always; his skill hits give the geo DMG. No Lunar-Crystallize or Moondrifts in this team, so the lunar and team parts do not trigger.
+team aratakiitto-albedo-gorou-bennett
+gorou add weapon="goldenfrostboundoath" refine=5 lvl=90/90;
