@@ -13,7 +13,6 @@ crate::weapons! {
     SacrificialSword => sacrificialsword,
     AquaSimulacra => aquasimulacra,
     Deathmatch => deathmatch,
-    DisasterAndRemorse => disasterandremorse,
     TheAlleyFlash => thealleyflash,
     HarbingerOfDawn => harbingerofdawn,
     FavoniusWarbow => favoniuswarbow,
