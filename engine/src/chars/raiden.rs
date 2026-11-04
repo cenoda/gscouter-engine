@@ -151,9 +151,11 @@ impl Character for Char {
             (g::ATTACK_HITMARKS[n], &g::ATTACK_FRAMES[n], TASK_NORMAL)
         };
         for (i, &h) in hitmarks.iter().enumerate() {
-            // Musou Isshin's mult comes from the Resolve when the attack starts
-            let slot = if sword { s.alloc(AttackEvent::new(sword_info(s, ci, n, i), CB_RESTORE | CB_C6)) as i32 } else { 0 };
-            s.queue_char_task(ci, Task::Char { c: ci as u8, id, arg: if sword { slot } else { (n * 8 + i) as i32 } }, h);
+            // the attack and its pattern are built when the action starts
+            // (Musou Isshin's mult from the Resolve then), queued at the hit
+            let ev = if sword { AttackEvent::new(sword_info(s, ci, n, i), CB_RESTORE | CB_C6) } else { AttackEvent::new(normal_info(s, ci, n, i), 0) };
+            let slot = s.alloc(ev) as i32;
+            s.queue_char_task(ci, Task::Char { c: ci as u8, id, arg: slot }, h);
         }
         let atkspd = s.stat(ci, st::ATKSPD);
         let info = ActInfo::new(Frames::Attack { table, atkspd }, table[0], *hitmarks.last().unwrap(), AnimState::Normal);
@@ -175,7 +177,7 @@ impl Character for Char {
                     ai.def_halt = true;
                 }
                 ai.hitlag_factor = 0.01;
-                ai.pattern = s.box_on_player(0.0, -0.1, 7.5, 8.0);
+                // its box is built at the hit (TASK_SWORD_CA)
                 let slot = s.alloc(AttackEvent::new(ai, CB_RESTORE | CB_C6)) as i32;
                 s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_SWORD_CA, arg: slot }, g::SWORD_CA_HITMARKS[i]);
             }
@@ -229,20 +231,14 @@ impl Character for Char {
 
     fn task(s: &mut Sim, ci: usize, id: u8, arg: i32) {
         match id {
-            TASK_NORMAL => {
-                let (n, i) = ((arg / 8) as usize, (arg % 8) as usize);
-                let lvl = s.talent(ci, 0);
-                let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, g::ATTACK[n][i][lvl]);
-                ai.abil = NORMAL_NAMES[n];
-                ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
-                ai.hitlag_factor = 0.01;
-                ai.def_halt = g::ATTACK_DEF_HALT[n][i];
-                let (o, hb) = (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n]);
-                ai.pattern = if n == 0 || n == 2 { s.box_on_player(o[0], o[1], hb[0], hb[1]) } else { s.fan_on_player(o[0], o[1], hb[0], g::ATTACK_FAN_ANGLES[n]) };
-                s.queue_attack(ai, 0, 0, 0);
-            }
-            TASK_SWORD | TASK_SWORD_CA => {
+            TASK_NORMAL | TASK_SWORD => {
                 // the attack built when the action started, snapshot now
+                s.queue_attack_slot(arg as u16, 0, 0);
+            }
+            TASK_SWORD_CA => {
+                // the mult from the action's start; gcsim builds the box in
+                // the char task, where the player is at the hit
+                s.slots[arg as usize].info.pattern = s.box_on_player(0.0, -0.1, 7.5, 8.0);
                 s.queue_attack_slot(arg as u16, 0, 0);
             }
             TASK_EYE => {
@@ -326,6 +322,19 @@ impl Character for Char {
             _ => {}
         }
     }
+}
+
+/// A normal attack's hit, its pattern from where the player is now.
+fn normal_info(s: &Sim, ci: usize, n: usize, i: usize) -> AttackInfo {
+    let lvl = s.talent(ci, 0);
+    let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, g::ATTACK[n][i][lvl]);
+    ai.abil = NORMAL_NAMES[n];
+    ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
+    ai.hitlag_factor = 0.01;
+    ai.def_halt = g::ATTACK_DEF_HALT[n][i];
+    let (o, hb) = (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n]);
+    ai.pattern = if n == 0 || n == 2 { s.box_on_player(o[0], o[1], hb[0], hb[1]) } else { s.fan_on_player(o[0], o[1], hb[0], g::ATTACK_FAN_ANGLES[n]) };
+    ai
 }
 
 fn sword_info(s: &Sim, ci: usize, n: usize, i: usize) -> AttackInfo {

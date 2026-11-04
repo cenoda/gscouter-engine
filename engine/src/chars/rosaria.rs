@@ -11,11 +11,15 @@ use crate::types::*;
 
 pub struct Char;
 
-#[derive(Default)]
 pub struct State {
     /// A1 and C4 trigger once per skill.
     a1_done: bool,
     c4_done: bool,
+    /// The running normal's hit areas, taken at the action (gcsim builds
+    /// them before queuing the hits as her tasks).
+    normal_pat: [Pattern; 2],
+    /// The lance's hit and DoT areas, taken at the burst.
+    lance_pat: [Pattern; 2],
 }
 
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
@@ -45,7 +49,7 @@ impl Character for Char {
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
-        State::default()
+        State { a1_done: false, c4_done: false, normal_pat: [Pattern::Unknown; 2], lance_pat: [Pattern::Unknown; 2] }
     }
 
     fn unsupported(a: Action, p: &Params) -> Option<String> {
@@ -73,6 +77,9 @@ impl Character for Char {
         let n = s.chars[ci].normal_counter as usize;
         let hitmarks = g::ATTACK_HITMARKS[n];
         for (i, &h) in hitmarks.iter().enumerate() {
+            let (off, hb) = (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n][i]);
+            let p = if n == 2 || (n == 4 && i == 0) { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.fan_on_player(0.0, off, hb[0], g::ATTACK_FAN_ANGLES[n]) };
+            s.st_mut::<State>(ci).normal_pat[i] = p;
             s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_NORMAL, arg: (n * 8 + i) as i32 }, h);
         }
         let atkspd = s.stat(ci, st::ATKSPD);
@@ -124,6 +131,9 @@ impl Character for Char {
         let cbs = c1(s, ci) | c6(s, ci);
         ai.pattern = s.circle_on_player(0.0, 0.5, 3.5);
         s.queue_attack(ai, cbs, 15, 15);
+        // the lance's areas, 3 in front of the player, as she casts
+        let lance = [s.circle_on_player(0.0, 3.0, 6.0), s.circle_on_player(0.0, 3.0, 6.5)];
+        s.st_mut::<State>(ci).lance_pat = lance;
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_LANCE, arg: 0 }, 56);
         // A4: a share of her CRIT Rate to the others
         if s.chars[ci].ascension >= 4 {
@@ -150,8 +160,7 @@ impl Character for Char {
                 ai.hitlag_factor = 0.01;
                 ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
                 ai.def_halt = g::ATTACK_DEF_HALT[n][i];
-                let (off, hb) = (g::ATTACK_OFFSETS[n][i], g::ATTACK_HITBOXES[n][i]);
-                ai.pattern = if n == 2 || (n == 4 && i == 0) { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.fan_on_player(0.0, off, hb[0], g::ATTACK_FAN_ANGLES[n]) };
+                ai.pattern = s.st::<State>(ci).normal_pat[i];
                 let cbs = c1(s, ci);
                 s.queue_attack(ai, cbs, 0, 0);
             }
@@ -173,15 +182,16 @@ impl Character for Char {
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Cryo, 25.0, g::BURST[1][lvl]);
                 ai.abil = "Rites of Termination (Initial 2)";
                 ai.hitlag_factor = 0.01;
-                // around the lance, 3 in front of the player
-                ai.pattern = s.circle_on_player(0.0, 3.0, 6.0);
+                // around the lance, placed at the cast
+                let lance = s.st::<State>(ci).lance_pat;
+                ai.pattern = lance[0];
                 s.queue_attack(ai, cbs, 0, 0);
                 let dur = if s.chars[ci].cons >= 2 { 510 + 240 } else { 510 };
                 s.add_core_status(BURST_STATUS, dur);
                 // the DoT snapshots as the lance lands
                 let mut dot = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Cryo, 25.0, g::BURST_DOT[lvl]);
                 dot.abil = "Rites of Termination (DoT)";
-                dot.pattern = s.circle_on_player(0.0, 3.0, 6.5);
+                dot.pattern = lance[1];
                 for i in (120..dur).step_by(120) {
                     s.queue_attack(dot, cbs, 0, i);
                 }

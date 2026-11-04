@@ -32,6 +32,11 @@ pub struct State {
     salon_flat: [f64; 3],
     c6_count: i32,
     c6_heal_src: i32,
+    /// Where each Arkhe strike in flight lands, taken when its normal hit
+    /// lands (by the Arkhe's ICD index then).
+    arkhe_pos: [(f64, f64); 2],
+    /// The charged attack's area, built at the action.
+    charge_pattern: Pattern,
 }
 
 const SKILL: ModKey = ModKey::new(g::SKILL_KEY);
@@ -142,6 +147,8 @@ impl Character for Char {
             salon_flat: [0.0; 3],
             c6_count: 0,
             c6_heal_src: 0,
+            arkhe_pos: [(0.0, 0.0); 2],
+            charge_pattern: Pattern::Unknown,
         }
     }
 
@@ -246,6 +253,9 @@ impl Character for Char {
 
     fn charge(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
         let windup = if s.current_state() == AnimState::Normal { 11 } else { 0 };
+        // NewCircleHitOnTarget(Player, nil, 2.6), at the action
+        let pattern = s.circle_on_player(0.0, 0.0, 2.6);
+        s.st_mut::<State>(ci).charge_pattern = pattern;
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_CHARGE, arg: s.st::<State>(ci).pneuma as i32 }, g::CHARGE_HITMARK - windup);
         // a frame after the hit, so that C6 reads the old Arkhe
         let to_pneuma = !s.st::<State>(ci).pneuma;
@@ -301,7 +311,7 @@ impl Character for Char {
     fn task(s: &mut Sim, ci: usize, id: u8, arg: i32) {
         match id {
             TASK_NORMAL => normal_hit(s, ci, arg as usize),
-            TASK_ARKHE => arkhe_strike(s, ci),
+            TASK_ARKHE => arkhe_strike(s, ci, arg as usize),
             TASK_CHARGE => charge_hit(s, ci),
             TASK_ARKHE_SWITCH => {
                 let pneuma = arg == 1;
@@ -461,9 +471,12 @@ fn normal_hit(s: &mut Sim, ci: usize, n: usize) {
         ai.flat_dmg = c6_flat(s, ci, true);
         cbs |= CB_C6;
     }
+    // gcsim picks the shape by c.NormalCounter inside the hitmark task,
+    // read then: already advanced past this hit (or reset)
+    let m = s.chars[ci].normal_counter as usize;
     let k = c6_active(s, ci) as usize;
-    let (oy, hb) = (g::ATTACK_OFFSETS[k][n], g::ATTACK_HITBOXES[k][n]);
-    ai.pattern = if matches!(n, 0 | 3) { s.box_on_player(0.0, oy, hb[0], hb[1]) } else { s.circle_on_player(0.0, oy, hb[0]) };
+    let (oy, hb) = (g::ATTACK_OFFSETS[k][m], g::ATTACK_HITBOXES[k][m]);
+    ai.pattern = if matches!(m, 0 | 3) { s.box_on_player(0.0, oy, hb[0], hb[1]) } else { s.circle_on_player(0.0, oy, hb[0]) };
     s.queue_attack(ai, cbs, 0, 0);
 }
 
@@ -473,10 +486,13 @@ fn arkhe_cb(s: &mut Sim, ci: usize) {
         return;
     }
     s.add_status(ci, ARKHE_ICD[a], 6 * 60, true);
-    s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_ARKHE, arg: 0 }, 30);
+    // CalcOffsetPoint(player.Pos(), {Y: -0.3}, player.Direction()), now
+    let pos = s.point_from_player(0.0, -0.3);
+    s.st_mut::<State>(ci).arkhe_pos[a] = pos;
+    s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_ARKHE, arg: a as i32 }, 30);
 }
 
-fn arkhe_strike(s: &mut Sim, ci: usize) {
+fn arkhe_strike(s: &mut Sim, ci: usize, a: usize) {
     let lvl = s.talent(ci, 0);
     let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Hydro, 0.0, g::ARKHE[lvl]);
     ai.abil = if s.st::<State>(ci).pneuma { "Surging Blade (furina)" } else { "Spiritbreath Thorn (furina)" };
@@ -485,7 +501,11 @@ fn arkhe_strike(s: &mut Sim, ci: usize) {
     if c6_active(s, ci) {
         ai.flat_dmg = c6_flat(s, ci, false);
     }
-    ai.pattern = s.box_on_player(0.0, -0.3, 1.2, 4.5);
+    // NewBoxHitOnTarget(arkhePos, nil, 1.2, 4.5): a plain point, so
+    // gcsim's default direction
+    let (x, y) = s.st::<State>(ci).arkhe_pos[a];
+    let (dx, dy) = DEFAULT_DIR;
+    ai.pattern = Pattern::Box { x, y, w: 1.2, h: 4.5, dx, dy };
     s.queue_attack(ai, 0, 0, 0);
 }
 
@@ -495,7 +515,7 @@ fn charge_hit(s: &mut Sim, ci: usize) {
     // gcsim names it after the Arkhe when the charge started
     ai.abil = if s.st::<State>(ci).pneuma { "Charge Pneuma" } else { "Charge Ousia" };
     ai.hitlag_halt = 0.02 * 60.0;
-    ai.pattern = s.circle_on_player(0.0, 0.0, 2.6);
+    ai.pattern = s.st::<State>(ci).charge_pattern;
     let mut cbs = 0;
     if c6_active(s, ci) {
         ai.flat_dmg = c6_flat(s, ci, true);
