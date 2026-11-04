@@ -228,6 +228,9 @@ type Result struct {
 	EnergyWaits  float64 `json:"energy_waits"`
 	GcsimSeconds float64 `json:"gcsim_seconds"`
 	GseSeconds   float64 `json:"gse_seconds"`
+	// Reused is a verdict taken from an earlier run (-reuse): the build's
+	// engine output on its first seeds was the same to the last bit.
+	Reused bool `json:"reused,omitempty"`
 }
 
 type TeamStatus struct {
@@ -753,8 +756,12 @@ func main() {
 					continue
 				}
 				fmt.Fprintf(os.Stderr, "%s / %s ...\n", id, j.v.Name)
-				r := compare(gse, tmp, id, j.v, j.cfg)
-				fmt.Fprintf(os.Stderr, "%s / %s: %s at %d iterations\n", id, j.v.Name, r.Verdict, r.Iter)
+				r := compareReusing(gse, tmp, id, j.v, j.cfg)
+				reused := ""
+				if r.Reused {
+					reused = " (reused)"
+				}
+				fmt.Fprintf(os.Stderr, "%s / %s: %s at %d iterations%s\n", id, j.v.Name, r.Verdict, r.Iter, reused)
 				// a probe exists to check what it adds, so it must run
 				if r.Verdict == "unsupported" && strings.HasPrefix(j.v.Name, "probe:") {
 					r.Verdict = "error"
@@ -1877,6 +1884,9 @@ func markdown(rep *Report) string {
 				team, build, it, verdict := "", "", "", ""
 				if i == 0 {
 					team, build, it, verdict = r.Team, r.Variant, strconv.Itoa(r.Iter), "**"+r.Verdict+"**"
+					if r.Reused {
+						verdict += " (reused)"
+					}
 				}
 				mv := ""
 				if m.Verdict != "pass" {
