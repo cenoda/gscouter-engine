@@ -1488,6 +1488,9 @@ pub struct Sim {
     pub diona_a1: bool,
     /// Noelle's C2 -20% charged attack stamina, from her slot.
     pub noelle_c2: Option<u8>,
+    /// Barbara's A1 ("barb-a1-stam"): stamina -12% until this frame,
+    /// added at her skill, after the mods of every Init.
+    pub barbara_a1: i32,
     /// Electro resonance, with the frame of its last particle (0 before
     /// the first).
     pub electro_res: Option<i32>,
@@ -1684,6 +1687,7 @@ impl Sim {
             tick_subs: Vec::new(),
             diona_a1: false,
             noelle_c2: None,
+            barbara_a1: 0,
             electro_res: None,
             dendro_res: false,
             anemo_res: false,
@@ -5275,6 +5279,9 @@ impl Sim {
         }
         if noelle && !noelle_first {
             pct += -0.2;
+        }
+        if self.barbara_a1 > self.f {
+            pct += -0.12;
         }
         pct
     }
