@@ -24,7 +24,7 @@ pub fn unsupported(p: &ParsedConfig) -> Vec<String> {
             p.chars.iter().map(|c| (c.key, profile::char_kind(char_name(c.key)))).collect()
         }
     };
-    let mut w = Walker { kinds: &kinds, found: Vec::new() };
+    let mut w = Walker { kinds: &kinds, found: Vec::new(), fns: Vec::new() };
     w.block(&p.program);
     for s in w.found {
         add(s);
@@ -35,16 +35,18 @@ pub fn unsupported(p: &ParsedConfig) -> Vec<String> {
 struct Walker<'a> {
     kinds: &'a [(u16, Option<CharKind>)],
     found: Vec<String>,
+    /// The functions declared so far, by name, for set_on_tick's.
+    fns: Vec<(&'a str, &'a Block)>,
 }
 
-impl Walker<'_> {
-    fn block(&mut self, b: &Block) {
+impl<'a> Walker<'a> {
+    fn block(&mut self, b: &'a Block) {
         for s in &b.0 {
             self.stmt(s);
         }
     }
 
-    fn stmt(&mut self, s: &Stmt) {
+    fn stmt(&mut self, s: &'a Stmt) {
         match s {
             Stmt::Block(b) => self.block(b),
             Stmt::Let(_, e) | Stmt::Assign(_, e) | Stmt::Return(e) | Stmt::Expr(e) => self.expr(e),
@@ -68,7 +70,10 @@ impl Walker<'_> {
                     self.block(d);
                 }
             }
-            Stmt::Fn(_, lit) => self.block(&lit.body),
+            Stmt::Fn(name, lit) => {
+                self.fns.push((name, &lit.body));
+                self.block(&lit.body)
+            }
             Stmt::While(c, b) => {
                 self.expr(c);
                 self.block(b);
@@ -88,7 +93,7 @@ impl Walker<'_> {
         }
     }
 
-    fn expr(&mut self, e: &Expr) {
+    fn expr(&mut self, e: &'a Expr) {
         match e {
             Expr::Num(_) | Expr::Str(_) | Expr::Ident(_) | Expr::Field(_) => {}
             Expr::Func(lit) => self.block(&lit.body),
@@ -109,6 +114,19 @@ impl Walker<'_> {
                     }
                     if name == "execute_action" {
                         self.action(args);
+                    }
+                    // the engine runs a callback that only reads (eval.rs)
+                    if name == "set_on_tick" {
+                        let body = match args.first() {
+                            Some(Expr::Func(lit)) => Some(&lit.body),
+                            Some(Expr::Ident(f)) => self.fns.iter().rev().find(|x| x.0 == f).map(|x| x.1),
+                            _ => None,
+                        };
+                        match body.map(crate::eval::on_tick_effect) {
+                            Some(None) => {}
+                            Some(Some(why)) => self.found.push(format!("unsupported: builtin set_on_tick with {why}")),
+                            None => self.found.push("unsupported: builtin set_on_tick with a function it cannot find".into()),
+                        }
                     }
                     // moving the player away from the origin needs every
                     // member's module checked for it

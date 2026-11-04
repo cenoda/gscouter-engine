@@ -32,6 +32,7 @@ enum Builtin {
     PickUpCrystallize,
     SetPlayerPos,
     SetStartingVerdantDew,
+    SetOnTick,
     Unsupported(&'static str),
 }
 
@@ -60,7 +61,7 @@ const BUILTINS: &[(&str, Builtin)] = &[
     ("asin", Builtin::Asin),
     ("acos", Builtin::Acos),
     ("is_even", Builtin::IsEven),
-    ("set_on_tick", Builtin::Unsupported("set_on_tick")),
+    ("set_on_tick", Builtin::SetOnTick),
 ];
 
 /// Whether gcsl has the built-in and the engine does not implement it.
@@ -573,9 +574,66 @@ impl<'s> Eval<'s> {
             Builtin::Cos => float(self.num(args, line, env)?.f().cos()),
             Builtin::Asin => float(self.num(args, line, env)?.f().asin()),
             Builtin::Acos => float(self.num(args, line, env)?.f().acos()),
+            Builtin::SetOnTick => {
+                // gcsim (setOnTick) evaluates the function's body in this
+                // env after every frame (OnTick). A body that only reads
+                // and prints changes nothing in the fight, so the engine
+                // runs it once here, for the errors a read can give, and
+                // never again; anything else is an error.
+                let vs = self.args(args, line, &["function"], env)?;
+                let Value::Func(fv) = &vs[0] else { unreachable!() };
+                if let Some(why) = on_tick_effect(&fv.lit.body) {
+                    return err(format!("unsupported: builtin set_on_tick with {why}"));
+                }
+                if let Err(Stop::Err(m)) = self.block(&fv.lit.body, env) {
+                    return err(m);
+                }
+                Ok(Value::Null)
+            }
             Builtin::Unsupported(name) => err(format!("unsupported: builtin {name}")),
         }
     }
+}
+
+/// What in a set_on_tick body could change the fight or the program's
+/// state (an assignment, a call other than print and the pure built-ins, a
+/// function literal, a loop), None when it only reads. A `let` declares a
+/// variable in the body's own block, which each tick starts afresh.
+pub fn on_tick_effect(b: &Block) -> Option<String> {
+    fn block(b: &Block) -> Option<String> {
+        b.0.iter().find_map(stmt)
+    }
+    fn stmt(s: &Stmt) -> Option<String> {
+        match s {
+            Stmt::Block(b) => block(b),
+            Stmt::Expr(e) | Stmt::Let(_, e) | Stmt::Return(e) => expr(e),
+            Stmt::Ctrl(_) => None,
+            Stmt::If(c, then, other) => expr(c).or_else(|| block(then)).or_else(|| other.as_deref().and_then(stmt)),
+            Stmt::Switch(c, cases, default) => c
+                .as_ref()
+                .and_then(expr)
+                .or_else(|| cases.iter().find_map(|(e, b)| expr(e).or_else(|| block(b))))
+                .or_else(|| default.as_ref().and_then(block)),
+            Stmt::Assign(name, _) => Some(format!("assignment to {name}")),
+            Stmt::Fn(name, _) => Some(format!("fn {name}")),
+            Stmt::While(..) | Stmt::For(..) => Some("a loop".into()),
+        }
+    }
+    fn expr(e: &Expr) -> Option<String> {
+        match e {
+            Expr::Num(_) | Expr::Str(_) | Expr::Ident(_) | Expr::Field(_) => None,
+            Expr::Func(_) => Some("a function literal".into()),
+            Expr::Unary(_, r) => expr(r),
+            Expr::Binary(_, l, r) => expr(l).or_else(|| expr(r)),
+            Expr::Map(fields) => fields.iter().find_map(|(_, v)| expr(v)),
+            Expr::Call(fun, args, _) => match fun.as_ref() {
+                Expr::Ident(n) if matches!(n.as_str(), "print" | "f" | "type" | "is_even" | "sin" | "cos" | "asin" | "acos") => args.iter().find_map(expr),
+                Expr::Ident(n) => Some(format!("a call to {n}")),
+                _ => Some("a call".into()),
+            },
+        }
+    }
+    block(b)
 }
 
 pub fn action_from(i: i64) -> Option<Action> {
