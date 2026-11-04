@@ -1,0 +1,43 @@
+# Kokomi's jellyfish keeps its cast position; Lauma's sanctuary ticks follow each move.
+options iteration=1000 duration=40 swap_delay=12;
+target lvl=100 resist=0.1 radius=1 pos=0,0;
+
+lauma char lvl=90/90 cons=6 talent=10,10,10;
+lauma add weapon="favoniuscodex" refine=1 lvl=90/90;
+lauma add stats atk=311 em=600 er=10 cr=1 cd=0.8;
+kokomi char lvl=90/90 cons=5 talent=10,10,10;
+kokomi add weapon="prototypeamber" refine=1 lvl=90/90;
+kokomi add stats atk=311 hp%=0.466 hydro%=0.466 er=10 cr=2;
+nefer char lvl=90/90 cons=0 talent=1,1,1;
+nefer add weapon="favoniuscodex" refine=1 lvl=90/90;
+nefer add stats cr=1;
+
+active kokomi;
+set_player_pos(0,-9);
+kokomi skill;
+set_player_pos(0,-12);
+lauma skill;
+set_player_pos(0,-5);
+wait(130);
+set_player_pos(0,-8);
+wait(130);
+set_player_pos(4,4);
+lauma burst;
+set_player_pos(0,-5.9);
+kokomi burst;
+set_player_pos(0,-7);
+wait(200);
+set_player_pos(0,-2);
+wait(200);
+set_player_pos(0,-7.5);
+wait(300);
+set_player_pos(0,-1);
+lauma charge;
+wait(200);
+if .dew > 0 {
+  lauma skill[hold=1];
+} else {
+  lauma skill;
+}
+set_player_pos(0,-12);
+wait(1800);

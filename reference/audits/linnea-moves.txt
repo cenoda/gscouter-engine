@@ -1,0 +1,18 @@
+# Moved-player geometry audit of Linnea (with Yelan for Lunar-Crystallize). Replace only the marked position for distance checks.
+options iteration=1000 duration=40 swap_delay=12;
+target lvl=100 resist=0.1 radius=1 pos=0,0;
+
+linnea char lvl=90/90 cons=6 talent=10,10,10;
+linnea add weapon="favoniuswarbow" refine=1 lvl=90/90;
+linnea add stats atk=311 def%=0.583 em=187 cr=1 cd=0.8;
+yelan char lvl=90/90 cons=0 talent=9,9,9;
+yelan add weapon="favoniuswarbow" refine=1 lvl=90/90;
+yelan add stats hp=4780 atk=311 hp%=0.466 hydro%=0.466 cr=1;
+
+active yelan;
+set_player_pos(0,-1.5); # audit position
+yelan skill, burst;
+linnea skill, burst, attack:4, aim, skill, skill, skill;
+yelan attack:3;
+linnea attack:4, aim[hold=1];
+wait(1800);

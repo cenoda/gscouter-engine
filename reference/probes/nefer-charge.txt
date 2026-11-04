@@ -1,0 +1,6 @@
+# Nefer's normal attacks, tapped charged attacks (Phantasm Performance with Dew, the ordinary charged attack without) and, once the skill's three Phantasm charges are spent, a tap and a short Slither that end in the ordinary charged attack (no library rotation taps or holds briefly).
+team nefer-lauma-columbina-nahida
+rotation- nefer skill, charge[hold=150], dash, charge[hold=150], dash, charge[hold=150], dash,
+rotation-       skill, charge[hold=150], dash, charge[hold=150], dash, charge[hold=150];
+rotation+ nefer skill, attack:4, charge, charge[hold=30], dash, charge[hold=150], dash, charge, charge[hold=30], dash,
+rotation+       skill, charge, attack:2, charge[hold=150], dash, charge[hold=150];
