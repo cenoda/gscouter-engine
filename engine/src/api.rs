@@ -231,7 +231,9 @@ mod tests {
         assert!(run_iterations(&src, 450.0, 1, 0, 1).unwrap_err().contains("longer than warmup"));
         // a character gcsim has and the engine does not port yet, whichever
         // that is when the test runs
-        let (name, _) = crate::data::CHAR_NAMES.iter().find(|(n, _)| crate::profile::char_kind(n).is_none()).expect("a character not ported");
+        // (not an alias of a ported one: "amy" is Fischl's)
+        let ported = |id: &_| crate::data::CHAR_NAMES.iter().any(|(n, i)| i == id && crate::profile::char_kind(n).is_some());
+        let (name, _) = crate::data::CHAR_NAMES.iter().find(|(n, id)| crate::profile::char_kind(n).is_none() && !ported(id)).expect("a character not ported");
         let bad = src.replace("hutao char", &format!("{name} char")).replace("hutao add", &format!("{name} add"));
         let want = format!("unsupported: character {name}");
         assert_eq!(unsupported(&bad).unwrap(), [want.clone()]);
