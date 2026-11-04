@@ -781,12 +781,23 @@ jobs:
         with:
           pattern: compare-*
           path: reports
+      # the approvals already given: Gscouter main's approved list, which
+      # the summary carries forward or lists as dropped (none before
+      # Phase 4 is merged there)
+      - uses: actions/checkout@v4
+        with:
+          repository: cenoda/Gscouter
+          ref: main
+          path: gscouter-main
+          sparse-checkout: internal/engine
       - name: Write the manifest
         run: |
           mkdir -p release
           cp wasm/target/wasm32-unknown-unknown/release/gse_wasm.wasm release/
-          cd reference && go run ./manifest -wasm ../release/gse_wasm.wasm -commit "$GITHUB_SHA" -out ../release/manifest.json -approval ../release/approval.md ../reports/compare-*/compare.json | tee -a "$GITHUB_STEP_SUMMARY"
-          cat ../release/approval.md >> "$GITHUB_STEP_SUMMARY"
+          cd reference && go run ./manifest -wasm ../release/gse_wasm.wasm -commit "$GITHUB_SHA" -out ../release/manifest.json -approval ../release/approval.md -summary ../release/approval-summary.md -candidates ../release/approved-candidates.txt -approved ../gscouter-main/internal/engine/approved.txt ../reports/compare-*/compare.json | tee -a "$GITHUB_STEP_SUMMARY"
+          # approval.md has every verified team, past the job summary's
+          # 1 MiB; the summary page is what the owner answers
+          cat ../release/approval-summary.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: engine-release
