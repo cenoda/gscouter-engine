@@ -4,11 +4,14 @@
 pub mod plunge;
 pub mod traveler_common;
 pub mod traveler_pyro;
+pub mod traveler_electro;
 pub mod watch;
 
 crate::chars! {
     LuminePyro => luminepyro,
     AetherPyro => aetherpyro,
+    LumineElectro => lumineelectro,
+    AetherElectro => aetherelectro,
     Hutao => hutao,
     Xingqiu => xingqiu,
     Zhongli => zhongli,
@@ -114,6 +117,6 @@ impl CharKind {
     /// One of gcsim's Travelers, whose NewTraveler reads the story quest
     /// params (`traveler_common::PARAMS`).
     pub fn traveler(self) -> bool {
-        matches!(self, CharKind::LuminePyro | CharKind::AetherPyro)
+        matches!(self, CharKind::LuminePyro | CharKind::AetherPyro | CharKind::LumineElectro | CharKind::AetherElectro)
     }
 }
