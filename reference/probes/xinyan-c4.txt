@@ -1,0 +1,3 @@
+# Xinyan C4: the skill's swing takes 15% off the enemy's Physical RES for 12 s (C3 raises the skill's level).
+team xinyan-furina-rosaria-bennett
+xinyan char lvl=90/90 cons=4 talent=9,9,9;

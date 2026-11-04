@@ -96,6 +96,7 @@ crate::chars! {
     Ningguang => ningguang,
     Itto => itto,
     Venti => venti,
+    Xinyan => xinyan,
 }
 
 /// The characters whose modules have been checked against gcsim for a
