@@ -1,0 +1,237 @@
+## zhongli-moves.txt @ 0,-1.5: gcsim 4025.1543 engine 4025.1543
+  zhongli/Charge: hits 1 / 1  dmg 3262.189769 / 3262.189769
+  zhongli/Normal 0: hits 2 / 2  dmg 2317.475933 / 2317.475933
+  zhongli/Normal 1: hits 2 / 2  dmg 2337.536284 / 2337.536284
+  zhongli/Normal 2: hits 2 / 2  dmg 2726.707099 / 2726.707099
+  zhongli/Normal 3: hits 2 / 2  dmg 2955.395104 / 2955.395104
+  zhongli/Planet Befall: hits 1 / 1  dmg 35594.481246 / 35594.481246
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Initial): hits 2 / 2  dmg 2596.200814 / 2596.200814
+  zhongli/Stone Stele (Tick): hits 21 / 21  dmg 45244.438942 / 45244.438942
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-4: gcsim 3822.5846 engine 3822.5846
+  zhongli/Charge: hits 1 / 1  dmg 3262.189769 / 3262.189769
+  zhongli/Normal 0: hits 2 / 2  dmg 2317.475933 / 2317.475933
+  zhongli/Normal 3: hits 2 / 2  dmg 2955.395104 / 2955.395104
+  zhongli/Planet Befall: hits 1 / 1  dmg 35594.481246 / 35594.481246
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Initial): hits 2 / 2  dmg 2596.200814 / 2596.200814
+  zhongli/Stone Stele (Tick): hits 21 / 21  dmg 45244.438942 / 45244.438942
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-4.0001: gcsim 3822.5846 engine 3822.5846
+  zhongli/Charge: hits 1 / 1  dmg 3262.189769 / 3262.189769
+  zhongli/Normal 0: hits 2 / 2  dmg 2317.475933 / 2317.475933
+  zhongli/Normal 3: hits 2 / 2  dmg 2955.395104 / 2955.395104
+  zhongli/Planet Befall: hits 1 / 1  dmg 35594.481246 / 35594.481246
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Initial): hits 2 / 2  dmg 2596.200814 / 2596.200814
+  zhongli/Stone Stele (Tick): hits 21 / 21  dmg 45244.438942 / 45244.438942
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-6: gcsim 3611.6698 engine 3611.6698
+  zhongli/Charge: hits 1 / 1  dmg 3262.189769 / 3262.189769
+  zhongli/Planet Befall: hits 1 / 1  dmg 35594.481246 / 35594.481246
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Initial): hits 2 / 2  dmg 2596.200814 / 2596.200814
+  zhongli/Stone Stele (Tick): hits 21 / 21  dmg 45244.438942 / 45244.438942
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-6.0001: gcsim 3507.8217 engine 3507.8217
+  zhongli/Charge: hits 1 / 1  dmg 3262.189769 / 3262.189769
+  zhongli/Planet Befall: hits 1 / 1  dmg 35594.481246 / 35594.481246
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Tick): hits 21 / 21  dmg 45244.438942 / 45244.438942
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-7.5: gcsim 3507.8217 engine 3507.8217
+  zhongli/Charge: hits 1 / 1  dmg 3262.189769 / 3262.189769
+  zhongli/Planet Befall: hits 1 / 1  dmg 35594.481246 / 35594.481246
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Tick): hits 21 / 21  dmg 45244.438942 / 45244.438942
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-7.5001: gcsim 3048.6404 engine 3048.6404
+  zhongli/Charge: hits 1 / 1  dmg 2796.162659 / 2796.162659
+  zhongli/Planet Befall: hits 1 / 1  dmg 30509.555353 / 30509.555353
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Tick): hits 21 / 21  dmg 39315.857287 / 39315.857287
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-13.5: gcsim 1332.2287 engine 1332.2287
+  zhongli/Charge: hits 1 / 1  dmg 2796.162659 / 2796.162659
+  zhongli/Planet Befall: hits 1 / 1  dmg 30509.555353 / 30509.555353
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-13.5001: gcsim 111.8465 engine 111.8465
+  zhongli/Charge: hits 1 / 1  dmg 2796.162659 / 2796.162659
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 3,4: gcsim 1801.8922 engine 1801.8922
+  zhongli/Charge: hits 1 / 1  dmg 3262.189769 / 3262.189769
+  zhongli/Planet Befall: hits 1 / 1  dmg 35594.481246 / 35594.481246
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Initial): hits 2 / 2  dmg 2596.200814 / 2596.200814
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+## zhongli-moves.txt @ 0,-20: gcsim 111.8465 engine 111.8465
+  zhongli/Charge: hits 1 / 1  dmg 2796.162659 / 2796.162659
+  waits gcsim {'zhongli': {'skill_cd': 2.9833333333333374}} engine {'zhongli': {'skill_cd': 2.9833333333333334}}
+TOTAL DIFFS 0
+## zhongli-moves-timing.txt: gcsim 2414.5815 engine 2414.5815
+  zhongli/Planet Befall: hits 1 / 1  dmg 30509.555353 / 30509.555353
+  zhongli/Stone Stele (Hold): hits 1 / 1  dmg 3594.433500 / 3594.433500
+  zhongli/Stone Stele (Initial): hits 1 / 1  dmg 1298.100407 / 1298.100407
+  zhongli/Stone Stele (Tick): hits 12 / 12  dmg 24962.449071 / 24962.449071
+  waits gcsim {'zhongli': {'skill_cd': 3.4833333333332988}} engine {'zhongli': {'skill_cd': 3.4833333333333334}}
+TOTAL DIFFS 0
+## collei-aino-moves.txt @ 0,-1.5: gcsim 3663.5512 engine 3663.5512
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/Musecatcher 1: hits 2 / 2  dmg 10123.742981 / 10123.742981
+  aino/Normal 0: hits 2 / 2  dmg 2671.135253 / 2671.135253
+  aino/Normal 1: hits 2 / 2  dmg 2658.802791 / 2658.802791
+  aino/Normal 2: hits 4 / 4  dmg 3953.886048 / 3953.886048
+  aino/bloom: hits 5 / 5  dmg 22564.287790 / 22564.287790
+  collei/Floral Brush: hits 4 / 4  dmg 18057.719246 / 18057.719246
+  collei/Floral Sidewinder (A1): hits 6 / 6  dmg 3980.978670 / 3980.978670
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/Trump-Card Kitty (Explosion): hits 1 / 1  dmg 6025.927793 / 6025.927793
+  collei/Trump-Card Kitty (Leap): hits 12 / 12  dmg 15495.242896 / 15495.242896
+  collei/bloom: hits 1 / 1  dmg 6392.461827 / 6392.461827
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-3: gcsim 3663.5512 engine 3663.5512
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/Musecatcher 1: hits 2 / 2  dmg 10123.742981 / 10123.742981
+  aino/Normal 0: hits 2 / 2  dmg 2671.135253 / 2671.135253
+  aino/Normal 1: hits 2 / 2  dmg 2658.802791 / 2658.802791
+  aino/Normal 2: hits 4 / 4  dmg 3953.886048 / 3953.886048
+  aino/bloom: hits 5 / 5  dmg 22564.287790 / 22564.287790
+  collei/Floral Brush: hits 4 / 4  dmg 18057.719246 / 18057.719246
+  collei/Floral Sidewinder (A1): hits 6 / 6  dmg 3980.978670 / 3980.978670
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/Trump-Card Kitty (Explosion): hits 1 / 1  dmg 6025.927793 / 6025.927793
+  collei/Trump-Card Kitty (Leap): hits 12 / 12  dmg 15495.242896 / 15495.242896
+  collei/bloom: hits 1 / 1  dmg 6392.461827 / 6392.461827
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-3.0001: gcsim 2927.2375 engine 2927.2375
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/Musecatcher 1: hits 2 / 2  dmg 10123.742981 / 10123.742981
+  aino/Normal 0: hits 2 / 2  dmg 2671.135253 / 2671.135253
+  aino/Normal 1: hits 2 / 2  dmg 2658.802791 / 2658.802791
+  aino/Normal 2: hits 4 / 4  dmg 3953.886048 / 3953.886048
+  aino/bloom: hits 3 / 3  dmg 13538.572674 / 13538.572674
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/Trump-Card Kitty (Explosion): hits 1 / 1  dmg 6025.927793 / 6025.927793
+  collei/Trump-Card Kitty (Leap): hits 14 / 14  dmg 18077.783378 / 18077.783378
+  collei/bloom: hits 2 / 2  dmg 12784.923655 / 12784.923655
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-5: gcsim 2766.5149 engine 2766.5149
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/Musecatcher 1: hits 2 / 2  dmg 10123.742981 / 10123.742981
+  aino/bloom: hits 2 / 2  dmg 9025.715116 / 9025.715116
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/Trump-Card Kitty (Explosion): hits 1 / 1  dmg 6025.927793 / 6025.927793
+  collei/Trump-Card Kitty (Leap): hits 16 / 16  dmg 20660.323861 / 20660.323861
+  collei/bloom: hits 3 / 3  dmg 19177.385482 / 19177.385482
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-5.0001: gcsim 1563.8982 engine 1563.8982
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/Musecatcher 1: hits 2 / 2  dmg 10123.742981 / 10123.742981
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/Trump-Card Kitty (Explosion): hits 1 / 1  dmg 6025.927793 / 6025.927793
+  collei/bloom: hits 2 / 2  dmg 12784.923655 / 12784.923655
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-6.5: gcsim 1226.4401 engine 1226.4401
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/Trump-Card Kitty (Explosion): hits 1 / 1  dmg 6025.927793 / 6025.927793
+  collei/bloom: hits 2 / 2  dmg 12784.923655 / 12784.923655
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-6.5001: gcsim 812.4938 engine 812.4938
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/bloom: hits 1 / 1  dmg 6392.461827 / 6392.461827
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-10: gcsim 812.4938 engine 812.4938
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/bloom: hits 1 / 1  dmg 6392.461827 / 6392.461827
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-10.0001: gcsim 550.6221 engine 551.4894
+  aino/Cool Your Jets Ducky: hits 0.079 / 0.097  dmg 48.204333 / 59.187598  <-- DIFF
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/bloom: hits 0.959 / 0.951  dmg 4327.830398 / 4291.727538  <-- DIFF
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/bloom: hits 0.040999999999999995 / 0.049  dmg 262.090935 / 313.230630  <-- DIFF
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 3,4: gcsim 2766.5149 engine 2766.5149
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/Musecatcher 1: hits 2 / 2  dmg 10123.742981 / 10123.742981
+  aino/bloom: hits 2 / 2  dmg 9025.715116 / 9025.715116
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  collei/Trump-Card Kitty (Explosion): hits 1 / 1  dmg 6025.927793 / 6025.927793
+  collei/Trump-Card Kitty (Leap): hits 16 / 16  dmg 20660.323861 / 20660.323861
+  collei/bloom: hits 3 / 3  dmg 19177.385482 / 19177.385482
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+## collei-aino-moves.txt @ 0,-20: gcsim 546.4465 engine 546.4465
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/bloom: hits 1 / 1  dmg 4512.857558 / 4512.857558
+  collei/Fully-Charged Aimed Shot: hits 1 / 1  dmg 3702.310163 / 3702.310163
+  collei/Normal 0: hits 1 / 1  dmg 975.217575 / 975.217575
+  collei/Normal 1: hits 1 / 1  dmg 954.059008 / 954.059008
+  collei/Normal 2: hits 1 / 1  dmg 1209.885315 / 1209.885315
+  collei/Normal 3: hits 1 / 1  dmg 1521.493297 / 1521.493297
+  waits gcsim {'aino': {}, 'collei': {}} engine {'collei': {}, 'aino': {}}
+TOTAL DIFFS 3
+## collei-aino-moves-timing.txt: gcsim 2216.3105 engine 2216.3105
+  aino/Cool Your Jets Ducky: hits 10 / 10  dmg 6101.814269 / 6101.814269
+  aino/Musecatcher 0: hits 2 / 2  dmg 3517.571714 / 3517.571714
+  aino/Musecatcher 1: hits 1 / 1  dmg 5061.871491 / 5061.871491
+  aino/bloom: hits 3 / 3  dmg 13538.572674 / 13538.572674
+  collei/Floral Brush: hits 2 / 2  dmg 9028.859623 / 9028.859623
+  collei/Floral Sidewinder (A1): hits 2 / 2  dmg 1326.992890 / 1326.992890
+  collei/Trump-Card Kitty (Explosion): hits 1 / 1  dmg 6025.927793 / 6025.927793
+  collei/Trump-Card Kitty (Leap): hits 12 / 12  dmg 15495.242896 / 15495.242896
+  collei/bloom: hits 1 / 1  dmg 6392.461827 / 6392.461827
+  waits gcsim {'aino': {'swap_cd': 0.18333333333333168}, 'collei': {'skill_cd': 0.050000000000000405}} engine {'collei': {'skill_cd': 0.05}, 'aino': {'swap_cd': 0.18333333333333335}}
+TOTAL DIFFS 0
