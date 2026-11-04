@@ -1,0 +1,3 @@
+# Vodyanitsa C2: horns give Two Voices in Black and White (CRIT DMG), and the song lasts 9 s longer.
+team neuvillette-furina-escoffier-vodyanitsa
+vodyanitsa char lvl=90/90 cons=2 talent=9,9,9;

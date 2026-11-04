@@ -1,0 +1,3 @@
+# Vodyanitsa C6 with Stellar Swirl: the party buff elevates Stellar Swirl DMG.
+team vesna-vodyanitsa-odette-sucrose
+vodyanitsa char lvl=90/90 cons=6 talent=9,9,9;

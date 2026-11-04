@@ -1,0 +1,3 @@
+# Odette C1: the recast adds Daybreak Finale and Marvelous Splendor gains 2 stacks.
+team vesna-odette-diona-faruzan
+odette char lvl=90/90 cons=1 talent=9,9,9;

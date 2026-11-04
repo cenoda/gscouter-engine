@@ -2734,6 +2734,14 @@ impl Sim {
         if self.lunar_direct_elevation != 0 && self.slots[slot as usize].info.tag.is_lunar_direct() {
             self.slots[slot as usize].elevation += self.lunar_direct_elevation;
         }
+        // Odette's C6 elevates direct Stellar DMG (her OnApplyAttack
+        // subscription)
+        if let Some(o) = self.stellar.odette_c6 {
+            let info = self.slots[slot as usize].info;
+            if info.tag.is_stellar_direct() {
+                self.slots[slot as usize].elevation += crate::chars::odette::c6_elevation(self, o as usize, info.actor as usize);
+            }
+        }
         // one enemy, hit while it lives when the attack's area reaches it
         // (AttackWillLand)
         if !self.enemy_alive {
@@ -5132,7 +5140,19 @@ impl Sim {
         }
     }
 
+    /// The action whose cooldown an action reads: Odette's skill reads her
+    /// recast's (gcsim's ActionSpecialSkill, the third slot) while the
+    /// recast is up.
+    pub fn cd_action(&self, ci: usize, a: Action) -> Action {
+        if a == Action::Skill && self.chars[ci].kind == crate::chars::CharKind::Odette && crate::chars::odette::use_special(self, ci) {
+            Action::LowPlunge
+        } else {
+            a
+        }
+    }
+
     pub fn cooldown(&self, ci: usize, a: Action) -> i32 {
+        let a = self.cd_action(ci, a);
         let cd = &self.chars[ci].cd[Char::cd_index(a)];
         if cd.len == 0 {
             return 0;
@@ -5142,6 +5162,7 @@ impl Sim {
 
     /// gcsim's ReduceActionCooldown.
     pub fn reduce_cd(&mut self, ci: usize, a: Action, v: i32) {
+        let a = self.cd_action(ci, a);
         self.reduce_cd_one(ci, a, v);
         if a == Action::Skill && self.chars[ci].skill_cd_twin {
             self.reduce_cd_one(ci, Action::LowPlunge, v);
@@ -5150,6 +5171,7 @@ impl Sim {
 
     /// gcsim's ResetActionCooldown.
     pub fn reset_cd(&mut self, ci: usize, a: Action) {
+        let a = self.cd_action(ci, a);
         self.reset_cd_one(ci, a);
         if a == Action::Skill && self.chars[ci].skill_cd_twin {
             self.reset_cd_one(ci, Action::LowPlunge);
@@ -6000,7 +6022,7 @@ impl Sim {
                             }
                             _ => self.cooldown(ci, a) as i64,
                         })),
-                        "charge" => Ok(int(c.cd[Char::cd_index(a)].available as i64)),
+                        "charge" => Ok(int(c.cd[Char::cd_index(self.cd_action(ci, a))].available as i64)),
                         "ready" => Ok(b(if a == Action::Swap { self.player.swap_cd == 0 || active } else { self.action_ready(ci, a, &Params::default()) })),
                         t => Err(format!("bad character ability condition: invalid type {t}")),
                     };
