@@ -77,9 +77,9 @@ type report struct {
 type Manifest struct {
 	Engine   Engine `json:"engine"`
 	Gscouter string `json:"gscouter_commit"`
-	// Kinds are the kinds of build this release judged: every kind, or
-	// library alone for a library-only release (the owner, 2026-11-04),
-	// whose teams are verified on the others after it.
+	// Kinds are the kinds of build this release judged: library (with
+	// the probes), which is the whole verification (the owner,
+	// 2026-11-04), and any other kind a release also ran.
 	Kinds []string        `json:"kinds"`
 	Teams map[string]Team `json:"teams"`
 	// Verified counts the teams verified; Supported those the engine
@@ -241,7 +241,7 @@ func main() {
 	approval := flag.String("approval", "", "also write the owner's approval table (Markdown), every verified team, to this file")
 	summary := flag.String("summary", "", "also write the page the owner answers (Markdown): counts, drift, group B in full")
 	candidates := flag.String("candidates", "", "also write group A's team ids to this file, for approved.txt once the owner answers")
-	kindsFlag := flag.String("kinds", strings.Join(kinds, ","), "the kinds of build the release ran, each needed for a team's verdict (library alone for a library-only release)")
+	kindsFlag := flag.String("kinds", "library", "the kinds of build the release ran, each needed for a team's verdict: library, the whole verification (the owner, 2026-11-04), and any of variants, buildspace and pages it also ran")
 	approvedPath := flag.String("approved", "", "Gscouter's approved list (internal/engine/approved.txt): its teams are carried forward or listed as dropped, and left out of the groups to answer; none or a missing file for none known")
 	flag.Parse()
 	need, err := parseKinds(*kindsFlag)
