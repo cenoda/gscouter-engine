@@ -115,13 +115,15 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
     let kind = char_kind(name);
     match kind {
         None => errs.push(format!("unsupported: character {name}")),
-        Some(k) if p.cons > k.max_cons() => errs.push(format!("unsupported: constellation {name} C{}", p.cons)),
+        Some(k) if p.cons < 0 || p.cons > k.max_cons() => errs.push(format!("unsupported: constellation {name} C{}", p.cons)),
         _ => {}
     }
     let wname = weapon_name(p.weapon.key);
     let weapon = WeaponKind::from_name(wname);
     if weapon.is_none() {
         errs.push(format!("unsupported: weapon {wname}"));
+    } else if !(1..=5).contains(&p.weapon.refine) {
+        errs.push(format!("unsupported: weapon {wname} R{}", p.weapon.refine));
     }
     let mut sets = Vec::new();
     for (k, count) in &p.sets {
@@ -261,6 +263,12 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
                 errs.push(format!("unsupported: hexerei {}", char_name(c.key)));
             }
         }
+    }
+    if p.chars.iter().filter(|c| weapon_name(c.weapon.key) == "keyofkhajnisut").count() > 1 {
+        errs.push("unsupported: weapon keyofkhajnisut on two characters".into());
+    }
+    if p.chars.iter().filter(|c| c.sets.iter().any(|&(k, n)| set_name(k) == "vermillionhereafter" && n >= 4)).count() > 1 {
+        errs.push("unsupported: set vermillionhereafter 4-piece on two characters".into());
     }
     let mut chars = Vec::new();
     for c in &p.chars {

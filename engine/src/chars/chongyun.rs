@@ -75,6 +75,7 @@ fn a4(s: &mut Sim, ci: usize, delay: i32, src: i32, use_old: bool) {
         ai.abil = "Spirit Blade: Chonghua's Layered Frost (A4)";
         ai.blunt = true;
         ai.poise = 100.0;
+        ai.pattern = s.circle_on_target(3.5);
         let snap = s.snapshot_event(ai, 0);
         st_mut(s, ci).a4_snap = snap;
         snap

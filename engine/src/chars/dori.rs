@@ -90,7 +90,7 @@ impl Character for Char {
             Action::LowPlunge | Action::HighPlunge => plunge::unknown_param(a, p, &[]),
             Action::Skill => p.0.iter().find(|(k, _)| k != "travel").map(|(k, _)| format!("skill param {k}")),
             Action::Burst => p.0.iter().find(|(k, _)| k != "c2_travel").map(|(k, _)| format!("burst param {k}")),
-            Action::Attack | Action::Charge => None,
+            Action::Attack => None,
             _ => Some(crate::gcsl::action_name(a).into()),
         }
     }

@@ -117,6 +117,7 @@ fn add_field(s: &mut Sim, ci: usize, dur: i32) {
     ai.hitlag_halt = 0.02 * 60.0;
     ai.hitlag_factor = 0.01;
     ai.deployable = true;
+    ai.pattern = s.circle_on_target(4.5);
     let snap = s.snapshot_event(ai, 0);
     let x = st_mut(s, ci);
     x.skill_ai = ai;

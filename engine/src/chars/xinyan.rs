@@ -195,8 +195,7 @@ impl Character for Char {
             s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_BURST_SHIELD, arg: 0 }, g::BURST_SHIELD_START);
             // C2's extra pulses of the level 3 shield's DoT
             for &h in g::C2_PULSE_HITMARKS {
-                let mut ai = shield_dot_info(s, ci);
-                ai.pattern = s.circle_on_player(0.0, 0.0, 3.0);
+                let ai = shield_dot_info(s, ci);
                 s.queue_attack(ai, c1_cb(s, ci), 1, h);
             }
         }
@@ -233,8 +232,7 @@ impl Character for Char {
                 if !has_shield(s) || st(s, ci).shield_level != 3 || st(s, ci).shield_tick_src != arg {
                     return;
                 }
-                let mut ai = shield_dot_info(s, ci);
-                ai.pattern = s.circle_on_player(0.0, 0.0, 3.0);
+                let ai = shield_dot_info(s, ci);
                 s.queue_attack(ai, c1_cb(s, ci), 1, 1);
                 s.add_task(Task::Char { c: ci as u8, id: TASK_SHIELD_DOT, arg }, 2 * 60);
             }
@@ -326,6 +324,7 @@ fn shield_dot_info(s: &Sim, ci: usize) -> AttackInfo {
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::SKILL_DOT[lvl]);
     ai.abil = "Sweeping Fervor (DoT)";
+    ai.pattern = s.circle_on_player(0.0, 0.0, 3.0);
     ai
 }
 

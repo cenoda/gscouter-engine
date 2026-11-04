@@ -239,6 +239,18 @@ mod tests {
         assert_eq!(unsupported(&bad).unwrap(), [want.clone()]);
         assert_eq!(run_iterations(&bad, 150.0, 1, 0, 1).unwrap_err(), want);
         assert!(unsupported(&src).unwrap().is_empty());
+
+        let two_keys = "target lvl=100 resist=0.1 radius=2 pos=0,2.4;\nhutao char lvl=90/90 cons=0 talent=9,9,9;\nhutao add weapon=\"keyofkhajnisut\" refine=1 lvl=90/90;\nxingqiu char lvl=90/90 cons=0 talent=9,9,9;\nxingqiu add weapon=\"keyofkhajnisut\" refine=1 lvl=90/90;\nactive hutao;\nhutao attack;\n";
+        assert_eq!(unsupported(two_keys).unwrap(), ["unsupported: weapon keyofkhajnisut on two characters"]);
+
+        let two_verm = "target lvl=100 resist=0.1 radius=2 pos=0,2.4;\nhutao char lvl=90/90 cons=0 talent=9,9,9;\nhutao add weapon=\"whitetassel\" refine=1 lvl=90/90;\nhutao add set=\"vermillionhereafter\" count=4;\nxingqiu char lvl=90/90 cons=0 talent=9,9,9;\nxingqiu add weapon=\"travelershandysword\" refine=1 lvl=70/70;\nxingqiu add set=\"vermillionhereafter\" count=4;\nactive hutao;\nhutao attack;\n";
+        assert_eq!(unsupported(two_verm).unwrap(), ["unsupported: set vermillionhereafter 4-piece on two characters"]);
+
+        let dahlia_low = "target lvl=100 resist=0.1 radius=2 pos=0,2.4;\ndahlia char lvl=60/60 cons=0 talent=6,6,6;\ndahlia add weapon=\"travelershandysword\" refine=1 lvl=70/70;\nactive dahlia;\ndahlia burst;\n";
+        assert_eq!(unsupported(dahlia_low).unwrap(), ["unsupported: dahlia's burst below ascension 4"]);
+
+        let dori_charge = "target lvl=100 resist=0.1 radius=2 pos=0,2.4;\ndori char lvl=90/90 cons=0 talent=9,9,9;\ndori add weapon=\"thebell\" refine=1 lvl=70/70;\nactive dori;\ndori charge;\n";
+        assert_eq!(unsupported(dori_charge).unwrap(), ["unsupported: action dori charge"]);
     }
 
     /// team-looped.txt's characters with other conditions and program.

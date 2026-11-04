@@ -203,7 +203,7 @@ impl Character for Char {
                 let extend = s.st::<State>(ci).sprout_should_extend;
                 s.st_mut::<State>(ci).sprout_src = src;
                 s.add_status(ci, SPROUT, if extend { 360 } else { 180 }, true);
-                let ev = s.snapshot_event(sprout_info(ci), 0);
+                let ev = s.snapshot_event(sprout_info(s, ci), 0);
                 s.st_mut::<State>(ci).sprout_ev = ev;
                 s.queue_char_task(ci, Task::Char { c, id: TASK_SPROUT_TICK, arg: src }, g::SPROUT_HITMARK);
             }
@@ -295,9 +295,10 @@ impl Character for Char {
     }
 }
 
-fn sprout_info(ci: usize) -> AttackInfo {
+fn sprout_info(s: &Sim, ci: usize) -> AttackInfo {
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_COLLEI_SPROUT, icd::GROUP_DEFAULT, Element::Dendro, 25.0, 0.4);
     ai.abil = "Floral Sidewinder (A1)";
+    ai.pattern = s.circle_on_player(0.0, 0.0, 2.0);
     ai
 }
 

@@ -504,6 +504,7 @@ fn cannon(s: &mut Sim, ci: usize, p: &Params) -> ActInfo {
     ai.abil = "Scalespiker Cannon";
     ai.add_tags = add_tag::NIGHTSOUL | add_tag::KINICH_CANNON;
     ai.flat_dmg = a4_amount(s, ci);
+    ai.pattern = s.circle_on_target(3.0);
     let st = s.st_mut::<State>(ci);
     st.cannon = AttackEvent::new(ai, 0);
     st.cannon_radius = 3.0;

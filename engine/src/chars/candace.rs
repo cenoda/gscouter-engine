@@ -96,6 +96,8 @@ impl Character for Char {
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
         let n = s.chars[ci].normal_counter as usize;
         let lvl = s.talent(ci, 0);
+        let (off, hb) = (g::ATTACK_OFFSETS[n], g::ATTACK_HITBOXES[n]);
+        let pat = if n == 1 || n == 3 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.fan_on_player(0.0, off, hb[0], g::ATTACK_FAN_ANGLES[n]) };
         for (i, mult) in g::ATTACK[n].iter().enumerate() {
             let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, mult[lvl]);
             ai.abil = NORMAL_NAMES[n];
@@ -104,6 +106,7 @@ impl Character for Char {
             ai.hitlag_factor = 0.01;
             ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
             ai.def_halt = g::ATTACK_HITLAG_DEF_HALT[n][i];
+            ai.pattern = pat;
             let h = g::ATTACK_HITMARKS[n][i];
             s.queue_attack(ai, 0, h, h);
         }
@@ -130,6 +133,8 @@ impl Character for Char {
         ai.hitlag_factor = 0.01;
         ai.hitlag_halt = 0.05 * 60.0;
         ai.def_halt = true;
+        let (off, hb) = (g::SKILL_OFFSETS[level], g::SKILL_HITBOXES[level]);
+        ai.pattern = if level == 0 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
         let hitmark = g::SKILL_HITMARKS[level] - windup;
         let c2 = if s.chars[ci].cons >= 2 { CB_C2 } else { 0 };
         let particle = if level == 0 { CB_PARTICLE_2 } else { CB_PARTICLE_3 };
@@ -155,6 +160,7 @@ impl Character for Char {
         ai.flat_dmg = g::BURST_DMG[lvl] * s.max_hp(ci);
         ai.hitlag_factor = 0.01;
         ai.def_halt = true;
+        ai.pattern = s.circle_on_player(0.0, 0.0, 3.5);
         s.queue_attack(ai, 0, g::BURST_HITMARK, g::BURST_HITMARK);
         let f = s.f;
         s.st_mut::<State>(ci).burst_src = f;
@@ -214,6 +220,7 @@ impl Character for Char {
                 ai.flat_dmg = g::BURST_WAVE_DMG[lvl] * s.max_hp(ci);
                 ai.hitlag_factor = 0.01;
                 ai.def_halt = true;
+                ai.pattern = s.circle_on_player(0.0, 0.0, 3.5);
                 s.queue_attack(ai, 0, g::WAVE_HITMARK, g::WAVE_HITMARK);
                 s.st_mut::<State>(ci).wave_count += 1;
             }
@@ -231,6 +238,7 @@ impl Character for Char {
                 ai.abil = "The Overflow (C6)";
                 ai.flat_dmg = 0.15 * s.max_hp(ci);
                 ai.def_halt = true;
+                ai.pattern = s.circle_on_player(0.0, 0.0, 3.5);
                 s.queue_attack(ai, 0, g::WAVE_HITMARK, g::WAVE_HITMARK);
             }
             _ => {}
