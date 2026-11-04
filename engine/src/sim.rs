@@ -1391,6 +1391,7 @@ pub enum ShieldType {
     NoelleA1,
     XinyanSkill,
     TravelerHydroC4,
+    Bell,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
