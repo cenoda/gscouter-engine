@@ -4493,10 +4493,21 @@ impl Sim {
         if ok {
             return true;
         }
-        // Moondrifts: their OnDestruct does nothing
-        let n = self.constructs.len();
-        self.constructs.retain(|c| c.limited || c.src != src);
-        self.constructs.len() != n
+        // then gcsim's consNoLimit: the geo traveler's walls, and the
+        // Moondrifts, whose OnDestruct does nothing
+        let mut k = 0;
+        while k < self.constructs.len() {
+            if !self.constructs[k].limited && self.constructs[k].src == src {
+                let c = self.constructs.remove(k);
+                ok = true;
+                if c.owner != u8::MAX {
+                    crate::chars::dispatch::construct_expired(self.chars[c.owner as usize].kind, self, c.owner as usize, c.key);
+                }
+            } else {
+                k += 1;
+            }
+        }
+        ok
     }
 
     /// gcsim's NewNoLimitCons of a Moondrift (OnDestruct does nothing).
@@ -5481,7 +5492,9 @@ impl Sim {
         while k < self.constructs.len() {
             if self.constructs[k].expiry == f {
                 let c = self.constructs.remove(k);
-                if c.limited {
+                // every construct's OnDestruct but the Moondrifts' (which
+                // do nothing and have no owner)
+                if c.owner != u8::MAX {
                     crate::chars::dispatch::construct_expired(self.chars[c.owner as usize].kind, self, c.owner as usize, c.key);
                 }
             } else {

@@ -2,6 +2,9 @@
 //! implementing `content::Character`; a line here registers it.
 
 pub mod plunge;
+pub mod traveler;
+pub mod traveleranemo;
+pub mod travelergeo;
 pub mod watch;
 
 crate::chars! {
@@ -97,6 +100,10 @@ crate::chars! {
     Itto => itto,
     Venti => venti,
     Xinyan => xinyan,
+    Aethergeo => aethergeo,
+    Luminegeo => luminegeo,
+    Aetheranemo => aetheranemo,
+    Lumineanemo => lumineanemo,
 }
 
 /// The characters whose modules have been checked against gcsim for a

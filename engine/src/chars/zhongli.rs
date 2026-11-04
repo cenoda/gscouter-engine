@@ -298,8 +298,12 @@ fn resonance(s: &mut Sim, ci: usize, src: i32) {
                         if (x - sx).powi(2) + (y - sy).powi(2) > 64.0 {
                             continue;
                         }
-                        // an 8 by 8 box from 4 behind it, along its direction
+                        // an 8 by 8 box from 4 behind it along its
+                        // direction; gcsim builds the box on that point,
+                        // which faces the default direction (geo
+                        // traveler's walls are turned)
                         let (bx, by) = offset_point((x, y), (0.0, -4.0), (dx, dy));
+                        let (dx, dy) = DEFAULT_DIR;
                         hits.push(Pattern::Box { x: bx, y: by, w: 8.0, h: 8.0, dx, dy });
                     }
                     None => hits.push(Pattern::Unknown),

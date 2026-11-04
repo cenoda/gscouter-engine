@@ -112,6 +112,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("hexerei", Some(CharKind::Sucrose | CharKind::Mona | CharKind::Razor | CharKind::Durin | CharKind::Nicole)) => {}
             ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno)) => {}
             ("c2_stacks" | "pyrotechnic_travel", Some(CharKind::Lyney)) => {}
+            (k, Some(CharKind::Aethergeo | CharKind::Luminegeo | CharKind::Aetheranemo | CharKind::Lumineanemo)) if crate::chars::traveler::PARAMS.contains(&k) => {}
             // the character itself is unsupported
             (_, None) => {}
             _ => errs.push(format!("unsupported: param {name} {k}")),
