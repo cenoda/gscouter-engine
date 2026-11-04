@@ -64,8 +64,9 @@ pub enum EventKind {
     DendroCore,
     TargetDied,
     ActionExec,
+    MoondriftHarmony,
 }
-pub const N_EVENTS: usize = 27;
+pub const N_EVENTS: usize = 28;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -137,6 +138,9 @@ pub enum Event<'a> {
     /// OnActionExec: the active character executed this action (after
     /// it ran).
     ActionExec(Action),
+    /// OnMoondriftHarmony: three Moondrifts near the player made a
+    /// Lunar-Crystallize reaction Moondrift Harmony, before its hits.
+    MoondriftHarmony,
 }
 
 impl Event<'_> {
@@ -169,6 +173,7 @@ impl Event<'_> {
             Event::DendroCore { .. } => EventKind::DendroCore,
             Event::TargetDied(_) => EventKind::TargetDied,
             Event::ActionExec(_) => EventKind::ActionExec,
+            Event::MoondriftHarmony => EventKind::MoondriftHarmony,
         }
     }
 }

@@ -100,6 +100,7 @@ crate::chars! {
     Kaveh => kaveh,
     Prune => prune,
     YumemizukiMizuki => mizuki,
+    Linnea => linnea,
 }
 
 /// The characters whose modules have been checked against gcsim for a

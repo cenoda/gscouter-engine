@@ -2523,6 +2523,11 @@ impl Sim {
 
     /// Lunar-Bloom and Lunar-Crystallize for the fight (gcsim's
     /// LunarBloomEnableKey and LunarCrystallizeEnableKey).
+    /// gcsim's Flags.Custom[LunarCrystallizeEnableKey] (Linnea).
+    pub fn enable_lunar_crystallize(&mut self) {
+        self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
+    }
+
     pub fn enable_lunar_bloom_crystallize(&mut self) {
         self.set_flag(LUNAR_BLOOM, 1.0);
         self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
@@ -3646,9 +3651,11 @@ impl Sim {
                 self.new_moondrift(ex + ox, ey + oy, DEFAULT_DIR);
             }
         } else if self.lcr_count >= 3 && self.core_status_key(MOONDRIFT_HARMONY_ICD) == 0 {
-            // Moondrift Harmony (OnMoondriftHarmony: no ported content
-            // subscribes)
+            // Moondrift Harmony
             self.lcr_count -= 3;
+            if !self.subs[EventKind::MoondriftHarmony as usize].is_empty() {
+                self.emit(Event::MoondriftHarmony);
+            }
             self.add_core_status(MOONDRIFT_HARMONY_ICD, LCR_HITMARKS[2]);
             self.do_lcr_attack(ev.info.actor as usize);
             // the Moondrifts near the player last 9 s from now
@@ -3672,6 +3679,14 @@ impl Sim {
     /// Lunar-Charged's key, shared); the contributors start over.
     fn do_lcr_attack(&mut self, owner: usize) {
         let contrib = self.lcr_contrib;
+        self.do_lcr_attack_with(contrib, owner);
+        self.lcr_contrib = 0;
+    }
+
+    /// gcsim's DoLCrAttackWithContrib: three hits from the contributors
+    /// given (bit i for character i), each with a second when content gives
+    /// it a chance.
+    pub fn do_lcr_attack_with(&mut self, contrib: u8, owner: usize) {
         for d in LCR_HITMARKS {
             self.add_task(Task::LcrHit { contrib, owner: owner as u8 }, d);
             if let Some(chance) = self.flags.iter().find(|f| f.0 == LC_EXTRA_HIT).map(|f| f.1) {
@@ -3680,7 +3695,6 @@ impl Sim {
                 }
             }
         }
-        self.lcr_contrib = 0;
     }
 
     /// gcsim's doSingleLCrAttack: Lunar-Crystallize damage, 10 frames on.
@@ -4548,6 +4562,11 @@ impl Sim {
         let f = self.f;
         self.constructs.push(Construct { owner: u8::MAX, key: MOONDRIFT, src: f, expiry: f + LCR_DUR, pos: Some([x, y, dir.0, dir.1]), limited: false });
         self.emit(Event::ConstructSpawned);
+    }
+
+    /// gcsim's Constructs.CountByType(GeoConstructLunarCrystallize).
+    pub fn moondrift_count(&self) -> usize {
+        self.constructs.iter().filter(|c| c.key == MOONDRIFT).count()
     }
 
     /// The Moondrifts within `r` of the player (gcsim's Distance < r).

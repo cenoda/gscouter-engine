@@ -1,0 +1,3 @@
+# Linnea at C6 (C1 to C6).
+team linnea-navia-columbina-furina
+linnea char lvl=90/90 cons=6 talent=9,9,9;
