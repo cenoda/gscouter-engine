@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -74,9 +75,13 @@ type report struct {
 
 // Manifest is what Gscouter reads.
 type Manifest struct {
-	Engine   Engine          `json:"engine"`
-	Gscouter string          `json:"gscouter_commit"`
-	Teams    map[string]Team `json:"teams"`
+	Engine   Engine `json:"engine"`
+	Gscouter string `json:"gscouter_commit"`
+	// Kinds are the kinds of build this release judged: every kind, or
+	// library alone for a library-only release (the owner, 2026-11-04),
+	// whose teams are verified on the others after it.
+	Kinds []string        `json:"kinds"`
+	Teams map[string]Team `json:"teams"`
 	// Verified counts the teams verified; Supported those the engine
 	// runs the library build of.
 	Verified  int `json:"verified"`
@@ -109,6 +114,9 @@ type Engine struct {
 
 type Team struct {
 	Verified bool `json:"verified"`
+	// VerifiedKinds are the kinds a verified team passed: the release's
+	// Kinds.
+	VerifiedKinds []string `json:"verified_kinds,omitempty"`
 	// Why lists what keeps a team unverified.
 	Why []string `json:"why,omitempty"`
 	// Builds counts the team's builds by kind: passed of those run.
@@ -233,9 +241,14 @@ func main() {
 	approval := flag.String("approval", "", "also write the owner's approval table (Markdown), every verified team, to this file")
 	summary := flag.String("summary", "", "also write the page the owner answers (Markdown): counts, drift, group B in full")
 	candidates := flag.String("candidates", "", "also write group A's team ids to this file, for approved.txt once the owner answers")
+	kindsFlag := flag.String("kinds", strings.Join(kinds, ","), "the kinds of build the release ran, each needed for a team's verdict (library alone for a library-only release)")
 	approvedPath := flag.String("approved", "", "Gscouter's approved list (internal/engine/approved.txt): its teams are carried forward or listed as dropped, and left out of the groups to answer; none or a missing file for none known")
 	flag.Parse()
-	m, err := build(*wasm, *commit, flag.Args())
+	need, err := parseKinds(*kindsFlag)
+	var m *Manifest
+	if err == nil {
+		m, err = build(*wasm, *commit, need, flag.Args())
+	}
 	var approved []approvedTeam
 	if err == nil && *approvedPath != "" {
 		var raw []byte
@@ -270,7 +283,32 @@ func main() {
 	fmt.Printf("%d of %d supported teams verified\n", m.Verified, m.Supported)
 }
 
-func build(wasm, commit string, paths []string) (*Manifest, error) {
+// parseKinds reads -kinds: a comma-separated subset of kinds, in kinds'
+// order.
+func parseKinds(s string) ([]string, error) {
+	want := map[string]bool{}
+	for _, k := range strings.Split(s, ",") {
+		if k = strings.TrimSpace(k); k == "" {
+			continue
+		}
+		if !slices.Contains(kinds, k) {
+			return nil, fmt.Errorf("-kinds: %q is not one of %s", k, strings.Join(kinds, ", "))
+		}
+		want[k] = true
+	}
+	var out []string
+	for _, k := range kinds {
+		if want[k] {
+			out = append(out, k)
+		}
+	}
+	if len(out) == 0 {
+		return nil, errors.New("-kinds: none given")
+	}
+	return out, nil
+}
+
+func build(wasm, commit string, need []string, paths []string) (*Manifest, error) {
 	if wasm == "" || commit == "" || len(paths) == 0 {
 		return nil, errors.New("want -wasm, -commit and the reports")
 	}
@@ -279,7 +317,11 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		return nil, err
 	}
 	sum := sha256.Sum256(b)
-	m := &Manifest{Engine: Engine{Commit: commit, WasmSHA256: hex.EncodeToString(sum[:])}, Teams: map[string]Team{}}
+	m := &Manifest{Engine: Engine{Commit: commit, WasmSHA256: hex.EncodeToString(sum[:])}, Kinds: need, Teams: map[string]Team{}}
+	needed := map[string]bool{}
+	for _, k := range need {
+		needed[k] = true
+	}
 
 	supported := map[string]bool{}
 	ran := map[string]bool{} // kinds some report ran
@@ -311,7 +353,7 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		}
 	}
 	var missing []string
-	for _, k := range kinds {
+	for _, k := range need {
 		if !ran[k] {
 			missing = append(missing, k)
 		}
@@ -338,6 +380,9 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		}
 		for _, v := range order {
 			r := last[v]
+			if k := kindOf(r); k != "probes" && !needed[k] {
+				continue // a kind this release does not judge
+			}
 			if r.Verdict != "idle" && len(r.Metrics) > 0 && r.Metrics[0].Name == "team" && !math.IsInf(r.Metrics[0].Diff, 0) && !math.IsNaN(r.Metrics[0].Diff) {
 				diffs = append(diffs, r.Metrics[0].Diff)
 				byKind[kindOf(r)] = append(byKind[kindOf(r)], r.Metrics[0].Diff)
@@ -374,7 +419,7 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 				t.Why = append(t.Why, v+": "+r.Verdict)
 			}
 		}
-		for _, k := range kinds {
+		for _, k := range need {
 			t.Builds[k] = fmt.Sprintf("%d/%d", pass[k], total[k])
 			if total[k] == 0 && k != "buildspace" {
 				// a team may have no build-space build the engine runs;
@@ -387,7 +432,8 @@ func build(wasm, commit string, paths []string) (*Manifest, error) {
 		t.Verified = len(t.Why) == 0
 		if t.Verified {
 			m.Verified++
-			t.Group, t.GroupWhy = group(t)
+			t.VerifiedKinds = need
+			t.Group, t.GroupWhy = group(t, needed["pages"])
 		}
 		m.Teams[id] = t
 	}
