@@ -1,10 +1,10 @@
 # Phase 4: how the owner approves teams
 
-> Status: decided by the owner on 2026-11-04 (§5; verification is the library build, §5.6); the groups are written by `reference/manifest` (§4) · 2026-11-04
+> Status: decided by the owner on 2026-11-04 (§5; verification is the library build, §5.6) and applied to release `e6c8a07` the same day (4,436 teams of group A and 11 of group B approved, Gscouter `docs/engine.md`); the groups are written by `reference/manifest` (§4) · Last updated: 2026-11-04
 
 A library team moves to the engine in Gscouter only with the owner's yes for that team (`CLAUDE.md`), recorded in Gscouter's `internal/engine/approved.txt` with the date of the answer (Gscouter `docs/engine.md` §2). A release (`compare.yml` with `release=true` on `main`) writes `manifest.json` and `approval.md`. `approval.md` has a row per verified team for its library build (and one for its one-pass page config, `page:once`, when a release also ran the pages), with gcsim's and the engine's team DPS, the difference with its 95% half-width, and the character furthest apart, plus the drift over every build compared.
 
-With about 3,000 verified teams that table is thousands of rows, too long for anyone to read and answer team by team. This document sets out how it is put to the owner without loosening the bound: every team offered has already passed `compare` at 1%. The groups below only decide how closely the owner looks at each team.
+With thousands of verified teams (4,447 on release `e6c8a07`) that table is thousands of rows, too long for anyone to read and answer team by team. This document sets out how it is put to the owner without loosening the bound: every team offered has already passed `compare` at 1%. The groups below only decide how closely the owner looks at each team.
 
 ## 1. What a verified team already means
 

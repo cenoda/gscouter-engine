@@ -18,7 +18,8 @@ package main
 // lacks, such as a constellation above what a character implements) is not
 // run and not dropped: it is a result with the verdict "unsupported" and
 // the names, counted by axis and by reason in the report, the start of the
-// measure of progress over players' builds (docs/roadmap.md §2).
+// measure of progress over players' builds (docs/history.md §1). No longer
+// verified since 2026-11-04 (docs/verification.md §5).
 
 import (
 	"fmt"
