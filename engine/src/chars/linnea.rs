@@ -315,7 +315,7 @@ impl Character for Char {
                     s.special_atk.elevation += 250;
                 }
             }
-            Event::MoondriftHarmony => {
+            Event::MoondriftHarmony(_) => {
                 let cons = s.chars[ci].cons;
                 // C1: Field Catalog stacks
                 if cons >= 1 {

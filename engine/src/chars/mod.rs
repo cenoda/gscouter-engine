@@ -123,6 +123,13 @@ crate::chars! {
     Qiqi => qiqi,
     Barbara => barbara,
     Amber => amber,
+    Iansan => iansan,
+    Ifa => ifa,
+    Aloy => aloy,
+    Alyosha => alyosha,
+    Zibai => zibai,
+    Illuga => illuga,
+    Varka => varka,
 }
 
 /// The characters whose modules have been checked against gcsim for a

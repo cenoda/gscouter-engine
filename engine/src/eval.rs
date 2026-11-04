@@ -563,7 +563,7 @@ impl<'s> Eval<'s> {
                 if f < 0.0 {
                     return err(format!("invalid value for movement, expected non-negative number, got {f}"));
                 }
-                // OnMovement: none of the engine's characters listen to it
+                self.sim.emit(crate::content::Event::Movement(f));
                 Ok(Value::Null)
             }
             Builtin::IsEven => {

@@ -521,6 +521,8 @@ pub mod add_tag {
     /// Not a gcsim tag: an attack of Tartaglia's with StrikeTypeSlash,
     /// which Slingshot's passive skips (the engine keeps no strike type).
     pub const TARTAGLIA_SLASH: u8 = 1 << 4;
+    /// AttackTagVarkaSpecial: Varka's Four Winds' Ascension.
+    pub const VARKA_SPECIAL: u8 = 1 << 5;
 }
 
 impl AttackInfo {
@@ -1559,6 +1561,8 @@ pub struct Sim {
     /// Columbina's elevation of direct lunar DMG, in thousandths (0 without
     /// her constellations).
     pub lunar_direct_elevation: u16,
+    /// The slot of the attack OnApplyAttack is emitted for.
+    pub apply_slot: u16,
     /// The Nightsoul Burst's ICD, by the team's Natlan characters.
     pub nightsoul_burst_icd: i32,
     /// A member has gadgets that collide with the player (Mizuki's
@@ -1737,6 +1741,7 @@ impl Sim {
             statuses: Vec::new(),
             flags: Vec::new(),
             lunar_direct_elevation: 0,
+            apply_slot: 0,
             nightsoul_burst_icd: 0,
             collide_checks: false,
             hit_flat: 0.0,
@@ -2548,13 +2553,14 @@ impl Sim {
 
     /// Lunar-Bloom and Lunar-Crystallize for the fight (gcsim's
     /// LunarBloomEnableKey and LunarCrystallizeEnableKey).
-    /// gcsim's Flags.Custom[LunarCrystallizeEnableKey] (Linnea).
-    pub fn enable_lunar_crystallize(&mut self) {
+    pub fn enable_lunar_bloom_crystallize(&mut self) {
+        self.set_flag(LUNAR_BLOOM, 1.0);
         self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
     }
 
-    pub fn enable_lunar_bloom_crystallize(&mut self) {
-        self.set_flag(LUNAR_BLOOM, 1.0);
+    /// Lunar-Crystallize alone for the fight (gcsim's
+    /// LunarCrystallizeEnableKey; Linnea, Zibai).
+    pub fn enable_lunar_crystallize(&mut self) {
         self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
     }
 
@@ -2773,6 +2779,8 @@ impl Sim {
         // OnApplyAttack, before anything else
         if !self.subs[EventKind::ApplyAttack as usize].is_empty() {
             let ev = self.slots[slot as usize];
+            // subscribers that change the attack change it in this slot
+            self.apply_slot = slot;
             self.emit(Event::ApplyAttack(&ev));
         }
         // Columbina's constellations elevate direct lunar DMG (her
@@ -3690,7 +3698,7 @@ impl Sim {
             // Moondrift Harmony
             self.lcr_count -= 3;
             if !self.subs[EventKind::MoondriftHarmony as usize].is_empty() {
-                self.emit(Event::MoondriftHarmony);
+                self.emit(Event::MoondriftHarmony(ev));
             }
             self.add_core_status(MOONDRIFT_HARMONY_ICD, LCR_HITMARKS[2]);
             self.do_lcr_attack(ev.info.actor as usize);
@@ -5202,14 +5210,15 @@ impl Sim {
         }
     }
 
-    pub fn set_cd(&mut self, ci: usize, a: Action, dur: i32) {
-        // CDReduction: anemo resonance's mod (added at setup, so first),
-        // then the character's cooldown mods in effect, in their order
+    /// gcsim's CDReduction: anemo resonance's mod (added at setup, so
+    /// first), then, for the skill, burst or special skill (`skill_like`),
+    /// the character's cooldown mods in effect, in their order.
+    pub fn cd_reduction(&self, ci: usize, skill_like: bool, dur: i32) -> i32 {
         let mut cd = 1.0;
         if self.anemo_res {
             cd += -0.05;
         }
-        if matches!(a, Action::Skill | Action::Burst) {
+        if skill_like {
             let f = self.f;
             for m in &self.chars[ci].mods {
                 if m.kind == ModKind::Cooldown && (m.expiry() == -1 || m.expiry() > f) {
@@ -5217,7 +5226,11 @@ impl Sim {
                 }
             }
         }
-        let dur = if cd == 1.0 { dur } else { (dur as f64 * cd) as i32 };
+        if cd == 1.0 { dur } else { (dur as f64 * cd) as i32 }
+    }
+
+    pub fn set_cd(&mut self, ci: usize, a: Action, dur: i32) {
+        let dur = self.cd_reduction(ci, matches!(a, Action::Skill | Action::Burst), dur);
         let cd = &mut self.chars[ci].cd[Char::cd_index(a)];
         cd.queue[cd.len] = dur;
         cd.len += 1;
@@ -5275,6 +5288,9 @@ impl Sim {
 
     /// gcsim's ReduceActionCooldown.
     pub fn reduce_cd(&mut self, ci: usize, a: Action, v: i32) {
+        if a == Action::Skill {
+            crate::chars::dispatch::skill_cd_changed(self.chars[ci].kind, self, ci, Some(v));
+        }
         let a = self.cd_action(ci, a);
         self.reduce_cd_one(ci, a, v);
         if a == Action::Skill && self.chars[ci].skill_cd_twin {
@@ -5284,6 +5300,9 @@ impl Sim {
 
     /// gcsim's ResetActionCooldown.
     pub fn reset_cd(&mut self, ci: usize, a: Action) {
+        if a == Action::Skill {
+            crate::chars::dispatch::skill_cd_changed(self.chars[ci].kind, self, ci, None);
+        }
         let a = self.cd_action(ci, a);
         self.reset_cd_one(ci, a);
         if a == Action::Skill && self.chars[ci].skill_cd_twin {
@@ -5442,10 +5461,7 @@ impl Sim {
         self.player.dash_lockout = self.chars[to].dash_lockout;
         self.chars[to].remaining_dash_cd = 0;
         self.player.swap_cd = self.swap_icd;
-        for c in &mut self.chars {
-            c.normal_counter = 0;
-            c.normal_s_counter = 0;
-        }
+        self.reset_all_normal_counters();
         self.emit(Event::Swap { prev, next: to });
         // the shield stats collector, last to subscribe
         if !self.shield_bonus_mods.is_empty() {
@@ -5822,14 +5838,21 @@ impl Sim {
         self.set_action_used(info);
         self.player.last = LastAction { char: ci as u8, action: a };
         if a != Action::Attack {
-            for c in &mut self.chars {
-                c.normal_counter = 0;
-                c.normal_s_counter = 0;
-            }
+            self.reset_all_normal_counters();
         }
         // OnActionExec, after the action (Lauma's Spirit Envoy ends on it)
         if !self.subs[EventKind::ActionExec as usize].is_empty() {
             self.emit(Event::ActionExec(a));
+        }
+    }
+
+    /// gcsim's ResetAllNormalCounter: each character's ResetNormalCounter.
+    fn reset_all_normal_counters(&mut self) {
+        for i in 0..self.chars.len() {
+            if !crate::chars::dispatch::keeps_normal_counter(self.chars[i].kind, self, i) {
+                self.chars[i].normal_counter = 0;
+                self.chars[i].normal_s_counter = 0;
+            }
         }
     }
 
@@ -6134,6 +6157,13 @@ impl Sim {
                 if let Some(a) = action_key(typ) {
                     need(3, "character ability")?;
                     let active = self.player.active as usize == ci;
+                    if let Some((cd, charges)) = crate::chars::dispatch::cd_view(c.kind, self, ci, a) {
+                        match fields[2].as_str() {
+                            "cd" => return Ok(int(cd as i64)),
+                            "charge" => return Ok(int(charges as i64)),
+                            _ => {}
+                        }
+                    }
                     return match fields[2].as_str() {
                         "cd" => Ok(int(match a {
                             Action::Swap => self.player.swap_cd as i64,
