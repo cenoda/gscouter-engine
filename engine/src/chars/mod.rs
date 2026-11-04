@@ -120,6 +120,9 @@ crate::chars! {
     Sigewinne => sigewinne,
     Vodyanitsa => vodyanitsa,
     Odette => odette,
+    Qiqi => qiqi,
+    Barbara => barbara,
+    Amber => amber,
 }
 
 /// The characters whose modules have been checked against gcsim for a

@@ -1,0 +1,3 @@
+# Amber at C0: no C1 arrow, C2 detonations, C4 charges or C6 ATK.
+team amber-chongyun-bennett-rosaria
+amber char lvl=90/90 cons=0 talent=9,9,9;

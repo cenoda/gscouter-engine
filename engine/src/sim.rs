@@ -649,6 +649,9 @@ pub enum Task {
     GadgetAttack { slot: u16 },
     /// A crystallize shard appears, of an element by a character.
     SpawnShard { actor: u8, ele: Element },
+    /// A shard of a crystallize on a gadget (Amber's Baron Bunny): its
+    /// position is drawn around the gadget's circle, (x, y, r).
+    SpawnShardAt { actor: u8, ele: Element, at: (f64, f64, f64) },
     /// The shield stats collector's ShieldBonus at the end of the frame
     /// a player is hit.
     ShieldTrack,
@@ -1116,6 +1119,11 @@ impl Aura {
             }
         }
     }
+    /// gcsim's attachOrRefillNormalEle for an element other than pyro
+    /// (Amber's Baron Bunny takes cryo so).
+    pub fn attach_normal(&mut self, m: usize, dur: f64, src: usize) {
+        self.attach_overlap(m, 0.8 * dur, 6.0 * dur + 420.0, src);
+    }
     fn attach_overlap(&mut self, m: usize, amt: f64, length: f64, src: usize) {
         if self.get(m) > ZERO_DUR {
             let add = (amt - self.dur[m][src]).max(0.0);
@@ -1501,6 +1509,9 @@ pub struct Sim {
     pub diona_a1: bool,
     /// Noelle's C2 -20% charged attack stamina, from her slot.
     pub noelle_c2: Option<u8>,
+    /// Barbara's A1 ("barb-a1-stam"): stamina -12% until this frame,
+    /// added at her skill, after the mods of every Init.
+    pub barbara_a1: i32,
     /// Electro resonance, with the frame of its last particle (0 before
     /// the first).
     pub electro_res: Option<i32>,
@@ -1705,6 +1716,7 @@ impl Sim {
             tick_subs: Vec::new(),
             diona_a1: false,
             noelle_c2: None,
+            barbara_a1: 0,
             electro_res: None,
             dendro_res: false,
             anemo_res: false,
@@ -2647,7 +2659,8 @@ impl Sim {
                     self.hit_gadgets(&ev);
                 }
             }
-            Task::SpawnShard { actor, ele } => self.spawn_shard(actor as usize, ele),
+            Task::SpawnShard { actor, ele } => self.spawn_shard(actor as usize, ele, None),
+            Task::SpawnShardAt { actor, ele, at } => self.spawn_shard(actor as usize, ele, Some(at)),
             Task::DewExpiry { at } => self.player.dew_expiry = at,
             Task::ShieldTrack => {
                 self.shield_bonus();
@@ -3298,7 +3311,7 @@ impl Sim {
 
     /// gcsim's CalcReactionDmg: the attack with its flat damage and the
     /// snapshot it takes (the level and EM only).
-    fn reaction_attack(&self, mut ai: AttackInfo) -> AttackEvent {
+    pub(crate) fn reaction_attack(&self, mut ai: AttackInfo) -> AttackEvent {
         let ci = ai.actor as usize;
         let em = self.stat(ci, st::EM);
         let lvl = self.chars[ci].level;
@@ -4127,7 +4140,7 @@ impl Sim {
     /// the character's level and EM now, at a random point beyond the
     /// enemy (drawn only when a character reads it, see
     /// `shard_positions`). A fourth shard removes the oldest.
-    fn spawn_shard(&mut self, ci: usize, ele: Element) {
+    fn spawn_shard(&mut self, ci: usize, ele: Element, at: Option<(f64, f64, f64)>) {
         let em = self.stats(ci)[st::EM];
         let lvl = (self.chars[ci].level - 1).clamp(0, 99) as usize;
         let f = self.f;
@@ -4142,8 +4155,9 @@ impl Sim {
             em_bonus: (40.0 / 9.0) * (em / (1400.0 + em)),
         };
         let pos = if self.shard_positions {
-            let r = self.target_radius + 0.5;
-            self.random_point(self.enemy_pos.0, self.enemy_pos.1, r, r)
+            let (x, y, r) = at.unwrap_or((self.enemy_pos.0, self.enemy_pos.1, self.target_radius));
+            let r = r + 0.5;
+            self.random_point(x, y, r, r)
         } else {
             (0.0, 0.0)
         };
@@ -5395,6 +5409,9 @@ impl Sim {
         }
         if noelle && !noelle_first {
             pct += -0.2;
+        }
+        if self.barbara_a1 > self.f {
+            pct += -0.12;
         }
         pct
     }

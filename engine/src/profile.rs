@@ -111,7 +111,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             (k, Some(kind)) if kind.traveler() && crate::chars::traveler_common::PARAMS.contains(&k) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             ("hexerei", Some(CharKind::Sucrose | CharKind::Mona | CharKind::Razor | CharKind::Durin | CharKind::Nicole)) => {}
-            ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno)) => {}
+            ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno | CharKind::Qiqi)) => {}
             ("c2_stacks" | "pyrotechnic_travel", Some(CharKind::Lyney)) => {}
             // the character itself is unsupported
             (_, None) => {}
