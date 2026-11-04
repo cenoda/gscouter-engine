@@ -351,7 +351,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        part: [0, 1, 2, 3]
+        part: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
@@ -388,7 +388,7 @@ jobs:
         # work branches take the stored verdict of a build whose engine
         # output on its first 500 seeds has not moved (compare -reuse);
         # main runs every build in full and stores what it finds
-        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes ${{ needs.plan.outputs.teams != '' && format('-teams {0}', needs.plan.outputs.teams) || '' }} -shard ${{ matrix.part }}/4 -cache "$GCSIM_CACHE" ${{ github.ref != 'refs/heads/main' && '-reuse' || '' }} -json ../compare.json -md ../compare.md
+        run: go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes ${{ needs.plan.outputs.teams != '' && format('-teams {0}', needs.plan.outputs.teams) || '' }} -shard ${{ matrix.part }}/16 -cache "$GCSIM_CACHE" ${{ github.ref != 'refs/heads/main' && '-reuse' || '' }} -json ../compare.json -md ../compare.md
       - name: Summary
         if: always()
         run: test -f compare.md && cat compare.md >> "$GITHUB_STEP_SUMMARY" || true
