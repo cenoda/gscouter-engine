@@ -12,6 +12,7 @@ What each document is for. The conventions are Gscouter's (its `docs/README.md`)
 | `docs/verification.md` | How it is checked against gcsim: `compare`'s rules, probes, CI and its caches, releases |
 | `docs/porting.md` | How to port from gcsim, the gcsim behaviour matched on purpose, and the pitfalls found so far |
 | `docs/phase4-approval.md` | How the owner approves teams for Gscouter: groups A and B, carry-forward, the owner's decisions |
+| `docs/independence.md` | The plan to stop depending on gcsim (Phase 6): why, what stays, where data comes from, the steps, what remains |
 | `docs/history.md` | Records of Phases 0 to 3: results tables, runs and measurements as they were taken |
 | `docs/rotation-search.md` | A pointer: rotation search moved to gscouter-optimizer |
 | `reference/audits/` | Audits of where characters read the player's position, for `MOVES_WITH_PLAYER` |

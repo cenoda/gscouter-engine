@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 to 3 done for the library; Phase 4 live in Gscouter (4,447 teams on release `e6c8a07`, approved 2026-11-04); Phase 5, upkeep, is what remains · Last updated: 2026-11-04
+> Status: Phases 0 to 3 done for the library; Phase 4 live in Gscouter (4,447 teams on release `e6c8a07`, approved 2026-11-04); Phase 5, upkeep, now; Phase 6, independence from gcsim, planned · Last updated: 2026-11-04
 
 What it takes for this engine to score Gscouter's results, and where that stands. The measurements and step-by-step records of the finished phases are in `docs/history.md`.
 
@@ -66,13 +66,17 @@ Done in Gscouter (its `docs/engine.md`): the engine's WebAssembly module runs in
 
 ### Phase 5: upkeep (now)
 
-- **Following gcsim.** Every update of Gscouter's gcsim fork (game patches, fixes, new characters) is ported too, then compared again. New characters now cost twice: the fork and the engine.
+- **Following gcsim.** Every update of Gscouter's gcsim fork (game patches, fixes, new characters) is ported too, then compared again. New characters now cost twice: the fork and the engine. Phase 6 ends this; until it is far enough along, new characters wait and are not implemented on the fork (owner, 2026-11-04).
 - **Releases.** Each release that changes the engine goes to the owner (`docs/phase4-approval.md` §5): approvals in group A carry forward, the rest come back for an answer.
 - **Unverified teams.** The 121 idle rotations are fixed in Gscouter's library, not here; the next release then verifies them. `amber-furina-bennett-rosaria` passes `gse --check` at `1afae95`, so the next release should judge it. `mavuika-citlali-xilonen-bennett` errors in both engines (Mavuika's recast read the frame before the state ends).
 - **Unverified content.** The gaps of Phase 3 above, each with the probe that would reach it.
 - **Errors left on purpose** (`README.md`, "What it does not do"): ported when a player's build or a library rotation needs them, as Gscouter's fallback log shows (Gscouter `docs/engine.md` §1).
 - **A lead, not a failure**: Raiden as a filler on `neuvillette-fischl-nahida-raidenshogun`'s page configs leaned +0.3% to +0.7%, in the tail of fights whose blooms go on past 150 s (`docs/history.md` §3, Phase 2, "Known inconclusive builds"). Page configs are no longer verified.
 - **Source validation** (`cmd/validate` in Gscouter) stays on gcsim: it runs each entry under its source's conditions (several targets, other enemies, `hurt`), which scoring does not need.
+
+### Phase 6: independence from gcsim (planned, 2026-11-04)
+
+Agreed with the owner, not started: `docs/independence.md`. Gscouter and the engine stop depending on gcsim, dependency first and new characters after: (1) the engine's data and key table become its own; (2) Gscouter's showcase reading, keys and parsing move off gcsim; (3) verification moves from gcsim to the engine's own regression and checks against the game, approval is revised, and the rule "within 1% of gcsim" is removed (not yet); (4) timelines, character details and charts move to the engine; (5) the fallback is ported away and gcsim leaves the site; (6) the gcsim behaviour matched on purpose is judged against the game, Arlecchino first. New content comes from official, released information and measurements, never from datamining.
 
 ## 4. Decisions for the owner
 
