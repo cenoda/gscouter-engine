@@ -9,9 +9,9 @@
 //! attack takes, in a random order (Go's rand.Perm), up to three whose
 //! centers are in the box or the fan in front of the player
 //! (getSourcewaterDroplets: gcsim's IsWithinArea is PointInShape, the
-//! center only); C6 takes the first within 15. At most twelve exist; a
-//! thirteenth removes the oldest. Hydro Traveler's and Sigewinne's
-//! droplets, which gcsim's charged attack takes too, are not ported.
+//! center only); C6 takes the first within 15. At most twelve of his exist;
+//! a thirteenth removes the oldest. Sigewinne's droplets are taken too, as
+//! gcsim's pickup takes every kind; Hydro Traveler's are not ported.
 //!
 //! The judgment's length grows while it lasts (a frames function that
 //! reads tickAnimLength in gcsim): the frames are the action's own, from
@@ -60,7 +60,9 @@ pub struct State {
     burst_flat: [f64; 2],
 }
 
-const DROPLET: u8 = 0;
+pub const DROPLET: u8 = 0;
+/// The most droplets there can be: twelve of each kind ported.
+pub const MAX_DROPLETS: usize = 24;
 const DROPLET_DURATION: i32 = 878;
 const DROPLET_LIMIT: usize = 12;
 
@@ -160,10 +162,10 @@ impl Character for Char {
         Some(0.0)
     }
 
-    fn condition(s: &Sim, ci: usize, fields: &[String]) -> Option<Result<Num, String>> {
+    fn condition(s: &Sim, _ci: usize, fields: &[String]) -> Option<Result<Num, String>> {
         match fields[0].as_str() {
-            "droplets" => Some(Ok(Num::Int(droplets(s, ci, false).1 as i64))),
-            "droplets-c6" => Some(Ok(Num::Int(droplets(s, ci, true).1 as i64))),
+            "droplets" => Some(Ok(Num::Int(droplets(s, false).1 as i64))),
+            "droplets-c6" => Some(Ok(Num::Int(droplets(s, true).1 as i64))),
             _ => None,
         }
     }
@@ -422,8 +424,13 @@ fn sync_frames(s: &mut Sim, ci: usize) {
 // ------------------------------------------------------------ droplets
 
 /// Whether a gadget is one of his droplets (`.gadgets.sourcewaterdroplet`).
+/// Sigewinne's droplets are gadgets of the same id, and anyone's pickup
+/// takes both kinds (gcsim's getSourcewaterDroplets takes every
+/// sourcewaterdroplet.Gadget).
 pub fn is_droplet(s: &Sim, gd: &Gadget) -> bool {
-    s.chars[gd.owner as usize].kind == crate::chars::CharKind::Neuvillette && gd.id == DROPLET
+    gd.owner != CORE
+        && matches!(s.chars[gd.owner as usize].kind, crate::chars::CharKind::Neuvillette | crate::chars::CharKind::Sigewinne)
+        && gd.id == DROPLET
 }
 
 /// gcsim's CalcRandomPointFromCenter around (cx, cy).
@@ -433,7 +440,7 @@ fn random_point(s: &mut Sim, cx: f64, cy: f64, min: f64, max: f64) -> (f64, f64)
 
 /// sourcewaterdroplet.New: a thirteenth removes the oldest (the first of
 /// the earliest frame).
-fn add_droplet(s: &mut Sim, ci: usize, x: f64, y: f64) {
+pub fn add_droplet(s: &mut Sim, ci: usize, x: f64, y: f64) {
     let mut count = 0;
     let mut oldest: Option<usize> = None;
     for (k, gd) in s.gadgets.iter().enumerate() {
@@ -454,7 +461,11 @@ fn add_droplet(s: &mut Sim, ci: usize, x: f64, y: f64) {
 /// player, or the 80 degree fan of radius 14 ahead; with c6, within 15.
 /// (x, y) is from the player, who faces (0, 1): the profile keeps the
 /// enemy up the y axis, and the player does not move with Neuvillette.
-fn in_area(x: f64, y: f64, c6: bool) -> bool {
+fn in_area(s: &Sim, x: f64, y: f64, c6: bool) -> bool {
+    // in the player's frame: across and along its facing (the identity
+    // for the default facing (0, 1))
+    let (dx, dy) = s.player_dir;
+    let (x, y) = (x * dy - y * dx, x * dx + y * dy);
     if c6 {
         return x * x + y * y <= 15.0 * 15.0;
     }
@@ -473,11 +484,11 @@ fn in_area(x: f64, y: f64, c6: bool) -> bool {
 
 /// The indices of the droplets in range, in the gadget list's order, and
 /// how many.
-fn droplets(s: &Sim, ci: usize, c6: bool) -> ([usize; DROPLET_LIMIT], usize) {
-    let mut out = [0; DROPLET_LIMIT];
+pub fn droplets(s: &Sim, c6: bool) -> ([usize; MAX_DROPLETS], usize) {
+    let mut out = [0; MAX_DROPLETS];
     let mut n = 0;
     for (k, gd) in s.gadgets.iter().enumerate() {
-        if gd.owner as usize == ci && gd.id == DROPLET && in_area(gd.x - s.player_pos.0, gd.y - s.player_pos.1, c6) {
+        if is_droplet(s, gd) && in_area(s, gd.x - s.player_pos.0, gd.y - s.player_pos.1, c6) {
             out[n] = k;
             n += 1;
         }
@@ -500,8 +511,8 @@ fn consume(s: &mut Sim, ci: usize, idx: &mut [usize]) {
 /// legalEvalFindDroplets: up to three of the droplets in range, in the
 /// order of Go's rand.Perm.
 fn legal_eval_find(s: &mut Sim, ci: usize) -> usize {
-    let (found, n) = droplets(s, ci, false);
-    let mut perm = [0usize; DROPLET_LIMIT];
+    let (found, n) = droplets(s, false);
+    let mut perm = [0usize; MAX_DROPLETS];
     for i in 0..n {
         let j = s.rng.intn(i as i32 + 1) as usize;
         perm[i] = perm[j];
@@ -666,7 +677,7 @@ fn c6_droplet_check(s: &mut Sim, ci: usize, src: i32) {
         return;
     }
     if st.judge_start + st.judge_dur - s.f <= 60 {
-        let (found, n) = droplets(s, ci, true);
+        let (found, n) = droplets(s, true);
         if n > 0 {
             consume(s, ci, &mut [found[0]]);
             s.st_mut::<State>(ci).judge_dur += 60;

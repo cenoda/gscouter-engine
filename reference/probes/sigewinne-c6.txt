@@ -1,0 +1,3 @@
+# Sigewinne at C6.
+team sigewinne-furina-fischl-kaedeharakazuha
+sigewinne char lvl=90/90 cons=6 talent=9,9,9;

@@ -116,6 +116,8 @@ crate::chars! {
     Prune => prune,
     YumemizukiMizuki => mizuki,
     Linnea => linnea,
+    Dahlia => dahlia,
+    Sigewinne => sigewinne,
 }
 
 /// The characters whose modules have been checked against gcsim for a
