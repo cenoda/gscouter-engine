@@ -1336,6 +1336,10 @@ pub struct Gadget {
     /// and EndGadgetTypEnemy: dendro cores, the Bogglecat Box), which
     /// abilities that pick gadgets as targets choose from.
     pub enemy_camp: bool,
+    /// gcsim's CollidableTypes[TargettablePlayer]: each frame, before
+    /// anything ticks, its owner's gadget_collide runs when it overlaps the
+    /// player (Combat.Tick's collision check).
+    pub collides_player: bool,
     /// gcsim's TargetKey: gadgets get increasing keys as they are added,
     /// so the list, which keeps the order they came in, is sorted by key.
     pub key: u32,
@@ -1536,8 +1540,16 @@ pub struct Sim {
     pub lunar_direct_elevation: u16,
     /// The Nightsoul Burst's ICD, by the team's Natlan characters.
     pub nightsoul_burst_icd: i32,
+    /// A member has gadgets that collide with the player (Mizuki's
+    /// snacks): each frame starts with their collision check.
+    pub collide_checks: bool,
     /// Flat damage EnemyHit subscribers add to the hit.
     pub hit_flat: f64,
+    /// CRIT Rate an EnemyHit subscriber set the hit's to (Mizuki's C6 on
+    /// swirls); the CRIT Rate added in `hit_crit` after it goes on top.
+    pub hit_cr_set: Option<f64>,
+    /// The name an EnemyHit subscriber gave the hit (Mizuki's C1).
+    pub hit_abil: Option<&'static str>,
     /// DEF ignored added to the hit by OnEnemyHit subscribers (gcsim's
     /// subscribers that raise atk.Info.IgnoreDefPercent, as Nicole's C6).
     pub hit_ignore_def: f64,
@@ -1704,7 +1716,10 @@ impl Sim {
             flags: Vec::new(),
             lunar_direct_elevation: 0,
             nightsoul_burst_icd: 0,
+            collide_checks: false,
             hit_flat: 0.0,
+            hit_cr_set: None,
+            hit_abil: None,
             hit_ignore_def: 0.0,
             hit_base_bonus: 0.0,
             hit_dmgp: 0.0,
@@ -2369,8 +2384,8 @@ impl Sim {
     /// OnPlayerHit on character `on` (the active character when the player
     /// is hit; Dehya's Redmane's Blood names her), with gcsim's shield
     /// stats collector, which subscribes to it.
-    pub fn player_hit_event(&mut self, on: usize, ele: Element) {
-        self.emit(Event::PlayerHit { on, ele });
+    pub fn player_hit_event(&mut self, on: usize, ele: Element, tag: AttackTag) {
+        self.emit(Event::PlayerHit { on, ele, tag });
         // the shield stats collector looks at the shields at the end of
         // the frame (its ShieldBonus drops the mods that are done)
         if !self.shield_bonus_mods.is_empty() {
@@ -2866,8 +2881,10 @@ impl Sim {
                 // a subscriber can apply an attack inside the emit (an
                 // attack queued with no delay, as Escoffier's C6 with
                 // travel 0): keep the outer hit's accumulators
-                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation);
+                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation, self.hit_cr_set, self.hit_abil);
                 self.hit_elevation = 0;
+                self.hit_cr_set = None;
+                self.hit_abil = None;
                 self.hit_flat = 0.0;
                 self.hit_ignore_def = 0.0;
                 self.hit_crit = None;
@@ -2880,14 +2897,20 @@ impl Sim {
                 ev.info.ignore_def += self.hit_ignore_def;
                 ev.elevation += self.hit_elevation;
                 base_bonus = self.hit_base_bonus;
+                if let Some(cr) = self.hit_cr_set {
+                    ev.stats[st::CR] = cr;
+                }
                 if let Some((cr, cd)) = self.hit_crit {
                     ev.stats[st::CR] += cr;
                     ev.stats[st::CD] = cd;
                 }
+                if let Some(abil) = self.hit_abil {
+                    ev.info.abil = abil;
+                }
                 if self.hit_mult != 1.0 {
                     ev.info.mult *= self.hit_mult;
                 }
-                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation) = outer;
+                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation, self.hit_cr_set, self.hit_abil) = outer;
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }
@@ -3731,7 +3754,7 @@ impl Sim {
             self.core_explode(g.actor, g.x, g.y, g.id == BOUNTIFUL_CORE);
         }
         let f = self.f;
-        self.push_gadget(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true, key: 0 });
+        self.push_gadget(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true, collides_player: false, key: 0 });
         // OnDendroCore, with the core just added
         if !self.subs[EventKind::DendroCore as usize].is_empty() {
             let key = self.gadget_key - 1;
@@ -3755,6 +3778,27 @@ impl Sim {
             g.id = BOUNTIFUL_CORE;
             g.duration = 24;
             g.timer = 0;
+        }
+    }
+
+    /// Kaveh's ruptureDendroCores: every dendro core the pattern reaches
+    /// expires on its next tick (gcsim sets its Duration to 1). Bountiful
+    /// Cores are another type in gcsim, which the loop skips.
+    pub fn rupture_cores(&mut self, p: Pattern, ci: usize, abil: &str) {
+        for k in 0..self.gadgets.len() {
+            let g = self.gadgets[k];
+            if g.owner != CORE || g.id == BOUNTIFUL_CORE {
+                continue;
+            }
+            match p.hits_gadget(&g, g.r) {
+                None => {
+                    let who = crate::gcsl::char_name(self.chars[ci].key);
+                    self.unsupported(&format!("hit pattern {who} {abil}"));
+                    return;
+                }
+                Some(true) => self.gadgets[k].duration = 1,
+                Some(false) => {}
+            }
         }
     }
 
@@ -3879,7 +3923,7 @@ impl Sim {
     /// the player, and it does not count as damage.
     fn player_hit(&mut self, mut ev: AttackEvent) {
         let active = self.player.active as usize;
-        self.player_hit_event(active, ev.info.element);
+        self.player_hit_event(active, ev.info.element, ev.info.tag);
         let s = &mut ev.stats;
         let st_ele = ev.info.element.dmg_stat();
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
@@ -4532,7 +4576,7 @@ impl Sim {
     /// The gadget is at (x, y), of radius r (gcsim's world coordinates).
     pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
         let f = self.f;
-        self.push_gadget(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: f, x, y, r, actor: 0, takes_hits: false, enemy_camp: false, key: 0 });
+        self.push_gadget(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: f, x, y, r, actor: 0, takes_hits: false, enemy_camp: false, collides_player: false, key: 0 });
     }
 
     /// Appends a gadget with the next key (the end of gcsim's AddGadget).
@@ -4591,6 +4635,27 @@ impl Sim {
     /// range keeps reading the old array when an append in the tick grows
     /// the slice, so a gadget killed after that would still tick there; no
     /// ported hook adds a gadget during the tick.)
+    /// Combat.Tick's collision check of the gadgets that collide with the
+    /// player, in their order.
+    fn collide_gadgets(&mut self) {
+        let mut k = 0;
+        while k < self.gadgets.len() {
+            let g = self.gadgets[k];
+            if g.collides_player && (Pattern::Circle { x: g.x, y: g.y, r: g.r }).hits_circle(self.player_pos.0, self.player_pos.1, 0.3) == Some(true) {
+                crate::chars::dispatch::gadget_collide(self.chars[g.owner as usize].kind, self, g.owner as usize, g.id);
+            }
+            k = if self.gadgets.get(k).is_some_and(|x| x.key == g.key) { k + 1 } else { self.gadget_from(g.key + 1) };
+        }
+    }
+
+    /// Makes the owner's gadget id collide with the player (its owner
+    /// sets `collide_checks` in its init).
+    pub fn set_gadget_collides_player(&mut self, owner: usize, id: u8) {
+        if let Some(k) = self.gadget_index(owner, id) {
+            self.gadgets[k].collides_player = true;
+        }
+    }
+
     fn tick_gadgets(&mut self) {
         // gadgets with this key or later came during the tick
         let end = self.gadget_key;
@@ -5436,7 +5501,11 @@ impl Sim {
     pub fn next_frame(&mut self) -> bool {
         self.f += 1;
         let f = self.f;
-        // Combat.Tick: the player's aura, then the enemy
+        // Combat.Tick: the gadgets' collisions with the player, the
+        // player's aura, then the enemy
+        if self.collide_checks && !self.gadgets.is_empty() {
+            self.collide_gadgets();
+        }
         if !self.player_aura.idle() {
             self.player_aura.tick();
         }
