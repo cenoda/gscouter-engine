@@ -1,0 +1,32 @@
+# Collei and Aino: the burst areas stay where each was cast, the sprout and
+# A4's zone follow the player.
+options iteration=1000 duration=30 swap_delay=12;
+target lvl=100 resist=0.1 radius=1 pos=0,0;
+
+collei char lvl=90/90 cons=2 talent=10,10,10;
+collei add weapon="favoniuswarbow" refine=1 lvl=90/90;
+collei add stats atk=311 em=200 dendro%=0.466 er=10 cr=1 cd=0.8;
+aino char lvl=90/90 cons=0 talent=10,10,10;
+aino add weapon="favoniusgreatsword" refine=1 lvl=90/90;
+aino add stats atk=311 hydro%=0.466 er=10 cr=1 cd=0.8;
+
+active aino;
+set_player_pos(0,-3);
+aino burst;
+set_player_pos(0,-25);
+aino skill;
+set_player_pos(4,-3);
+collei burst;
+set_player_pos(0,-2);
+collei skill;
+wait(100);
+set_player_pos(0,-9);
+wait(150);
+set_player_pos(0,-2.9);
+wait(150);
+set_player_pos(0,-3.1);
+wait(200);
+set_player_pos(3,4);
+aino skill;
+collei skill;
+wait(800);

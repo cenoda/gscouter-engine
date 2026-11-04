@@ -1,0 +1,28 @@
+# Zhongli: two steles placed from different positions tick where each one
+# stands; the shield's shred follows each move of the player.
+options iteration=1000 duration=25 swap_delay=12;
+target lvl=100 resist=0.1 radius=1 pos=0,0;
+
+zhongli char lvl=90/90 cons=1 talent=10,10,10;
+zhongli add weapon="favoniuslance" refine=1 lvl=90/90;
+zhongli add stats atk=311 hp%=0.466 geo%=0.466 er=10 cr=1 cd=0.8;
+
+active zhongli;
+set_player_pos(0,-2);
+zhongli skill;
+wait(30);
+set_player_pos(6,1);
+zhongli skill[hold=1];
+set_player_pos(0,-7);
+wait(200);
+set_player_pos(0,-9);
+wait(200);
+set_player_pos(5,5);
+wait(200);
+set_player_pos(-3,-12);
+zhongli burst;
+set_player_pos(0,-2);
+wait(400);
+set_player_pos(0,-30);
+zhongli skill;
+wait(900);

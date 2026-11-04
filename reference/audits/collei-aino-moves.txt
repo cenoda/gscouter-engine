@@ -1,0 +1,30 @@
+# Collei and Aino with the player moved: Collei's skill (a circle of 2 on
+# the player at the action), the A1 sprout's ticks (on the player at each
+# tick), the burst (a circle of 5.5 and leaps of 4 where she cast it, A4's
+# zone of 6 there); Aino's normals and skill (on the player and the
+# enemy), the burst's balls (an enemy within 10 of where she cast it, or a
+# random point around it). Hydro and dendro bloom, so dendro cores appear.
+options iteration=1000 duration=30 swap_delay=12;
+target lvl=100 resist=0.1 radius=1 pos=0,0;
+
+collei char lvl=90/90 cons=2 talent=10,10,10;
+collei add weapon="favoniuswarbow" refine=1 lvl=90/90;
+collei add stats atk=311 em=200 dendro%=0.466 er=10 cr=1 cd=0.8;
+aino char lvl=90/90 cons=0 talent=10,10,10;
+aino add weapon="favoniusgreatsword" refine=1 lvl=90/90;
+aino add stats atk=311 hydro%=0.466 er=10 cr=1 cd=0.8;
+
+active aino;
+set_player_pos(0,-1.5); # audit position
+aino skill;
+aino burst;
+aino attack:3;
+collei skill;
+collei burst;
+collei attack:4;
+collei aim;
+wait(300);
+aino skill;
+aino attack:3;
+collei skill;
+wait(600);

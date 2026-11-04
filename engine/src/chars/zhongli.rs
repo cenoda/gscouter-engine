@@ -270,8 +270,8 @@ fn new_stele(s: &mut Sim, ci: usize) {
     tick.blunt = true;
     tick.poise = 0.0;
     tick.flat_dmg = flat;
-    // the stele's own tick: an 8 by 8 box from 4 behind the stele
-    tick.pattern = s.box_on_player(0.0, -1.0, 8.0, 8.0);
+    // the stele's own tick: an 8 by 8 box from 4 behind the stele, built
+    // at each tick from that stele (`resonance`)
     s.st_mut::<State>(ci).stele_snap = s.snapshot_event(tick, 0);
     s.add_task(Task::Char { c: ci as u8, id: TASK_RESONANCE, arg: f }, 120);
 }
@@ -288,8 +288,15 @@ fn resonance(s: &mut Sim, ci: usize, src: i32) {
     let is_stele = |c: &Construct| c.limited && c.owner as usize == ci && c.key == STELE;
     if let Some(stele) = s.constructs.iter().find(|c| is_stele(c) && c.src == src).copied() {
         let ev = s.st::<State>(ci).stele_snap;
-        s.queue_attack_with_snap(ev, CB_PARTICLE, 0);
-        let [sx, sy, ..] = stele.pos.unwrap();
+        // its own hit: an 8 by 8 box from 4 behind this stele along its
+        // direction, on that point, which faces the default direction (the
+        // snapshot is the newest stele's; its position is this one's)
+        let [sx, sy, sdx, sdy] = stele.pos.unwrap();
+        let (bx, by) = offset_point((sx, sy), (0.0, -4.0), (sdx, sdy));
+        let (ddx, ddy) = DEFAULT_DIR;
+        let mut own = ev;
+        own.info.pattern = Pattern::Box { x: bx, y: by, w: 8.0, h: 8.0, dx: ddx, dy: ddy };
+        s.queue_attack_with_snap(own, CB_PARTICLE, 0);
         let mut hits: Vec<Pattern> = Vec::new();
         for limited in [true, false] {
             for c in s.constructs.iter().filter(|c| c.limited == limited && !is_stele(c)) {
@@ -346,8 +353,10 @@ fn add_jade_shield(s: &mut Sim, ci: usize) {
     s.st_mut::<State>(ci).shielded = true;
 }
 
+/// gcsim's shred task: while shielded, the enemies within 7.5 of the
+/// player (their centers) now.
 fn shred(s: &mut Sim, ci: usize, i: i32) {
-    if s.st::<State>(ci).shielded {
+    if s.st::<State>(ci).shielded && s.enemy_alive && s.enemy_within(s.circle_on_player(0.0, 0.0, 7.5)) {
         for (key, e) in SHRED {
             s.enemy_add_resist(key, e, -0.2, 60);
         }
