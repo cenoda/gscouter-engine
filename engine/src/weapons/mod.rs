@@ -131,4 +131,12 @@ crate::weapons! {
     PrototypeRancour => prototyperancour,
     RedhornStonethresher => redhornstonethresher,
     Whiteblind => whiteblind,
+    EverlastingMoonglow => everlastingmoonglow,
+    EyeOfPerception => eyeofperception,
+    LostPrayerToTheSacredWinds => lostprayertothesacredwinds,
+    MappaMare => mappamare,
+    VividNotions => vividnotions,
+    NightweaversLookingGlass => nightweaverslookingglass,
+    SurfsUp => surfsup,
+    TulaytullahsRemembrance => tulaytullahsremembrance,
 }

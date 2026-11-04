@@ -68,6 +68,27 @@ pub fn char_kind(name: &str) -> Option<CharKind> {
     CharKind::from_name(name)
 }
 
+/// The weapon params gcsim's package reads, for the weapons whose params
+/// are checked; None for a weapon not checked.
+fn weapon_params_known(w: WeaponKind) -> Option<&'static [&'static str]> {
+    Some(match w {
+        WeaponKind::SacrificialJade => &["stacks"],
+        WeaponKind::LostPrayerToTheSacredWinds => &["stacks"],
+        // the rest read none
+        WeaponKind::EverlastingMoonglow
+        | WeaponKind::EyeOfPerception
+        | WeaponKind::MappaMare
+        | WeaponKind::VividNotions
+        | WeaponKind::NightweaversLookingGlass
+        | WeaponKind::SurfsUp
+        | WeaponKind::TulaytullahsRemembrance => &[],
+        // gcsim reads only melusines; Gscouter's library passes stacks,
+        // which gcsim ignores
+        WeaponKind::UltimateOverlordsMegaMagicSword => &["melusines", "stacks"],
+        _ => return None,
+    })
+}
+
 fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
     let mut errs = Vec::new();
     let name = char_name(p.key);
@@ -117,14 +138,10 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             _ => errs.push(format!("unsupported: param {name} {k}")),
         }
     }
-    // Sacrificial Jade reads only stacks and Ultimate Overlord's Mega Magic
-    // Sword only melusines; any other param of theirs is an error
-    let known: &[&str] = match weapon {
-        Some(WeaponKind::SacrificialJade) => &["stacks"],
-        Some(WeaponKind::UltimateOverlordsMegaMagicSword) => &["melusines"],
-        _ => &[],
-    };
-    if matches!(weapon, Some(WeaponKind::SacrificialJade | WeaponKind::UltimateOverlordsMegaMagicSword)) {
+    // the params a weapon reads, as gcsim's package does; any other param
+    // of a weapon listed here is an error (weapons not listed are not
+    // checked yet)
+    if let Some(known) = weapon.and_then(weapon_params_known) {
         for (k, _) in &p.weapon.params {
             if !known.contains(&k.as_str()) {
                 errs.push(format!("unsupported: param {wname} {k}"));
