@@ -111,6 +111,7 @@ crate::chars! {
     Venti => venti,
     Xinyan => xinyan,
     Jahoda => jahoda,
+    Tartaglia => tartaglia,
 }
 
 /// The characters whose modules have been checked against gcsim for a

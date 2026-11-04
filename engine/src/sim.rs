@@ -518,6 +518,9 @@ pub mod add_tag {
     pub const WRIO_SSC_CA: u8 = 1 << 2;
     /// AttackTagKinichCannon: Kinich's Scalespiker Cannon (his C1).
     pub const KINICH_CANNON: u8 = 1 << 3;
+    /// Not a gcsim tag: an attack of Tartaglia's with StrikeTypeSlash,
+    /// which Slingshot's passive skips (the engine keeps no strike type).
+    pub const TARTAGLIA_SLASH: u8 = 1 << 4;
 }
 
 impl AttackInfo {
@@ -800,6 +803,9 @@ pub struct Char {
     /// Levels added to its skill talent by another member (gcsim's
     /// SkirkPassive tag).
     pub skill_talent_bonus: i32,
+    /// Levels added to its normal attack talent by another member (gcsim's
+    /// ChildePassive tag, which Tartaglia's Init sets on the party).
+    pub attack_talent_bonus: i32,
     /// AnimationStartDelay by gcsim's AnimationDelayKey.
     pub anim_delay: [i32; 3],
     pub weapon: WeaponKind,
@@ -1793,6 +1799,7 @@ impl Sim {
             frozen: 0,
             time_passed: 0,
             skill_talent_bonus: 0,
+            attack_talent_bonus: 0,
             queue: Queue::new(),
             cd: [Cooldown { available: 1, ..Default::default() }; 3],
             skill_cd_twin: false,
@@ -1918,6 +1925,8 @@ impl Sim {
         let mut add = if con > 0 && c.cons >= con { 3 } else { 0 };
         if i == 1 {
             add += c.skill_talent_bonus;
+        } else if i == 0 {
+            add += c.attack_talent_bonus;
         }
         (c.talents[i] - 1 + add) as usize
     }

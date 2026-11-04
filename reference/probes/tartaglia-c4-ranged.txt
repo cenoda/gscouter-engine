@@ -1,0 +1,3 @@
+# Tartaglia at C4 on a ranged rotation (aimed shots and the ranged burst): C4's ticks as Riptide Flash.
+team neuvillette-tartaglia-xilonen-kaedeharakazuha
+tartaglia char lvl=90/90 cons=4 talent=9,9,9;
