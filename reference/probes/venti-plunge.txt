@@ -1,0 +1,4 @@
+# Venti's high plunge after his pressed skill.
+team mona-shenhe-venti-ganyu
+rotation- venti skill, attack;
+rotation+ venti skill, high_plunge;
