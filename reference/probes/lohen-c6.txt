@@ -1,0 +1,4 @@
+# Lohen at C6 with Disaster and Remorse R5: C1's Will to Win, C2's Evilsbane Blade, C4's energy and full Will, C6's kept Will, Joy and CRIT DMG (the library builds carry C0 and R1).
+team lohen-durin-nicole-sucrose
+lohen char lvl=90/90 cons=6 talent=9,9,9;
+lohen add weapon="disasterandremorse" refine=5 lvl=90/90;

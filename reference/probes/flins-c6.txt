@@ -1,0 +1,3 @@
+# Flins at C6: C1's energy and Spearstorm cooldown, C2's hit and electro RES shred, C4's ATK and A4, C6's elevation (the library builds carry C0).
+team flins-ineffa-columbina-sucrose
+flins char lvl=90/90 cons=6 talent=9,9,9;
