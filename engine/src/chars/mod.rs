@@ -4,6 +4,7 @@
 pub mod plunge;
 pub mod traveler;
 pub mod traveleranemo;
+pub mod travelerdendro;
 pub mod travelergeo;
 pub mod watch;
 
@@ -104,6 +105,8 @@ crate::chars! {
     Luminegeo => luminegeo,
     Aetheranemo => aetheranemo,
     Lumineanemo => lumineanemo,
+    Aetherdendro => aetherdendro,
+    Luminedendro => luminedendro,
 }
 
 /// The characters whose modules have been checked against gcsim for a

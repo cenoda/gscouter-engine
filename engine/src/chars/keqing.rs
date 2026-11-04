@@ -253,7 +253,9 @@ impl Character for Char {
                 | Reaction::Aggravate
                 | Reaction::Hyperbloom
         );
-        if !electro || ev.info.actor as usize != ci {
+        // an enemy's reactions only (gcsim's cbNoGadget), but a hyperbloom
+        // on a dendro core
+        if !electro || ev.info.actor as usize != ci || (r != Reaction::Hyperbloom && !ev.on_enemy()) {
             return;
         }
         s.add_mod(ci, Mod::stat(C4, st::ATKP, 0.25, false, true, -1), 600);

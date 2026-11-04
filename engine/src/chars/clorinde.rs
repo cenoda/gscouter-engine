@@ -315,7 +315,7 @@ impl Character for Char {
                     | Reaction::Quicken
                     | Reaction::Overload
                     | Reaction::SwirlElectro
-                    | Reaction::CrystallizeElectro => !ev.on_player,
+                    | Reaction::CrystallizeElectro => ev.on_enemy(),
                     _ => false,
                 };
                 if hit {

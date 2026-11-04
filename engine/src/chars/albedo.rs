@@ -202,7 +202,11 @@ impl Character for Char {
         match id {
             TASK_CONSTRUCT => {
                 let f = s.f;
-                s.new_construct(Construct { owner: ci as u8, key: CONSTRUCT, src: f, expiry: f + 1800, pos: None, limited: true }, true);
+                // where the skill put it (3 ahead of the player), facing as
+                // the player did (the player does not move with Albedo)
+                let Pattern::Circle { x, y, .. } = st(s, ci).skill_area else { unreachable!() };
+                let (dx, dy) = s.player_dir;
+                s.new_construct(Construct { owner: ci as u8, key: CONSTRUCT, src: f, expiry: f + 1800, pos: Some([x, y, dx, dy]), limited: true }, true);
                 let x = st_mut(s, ci);
                 x.last_construct = f;
                 x.skill_active = true;

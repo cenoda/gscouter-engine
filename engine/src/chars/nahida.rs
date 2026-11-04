@@ -107,7 +107,8 @@ impl Character for Char {
         let lvl = s.talent(ci, 0);
         let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Dendro, 25.0, g::ATTACK[n][lvl]);
         ai.abil = NORMAL_NAMES[n];
-        // a box on the target
+        // a box from the player on the target
+        ai.pattern = s.box_on_target(0.0, g::ATTACK_OFFSETS[n], g::ATTACK_HITBOXES[n][0], g::ATTACK_HITBOXES[n][1]);
         let h = g::ATTACK_HITMARKS[n];
         s.queue_attack(ai, c6_cb(s, ci), h, h);
         let atkspd = s.stat(ci, st::ATKSPD);
@@ -123,6 +124,7 @@ impl Character for Char {
         ai.abil = "Charge Attack";
         let windup = if s.current_state() == AnimState::Normal { 10 } else { 0 };
         // a 6 by 6 box 3 short of the target
+        ai.pattern = s.box_on_target(0.0, -3.0, 6.0, 6.0);
         let h = g::CHARGE_HITMARK - windup;
         s.queue_attack(ai, c6_cb(s, ci), h, h);
         let t = &g::CHARGE_FRAMES;
@@ -136,6 +138,7 @@ impl Character for Char {
         if hold == 0 {
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Dendro, 25.0, g::SKILL_PRESS[lvl]);
             ai.abil = "All Schemes to Know (Press)";
+            ai.pattern = s.circle_on_player(0.0, 0.2, 4.6);
             s.queue_attack(ai, CB_MARK, 0, g::SKILL_PRESS_HITMARK);
             s.set_cd_with_delay(ci, Action::Skill, g::SKILL_PRESS_CD, 11);
             let t = &g::SKILL_PRESS_FRAMES;
@@ -144,6 +147,7 @@ impl Character for Char {
         let hold = (hold.clamp(1, 300) - 1) as i32;
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Dendro, 25.0, g::SKILL_HOLD[lvl]);
         ai.abil = "All Schemes to Know (Hold)";
+        ai.pattern = s.circle_on_player(0.0, 0.0, 25.0);
         s.queue_attack(ai, CB_MARK, 0, hold + 3 + 30);
         s.set_cd_with_delay(ci, Action::Skill, g::SKILL_HOLD_CD, hold + 30);
         let t = &g::SKILL_HOLD_FRAMES;
@@ -310,6 +314,8 @@ fn tri_karma(s: &mut Sim, ci: usize) {
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NAHIDA_SKILL, icd::GROUP_NAHIDA_SKILL, Element::Dendro, 25.0, g::TRI_KARMA_ATK[lvl]);
     ai.abil = g::TRI_KARMA_ABIL;
+    // gcsim's NewSingleTargetHit on the marked enemy
+    ai.pattern = Pattern::Single;
     let mut ev = s.snapshot_event(ai, CB_PARTICLE);
     ev.info.flat_dmg = ev.stats[st::EM] * g::TRI_KARMA_EM[lvl];
     s.queue_attack_with_snap(ev, CB_PARTICLE, 3);
