@@ -21,8 +21,9 @@ pub struct Char;
 #[derive(Default)]
 pub struct State {
     revelation: bool,
-    /// The totems, oldest first: their ids and the frames they appeared.
-    totems: [(i32, i32); 3],
+    /// The totems, oldest first: their ids, the frames they appeared and
+    /// the centers of their detection areas (the player's position then).
+    totems: [(i32, i32, (f64, f64)); 3],
     count: usize,
     next_id: i32,
 }
@@ -268,20 +269,24 @@ impl Character for Char {
                         s.queue_attack(ai, 0, 64, 64);
                     }
                 }
+                // the detection area: a circle on the player's position now
+                let pos = s.player_pos;
                 let st = s.st_mut::<State>(ci);
-                st.totems[st.count] = (id, f);
+                st.totems[st.count] = (id, f, pos);
                 st.count += 1;
             }
             TASK_TICK => {
                 if !s.st::<State>(ci).has(arg) {
                     return;
                 }
-                // RandomEnemyWithinArea on a circle on the player of
-                // radius 12.5, 20 with C2 (60% more range): the one enemy.
-                // An enemy out of it would make the totem strike a gadget
-                // or nothing, which is not ported.
+                // RandomEnemyWithinArea on the totem's area, a circle of
+                // radius 12.5 (20 with C2) on where the player stood when it
+                // appeared: the one enemy. An enemy out of it would make the
+                // totem strike a gadget or nothing, which is not ported.
                 let r = if s.chars[ci].cons >= 2 { 20.0 } else { 12.5 };
-                if !s.enemy_within(s.circle_on_player(0.0, 0.0, r)) {
+                let st = s.st::<State>(ci);
+                let (x, y) = st.totems[..st.count].iter().find(|t| t.0 == arg).unwrap().2;
+                if !s.enemy_within(Pattern::Circle { x, y, r }) {
                     s.unsupported("yaemiko Sesshou Sakura with the enemy out of its range");
                     return;
                 }

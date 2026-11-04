@@ -24,6 +24,13 @@ pub struct State {
     /// One per swirl event gcsim subscribes (pyro, hydro, electro, cryo,
     /// Stellar Swirl), each with its own ICD.
     a4_icd: [i32; 5],
+    /// The normal attack's hits, built at the action (gcsim's ap).
+    normal_ap: [Pattern; 3],
+    /// Where A1 absorbs, taken at the skill.
+    a1_area: Pattern,
+    /// The burst's slash and ticks, and where it absorbs, taken at the cast.
+    q_ap: Pattern,
+    q_area: Pattern,
 }
 
 const PARTICLE_ICD: ModKey = ModKey::new(g::PARTICLE_ICD_KEY);
@@ -51,8 +58,8 @@ const TASK_C6: u8 = 7;
 /// The elements Chihayaburu and the burst absorb, in gcsim's order.
 const ABSORB: [Element; 4] = [Element::Pyro, Element::Hydro, Element::Electro, Element::Cryo];
 
-fn absorb_check(s: &Sim) -> Element {
-    s.absorb_check(&ABSORB)
+fn absorb_check(s: &Sim, area: Pattern) -> Element {
+    s.absorb_check_in(area, &ABSORB)
 }
 
 /// The airborne plunges (Xianyun's), from gcsim's plunge.go.
@@ -73,6 +80,10 @@ impl Character for Char {
             q_tick: empty,
             q_tick_absorb: empty,
             a4_icd: [-1; 5],
+            normal_ap: [Pattern::Unknown; 3],
+            a1_area: Pattern::Unknown,
+            q_ap: Pattern::Unknown,
+            q_area: Pattern::Unknown,
         }
     }
 
@@ -104,6 +115,8 @@ impl Character for Char {
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
         let n = s.chars[ci].normal_counter as usize;
         for (i, &h) in g::ATTACK_HITMARKS[n].iter().enumerate() {
+            let ap = s.circle_on_player(0.0, g::ATTACK_OFFSETS[n][i], g::ATTACK_RADIUS[n]);
+            s.st_mut::<State>(ci).normal_ap[i] = ap;
             s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_NORMAL, arg: (n * 8 + i) as i32 }, h);
         }
         let atkspd = s.stat(ci, st::ATKSPD);
@@ -133,7 +146,10 @@ impl Character for Char {
         st.skill_glide = glide == 1;
         let lvl = s.talent(ci, 1);
         let (c1, c6) = (s.chars[ci].cons >= 1, s.chars[ci].cons >= 6);
-        let (ai, cb, hitmark, cd, cd_start, frames, shortest) = if !hold {
+        let r = if hold { g::SKILL_HOLD_RADIUS } else { g::SKILL_PRESS_RADIUS } as f64;
+        let area = s.circle_on_player(0.0, 0.0, r);
+        s.st_mut::<State>(ci).a1_area = area;
+        let (mut ai, cb, hitmark, cd, cd_start, frames, shortest) = if !hold {
             let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 25.0, g::SKILL[lvl]);
             ai.abil = "Chihayaburu (Press)";
             let shortest = if glide == 1 { Action::Jump } else { Action::HighPlunge };
@@ -144,6 +160,7 @@ impl Character for Char {
             let shortest = if glide == 1 { Action::Swap } else { Action::HighPlunge };
             (ai, CB_PARTICLE_4, g::SKILL_HOLD_HITMARK, if c1 { 486 } else { 540 }, g::SKILL_HOLD_CD_START, &g::SKILL_HOLD_FRAMES[glide], shortest)
         };
+        ai.pattern = area;
         s.queue_attack(ai, cb, 0, hitmark);
         if s.chars[ci].ascension >= 1 {
             s.add_task(Task::Char { c: ci as u8, id: TASK_A1_CHECK, arg: hitmark / 6 }, 1);
@@ -196,12 +213,17 @@ impl Character for Char {
     }
 
     fn burst(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
-        s.st_mut::<State>(ci).q_absorb = Element::NoElement;
+        let (q_area, q_ap) = (s.circle_on_player(0.0, 1.0, 8.0), s.circle_on_player(0.0, 1.0, 9.0));
+        let st = s.st_mut::<State>(ci);
+        st.q_absorb = Element::NoElement;
+        st.q_area = q_area;
+        st.q_ap = q_ap;
         let lvl = s.talent(ci, 2);
         let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 50.0, g::BURST_SLASH[lvl]);
         ai.abil = "Kazuha Slash";
         ai.hitlag_halt = 0.05 * 60.0;
         ai.hitlag_factor = 0.05;
+        ai.pattern = q_ap;
         s.queue_attack(ai, 0, g::BURST_HITMARK, g::BURST_HITMARK);
         s.add_task(Task::Char { c: ci as u8, id: TASK_Q_CHECK, arg: 310 / 18 }, g::BURST_HITMARK - 1);
         s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_Q_SNAPSHOT, arg: 0 }, g::BURST_HITMARK - 1);
@@ -224,7 +246,7 @@ impl Character for Char {
                 ai.hitlag_factor = g::ATTACK_HITLAG_FACTOR[n][i];
                 ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
                 ai.def_halt = g::ATTACK_DEF_HALT[n][i];
-                ai.pattern = s.circle_on_player(0.0, g::ATTACK_OFFSETS[n][i], g::ATTACK_RADIUS[n]);
+                ai.pattern = s.st::<State>(ci).normal_ap[i];
                 s.queue_attack(ai, 0, 0, 0);
             }
             TASK_A1_CHECK | TASK_Q_CHECK => {
@@ -232,7 +254,8 @@ impl Character for Char {
                 if arg == 0 {
                     return;
                 }
-                let e = absorb_check(s);
+                let area = if id == TASK_A1_CHECK { s.st::<State>(ci).a1_area } else { s.st::<State>(ci).q_area };
+                let e = absorb_check(s, area);
                 let st = s.st_mut::<State>(ci);
                 if id == TASK_A1_CHECK {
                     st.a1_absorb = e;
@@ -249,12 +272,12 @@ impl Character for Char {
                 let mut dot = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 25.0, g::BURST_DOT[lvl]);
                 dot.abil = "Kazuha Slash (DoT)";
                 dot.hitlag_factor = 0.05;
+                // the slash's area, taken at the cast
+                dot.pattern = s.st::<State>(ci).q_ap;
                 let mut absorb = dot;
                 absorb.abil = "Kazuha Slash (Absorb DoT)";
                 absorb.mult = g::BURST_ELE_DOT[lvl];
                 absorb.element = Element::NoElement;
-                // can be pyro or electro, which reach dendro cores
-                absorb.pattern = s.circle_on_player(0.0, 1.0, 9.0);
                 let (tick, tick_absorb) = (s.snapshot_event(dot, 0), s.snapshot_event(absorb, 0));
                 let st = s.st_mut::<State>(ci);
                 st.q_tick = tick;
@@ -350,6 +373,11 @@ fn c2(s: &mut Sim, ci: usize, src: i32) {
         return;
     }
     s.add_task(Task::Char { c: ci as u8, id: TASK_C2, arg: src }, 30);
+    // only in the burst's area: radius 9 around where it absorbs
+    let Pattern::Circle { x, y, .. } = s.st::<State>(ci).q_area else { unreachable!() };
+    if !s.player_within(Pattern::Circle { x, y, r: 9.0 }) {
+        return;
+    }
     let active = s.player.active as usize;
     s.add_mod(active, Mod::owned(C2, ModKind::Stat, Owner::Char(ci as u8), st::EM, false, true, -1), 60);
     if active != ci {

@@ -3228,6 +3228,7 @@ impl Sim {
             let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::Shatter, icd::TAG_SHATTER, icd::GROUP_REACTION_A, Element::Physical, 0.0, 0.0);
             ai.abil = "shatter";
             ai.ignore_def = 1.0;
+            ai.pattern = Pattern::Single;
             let mut atk = self.reaction_attack(ai);
             atk.info.flat_dmg *= 3.0;
             self.queue_attack_with_snap(atk, 0, 0);
@@ -3243,6 +3244,7 @@ impl Sim {
         let mut ai = AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0);
         ai.abil = "Freeze Broken";
         ai.sim = true;
+        ai.pattern = Pattern::Single;
         self.queue_attack(ai, 0, -1, 0);
     }
 
