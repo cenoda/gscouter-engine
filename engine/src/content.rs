@@ -65,8 +65,9 @@ pub enum EventKind {
     TargetDied,
     ActionExec,
     Movement,
+    MoondriftHarmony,
 }
-pub const N_EVENTS: usize = 28;
+pub const N_EVENTS: usize = 29;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -139,6 +140,8 @@ pub enum Event<'a> {
     ActionExec(Action),
     /// OnMovement: the distance the rotation reports with `movement`.
     Movement(f64),
+    /// OnMoondriftHarmony, with the attack that triggered it.
+    MoondriftHarmony(&'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -172,6 +175,7 @@ impl Event<'_> {
             Event::TargetDied(_) => EventKind::TargetDied,
             Event::ActionExec(_) => EventKind::ActionExec,
             Event::Movement(_) => EventKind::Movement,
+            Event::MoondriftHarmony(_) => EventKind::MoondriftHarmony,
         }
     }
 }
@@ -350,6 +354,11 @@ pub trait Character {
     /// template's.
     fn receive_heal(_s: &mut Sim, _ci: usize, _caller: usize, _amount: f64) -> Option<f64> {
         None
+    }
+    /// Its ResetNormalCounter, when it keeps its normal attack sequence
+    /// (Zibai's C4 in Lunar Phase Shift): true to keep it.
+    fn keeps_normal_counter(_s: &Sim, _ci: usize) -> bool {
+        false
     }
 }
 
@@ -536,6 +545,7 @@ macro_rules! chars {
             pub fn frames_live(k: CharKind, s: &Sim, ci: usize, id: u8, arg: i16, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames_live(s, ci, id, arg, next)),* } }
             pub fn receives_heal(k: CharKind, s: &Sim, ci: usize, caller: usize) -> bool { match k { $(CharKind::$kind => $m::Char::receives_heal(s, ci, caller)),* } }
             pub fn receive_heal(k: CharKind, s: &mut Sim, ci: usize, caller: usize, amount: f64) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::receive_heal(s, ci, caller, amount)),* } }
+            pub fn keeps_normal_counter(k: CharKind, s: &Sim, ci: usize) -> bool { match k { $(CharKind::$kind => $m::Char::keeps_normal_counter(s, ci)),* } }
         }
     };
 }

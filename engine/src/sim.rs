@@ -1534,6 +1534,8 @@ pub struct Sim {
     /// Columbina's elevation of direct lunar DMG, in thousandths (0 without
     /// her constellations).
     pub lunar_direct_elevation: u16,
+    /// The slot of the attack OnApplyAttack is emitted for.
+    pub apply_slot: u16,
     /// The Nightsoul Burst's ICD, by the team's Natlan characters.
     pub nightsoul_burst_icd: i32,
     /// Flat damage EnemyHit subscribers add to the hit.
@@ -1703,6 +1705,7 @@ impl Sim {
             statuses: Vec::new(),
             flags: Vec::new(),
             lunar_direct_elevation: 0,
+            apply_slot: 0,
             nightsoul_burst_icd: 0,
             hit_flat: 0.0,
             hit_ignore_def: 0.0,
@@ -2513,6 +2516,12 @@ impl Sim {
         self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
     }
 
+    /// Lunar-Crystallize alone for the fight (gcsim's
+    /// LunarCrystallizeEnableKey).
+    pub fn enable_lunar_crystallize(&mut self) {
+        self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
+    }
+
     /// gcsim's LcExtraHitOverride (Lunar-Crystallize's shares the key).
     pub fn set_lunar_extra_hit(&mut self, chance: Option<f64>) {
         match chance {
@@ -2727,6 +2736,8 @@ impl Sim {
         // OnApplyAttack, before anything else
         if !self.subs[EventKind::ApplyAttack as usize].is_empty() {
             let ev = self.slots[slot as usize];
+            // subscribers that change the attack change it in this slot
+            self.apply_slot = slot;
             self.emit(Event::ApplyAttack(&ev));
         }
         // Columbina's constellations elevate direct lunar DMG (her
@@ -3623,9 +3634,9 @@ impl Sim {
                 self.new_moondrift(ex + ox, ey + oy, DEFAULT_DIR);
             }
         } else if self.lcr_count >= 3 && self.core_status_key(MOONDRIFT_HARMONY_ICD) == 0 {
-            // Moondrift Harmony (OnMoondriftHarmony: no ported content
-            // subscribes)
+            // Moondrift Harmony
             self.lcr_count -= 3;
+            self.emit(Event::MoondriftHarmony(ev));
             self.add_core_status(MOONDRIFT_HARMONY_ICD, LCR_HITMARKS[2]);
             self.do_lcr_attack(ev.info.actor as usize);
             // the Moondrifts near the player last 9 s from now
@@ -5304,10 +5315,7 @@ impl Sim {
         self.player.dash_lockout = self.chars[to].dash_lockout;
         self.chars[to].remaining_dash_cd = 0;
         self.player.swap_cd = self.swap_icd;
-        for c in &mut self.chars {
-            c.normal_counter = 0;
-            c.normal_s_counter = 0;
-        }
+        self.reset_all_normal_counters();
         self.emit(Event::Swap { prev, next: to });
         // the shield stats collector, last to subscribe
         if !self.shield_bonus_mods.is_empty() {
@@ -5680,14 +5688,21 @@ impl Sim {
         self.set_action_used(info);
         self.player.last = LastAction { char: ci as u8, action: a };
         if a != Action::Attack {
-            for c in &mut self.chars {
-                c.normal_counter = 0;
-                c.normal_s_counter = 0;
-            }
+            self.reset_all_normal_counters();
         }
         // OnActionExec, after the action (Lauma's Spirit Envoy ends on it)
         if !self.subs[EventKind::ActionExec as usize].is_empty() {
             self.emit(Event::ActionExec(a));
+        }
+    }
+
+    /// gcsim's ResetAllNormalCounter: each character's ResetNormalCounter.
+    fn reset_all_normal_counters(&mut self) {
+        for i in 0..self.chars.len() {
+            if !crate::chars::dispatch::keeps_normal_counter(self.chars[i].kind, self, i) {
+                self.chars[i].normal_counter = 0;
+                self.chars[i].normal_s_counter = 0;
+            }
         }
     }
 
