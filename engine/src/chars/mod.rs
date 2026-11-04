@@ -99,6 +99,7 @@ crate::chars! {
     Xinyan => xinyan,
     Qiqi => qiqi,
     Barbara => barbara,
+    Amber => amber,
 }
 
 /// The characters whose modules have been checked against gcsim for a
