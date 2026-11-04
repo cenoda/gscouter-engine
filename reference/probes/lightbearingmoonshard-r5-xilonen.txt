@@ -1,0 +1,3 @@
+# Xilonen with Lightbearing Moonshard R5 on a Lunar-Crystallize team.
+team navia-furina-columbina-xilonen
+xilonen add weapon="lightbearingmoonshard" refine=5 lvl=90/90;
