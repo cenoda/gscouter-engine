@@ -1,0 +1,4 @@
+# Sigewinne's dash taking droplets (hers and Neuvillette's), and the burst's ticks early cancel.
+team neuvillette-furina-zhongli-sigewinne
+rotation- sigewinne skill, attack, dash;
+rotation+ sigewinne skill, attack, dash[pickup_droplets=3];

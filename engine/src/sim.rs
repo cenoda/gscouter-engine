@@ -1364,6 +1364,8 @@ pub enum ShieldType {
     BeidouThunderShield,
     BeidouC1,
     LanyanShield,
+    DahliaBurst,
+    SigewinneC2,
     ColumbinaC1,
     KaeyaC4,
     YunjinSkill,
