@@ -130,6 +130,9 @@ crate::chars! {
     Zibai => zibai,
     Illuga => illuga,
     Varka => varka,
+    Heizou => heizou,
+    Sayu => sayu,
+    Yanfei => yanfei,
 }
 
 /// The characters whose modules have been checked against gcsim for a
