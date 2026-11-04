@@ -250,9 +250,7 @@ func approvalSummary(m *Manifest, approved []approvedTeam) string {
 	b.WriteString("\n")
 	pagesRun := slices.Contains(m.Kinds, "pages")
 	fmt.Fprintf(&b, "- Kinds judged: %s.", strings.Join(m.Kinds, ", "))
-	if !slices.Equal(m.Kinds, kinds) {
-		b.WriteString(" **A partial release**: a team is verified on these kinds alone; the others are verified after it, and a team that fails one goes back to gcsim and back to the owner (the owner, 2026-11-04).")
-	}
+	b.WriteString(" Verification is the library build and the probes within 1% of gcsim (the owner, 2026-11-04); a verified, approved team runs on the engine for any build a player enters whose content the engine has.")
 	b.WriteString("\n")
 	if pagesRun {
 		fmt.Fprintf(&b, "- Group A: both the library build's and the one-pass page config's team DPS within ±%.2f%% of gcsim, no build with a settled verdict, every judged character within ±%.0f%%. Every verified team passed compare at 1%%; the groups only decide how closely each is read.\n", 100*groupALimit, 100*judgedLimit)
