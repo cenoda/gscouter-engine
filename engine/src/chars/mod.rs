@@ -4,12 +4,15 @@
 pub mod plunge;
 pub mod traveler_common;
 pub mod traveler_pyro;
+pub mod traveler_hydro;
 pub mod traveler_electro;
 pub mod watch;
 
 crate::chars! {
     LuminePyro => luminepyro,
     AetherPyro => aetherpyro,
+    LumineHydro => luminehydro,
+    AetherHydro => aetherhydro,
     LumineElectro => lumineelectro,
     AetherElectro => aetherelectro,
     Hutao => hutao,
@@ -117,6 +120,11 @@ impl CharKind {
     /// One of gcsim's Travelers, whose NewTraveler reads the story quest
     /// params (`traveler_common::PARAMS`).
     pub fn traveler(self) -> bool {
-        matches!(self, CharKind::LuminePyro | CharKind::AetherPyro | CharKind::LumineElectro | CharKind::AetherElectro)
+        matches!(self, CharKind::LuminePyro | CharKind::AetherPyro | CharKind::LumineHydro | CharKind::AetherHydro | CharKind::LumineElectro | CharKind::AetherElectro)
+    }
+
+    /// The hydro Traveler, whose Sourcewater Droplets are gadgets.
+    pub fn traveler_hydro(self) -> bool {
+        matches!(self, CharKind::LumineHydro | CharKind::AetherHydro)
     }
 }
