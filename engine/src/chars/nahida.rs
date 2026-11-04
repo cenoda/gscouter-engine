@@ -28,6 +28,11 @@ pub struct State {
     a4_cr: f64,
     /// C6's Karmic Oblivion used since the burst.
     c6_count: i32,
+    /// The Shrine of Maya's area, taken at the cast: its ticks apply only
+    /// while the player stands in it.
+    burst_area: Option<Pattern>,
+    /// The area of a cast whose burst has not started yet.
+    next_burst_area: Option<Pattern>,
 }
 
 const MARK: ModKey = ModKey::new(g::SKILL_MARK_KEY);
@@ -107,7 +112,7 @@ impl Character for Char {
         let lvl = s.talent(ci, 0);
         let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Dendro, 25.0, g::ATTACK[n][lvl]);
         ai.abil = NORMAL_NAMES[n];
-        // a box from the player on the target
+        // a box on the target
         ai.pattern = s.box_on_target(0.0, g::ATTACK_OFFSETS[n], g::ATTACK_HITBOXES[n][0], g::ATTACK_HITBOXES[n][1]);
         let h = g::ATTACK_HITMARKS[n];
         s.queue_attack(ai, c6_cb(s, ci), h, h);
@@ -162,6 +167,7 @@ impl Character for Char {
     }
 
     fn burst(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
+        s.st_mut::<State>(ci).next_burst_area = Some(s.circle_on_player(0.0, 1.0, 20.0));
         s.add_task(Task::Char { c: ci as u8, id: TASK_BURST_START, arg: 0 }, 66);
         s.consume_energy(ci, 5);
         s.set_cd(ci, Action::Burst, 810);
@@ -182,6 +188,7 @@ impl Character for Char {
                 }
                 let frames = (dur * 60.0) as i32;
                 s.st_mut::<State>(ci).burst_src = f;
+                s.st_mut::<State>(ci).burst_area = s.st::<State>(ci).next_burst_area;
                 s.add_core_status(BURST, frames);
                 // A1 is taken as the burst starts
                 if s.chars[ci].ascension >= 1 {
@@ -203,6 +210,10 @@ impl Character for Char {
             TASK_BURST_TICK => {
                 // the player stands in the Shrine of Maya
                 if arg != s.st::<State>(ci).burst_src {
+                    return;
+                }
+                // the area taken at this burst's cast
+                if !s.st::<State>(ci).burst_area.is_some_and(|a| s.player_within(a)) {
                     return;
                 }
                 s.add_status(ci, WITHIN_BURST, 60, true);
@@ -314,7 +325,6 @@ fn tri_karma(s: &mut Sim, ci: usize) {
     let lvl = s.talent(ci, 1);
     let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NAHIDA_SKILL, icd::GROUP_NAHIDA_SKILL, Element::Dendro, 25.0, g::TRI_KARMA_ATK[lvl]);
     ai.abil = g::TRI_KARMA_ABIL;
-    // gcsim's NewSingleTargetHit on the marked enemy
     ai.pattern = Pattern::Single;
     let mut ev = s.snapshot_event(ai, CB_PARTICLE);
     ev.info.flat_dmg = ev.stats[st::EM] * g::TRI_KARMA_EM[lvl];

@@ -1,56 +1,11 @@
-//! What gcsim's travelers share (internal/characters/traveler/common): the
-//! story-quest buffs every element adds in its NewTraveler, and the sword
-//! normal and charged attacks each element's package repeats with the same
-//! tables. Aether is gcsim's gender 0, Lumine 1; an element's module is
+//! The sword normal and charged attacks that the anemo, geo and dendro
+//! travelers' packages repeat with the same tables (the story-quest buffs
+//! are `traveler_common`'s). Aether is gcsim's gender 0, Lumine 1; an element's module is
 //! generic over it (`G`), and the two keys are its two instances
 //! (`aethergeo.rs`, `luminegeo.rs` and the others).
 
 use crate::sim::*;
 use crate::types::*;
-
-/// gcsim's "traveler-story-quest-buffs" stat mod.
-pub const STORY: ModKey = ModKey::new("traveler-story-quest-buffs");
-
-/// The params TravelerStoryBuffs reads.
-pub const PARAMS: [&str; 3] = ["base_atk_buff", "skirk_story_buff", crate::gcsimdata::chars::traveler_common::TRUE_MOON_PARAM];
-
-/// gcsim's TravelerStoryBuffs: each buff is on unless its param is set to
-/// something other than 1.
-pub fn story_stats(cs: &CharSetup) -> Stats {
-    let on = |k: &str| cs.params.iter().find(|p| p.0 == k).is_none_or(|p| p.1 == 1);
-    let mut m = [0.0; N_STATS];
-    if on(PARAMS[0]) {
-        m[st::BASEATK] += 3.0;
-    }
-    if on(PARAMS[1]) {
-        m[st::BASEATK] += 7.0;
-        m[st::EM] += 15.0;
-        m[st::BASEHP] += 50.0;
-    }
-    if on(PARAMS[2]) {
-        m[st::CR] += 0.1;
-        m[st::DEFP] += 0.2;
-        m[st::ER] += 0.2;
-        m[st::EM] += 60.0;
-        m[st::HPP] += 0.2;
-        m[st::ATKP] += 0.2;
-        m[st::CD] += 0.2;
-    }
-    m
-}
-
-/// Adds the story-quest buffs' stat mod (amount from the owner's
-/// mod_amount, `story_amount`).
-pub fn add_story(s: &mut Sim, ci: usize) {
-    s.add_mod(ci, Mod::owned(STORY, ModKind::Stat, crate::content::Owner::Char(ci as u8), st::NONE, false, false, -1), -1);
-}
-
-/// The story-quest buffs' amount.
-pub fn story_amount(m: &Stats, out: &mut Stats) {
-    for i in 0..N_STATS {
-        out[i] += m[i];
-    }
-}
 
 /// The normal and charged attack tables, the same in every element's
 /// package.

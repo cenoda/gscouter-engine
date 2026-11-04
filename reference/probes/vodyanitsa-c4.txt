@@ -1,0 +1,3 @@
+# Vodyanitsa C4: heals on a character at 40% HP or more stack her Max HP, heals below it are 50% stronger.
+team neuvillette-furina-escoffier-vodyanitsa
+vodyanitsa char lvl=90/90 cons=4 talent=9,9,9;

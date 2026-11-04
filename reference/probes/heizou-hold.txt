@@ -1,0 +1,6 @@
+# Shikanoin Heizou's held skill, charging the Declension stacks he lacks.
+team shikanoinheizou-nahida-fischl-xingqiu
+rotation- case .heizou.normal > 1 && .heizou.skill.ready && .heizou.declension == 4:
+rotation-   heizou skill;
+rotation+ case .heizou.normal > 1 && .heizou.skill.ready && .heizou.declension >= 1:
+rotation+   heizou skill[hold=1];

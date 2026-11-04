@@ -1,0 +1,3 @@
+# Sayu C2: the kick's DMG bonus from the hold.
+team sayu-fischl-nahida-furina
+sayu char lvl=90/90 cons=2 talent=9,9,9;

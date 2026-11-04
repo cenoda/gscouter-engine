@@ -1,0 +1,3 @@
+# Linnea at C1 (Field Catalog).
+team linnea-navia-columbina-furina
+linnea char lvl=90/90 cons=1 talent=9,9,9;

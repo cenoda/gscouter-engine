@@ -32,8 +32,6 @@ const CB_C2: u16 = 1 << 0;
 const CB_C1: u16 = 1 << 1;
 const CB_PARTICLE: u16 = 1 << 2;
 
-// arg: the normal's index * 8 + the hit's
-const TASK_NORMAL: u8 = 0;
 // arg: the a4 delay, -1 for none
 const TASK_GUOBA: u8 = 1;
 const TASK_GUOBA_AURA_END: u8 = 2;
@@ -84,8 +82,19 @@ impl Character for Char {
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
         let n = s.chars[ci].normal_counter as usize;
         let hitmarks = g::ATTACK_HITMARKS[n];
+        let lvl = s.talent(ci, 0);
+        let cb = if s.chars[ci].cons >= 2 && n == 4 { CB_C2 } else { 0 };
         for (i, &h) in hitmarks.iter().enumerate() {
-            s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_NORMAL, arg: (n * 8 + i) as i32 }, h);
+            let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, g::ATTACK[n][i][lvl]);
+            ai.abil = NORMAL_NAMES[n];
+            ai.hitlag_factor = 0.01;
+            ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
+            ai.def_halt = true;
+            // NewBoxHitOnTarget(Player, nil, w, h), built at the action
+            // and queued in the char task at its hitmark
+            let hb = g::ATTACK_HITBOXES[n][i];
+            ai.pattern = s.box_on_player(0.0, 0.0, hb[0], hb[1]);
+            s.queue_attack_at(ci, ai, cb, h);
         }
         let atkspd = s.stat(ci, st::ATKSPD);
         let table = &g::ATTACK_FRAMES[n];
@@ -126,19 +135,6 @@ impl Character for Char {
 
     fn task(s: &mut Sim, ci: usize, id: u8, arg: i32) {
         match id {
-            TASK_NORMAL => {
-                let (n, i) = ((arg / 8) as usize, (arg % 8) as usize);
-                let lvl = s.talent(ci, 0);
-                let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_NORMAL_ATTACK, icd::GROUP_DEFAULT, Element::Physical, 25.0, g::ATTACK[n][i][lvl]);
-                ai.abil = NORMAL_NAMES[n];
-                ai.hitlag_factor = 0.01;
-                ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
-                ai.def_halt = true;
-                let hb = g::ATTACK_HITBOXES[n][i];
-                ai.pattern = s.box_on_player(0.0, 0.0, hb[0], hb[1]);
-                let cb = if s.chars[ci].cons >= 2 && n == 4 { CB_C2 } else { 0 };
-                s.queue_attack(ai, cb, 0, 0);
-            }
             TASK_GUOBA => {
                 let lvl = s.talent(ci, 1);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalArt, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::GUOBA_TICK[lvl]);
@@ -146,7 +142,8 @@ impl Character for Char {
                 // a fan of 60 degrees from Guoba, 1.3 in front of the player,
                 // toward the enemy; A1 makes it 20% longer
                 let range = if s.chars[ci].ascension >= 1 { 5.0 * 1.2 } else { 5.0 };
-                ai.pattern = s.fan_on_player(0.0, 1.3, range, 60.0);
+                // (a placeholder: the pattern is built at each breath)
+                ai.pattern = Pattern::Fan { x: 0.0, y: 0.0, r: range, fan: 60.0, dx: DEFAULT_DIR.0, dy: DEFAULT_DIR.1 };
                 let ev = s.snapshot_event(ai, 0);
                 s.st_mut::<State>(ci).guoba = ev;
                 s.add_status(ci, GUOBA_STATUS, GUOBA_DURATION, false);
@@ -186,7 +183,8 @@ impl Character for Char {
                 let lvl = s.talent(ci, 2);
                 let mut ai = AttackInfo::new(ci, AttackTag::ElementalBurst, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::PYRONADO_SPIN[lvl]);
                 ai.abil = "Pyronado";
-                ai.pattern = s.circle_on_player(0.0, 0.0, 2.5);
+                // built at each tick
+                ai.pattern = Pattern::Circle { x: 0.0, y: 0.0, r: 2.5 };
                 let ev = s.snapshot_event(ai, 0);
                 s.st_mut::<State>(ci).spin = ev;
                 for delay in (0..=max).step_by(73) {
@@ -200,7 +198,9 @@ impl Character for Char {
                 }
             }
             TASK_SPIN => {
-                let ev = s.st::<State>(ci).spin;
+                // NewCircleHitOnTarget(Player, nil, 2.5) in each tick's task
+                let mut ev = s.st::<State>(ci).spin;
+                ev.info.pattern = s.circle_on_player(0.0, 0.0, 2.5);
                 s.queue_attack_with_snap(ev, 0, 0);
             }
             _ => unreachable!(),
@@ -215,7 +215,15 @@ impl Character for Char {
         }
         s.set_gadget_aura(ci, GADGET_GUOBA, AURA_PYRO, g::INFUSE_DURABILITY as f64);
         s.add_task(Task::Char { c: ci as u8, id: TASK_GUOBA_AURA_END, arg: 0 }, g::INFUSE_WINDOW + 1);
-        let ev = s.st::<State>(ci).guoba;
+        // SetDirectionToClosestEnemy, then NewCircleHitOnTargetFanAngle(
+        // Guoba, nil, range, 60): a fan from Guoba toward the enemy
+        let k = s.gadget_index(ci, GADGET_GUOBA).expect("Guoba ticks while it is there");
+        let (x, y) = (s.gadgets[k].x, s.gadgets[k].y);
+        let (dx, dy) = calc_direction((x, y), s.enemy_pos);
+        let mut ev = s.st::<State>(ci).guoba;
+        if let Pattern::Fan { r, fan, .. } = ev.info.pattern {
+            ev.info.pattern = Pattern::Fan { x, y, r, fan, dx, dy };
+        }
         s.queue_attack_with_snap(ev, CB_C1 | CB_PARTICLE, 10);
     }
 

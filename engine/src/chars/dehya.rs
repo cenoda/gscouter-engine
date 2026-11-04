@@ -235,7 +235,7 @@ fn self_dot(s: &mut Sim, ci: usize) {
     ai.abil = g::SKILL_SELF_DO_T_ABIL;
     ai.flat_dmg = dmg;
     let _ = s.snapshot_event(ai, 0);
-    s.player_hit_event(ci, Element::Physical);
+    s.player_hit_event(ci, Element::Physical, AttackTag::None);
     let left = s.shields_on_damage(ci, active, dmg, Element::Physical);
     if left > 0.0 {
         s.drain_info(ci, left, true, g::SKILL_SELF_DO_T_ABIL);

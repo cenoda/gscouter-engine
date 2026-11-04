@@ -32,6 +32,8 @@ pub struct State {
     adeptal_stacks: i32,
     /// gcsim's tag of xianyun-c6: the leaps C6 has left.
     c6_tag: i32,
+    /// Driftcloud Wave's area, taken around the player at the action.
+    driftcloud_pat: Pattern,
 }
 
 const SKILL_STATE: ModKey = ModKey::new(g::SKILL_STATE_KEY);
@@ -80,6 +82,7 @@ impl Character for Char {
             a4_ratio: 0.0,
             adeptal_stacks: 0,
             c6_tag: 0,
+            driftcloud_pat: Pattern::Unknown,
         }
     }
 
@@ -266,7 +269,7 @@ impl Character for Char {
                 let counter = s.st::<State>(ci).skill_counter;
                 let mut ai = AttackInfo::new(ci, AttackTag::Plunge, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Anemo, 25.0, g::LEAP[ind][lvl]);
                 ai.abil = DRIFTCLOUD_NAMES[counter.clamp(0, 3) as usize];
-                ai.pattern = s.circle_on_player(0.0, 0.0, g::PLUNGE_RADIUS[ind]);
+                ai.pattern = s.st::<State>(ci).driftcloud_pat;
                 let mut ev = s.snapshot_event(ai, 0);
                 // C6: CRIT DMG by the leaps
                 if s.chars[ci].cons >= 6 {
@@ -374,6 +377,9 @@ pub fn tag(s: &Sim, ci: usize, key: &str) -> i64 {
 /// Driftcloud Wave, the plunge after a leap.
 fn driftcloud_wave(s: &mut Sim, ci: usize) -> ActInfo {
     let ind = (s.st::<State>(ci).skill_counter - 1) as usize;
+    // gcsim takes the area as she plunges, and hits from it at the hitmark
+    let area = s.circle_on_player(0.0, 0.0, g::PLUNGE_RADIUS[ind]);
+    s.st_mut::<State>(ci).driftcloud_pat = area;
     s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_DRIFTCLOUD, arg: ind as i32 }, g::PLUNGE_HITMARKS[ind]);
     let t = &g::DRIFTCLOUD_FRAMES[ind];
     ActInfo::new(Frames::Table(t), t[0], t[Action::Charge as usize], AnimState::Plunge)

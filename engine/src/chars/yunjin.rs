@@ -12,12 +12,14 @@ use crate::types::*;
 
 pub struct Char;
 
-#[derive(Default)]
 pub struct State {
     /// The burst's stacks left, by character (gcsim's tag on each).
     stacks: [i32; 4],
     /// A4: the party's distinct elements.
     elements: i32,
+    /// The running normal's hit area, taken at the action (gcsim builds it
+    /// before queuing the hits as her tasks).
+    normal_pat: Pattern,
 }
 
 const BURST_BUFF: ModKey = ModKey::new(g::BURST_BUFF_KEY);
@@ -42,7 +44,7 @@ impl Character for Char {
     type State = State;
 
     fn new_state(_: &CharSetup) -> State {
-        State::default()
+        State { stacks: [0; 4], elements: 0, normal_pat: Pattern::Unknown }
     }
 
     fn init(s: &mut Sim, ci: usize) {
@@ -83,6 +85,9 @@ impl Character for Char {
     fn attack(s: &mut Sim, ci: usize, _: &Params) -> ActInfo {
         let n = s.chars[ci].normal_counter as usize;
         let hits = g::ATTACK_HITMARKS[n];
+        let (off, hb) = (g::ATTACK_OFFSETS[n], g::ATTACK_HITBOXES[n]);
+        let p = if n == 3 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.fan_on_player(0.0, off, hb[0], g::ATTACK_FAN_ANGLES[n]) };
+        s.st_mut::<State>(ci).normal_pat = p;
         for (i, &h) in hits.iter().enumerate() {
             s.queue_char_task(ci, Task::Char { c: ci as u8, id: TASK_NORMAL, arg: (n * 2 + i) as i32 }, h);
         }
@@ -177,8 +182,7 @@ impl Character for Char {
                 ai.hitlag_factor = 0.01;
                 ai.hitlag_halt = g::ATTACK_HITLAG_HALT_FRAME[n][i] * 60.0;
                 ai.def_halt = g::ATTACK_DEF_HALT[n][i];
-                let (off, hb) = (g::ATTACK_OFFSETS[n], g::ATTACK_HITBOXES[n]);
-                ai.pattern = if n == 3 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.fan_on_player(0.0, off, hb[0], g::ATTACK_FAN_ANGLES[n]) };
+                ai.pattern = s.st::<State>(ci).normal_pat;
                 s.queue_attack(ai, 0, 0, 0);
             }
             TASK_BURST => {

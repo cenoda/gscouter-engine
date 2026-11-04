@@ -1,0 +1,3 @@
+# Prune at C3 (C1, C2; no C4 or C6).
+team raidenshogun-yaemiko-mona-prune
+prune char lvl=90/90 cons=3 talent=9,9,9;

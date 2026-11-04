@@ -19,7 +19,7 @@ pub struct Traveler<const G: usize>;
 pub struct State<const G: usize>(Inner);
 
 pub struct Inner {
-    story: Stats,
+    story: crate::chars::traveler_common::Story,
     /// What the skill and the burst absorbed (None before they do), with
     /// the skill's ICD tag for it.
     e_absorb: Option<Element>,
@@ -89,11 +89,11 @@ impl<const G: usize> Character for Traveler<G> {
     type State = State<G>;
 
     fn new_state(cs: &CharSetup) -> State<G> {
-        State(Inner { story: traveler::story_stats(cs), e_absorb: None, e_icd: icd::TAG_NONE, e_area: None, q_absorb: None, q_area: None, q_abs_snap: None, e_abs: [None; 3] })
+        State(Inner { story: crate::chars::traveler_common::Story::new(cs), e_absorb: None, e_icd: icd::TAG_NONE, e_area: None, q_absorb: None, q_area: None, q_abs_snap: None, e_abs: [None; 3] })
     }
 
     fn init(s: &mut Sim, ci: usize) {
-        traveler::add_story(s, ci);
+        crate::chars::traveler_common::story_buffs(s, ci);
         if s.chars[ci].ascension >= 4 {
             s.subscribe(EventKind::TargetDied, Owner::Char(ci as u8));
         }
@@ -227,8 +227,7 @@ impl<const G: usize> Character for Traveler<G> {
     }
 
     fn mod_amount(s: &Sim, ci: usize, _: usize, m: &Mod, out: &mut Stats) -> bool {
-        if m.key == traveler::STORY {
-            traveler::story_amount(&st(s, ci).story, out);
+        if crate::chars::traveler_common::story_amount(&st(s, ci).story, m, out) {
             return true;
         }
         false

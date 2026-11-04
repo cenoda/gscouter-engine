@@ -1,0 +1,3 @@
+# Qiqi at C6 in Radiance: Stellar-Conduct (Sandrone's Polestar Fields): C1, C2, C4 and C6's Radiance parts.
+team sandrone-yaemiko-qiqi-nicole
+qiqi char lvl=90/90 cons=6 talent=9,9,9;

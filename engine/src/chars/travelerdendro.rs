@@ -27,7 +27,7 @@ pub struct Traveler<const G: usize>;
 pub struct State<const G: usize>(Inner);
 
 pub struct Inner {
-    story: Stats,
+    story: crate::chars::traveler_common::Story,
     /// gcsim's burstPos, burstRadius, burstOverflowingLotuslight,
     /// burstTransfig and skillC1.
     burst_pos: (f64, f64),
@@ -95,11 +95,11 @@ impl<const G: usize> Character for Traveler<G> {
 
     fn new_state(cs: &CharSetup) -> State<G> {
         let lamp_atk = AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Dendro, 0.0, 0.0), 0);
-        State(Inner { story: traveler::story_stats(cs), burst_pos: (0.0, 0.0), burst_radius: 8.0, stacks: 0, transfig: None, skill_c1: false, hitbox_radius: 2.0, lamp_atk, lamp_end: 0, think_from: -1, icd: Vec::new() })
+        State(Inner { story: crate::chars::traveler_common::Story::new(cs), burst_pos: (0.0, 0.0), burst_radius: 8.0, stacks: 0, transfig: None, skill_c1: false, hitbox_radius: 2.0, lamp_atk, lamp_end: 0, think_from: -1, icd: Vec::new() })
     }
 
     fn init(s: &mut Sim, ci: usize) {
-        traveler::add_story(s, ci);
+        crate::chars::traveler_common::story_buffs(s, ci);
         let o = Owner::Char(ci as u8);
         // A1 and C6 lose their buffs on the character swapped out
         if s.chars[ci].ascension >= 1 || s.chars[ci].cons >= 6 {
@@ -284,8 +284,7 @@ impl<const G: usize> Character for Traveler<G> {
 
     fn mod_amount(s: &Sim, ci: usize, _: usize, m: &Mod, out: &mut Stats) -> bool {
         let t = st(s, ci);
-        if m.key == traveler::STORY {
-            traveler::story_amount(&t.story, out);
+        if crate::chars::traveler_common::story_amount(&t.story, m, out) {
             return true;
         }
         if m.key != C6 {

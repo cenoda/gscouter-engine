@@ -1,0 +1,3 @@
+# Odette C6: her Marvelous Splendor no longer decreases, and Stellar Glimmer DMG is elevated.
+team vesna-odette-diona-faruzan
+odette char lvl=90/90 cons=6 talent=9,9,9;

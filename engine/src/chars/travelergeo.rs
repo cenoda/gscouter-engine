@@ -19,7 +19,7 @@ pub struct Traveler<const G: usize>;
 pub struct State<const G: usize>(Inner);
 
 pub struct Inner {
-    story: Stats,
+    story: crate::chars::traveler_common::Story,
     skill_cd: i32,
     /// The circle of radius 7 around the player as the last burst was
     /// used (gcsim's burstArea), which C1 reads.
@@ -81,11 +81,11 @@ impl<const G: usize> Character for Traveler<G> {
     type State = State<G>;
 
     fn new_state(cs: &CharSetup) -> State<G> {
-        State(Inner { story: traveler::story_stats(cs), skill_cd: 8 * 60, burst_area: None, c1_tick_count: 15, c4_tag: 0, c4_count: 0, c4_src: 0, particle_done: false, stone_at: (0.0, 0.0, 0.0, 1.0), wall: 0, stones: Vec::new() })
+        State(Inner { story: crate::chars::traveler_common::Story::new(cs), skill_cd: 8 * 60, burst_area: None, c1_tick_count: 15, c4_tag: 0, c4_count: 0, c4_src: 0, particle_done: false, stone_at: (0.0, 0.0, 0.0, 1.0), wall: 0, stones: Vec::new() })
     }
 
     fn init(s: &mut Sim, ci: usize) {
-        traveler::add_story(s, ci);
+        crate::chars::traveler_common::story_buffs(s, ci);
         // A1: the skill's cooldown 2 s shorter
         if s.chars[ci].ascension >= 1 {
             st_mut(s, ci).skill_cd -= 2 * 60;
@@ -265,8 +265,7 @@ impl<const G: usize> Character for Traveler<G> {
     }
 
     fn mod_amount(s: &Sim, ci: usize, _: usize, m: &Mod, out: &mut Stats) -> bool {
-        if m.key == traveler::STORY {
-            traveler::story_amount(&st(s, ci).story, out);
+        if crate::chars::traveler_common::story_amount(&st(s, ci).story, m, out) {
             return true;
         }
         false

@@ -1,0 +1,3 @@
+# Linnea at C2 (Million Ton Crush's CRIT DMG, the hammers' Lunar-Crystallize hits).
+team linnea-navia-columbina-furina
+linnea char lvl=90/90 cons=2 talent=9,9,9;
