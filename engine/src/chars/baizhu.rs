@@ -107,8 +107,11 @@ impl Character for Char {
         let lvl = s.talent(ci, 0);
         let mut ai = AttackInfo::new(ci, AttackTag::Extra, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::Dendro, 25.0, g::CHARGE[lvl]);
         ai.abil = "Charge Attack";
-        // a circle on the player offset by the enemy's position: on the enemy
-        ai.pattern = s.circle_on_target(2.3);
+        // NewCircleHitOnTarget(Player, PrimaryTarget, 2.3): a circle on the
+        // player offset by the enemy's position, turned to her facing (on
+        // the enemy only with the player at the origin)
+        let (ex, ey) = s.enemy_pos;
+        ai.pattern = s.circle_on_player(ex, ey, 2.3);
         let windup = if s.current_state() == AnimState::Normal { 14 } else { 0 };
         let h = g::CHARGE_HITMARK - windup;
         s.queue_attack(ai, 0, h, h);

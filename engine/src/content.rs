@@ -64,8 +64,10 @@ pub enum EventKind {
     DendroCore,
     TargetDied,
     ActionExec,
+    Movement,
+    MoondriftHarmony,
 }
-pub const N_EVENTS: usize = 27;
+pub const N_EVENTS: usize = 29;
 
 #[derive(Clone, Copy)]
 pub enum Event<'a> {
@@ -101,8 +103,9 @@ pub enum Event<'a> {
     /// the hit through `Sim::hit_flat`, and changes its crit through
     /// `Sim::hit_crit`.
     EnemyHit(&'a AttackEvent),
-    /// OnPlayerHit: the active character was hit, by an attack of `ele`.
-    PlayerHit { on: usize, ele: Element },
+    /// OnPlayerHit: the active character was hit, by an attack of `ele`
+    /// with attack tag `tag`.
+    PlayerHit { on: usize, ele: Element, tag: AttackTag },
     /// OnShielded: a shield was added (or replaced one of its type).
     Shielded(&'a crate::sim::Shield),
     /// OnShieldBreak: a shield broke or expired.
@@ -136,6 +139,12 @@ pub enum Event<'a> {
     /// OnActionExec: the active character executed this action (after
     /// it ran).
     ActionExec(Action),
+    /// OnMovement: the distance the rotation reports with `movement`.
+    Movement(f64),
+    /// OnMoondriftHarmony: three Moondrifts near the player made a
+    /// Lunar-Crystallize reaction Moondrift Harmony, before its hits; with
+    /// the attack that triggered it.
+    MoondriftHarmony(&'a AttackEvent),
 }
 
 impl Event<'_> {
@@ -168,6 +177,8 @@ impl Event<'_> {
             Event::DendroCore { .. } => EventKind::DendroCore,
             Event::TargetDied(_) => EventKind::TargetDied,
             Event::ActionExec(_) => EventKind::ActionExec,
+            Event::Movement(_) => EventKind::Movement,
+            Event::MoondriftHarmony(_) => EventKind::MoondriftHarmony,
         }
     }
 }
@@ -273,6 +284,9 @@ pub trait Character {
     /// attack as it was before the enemy took it. `lands` is whether its
     /// pattern reaches the gadget, None when the attack has no pattern.
     fn gadget_hit(_s: &mut Sim, _ci: usize, _id: u8, _ev: &AttackEvent, _lands: Option<bool>) {}
+    /// A gadget of its that collides with the player overlaps it, at the
+    /// start of the frame (`Sim::set_gadget_collides_player`).
+    fn gadget_collide(_s: &mut Sim, _ci: usize, _id: u8) {}
     /// Its dash's ActInfo, after the template's Dash ran (a character with
     /// its own dash frames).
     fn dash_info(_s: &mut Sim, _ci: usize, info: ActInfo) -> ActInfo {
@@ -345,6 +359,20 @@ pub trait Character {
     /// (Clorinde's Night Watch turns it into Bond of Life), None for the
     /// template's.
     fn receive_heal(_s: &mut Sim, _ci: usize, _caller: usize, _amount: f64) -> Option<f64> {
+        None
+    }
+    /// Its ResetNormalCounter, when it keeps its normal attack sequence
+    /// (Zibai's C4 in Lunar Phase Shift): true to keep it.
+    fn keeps_normal_counter(_s: &Sim, _ci: usize) -> bool {
+        false
+    }
+    /// Its override of ReduceActionCooldown and ResetActionCooldown for
+    /// the skill, run before the template's: Some(v) reduces by v, None
+    /// resets (Varka's Four Winds' Ascension cooldown follows them).
+    fn skill_cd_changed(_s: &mut Sim, _ci: usize, _reduce: Option<i32>) {}
+    /// Its override of Cooldown and Charges, for conditions: Some((the
+    /// cooldown left, the charges)) when it is not the template's.
+    fn cd_view(_s: &Sim, _ci: usize, _a: Action) -> Option<(i32, i32)> {
         None
     }
 }
@@ -516,6 +544,7 @@ macro_rules! chars {
             pub fn construct_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::construct_expired(s, ci, key)),* } }
             pub fn gadget_tick(k: CharKind, s: &mut Sim, ci: usize, id: u8, timer: i32) { match k { $(CharKind::$kind => $m::Char::gadget_tick(s, ci, id, timer)),* } }
             pub fn gadget_hit(k: CharKind, s: &mut Sim, ci: usize, id: u8, ev: &AttackEvent, lands: Option<bool>) { match k { $(CharKind::$kind => $m::Char::gadget_hit(s, ci, id, ev, lands)),* } }
+            pub fn gadget_collide(k: CharKind, s: &mut Sim, ci: usize, id: u8) { match k { $(CharKind::$kind => $m::Char::gadget_collide(s, ci, id)),* } }
             pub fn shield_damaged(k: CharKind, s: &mut Sim, ci: usize, key: ModKey, dmg: f64, broken: bool) { match k { $(CharKind::$kind => $m::Char::shield_damaged(s, ci, key, dmg, broken)),* } }
             pub fn dash_info(k: CharKind, s: &mut Sim, ci: usize, info: ActInfo) -> ActInfo { match k { $(CharKind::$kind => $m::Char::dash_info(s, ci, info)),* } }
             pub fn shield_expired(k: CharKind, s: &mut Sim, ci: usize, key: ModKey) { match k { $(CharKind::$kind => $m::Char::shield_expired(s, ci, key)),* } }
@@ -532,6 +561,9 @@ macro_rules! chars {
             pub fn frames_live(k: CharKind, s: &Sim, ci: usize, id: u8, arg: i16, next: Action) -> i32 { match k { $(CharKind::$kind => $m::Char::frames_live(s, ci, id, arg, next)),* } }
             pub fn receives_heal(k: CharKind, s: &Sim, ci: usize, caller: usize) -> bool { match k { $(CharKind::$kind => $m::Char::receives_heal(s, ci, caller)),* } }
             pub fn receive_heal(k: CharKind, s: &mut Sim, ci: usize, caller: usize, amount: f64) -> Option<f64> { match k { $(CharKind::$kind => $m::Char::receive_heal(s, ci, caller, amount)),* } }
+            pub fn keeps_normal_counter(k: CharKind, s: &Sim, ci: usize) -> bool { match k { $(CharKind::$kind => $m::Char::keeps_normal_counter(s, ci)),* } }
+            pub fn skill_cd_changed(k: CharKind, s: &mut Sim, ci: usize, reduce: Option<i32>) { match k { $(CharKind::$kind => $m::Char::skill_cd_changed(s, ci, reduce)),* } }
+            pub fn cd_view(k: CharKind, s: &Sim, ci: usize, a: Action) -> Option<(i32, i32)> { match k { $(CharKind::$kind => $m::Char::cd_view(s, ci, a)),* } }
         }
     };
 }

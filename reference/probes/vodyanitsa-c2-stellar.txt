@@ -1,0 +1,3 @@
+# Vodyanitsa C2 with Stellar Swirl: Two Voices on Stellar Swirl CRIT DMG while the AlterMark is on.
+team vesna-vodyanitsa-odette-sucrose
+vodyanitsa char lvl=90/90 cons=2 talent=9,9,9;

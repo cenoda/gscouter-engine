@@ -1,0 +1,3 @@
+# Sayu C4: energy from her swirls.
+team sayu-fischl-nahida-furina
+sayu char lvl=90/90 cons=4 talent=9,9,9;

@@ -518,6 +518,11 @@ pub mod add_tag {
     pub const WRIO_SSC_CA: u8 = 1 << 2;
     /// AttackTagKinichCannon: Kinich's Scalespiker Cannon (his C1).
     pub const KINICH_CANNON: u8 = 1 << 3;
+    /// Not a gcsim tag: an attack of Tartaglia's with StrikeTypeSlash,
+    /// which Slingshot's passive skips (the engine keeps no strike type).
+    pub const TARTAGLIA_SLASH: u8 = 1 << 4;
+    /// AttackTagVarkaSpecial: Varka's Four Winds' Ascension.
+    pub const VARKA_SPECIAL: u8 = 1 << 5;
 }
 
 impl AttackInfo {
@@ -646,6 +651,9 @@ pub enum Task {
     GadgetAttack { slot: u16 },
     /// A crystallize shard appears, of an element by a character.
     SpawnShard { actor: u8, ele: Element },
+    /// A shard of a crystallize on a gadget (Amber's Baron Bunny): its
+    /// position is drawn around the gadget's circle, (x, y, r).
+    SpawnShardAt { actor: u8, ele: Element, at: (f64, f64, f64) },
     /// The shield stats collector's ShieldBonus at the end of the frame
     /// a player is hit.
     ShieldTrack,
@@ -800,6 +808,9 @@ pub struct Char {
     /// Levels added to its skill talent by another member (gcsim's
     /// SkirkPassive tag).
     pub skill_talent_bonus: i32,
+    /// Levels added to its normal attack talent by another member (gcsim's
+    /// ChildePassive tag, which Tartaglia's Init sets on the party).
+    pub attack_talent_bonus: i32,
     /// AnimationStartDelay by gcsim's AnimationDelayKey.
     pub anim_delay: [i32; 3],
     pub weapon: WeaponKind,
@@ -1110,6 +1121,11 @@ impl Aura {
             }
         }
     }
+    /// gcsim's attachOrRefillNormalEle for an element other than pyro
+    /// (Amber's Baron Bunny takes cryo so).
+    pub fn attach_normal(&mut self, m: usize, dur: f64, src: usize) {
+        self.attach_overlap(m, 0.8 * dur, 6.0 * dur + 420.0, src);
+    }
     fn attach_overlap(&mut self, m: usize, amt: f64, length: f64, src: usize) {
         if self.get(m) > ZERO_DUR {
             let add = (amt - self.dur[m][src]).max(0.0);
@@ -1336,6 +1352,10 @@ pub struct Gadget {
     /// and EndGadgetTypEnemy: dendro cores, the Bogglecat Box), which
     /// abilities that pick gadgets as targets choose from.
     pub enemy_camp: bool,
+    /// gcsim's CollidableTypes[TargettablePlayer]: each frame, before
+    /// anything ticks, its owner's gadget_collide runs when it overlaps the
+    /// player (Combat.Tick's collision check).
+    pub collides_player: bool,
     /// gcsim's TargetKey: gadgets get increasing keys as they are added,
     /// so the list, which keeps the order they came in, is sorted by key.
     pub key: u32,
@@ -1364,12 +1384,17 @@ pub enum ShieldType {
     BeidouThunderShield,
     BeidouC1,
     LanyanShield,
+    DahliaBurst,
+    SigewinneC2,
     ColumbinaC1,
     KaeyaC4,
     YunjinSkill,
     NoelleSkill,
     NoelleA1,
     XinyanSkill,
+    TravelerHydroC4,
+    Bell,
+    YanfeiC4,
 }
 
 /// A shield (gcsim's shield.Tmpl): HP absorbing damage, stronger against
@@ -1488,6 +1513,9 @@ pub struct Sim {
     pub diona_a1: bool,
     /// Noelle's C2 -20% charged attack stamina, from her slot.
     pub noelle_c2: Option<u8>,
+    /// Barbara's A1 ("barb-a1-stam"): stamina -12% until this frame,
+    /// added at her skill, after the mods of every Init.
+    pub barbara_a1: i32,
     /// Electro resonance, with the frame of its last particle (0 before
     /// the first).
     pub electro_res: Option<i32>,
@@ -1534,10 +1562,20 @@ pub struct Sim {
     /// Columbina's elevation of direct lunar DMG, in thousandths (0 without
     /// her constellations).
     pub lunar_direct_elevation: u16,
+    /// The slot of the attack OnApplyAttack is emitted for.
+    pub apply_slot: u16,
     /// The Nightsoul Burst's ICD, by the team's Natlan characters.
     pub nightsoul_burst_icd: i32,
+    /// A member has gadgets that collide with the player (Mizuki's
+    /// snacks): each frame starts with their collision check.
+    pub collide_checks: bool,
     /// Flat damage EnemyHit subscribers add to the hit.
     pub hit_flat: f64,
+    /// CRIT Rate an EnemyHit subscriber set the hit's to (Mizuki's C6 on
+    /// swirls); the CRIT Rate added in `hit_crit` after it goes on top.
+    pub hit_cr_set: Option<f64>,
+    /// The name an EnemyHit subscriber gave the hit (Mizuki's C1).
+    pub hit_abil: Option<&'static str>,
     /// DEF ignored added to the hit by OnEnemyHit subscribers (gcsim's
     /// subscribers that raise atk.Info.IgnoreDefPercent, as Nicole's C6).
     pub hit_ignore_def: f64,
@@ -1557,9 +1595,6 @@ pub struct Sim {
     /// Elevation (thousandths) EnemyHit subscribers add to the hit
     /// (Lauma's C6 on direct Lunar-Bloom).
     pub hit_elevation: u16,
-    /// Elevation (thousandths) ApplyAttack subscribers add to the attack
-    /// (Flins's C6 on direct Lunar-Charged).
-    pub apply_elevation: u16,
     /// BaseDmgBonus SpecialReactionAttack subscribers add to a lunar
     /// contribution (Ineffa on Lunar-Charged).
     pub special_base_bonus: f64,
@@ -1687,6 +1722,7 @@ impl Sim {
             tick_subs: Vec::new(),
             diona_a1: false,
             noelle_c2: None,
+            barbara_a1: 0,
             electro_res: None,
             dendro_res: false,
             anemo_res: false,
@@ -1706,8 +1742,12 @@ impl Sim {
             statuses: Vec::new(),
             flags: Vec::new(),
             lunar_direct_elevation: 0,
+            apply_slot: 0,
             nightsoul_burst_icd: 0,
+            collide_checks: false,
             hit_flat: 0.0,
+            hit_cr_set: None,
+            hit_abil: None,
             hit_ignore_def: 0.0,
             hit_base_bonus: 0.0,
             hit_dmgp: 0.0,
@@ -1715,7 +1755,6 @@ impl Sim {
             stellar: Default::default(),
             hit_crit: None,
             hit_elevation: 0,
-            apply_elevation: 0,
             special_base_bonus: 0.0,
             emit_sub: 0,
             special_atk: AttackEvent::new(AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0), 0),
@@ -1796,6 +1835,7 @@ impl Sim {
             frozen: 0,
             time_passed: 0,
             skill_talent_bonus: 0,
+            attack_talent_bonus: 0,
             queue: Queue::new(),
             cd: [Cooldown { available: 1, ..Default::default() }; 3],
             skill_cd_twin: false,
@@ -1921,6 +1961,8 @@ impl Sim {
         let mut add = if con > 0 && c.cons >= con { 3 } else { 0 };
         if i == 1 {
             add += c.skill_talent_bonus;
+        } else if i == 0 {
+            add += c.attack_talent_bonus;
         }
         (c.talents[i] - 1 + add) as usize
     }
@@ -2373,8 +2415,8 @@ impl Sim {
     /// OnPlayerHit on character `on` (the active character when the player
     /// is hit; Dehya's Redmane's Blood names her), with gcsim's shield
     /// stats collector, which subscribes to it.
-    pub fn player_hit_event(&mut self, on: usize, ele: Element) {
-        self.emit(Event::PlayerHit { on, ele });
+    pub fn player_hit_event(&mut self, on: usize, ele: Element, tag: AttackTag) {
+        self.emit(Event::PlayerHit { on, ele, tag });
         // the shield stats collector looks at the shields at the end of
         // the frame (its ShieldBonus drops the mods that are done)
         if !self.shield_bonus_mods.is_empty() {
@@ -2517,6 +2559,12 @@ impl Sim {
         self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
     }
 
+    /// Lunar-Crystallize alone for the fight (gcsim's
+    /// LunarCrystallizeEnableKey; Linnea, Zibai).
+    pub fn enable_lunar_crystallize(&mut self) {
+        self.set_flag(LUNAR_CRYSTALLIZE, 1.0);
+    }
+
     /// gcsim's LcExtraHitOverride (Lunar-Crystallize's shares the key).
     pub fn set_lunar_extra_hit(&mut self, chance: Option<f64>) {
         match chance {
@@ -2619,7 +2667,8 @@ impl Sim {
                     self.hit_gadgets(&ev);
                 }
             }
-            Task::SpawnShard { actor, ele } => self.spawn_shard(actor as usize, ele),
+            Task::SpawnShard { actor, ele } => self.spawn_shard(actor as usize, ele, None),
+            Task::SpawnShardAt { actor, ele, at } => self.spawn_shard(actor as usize, ele, Some(at)),
             Task::DewExpiry { at } => self.player.dew_expiry = at,
             Task::ShieldTrack => {
                 self.shield_bonus();
@@ -2731,14 +2780,22 @@ impl Sim {
         // OnApplyAttack, before anything else
         if !self.subs[EventKind::ApplyAttack as usize].is_empty() {
             let ev = self.slots[slot as usize];
-            self.apply_elevation = 0;
+            // subscribers that change the attack change it in this slot
+            self.apply_slot = slot;
             self.emit(Event::ApplyAttack(&ev));
-            self.slots[slot as usize].elevation += self.apply_elevation;
         }
         // Columbina's constellations elevate direct lunar DMG (her
         // OnApplyAttack subscription)
         if self.lunar_direct_elevation != 0 && self.slots[slot as usize].info.tag.is_lunar_direct() {
             self.slots[slot as usize].elevation += self.lunar_direct_elevation;
+        }
+        // Odette's C6 elevates direct Stellar DMG (her OnApplyAttack
+        // subscription)
+        if let Some(o) = self.stellar.odette_c6 {
+            let info = self.slots[slot as usize].info;
+            if info.tag.is_stellar_direct() {
+                self.slots[slot as usize].elevation += crate::chars::odette::c6_elevation(self, o as usize, info.actor as usize);
+            }
         }
         // one enemy, hit while it lives when the attack's area reaches it
         // (AttackWillLand)
@@ -2872,8 +2929,10 @@ impl Sim {
                 // a subscriber can apply an attack inside the emit (an
                 // attack queued with no delay, as Escoffier's C6 with
                 // travel 0): keep the outer hit's accumulators
-                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation);
+                let outer = (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation, self.hit_cr_set, self.hit_abil);
                 self.hit_elevation = 0;
+                self.hit_cr_set = None;
+                self.hit_abil = None;
                 self.hit_flat = 0.0;
                 self.hit_ignore_def = 0.0;
                 self.hit_crit = None;
@@ -2886,14 +2945,20 @@ impl Sim {
                 ev.info.ignore_def += self.hit_ignore_def;
                 ev.elevation += self.hit_elevation;
                 base_bonus = self.hit_base_bonus;
+                if let Some(cr) = self.hit_cr_set {
+                    ev.stats[st::CR] = cr;
+                }
                 if let Some((cr, cd)) = self.hit_crit {
                     ev.stats[st::CR] += cr;
                     ev.stats[st::CD] = cd;
                 }
+                if let Some(abil) = self.hit_abil {
+                    ev.info.abil = abil;
+                }
                 if self.hit_mult != 1.0 {
                     ev.info.mult *= self.hit_mult;
                 }
-                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation) = outer;
+                (self.hit_flat, self.hit_crit, self.hit_base_bonus, self.hit_mult, self.hit_ignore_def, self.hit_dmgp, self.hit_elevation, self.hit_cr_set, self.hit_abil) = outer;
             }
             crate::chars::dispatch::own_hit(self.chars[actor].kind, self, actor, &mut ev);
         }
@@ -3234,6 +3299,7 @@ impl Sim {
             let mut ai = AttackInfo::new(ev.info.actor as usize, AttackTag::Shatter, icd::TAG_SHATTER, icd::GROUP_REACTION_A, Element::Physical, 0.0, 0.0);
             ai.abil = "shatter";
             ai.ignore_def = 1.0;
+            ai.pattern = Pattern::Single;
             let mut atk = self.reaction_attack(ai);
             atk.info.flat_dmg *= 3.0;
             self.queue_attack_with_snap(atk, 0, 0);
@@ -3249,12 +3315,13 @@ impl Sim {
         let mut ai = AttackInfo::new(0, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0);
         ai.abil = "Freeze Broken";
         ai.sim = true;
+        ai.pattern = Pattern::Single;
         self.queue_attack(ai, 0, -1, 0);
     }
 
     /// gcsim's CalcReactionDmg: the attack with its flat damage and the
     /// snapshot it takes (the level and EM only).
-    fn reaction_attack(&self, mut ai: AttackInfo) -> AttackEvent {
+    pub(crate) fn reaction_attack(&self, mut ai: AttackInfo) -> AttackEvent {
         let ci = ai.actor as usize;
         let em = self.stat(ci, st::EM);
         let lvl = self.chars[ci].level;
@@ -3629,9 +3696,11 @@ impl Sim {
                 self.new_moondrift(ex + ox, ey + oy, DEFAULT_DIR);
             }
         } else if self.lcr_count >= 3 && self.core_status_key(MOONDRIFT_HARMONY_ICD) == 0 {
-            // Moondrift Harmony (OnMoondriftHarmony: no ported content
-            // subscribes)
+            // Moondrift Harmony
             self.lcr_count -= 3;
+            if !self.subs[EventKind::MoondriftHarmony as usize].is_empty() {
+                self.emit(Event::MoondriftHarmony(ev));
+            }
             self.add_core_status(MOONDRIFT_HARMONY_ICD, LCR_HITMARKS[2]);
             self.do_lcr_attack(ev.info.actor as usize);
             // the Moondrifts near the player last 9 s from now
@@ -3655,6 +3724,14 @@ impl Sim {
     /// Lunar-Charged's key, shared); the contributors start over.
     fn do_lcr_attack(&mut self, owner: usize) {
         let contrib = self.lcr_contrib;
+        self.do_lcr_attack_with(contrib, owner);
+        self.lcr_contrib = 0;
+    }
+
+    /// gcsim's DoLCrAttackWithContrib: three hits from the contributors
+    /// given (bit i for character i), each with a second when content gives
+    /// it a chance.
+    pub fn do_lcr_attack_with(&mut self, contrib: u8, owner: usize) {
         for d in LCR_HITMARKS {
             self.add_task(Task::LcrHit { contrib, owner: owner as u8 }, d);
             if let Some(chance) = self.flags.iter().find(|f| f.0 == LC_EXTRA_HIT).map(|f| f.1) {
@@ -3663,7 +3740,6 @@ impl Sim {
                 }
             }
         }
-        self.lcr_contrib = 0;
     }
 
     /// gcsim's doSingleLCrAttack: Lunar-Crystallize damage, 10 frames on.
@@ -3737,7 +3813,7 @@ impl Sim {
             self.core_explode(g.actor, g.x, g.y, g.id == BOUNTIFUL_CORE);
         }
         let f = self.f;
-        self.push_gadget(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true, key: 0 });
+        self.push_gadget(Gadget { owner: CORE, id: 0, timer: 0, duration: 300, aura: Aura::new(), src: f, x: px, y: py, r: 2.0, actor, takes_hits: false, enemy_camp: true, collides_player: false, key: 0 });
         // OnDendroCore, with the core just added
         if !self.subs[EventKind::DendroCore as usize].is_empty() {
             let key = self.gadget_key - 1;
@@ -3761,6 +3837,27 @@ impl Sim {
             g.id = BOUNTIFUL_CORE;
             g.duration = 24;
             g.timer = 0;
+        }
+    }
+
+    /// Kaveh's ruptureDendroCores: every dendro core the pattern reaches
+    /// expires on its next tick (gcsim sets its Duration to 1). Bountiful
+    /// Cores are another type in gcsim, which the loop skips.
+    pub fn rupture_cores(&mut self, p: Pattern, ci: usize, abil: &str) {
+        for k in 0..self.gadgets.len() {
+            let g = self.gadgets[k];
+            if g.owner != CORE || g.id == BOUNTIFUL_CORE {
+                continue;
+            }
+            match p.hits_gadget(&g, g.r) {
+                None => {
+                    let who = crate::gcsl::char_name(self.chars[ci].key);
+                    self.unsupported(&format!("hit pattern {who} {abil}"));
+                    return;
+                }
+                Some(true) => self.gadgets[k].duration = 1,
+                Some(false) => {}
+            }
         }
     }
 
@@ -3885,7 +3982,7 @@ impl Sim {
     /// the player, and it does not count as damage.
     fn player_hit(&mut self, mut ev: AttackEvent) {
         let active = self.player.active as usize;
-        self.player_hit_event(active, ev.info.element);
+        self.player_hit_event(active, ev.info.element, ev.info.tag);
         let s = &mut ev.stats;
         let st_ele = ev.info.element.dmg_stat();
         let ele_per = if st_ele != st::NONE { s[st_ele] } else { 0.0 };
@@ -4053,7 +4150,7 @@ impl Sim {
     /// the character's level and EM now, at a random point beyond the
     /// enemy (drawn only when a character reads it, see
     /// `shard_positions`). A fourth shard removes the oldest.
-    fn spawn_shard(&mut self, ci: usize, ele: Element) {
+    fn spawn_shard(&mut self, ci: usize, ele: Element, at: Option<(f64, f64, f64)>) {
         let em = self.stats(ci)[st::EM];
         let lvl = (self.chars[ci].level - 1).clamp(0, 99) as usize;
         let f = self.f;
@@ -4068,8 +4165,9 @@ impl Sim {
             em_bonus: (40.0 / 9.0) * (em / (1400.0 + em)),
         };
         let pos = if self.shard_positions {
-            let r = self.target_radius + 0.5;
-            self.random_point(self.enemy_pos.0, self.enemy_pos.1, r, r)
+            let (x, y, r) = at.unwrap_or((self.enemy_pos.0, self.enemy_pos.1, self.target_radius));
+            let r = r + 0.5;
+            self.random_point(x, y, r, r)
         } else {
             (0.0, 0.0)
         };
@@ -4512,6 +4610,11 @@ impl Sim {
         self.emit(Event::ConstructSpawned);
     }
 
+    /// gcsim's Constructs.CountByType(GeoConstructLunarCrystallize).
+    pub fn moondrift_count(&self) -> usize {
+        self.constructs.iter().filter(|c| c.key == MOONDRIFT).count()
+    }
+
     /// The Moondrifts within `r` of the player (gcsim's Distance < r).
     fn moondrifts_near(&self, r: f64) -> usize {
         let (px, py) = self.player_pos;
@@ -4538,7 +4641,7 @@ impl Sim {
     /// The gadget is at (x, y), of radius r (gcsim's world coordinates).
     pub fn add_gadget(&mut self, owner: usize, id: u8, duration: i32, x: f64, y: f64, r: f64) {
         let f = self.f;
-        self.push_gadget(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: f, x, y, r, actor: 0, takes_hits: false, enemy_camp: false, key: 0 });
+        self.push_gadget(Gadget { owner: owner as u8, id, timer: 0, duration, aura: Aura::new(), src: f, x, y, r, actor: 0, takes_hits: false, enemy_camp: false, collides_player: false, key: 0 });
     }
 
     /// Appends a gadget with the next key (the end of gcsim's AddGadget).
@@ -4597,6 +4700,27 @@ impl Sim {
     /// range keeps reading the old array when an append in the tick grows
     /// the slice, so a gadget killed after that would still tick there; no
     /// ported hook adds a gadget during the tick.)
+    /// Combat.Tick's collision check of the gadgets that collide with the
+    /// player, in their order.
+    fn collide_gadgets(&mut self) {
+        let mut k = 0;
+        while k < self.gadgets.len() {
+            let g = self.gadgets[k];
+            if g.collides_player && (Pattern::Circle { x: g.x, y: g.y, r: g.r }).hits_circle(self.player_pos.0, self.player_pos.1, 0.3) == Some(true) {
+                crate::chars::dispatch::gadget_collide(self.chars[g.owner as usize].kind, self, g.owner as usize, g.id);
+            }
+            k = if self.gadgets.get(k).is_some_and(|x| x.key == g.key) { k + 1 } else { self.gadget_from(g.key + 1) };
+        }
+    }
+
+    /// Makes the owner's gadget id collide with the player (its owner
+    /// sets `collide_checks` in its init).
+    pub fn set_gadget_collides_player(&mut self, owner: usize, id: u8) {
+        if let Some(k) = self.gadget_index(owner, id) {
+            self.gadgets[k].collides_player = true;
+        }
+    }
+
     fn tick_gadgets(&mut self) {
         // gadgets with this key or later came during the tick
         let end = self.gadget_key;
@@ -5087,14 +5211,15 @@ impl Sim {
         }
     }
 
-    pub fn set_cd(&mut self, ci: usize, a: Action, dur: i32) {
-        // CDReduction: anemo resonance's mod (added at setup, so first),
-        // then the character's cooldown mods in effect, in their order
+    /// gcsim's CDReduction: anemo resonance's mod (added at setup, so
+    /// first), then, for the skill, burst or special skill (`skill_like`),
+    /// the character's cooldown mods in effect, in their order.
+    pub fn cd_reduction(&self, ci: usize, skill_like: bool, dur: i32) -> i32 {
         let mut cd = 1.0;
         if self.anemo_res {
             cd += -0.05;
         }
-        if matches!(a, Action::Skill | Action::Burst) {
+        if skill_like {
             let f = self.f;
             for m in &self.chars[ci].mods {
                 if m.kind == ModKind::Cooldown && (m.expiry() == -1 || m.expiry() > f) {
@@ -5102,7 +5227,11 @@ impl Sim {
                 }
             }
         }
-        let dur = if cd == 1.0 { dur } else { (dur as f64 * cd) as i32 };
+        if cd == 1.0 { dur } else { (dur as f64 * cd) as i32 }
+    }
+
+    pub fn set_cd(&mut self, ci: usize, a: Action, dur: i32) {
+        let dur = self.cd_reduction(ci, matches!(a, Action::Skill | Action::Burst), dur);
         let cd = &mut self.chars[ci].cd[Char::cd_index(a)];
         cd.queue[cd.len] = dur;
         cd.len += 1;
@@ -5138,7 +5267,19 @@ impl Sim {
         }
     }
 
+    /// The action whose cooldown an action reads: Odette's skill reads her
+    /// recast's (gcsim's ActionSpecialSkill, the third slot) while the
+    /// recast is up.
+    pub fn cd_action(&self, ci: usize, a: Action) -> Action {
+        if a == Action::Skill && self.chars[ci].kind == crate::chars::CharKind::Odette && crate::chars::odette::use_special(self, ci) {
+            Action::LowPlunge
+        } else {
+            a
+        }
+    }
+
     pub fn cooldown(&self, ci: usize, a: Action) -> i32 {
+        let a = self.cd_action(ci, a);
         let cd = &self.chars[ci].cd[Char::cd_index(a)];
         if cd.len == 0 {
             return 0;
@@ -5148,6 +5289,10 @@ impl Sim {
 
     /// gcsim's ReduceActionCooldown.
     pub fn reduce_cd(&mut self, ci: usize, a: Action, v: i32) {
+        if a == Action::Skill {
+            crate::chars::dispatch::skill_cd_changed(self.chars[ci].kind, self, ci, Some(v));
+        }
+        let a = self.cd_action(ci, a);
         self.reduce_cd_one(ci, a, v);
         if a == Action::Skill && self.chars[ci].skill_cd_twin {
             self.reduce_cd_one(ci, Action::LowPlunge, v);
@@ -5156,6 +5301,10 @@ impl Sim {
 
     /// gcsim's ResetActionCooldown.
     pub fn reset_cd(&mut self, ci: usize, a: Action) {
+        if a == Action::Skill {
+            crate::chars::dispatch::skill_cd_changed(self.chars[ci].kind, self, ci, None);
+        }
+        let a = self.cd_action(ci, a);
         self.reset_cd_one(ci, a);
         if a == Action::Skill && self.chars[ci].skill_cd_twin {
             self.reset_cd_one(ci, Action::LowPlunge);
@@ -5282,6 +5431,9 @@ impl Sim {
         if noelle && !noelle_first {
             pct += -0.2;
         }
+        if self.barbara_a1 > self.f {
+            pct += -0.12;
+        }
         pct
     }
 
@@ -5310,10 +5462,7 @@ impl Sim {
         self.player.dash_lockout = self.chars[to].dash_lockout;
         self.chars[to].remaining_dash_cd = 0;
         self.player.swap_cd = self.swap_icd;
-        for c in &mut self.chars {
-            c.normal_counter = 0;
-            c.normal_s_counter = 0;
-        }
+        self.reset_all_normal_counters();
         self.emit(Event::Swap { prev, next: to });
         // the shield stats collector, last to subscribe
         if !self.shield_bonus_mods.is_empty() {
@@ -5442,7 +5591,11 @@ impl Sim {
     pub fn next_frame(&mut self) -> bool {
         self.f += 1;
         let f = self.f;
-        // Combat.Tick: the player's aura, then the enemy
+        // Combat.Tick: the gadgets' collisions with the player, the
+        // player's aura, then the enemy
+        if self.collide_checks && !self.gadgets.is_empty() {
+            self.collide_gadgets();
+        }
         if !self.player_aura.idle() {
             self.player_aura.tick();
         }
@@ -5686,14 +5839,21 @@ impl Sim {
         self.set_action_used(info);
         self.player.last = LastAction { char: ci as u8, action: a };
         if a != Action::Attack {
-            for c in &mut self.chars {
-                c.normal_counter = 0;
-                c.normal_s_counter = 0;
-            }
+            self.reset_all_normal_counters();
         }
         // OnActionExec, after the action (Lauma's Spirit Envoy ends on it)
         if !self.subs[EventKind::ActionExec as usize].is_empty() {
             self.emit(Event::ActionExec(a));
+        }
+    }
+
+    /// gcsim's ResetAllNormalCounter: each character's ResetNormalCounter.
+    fn reset_all_normal_counters(&mut self) {
+        for i in 0..self.chars.len() {
+            if !crate::chars::dispatch::keeps_normal_counter(self.chars[i].kind, self, i) {
+                self.chars[i].normal_counter = 0;
+                self.chars[i].normal_s_counter = 0;
+            }
         }
     }
 
@@ -5957,7 +6117,13 @@ impl Sim {
                 let f = self.f;
                 match (fields[1].as_str(), fields[2].as_str()) {
                     ("dendrocore", "count") => Ok(int(self.gadgets.iter().filter(|g| g.owner == CORE).count() as i64)),
-                    ("sourcewaterdroplet", "count") => Ok(int(self.gadgets.iter().filter(|g| g.owner != CORE && crate::chars::neuvillette::is_droplet(self, g)).count() as i64)),
+                    // the hydro Traveler's droplets are in gcsim's list twice
+                    ("sourcewaterdroplet", "count") => Ok(int(self
+                        .gadgets
+                        .iter()
+                        .filter(|g| g.owner != CORE)
+                        .map(|g| if crate::chars::neuvillette::is_droplet(self, g) { 1 } else if crate::chars::traveler_hydro::is_droplet(self, g) { 2 } else { 0 })
+                        .sum::<i64>())),
                     ("crystallizeshard", e) => {
                         let ele = match e {
                             "all" => None,
@@ -5992,6 +6158,13 @@ impl Sim {
                 if let Some(a) = action_key(typ) {
                     need(3, "character ability")?;
                     let active = self.player.active as usize == ci;
+                    if let Some((cd, charges)) = crate::chars::dispatch::cd_view(c.kind, self, ci, a) {
+                        match fields[2].as_str() {
+                            "cd" => return Ok(int(cd as i64)),
+                            "charge" => return Ok(int(charges as i64)),
+                            _ => {}
+                        }
+                    }
                     return match fields[2].as_str() {
                         "cd" => Ok(int(match a {
                             Action::Swap => self.player.swap_cd as i64,
@@ -6006,7 +6179,7 @@ impl Sim {
                             }
                             _ => self.cooldown(ci, a) as i64,
                         })),
-                        "charge" => Ok(int(c.cd[Char::cd_index(a)].available as i64)),
+                        "charge" => Ok(int(c.cd[Char::cd_index(self.cd_action(ci, a))].available as i64)),
                         "ready" => Ok(b(if a == Action::Swap { self.player.swap_cd == 0 || active } else { self.action_ready(ci, a, &Params::default()) })),
                         t => Err(format!("bad character ability condition: invalid type {t}")),
                     };

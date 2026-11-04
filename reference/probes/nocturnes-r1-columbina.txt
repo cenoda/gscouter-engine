@@ -1,0 +1,3 @@
+# Columbina with Nocturne's Curtain Call R1 on a lunar team.
+team columbina-ineffa-lauma-nahida
+columbina add weapon="nocturnescurtaincall" refine=1 lvl=90/90;

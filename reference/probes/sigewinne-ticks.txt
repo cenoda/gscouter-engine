@@ -1,0 +1,4 @@
+# Sigewinne's burst cut short by `ticks`, then a dash.
+team sigewinne-furina-fischl-kaedeharakazuha
+rotation- sigewinne burst;
+rotation+ sigewinne burst[ticks=3], dash;

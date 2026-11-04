@@ -279,7 +279,9 @@ impl Character for Char {
             }
             Event::ApplyAttack(ev) => {
                 if ev.info.tag == AttackTag::DirectLunarCharged {
-                    s.apply_elevation += c6_elevation(s, ci, ev.info.actor as usize);
+                    let e = c6_elevation(s, ci, ev.info.actor as usize);
+                    let slot = s.apply_slot as usize;
+                    s.slots[slot].elevation += e;
                 }
             }
             // C1: 8 energy on a Lunar-Charged on the enemy, once every 5.5 s

@@ -1,0 +1,6 @@
+# Tartaglia's melee burst (Light of Obliteration and Riptide Blast), which no library rotation uses.
+team tartaglia-bennett-xiangling-kaedeharakazuha
+rotation- tartaglia walk, burst, walk[f=11], skill,
+rotation+ tartaglia walk, skill;
+rotation+ if .tartaglia.burst.ready { tartaglia burst; }
+rotation+ tartaglia

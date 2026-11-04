@@ -37,7 +37,7 @@
 //!
 //! Stellar Swirl, from gcsim's pkg/reactable/stellarswirl.go and
 //! stellarswirl_gadget.go. While a character that enables it is in the
-//! team (StellarSwirlEnableKey: Sandrone, Vesna), an anemo hit on the
+//! team (StellarSwirlEnableKey: Sandrone, Vesna, the cryo Traveler), an anemo hit on the
 //! enemy's cryo or frozen aura reacts as Stellar Swirl instead of a cryo
 //! swirl: it emits OnStellarSwirl, gives every character Radiance: Stellar
 //! Swirl for 8 s (not hitlag), hits the enemy 3 frames later with the
@@ -54,8 +54,13 @@
 //! (`player.StellarSwirlAirborneBuff`). A detonation that reaches a player
 //! jumping from the ground (gcsim's boosted jump) is an error, and so is a
 //! cryo swirl on the player's own aura. Like the fields, the vortex is not
-//! among `Sim::gadgets` and ticks after the fields. gcsim's Wandering
-//! Vortex (Vodyanitsa) is not ported with her.
+//! among `Sim::gadgets` and ticks after the fields.
+//!
+//! With Vodyanitsa's A1 in the team (gcsim's WanderingVortexKey), every
+//! Stellar Swirl hands her the vortex it made or stacked (OnStellarSwirlVortex,
+//! before a sixth stack detonates it), and every detonation its area
+//! (OnStellarVortexDetonate, after the template's boosted jump); each
+//! vortex has an id for her to tell them apart.
 
 use crate::chars::CharKind;
 use crate::content::Event;
@@ -85,12 +90,12 @@ pub const MULT: [f64; 13] = [1.0, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.
 
 /// Whether gcsim's Init of this character sets StellarConductEnableKey.
 pub fn enables_stellar(k: CharKind) -> bool {
-    matches!(k, CharKind::Sandrone)
+    matches!(k, CharKind::Sandrone | CharKind::Odette | CharKind::LumineCryo | CharKind::AetherCryo)
 }
 
 /// Whether gcsim's Init of this character sets StellarSwirlEnableKey.
 pub fn enables_stellar_swirl(k: CharKind) -> bool {
-    matches!(k, CharKind::Sandrone | CharKind::Vesna)
+    matches!(k, CharKind::Sandrone | CharKind::Vesna | CharKind::Odette | CharKind::LumineCryo | CharKind::AetherCryo)
 }
 
 /// gcsim's RadianceSwirlKey: the status of Radiance: Stellar Swirl.
@@ -106,6 +111,8 @@ const SSW_STACK_RADIUS: [f64; 7] = [0.0, 6.0, 6.0, 8.0, 8.0, 8.0, 8.0];
 /// gcsim's StellarVortex.
 #[derive(Clone, Copy, Debug)]
 pub struct Vortex {
+    /// Its id, from 1.
+    id: u32,
     /// Ticks left.
     duration: i32,
     /// Where it is.
@@ -154,6 +161,21 @@ pub struct Stellar {
     swirl_stacks: i32,
     /// The Stellar Vortex, if there is one.
     pub vortex: Option<Vortex>,
+    /// The last vortex id given.
+    vortex_ids: u32,
+    /// Vodyanitsa's slot, when her A1 follows the vortices
+    /// (WanderingVortexKey and her subscriptions).
+    pub wandering: Option<u8>,
+    /// Odette's slot, when her C6 elevates direct Stellar hits (her
+    /// OnApplyAttack subscription).
+    pub odette_c6: Option<u8>,
+}
+
+impl Stellar {
+    /// Where the Stellar Vortex is, if there is one.
+    pub fn vortex_pos(&self) -> Option<(f64, f64)> {
+        self.vortex.map(|v| (v.x, v.y))
+    }
 }
 
 impl Sim {
@@ -272,8 +294,14 @@ impl Sim {
         sw.swirl_owner = actor as u8;
         sw.swirl_stacks = (sw.swirl_stacks + 1).min(SSW_MAX_STACKS);
         if sw.vortex.is_none() {
+            sw.vortex_ids += 1;
+            let id = sw.vortex_ids;
             let (x, y) = self.player_pos;
-            self.stellar.vortex = Some(Vortex { duration: SSW_DURATION, x, y });
+            self.stellar.vortex = Some(Vortex { id, duration: SSW_DURATION, x, y });
+        }
+        if let Some(v) = self.stellar.wandering {
+            let id = self.stellar.vortex.unwrap().id;
+            crate::chars::vodyanitsa::on_vortex(self, v as usize, id);
         }
         if self.stellar.swirl_stacks >= SSW_MAX_STACKS {
             // Kill: OnKill, then the gadget is removed
@@ -300,6 +328,9 @@ impl Sim {
         // OnStellarVortexDetonate: the template's boosted jump
         if self.current_state() == AnimState::Jump && self.player.airborne == Airborne::Grounded && self.player_within(ap) {
             self.unsupported("a Stellar Swirl detonation during a jump");
+        }
+        if let Some(v) = self.stellar.wandering {
+            crate::chars::vodyanitsa::on_detonate(self, v as usize, ap);
         }
     }
 

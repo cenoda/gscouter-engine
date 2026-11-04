@@ -110,6 +110,9 @@ pub struct State {
     charge_cancel: bool,
     /// The OnDendroCore hook of the spinning charged attack is subscribed.
     ca_hooked: bool,
+    /// Flamestrider's normal attacks' patterns, built at the action (gcsim
+    /// builds them there and queues them at the hitmark), by combo index.
+    bike_na_pattern: [Pattern; 8],
 }
 
 const BURST: ModKey = ModKey::new(g::BURST_KEY);
@@ -138,7 +141,7 @@ const TASK_BURST_HIT: u8 = 5;
 const TASK_RECAST_STATUS: u8 = 6;
 const TASK_C2_RING: u8 = 7;
 const TASK_C6_RING: u8 = 8;
-/// arg: the combo's index, plus 8 with the burst's hitboxes.
+/// arg: the combo's index.
 const TASK_BIKE_NA: u8 = 9;
 /// arg: the target (-1 for the enemy, else a gadget's key).
 const TASK_CA_HIT: u8 = 10;
@@ -148,7 +151,6 @@ const TASK_CAF_NS_EXIT: u8 = 13;
 const TASK_CA_UNHOOK: u8 = 14;
 const TASK_CDC_LOCKOUT: u8 = 15;
 const TASK_BIKE_PLUNGE_OFF: u8 = 16;
-const TASK_DASH_HIT: u8 = 17;
 
 // frames ids
 const FR_SKILL: u8 = 0;
@@ -776,6 +778,7 @@ impl Character for Char {
             can_bike_plunge: false,
             charge_cancel: false,
             ca_hooked: false,
+            bike_na_pattern: [Pattern::Unknown; 8],
         }
     }
 
@@ -1010,7 +1013,15 @@ impl Character for Char {
             st_mut(s, ci).charge_cancel = true;
         }
         if collision != 0 {
-            char_task(s, ci, TASK_DASH_HIT, 0, travel);
+            let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_MAVUIKA_FLAMESTRIDER, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::SKILL_DASH[s.talent(ci, 1)]);
+            ai.abil = "Flamestrider Sprint";
+            ai.add_tags = add_tag::NIGHTSOUL;
+            ai.blunt = true;
+            ai.poise = 75.0;
+            ai.deployable = true;
+            // built at the dash, queued on her queue after the travel
+            ai.pattern = s.circle_on_player(0.0, 1.0, 1.2);
+            s.queue_attack_at(ci, ai, 0, travel);
         }
         reduce_points(s, ci, 10.0);
         if s.current_state() == AnimState::Normal {
@@ -1132,8 +1143,7 @@ impl Character for Char {
                 char_task(s, ci, TASK_C6_RING, arg, 180);
             }
             TASK_BIKE_NA => {
-                let n = (arg & 7) as usize;
-                let hb = if arg & 8 != 0 { g::BIKE_ATTACK_BURST_HITBOXES[n] } else { g::BIKE_ATTACK_HITBOXES[n] };
+                let n = arg as usize;
                 let mut ai = AttackInfo::new(ci, AttackTag::Normal, icd::TAG_MAVUIKA_FLAMESTRIDER, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::SKILL_ATTACK[n][s.talent(ci, 0)]);
                 ai.abil = BIKE_NAMES[n];
                 ai.add_tags = add_tag::NIGHTSOUL;
@@ -1142,8 +1152,7 @@ impl Character for Char {
                 ai.hitlag_factor = 0.01;
                 ai.hitlag_halt = g::BIKE_ATTACK_HITLAG_HALT_FRAME[n] * 60.0;
                 ai.ignore_infusion = true;
-                let off = g::BIKE_ATTACK_OFFSETS[n];
-                ai.pattern = if hb.len() == 2 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
+                ai.pattern = st(s, ci).bike_na_pattern[n];
                 ai.flat_dmg = burst_bonus(s, ci, g::BURST_NA_BONUS) + c2_flat(s, ci, 0.6);
                 s.queue_attack(ai, 0, 0, 0);
                 reduce_points(s, ci, 1.0);
@@ -1191,16 +1200,6 @@ impl Character for Char {
                 char_task(s, ci, TASK_CDC_LOCKOUT, arg, g::BIKE_CHARGE_ATTACK_SPIN_FRAMES);
             }
             TASK_BIKE_PLUNGE_OFF => st_mut(s, ci).can_bike_plunge = false,
-            TASK_DASH_HIT => {
-                let mut ai = AttackInfo::new(ci, AttackTag::None, icd::TAG_MAVUIKA_FLAMESTRIDER, icd::GROUP_DEFAULT, Element::Pyro, 25.0, g::SKILL_DASH[s.talent(ci, 1)]);
-                ai.abil = "Flamestrider Sprint";
-                ai.add_tags = add_tag::NIGHTSOUL;
-                ai.blunt = true;
-                ai.poise = 75.0;
-                ai.deployable = true;
-                ai.pattern = s.circle_on_player(0.0, 1.0, 1.2);
-                s.queue_attack(ai, 0, 0, 0);
-            }
             _ => unreachable!(),
         }
     }
@@ -1279,8 +1278,13 @@ impl Character for Char {
 fn bike_attack(s: &mut Sim, ci: usize) -> ActInfo {
     let n = s.chars[ci].normal_counter;
     let delay = g::BIKE_ATTACK_HITMARKS[n as usize];
-    let arg = n + if s.mod_active(ci, BURST) { 8 } else { 0 };
-    char_task(s, ci, TASK_BIKE_NA, arg, delay);
+    // the pattern, built now with the burst's hitboxes while it lasts
+    let i = n as usize;
+    let hb = if s.mod_active(ci, BURST) { g::BIKE_ATTACK_BURST_HITBOXES[i] } else { g::BIKE_ATTACK_HITBOXES[i] };
+    let off = g::BIKE_ATTACK_OFFSETS[i];
+    let pattern = if hb.len() == 2 { s.box_on_player(0.0, off, hb[0], hb[1]) } else { s.circle_on_player(0.0, off, hb[0]) };
+    st_mut(s, ci).bike_na_pattern[i] = pattern;
+    char_task(s, ci, TASK_BIKE_NA, n, delay);
     let atkspd = s.stat(ci, st::ATKSPD);
     let table = &g::BIKE_ATTACK_FRAMES[n as usize];
     let info = ActInfo::new(Frames::Attack { table, atkspd }, table[0], delay, AnimState::Normal);

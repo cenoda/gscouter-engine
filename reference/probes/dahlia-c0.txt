@@ -1,0 +1,3 @@
+# Dahlia at C0: A4 without C6, no C1 energy, the Favor 12 s.
+team yoimiya-yelan-dahlia-bennett
+dahlia char lvl=90/90 cons=0 talent=9,9,9;

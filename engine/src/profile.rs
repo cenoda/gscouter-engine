@@ -68,6 +68,47 @@ pub fn char_kind(name: &str) -> Option<CharKind> {
     CharKind::from_name(name)
 }
 
+/// The weapon params gcsim's package reads, for the weapons whose params
+/// are checked; None for a weapon not checked.
+fn weapon_params_known(w: WeaponKind) -> Option<&'static [&'static str]> {
+    Some(match w {
+        WeaponKind::SacrificialJade => &["stacks"],
+        WeaponKind::LostPrayerToTheSacredWinds => &["stacks"],
+        // the rest read none
+        WeaponKind::EverlastingMoonglow
+        | WeaponKind::EyeOfPerception
+        | WeaponKind::MappaMare
+        | WeaponKind::VividNotions
+        | WeaponKind::NightweaversLookingGlass
+        | WeaponKind::SurfsUp
+        | WeaponKind::TulaytullahsRemembrance
+        | WeaponKind::BlackTassel
+        | WeaponKind::CalamityQueller
+        | WeaponKind::PrimordialJadeWingedSpear
+        | WeaponKind::PrototypeStarglitter
+        | WeaponKind::SymphonistOfScents
+        | WeaponKind::ProspectorsShovel
+        | WeaponKind::SacrificersStaff
+        | WeaponKind::WhiteTassel
+        | WeaponKind::SnowTombedStarsilver
+        | WeaponKind::TalkingStick
+        | WeaponKind::AstralVulturesCrimsonPlumage
+        | WeaponKind::SkywardHarp
+        | WeaponKind::HuntersPath
+        | WeaponKind::PolarStar
+        | WeaponKind::SharpshootersOath
+        | WeaponKind::TheFirstGreatMagic
+        | WeaponKind::SerenitysCall
+        | WeaponKind::TravelersHandySword
+        | WeaponKind::TheBell
+        | WeaponKind::WolfsGravestone => &[],
+        // gcsim reads only melusines; Gscouter's library passes stacks,
+        // which gcsim ignores
+        WeaponKind::UltimateOverlordsMegaMagicSword => &["melusines", "stacks"],
+        _ => return None,
+    })
+}
+
 fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
     let mut errs = Vec::new();
     let name = char_name(p.key);
@@ -108,23 +149,20 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("start_energy", _) => start_energy = *v as f64,
             ("start_serpents_subtlety", Some(CharKind::Skirk)) => {}
             ("breakthrough", Some(CharKind::Yelan)) => {}
+            (k, Some(kind)) if kind.traveler() && crate::chars::traveler_common::PARAMS.contains(&k) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             ("hexerei", Some(CharKind::Sucrose | CharKind::Mona | CharKind::Razor | CharKind::Durin | CharKind::Nicole)) => {}
-            ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno)) => {}
+            ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno | CharKind::Qiqi)) => {}
             ("c2_stacks" | "pyrotechnic_travel", Some(CharKind::Lyney)) => {}
             // the character itself is unsupported
             (_, None) => {}
             _ => errs.push(format!("unsupported: param {name} {k}")),
         }
     }
-    // Sacrificial Jade reads only stacks and Ultimate Overlord's Mega Magic
-    // Sword only melusines; any other param of theirs is an error
-    let known: &[&str] = match weapon {
-        Some(WeaponKind::SacrificialJade) => &["stacks"],
-        Some(WeaponKind::UltimateOverlordsMegaMagicSword) => &["melusines"],
-        _ => &[],
-    };
-    if matches!(weapon, Some(WeaponKind::SacrificialJade | WeaponKind::UltimateOverlordsMegaMagicSword)) {
+    // the params a weapon reads, as gcsim's package does; any other param
+    // of a weapon listed here is an error (weapons not listed are not
+    // checked yet)
+    if let Some(known) = weapon.and_then(weapon_params_known) {
         for (k, _) in &p.weapon.params {
             if !known.contains(&k.as_str()) {
                 errs.push(format!("unsupported: param {wname} {k}"));
@@ -193,6 +231,11 @@ pub fn config(p: &ParsedConfig) -> Result<Config, Vec<String>> {
     // too (NewBoxHitOnTarget on the primary target)
     if p.chars.iter().any(|c| char_name(c.key) == "chevreuse") && p.targets.iter().any(|t| t.pos.0 != 0.0 || t.pos.1 <= 0.0) {
         errs.push("unsupported: chevreuse with the target off the y axis".into());
+    }
+    // Neuvillette (and Sigewinne) take any Sourcewater Droplet, the hydro
+    // Traveler's too, and the Traveler takes theirs
+    if p.chars.iter().any(|c| matches!(char_name(c.key), "neuvillette" | "sigewinne")) && p.chars.iter().any(|c| matches!(char_name(c.key), "luminehydro" | "aetherhydro")) {
+        errs.push("unsupported: the hydro Traveler with neuvillette or sigewinne (their Sourcewater Droplets)".into());
     }
     if p.hurt {
         errs.push("unsupported: hurt".into());

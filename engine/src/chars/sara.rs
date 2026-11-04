@@ -6,9 +6,8 @@
 //! they reach the player, A4's energy and every constellation. gcsim has
 //! no plunges for her.
 //!
-//! Whether a buff's area reaches the player is decided as it is queued:
-//! gcsim decides it when the buff lands, and the player does not move with
-//! her on the team (she is not in `MOVES_WITH_PLAYER`).
+//! Whether a buff's area reaches the player is decided when the buff
+//! lands, where the player stands then, as gcsim's attackBuff does.
 
 use crate::content::{Character, Event};
 use crate::gcsimdata::chars::sara as g;
@@ -187,7 +186,9 @@ impl Character for Char {
     fn task(s: &mut Sim, ci: usize, id: u8, arg: i32) {
         match id {
             TASK_ATTACK_BUFF => {
-                if arg == 0 {
+                let p = s.slots[arg as usize].info.pattern;
+                s.free.push(arg as u16);
+                if !s.hits_player(p) {
                     return;
                 }
                 let active = s.player.active as usize;
@@ -246,10 +247,13 @@ fn a4_cb(s: &Sim, ci: usize) -> u16 {
     if s.chars[ci].ascension >= 4 { CB_A4 } else { 0 }
 }
 
-/// attackBuff: delay frames later, if the area reaches the player.
+/// attackBuff: delay frames later, if the area reaches the player where
+/// the player is then (AttackWillLand in the task). A slot holds the area.
 fn attack_buff(s: &mut Sim, ci: usize, p: Pattern, delay: i32) {
-    let lands = s.hits_player(p);
-    s.add_task(Task::Char { c: ci as u8, id: TASK_ATTACK_BUFF, arg: lands as i32 }, delay);
+    let mut ev = AttackEvent::new(AttackInfo::new(ci, AttackTag::None, icd::TAG_NONE, icd::GROUP_DEFAULT, Element::NoElement, 0.0, 0.0), 0);
+    ev.info.pattern = p;
+    let slot = s.alloc(ev);
+    s.add_task(Task::Char { c: ci as u8, id: TASK_ATTACK_BUFF, arg: slot as i32 }, delay);
 }
 
 /// C1: the skill's cooldown −1 s, once every 3 s.

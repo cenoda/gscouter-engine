@@ -1,0 +1,7 @@
+# Tartaglia at C6 with his melee burst: C6 resets the stance's cooldown when it ends.
+team tartaglia-bennett-xiangling-kaedeharakazuha
+tartaglia char lvl=90/90 cons=6 talent=9,9,9;
+rotation- tartaglia walk, burst, walk[f=11], skill,
+rotation+ tartaglia walk, skill;
+rotation+ if .tartaglia.burst.ready { tartaglia burst; }
+rotation+ tartaglia

@@ -1,0 +1,3 @@
+# Ineffa with Fractured Halo R5 (her shield gives Electrifying Edict) on a Lunar-Charged team.
+team gaming-furina-ineffa-bennett
+ineffa add weapon="fracturedhalo" refine=5 lvl=90/90;

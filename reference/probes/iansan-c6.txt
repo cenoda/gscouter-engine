@@ -1,0 +1,3 @@
+# Iansan C6: C1 energy, C2 ATK to the others, C4 points after another burst, C6 DMG on overflow and the longer burst.
+team chasca-iansan-bennett-furina
+iansan char lvl=90/90 cons=6 talent=9,9,9;
