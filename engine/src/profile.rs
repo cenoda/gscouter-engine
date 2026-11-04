@@ -108,6 +108,7 @@ fn char_setup(p: &CharProfile) -> Result<CharSetup, Vec<String>> {
             ("start_energy", _) => start_energy = *v as f64,
             ("start_serpents_subtlety", Some(CharKind::Skirk)) => {}
             ("breakthrough", Some(CharKind::Yelan)) => {}
+            (k, Some(kind)) if kind.traveler() && crate::chars::traveler_common::PARAMS.contains(&k) => {}
             ("oz_travel" | "hexerei", Some(CharKind::Fischl)) => {}
             ("hexerei", Some(CharKind::Sucrose | CharKind::Mona | CharKind::Razor | CharKind::Durin | CharKind::Nicole)) => {}
             ("revelation", Some(CharKind::Wriothesley | CharKind::Yaemiko | CharKind::Cyno)) => {}

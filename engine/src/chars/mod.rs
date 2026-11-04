@@ -2,9 +2,13 @@
 //! implementing `content::Character`; a line here registers it.
 
 pub mod plunge;
+pub mod traveler_common;
+pub mod traveler_pyro;
 pub mod watch;
 
 crate::chars! {
+    LuminePyro => luminepyro,
+    AetherPyro => aetherpyro,
     Hutao => hutao,
     Xingqiu => xingqiu,
     Zhongli => zhongli,
@@ -105,3 +109,11 @@ crate::chars! {
 /// the time gcsim takes it. Moving the player with anyone else on the team
 /// is an error that names them.
 pub const MOVES_WITH_PLAYER: &[CharKind] = &[CharKind::Bennett, CharKind::Diluc, CharKind::Gaming, CharKind::Sucrose, CharKind::Xingqiu, CharKind::Yoimiya, CharKind::Sandrone];
+
+impl CharKind {
+    /// One of gcsim's Travelers, whose NewTraveler reads the story quest
+    /// params (`traveler_common::PARAMS`).
+    pub fn traveler(self) -> bool {
+        matches!(self, CharKind::LuminePyro | CharKind::AetherPyro)
+    }
+}
