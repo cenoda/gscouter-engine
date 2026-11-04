@@ -70,18 +70,19 @@
 # chunks, as for the other jobs. A shard job that fails or stops at its
 # deadline leaves its seeds to the rerun job's gcsim.
 #
-# A manual run with "release" set to true runs every kind of build at one
-# commit: the library builds and probes, every variant part, every
-# build-space part and every page part. Its manifest job then builds the
+# A manual run with "release" set to true runs, at one commit, the kinds
+# "release_kinds" names: by default the library builds and probes, the
+# whole verification (the owner, 2026-11-04). Its manifest job then builds the
 # WebAssembly module (wasm/) and writes the teams Gscouter may run on it
-# (reference/manifest: a team is verified when every build of every kind
-# that the engine runs passes), uploaded with the module as the artifact
+# (reference/manifest: a team is verified when every build of the kinds
+# it judged passes), uploaded with the module as the artifact
 # "engine-release". Dispatch it on main. With "release_teams" (ids, or a
 # .txt file of them such as reference/release-batch-1.txt) every kind runs
 # on those teams alone, in fewer parts, and the manifest has only them: a
 # release in batches, the other teams unverified and on gcsim. With
-# "release_kinds" (library for a library-only release) it runs and judges
-# only those kinds; the manifest records them (kinds, verified_kinds).
+# "release_kinds" (library by default: verification is the library build
+# and probes, the owner's decision of 2026-11-04) it runs and judges those
+# kinds; the manifest records them (kinds, verified_kinds).
 #
 # A run on a branch saves its chunks in that branch's cache, which main
 # cannot read. A manual run on main with "import_run" set to that run's id
@@ -135,8 +136,8 @@ on:
         description: 'true runs every kind of build at this commit and writes the manifest of verified teams with the WebAssembly module (artifact engine-release). Dispatch on main.'
         default: "false"
       release_kinds:
-        description: 'With release: the kinds of build to run and judge, comma-separated from library, variants, buildspace, pages ("library" for a library-only release, whose teams are verified on the others after it); empty for every kind.'
-        default: ""
+        description: 'With release: the kinds of build to run and judge, comma-separated from library, variants, buildspace, pages. library (the default) is the whole verification (the owner, 2026-11-04).'
+        default: library
       release_teams:
         description: 'With release: only these teams, comma-separated ids or the path of a file in this repository listing one per line (reference/release-batch-1.txt); every kind runs on them alone, in fewer parts, and the manifest has only them. Empty for every team.'
         default: ""
@@ -302,7 +303,7 @@ jobs:
               echo "release_teams: $n teams; parts: variants $np, build space $nb, pages $ng"
               echo "teams=$RELEASE_TEAMS" >> "$GITHUB_OUTPUT"
             fi
-            RELEASE_KINDS=$(printf %s "${RELEASE_KINDS:-library,variants,buildspace,pages}" | tr -d "[:space:]")
+            RELEASE_KINDS=$(printf %s "${RELEASE_KINDS:-library}" | tr -d "[:space:]")
             [[ $RELEASE_KINDS =~ ^(library|variants|buildspace|pages)(,(library|variants|buildspace|pages))*$ ]] || { echo "release_kinds: want kinds from library, variants, buildspace, pages separated by commas, got $RELEASE_KINDS"; exit 1; }
             has() { [[ ,$RELEASE_KINDS, == *,$1,* ]]; }
             echo "kinds=$RELEASE_KINDS" >> "$GITHUB_OUTPUT"
