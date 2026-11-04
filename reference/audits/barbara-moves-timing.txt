@@ -1,0 +1,26 @@
+# Droplets and charged attacks keep their cast position; Melody Loop follows each move.
+options iteration=1000 duration=18 swap_delay=12;
+target lvl=100 resist=0.1 radius=1 pos=0,0;
+
+barbara char lvl=90/90 cons=6 talent=10,10,10;
+barbara add weapon="prototypeamber" refine=1 lvl=90/90;
+barbara add stats atk=311 atk%=0.466 hydro%=0.466 cr=1 cd=0.8;
+
+active barbara;
+set_player_pos(0,-1.5);
+barbara skill;
+set_player_pos(0,-12);
+wait(100);
+set_player_pos(0,-5);
+barbara charge;
+set_player_pos(0,-12);
+wait(100);
+barbara charge;
+set_player_pos(0,-5);
+wait(100);
+set_player_pos(1.5,0);
+wait(200);
+set_player_pos(0,12);
+wait(200);
+set_player_pos(-1.5,0);
+wait(1800);
