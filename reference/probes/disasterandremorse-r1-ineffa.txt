@@ -1,0 +1,3 @@
+# Ineffa with Disaster and Remorse R1.
+team gaming-furina-ineffa-bennett
+ineffa add weapon="disasterandremorse" refine=1 lvl=90/90;

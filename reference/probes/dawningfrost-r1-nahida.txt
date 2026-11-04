@@ -1,0 +1,3 @@
+# Nahida with Dawning Frost R1.
+team columbina-ineffa-lauma-nahida
+nahida add weapon="dawningfrost" refine=1 lvl=90/90;
