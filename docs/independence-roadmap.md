@@ -8,11 +8,11 @@ This is the execution companion to [the independence plan](independence.md), Pha
 
 `0 → 1 → 2 → 3 pilot → 3 gate transition → 4 → 5`
 
-Step 6 corrections and engine-only new characters can proceed after the step 3 transition. Evidence gathering for the pilot can start earlier; score-changing releases still follow the active rules. Existing regression checks remain active throughout. No calendar estimate is committed before the data-policy decision and dependency inventory.
+Step 6 corrections and engine-only new characters can proceed after the step 3 transition. Evidence gathering for the pilot can start earlier; score-changing releases still follow the active rules. Existing regression checks remain active throughout.
 
 | Milestone | Deliverables | Completion evidence |
 |---|---|---|
-| 0. Data policy and source pilot | Recorded owner decision on legacy extracted data; one released character's source inventory; official/derived/measured/estimated classification | Every required field has evidence or an explicit unresolved disposition; official table coverage and derivations have been checked. A legacy exception is explicit if selected. |
+| 0. Data policy and source pilot | Legacy extracted data policy recorded (done, 2026-11-04: documented legacy exception); one released character's source inventory; official/derived/measured/estimated classification | Every required field has evidence or an explicit unresolved disposition; official table coverage and derivations have been checked; the legacy exception is recorded in `docs/independence.md`. |
 | 1. Independent data maintenance | Provenance-bearing input format and converter; maintained data and canonical key/alias catalog; replacement for `reference/gendata` | Add or update a content-data fixture without gcsim source or tools. Validate units, keys, references and source metadata. Pure ownership changes preserve existing scores. |
 | 2. Site input migration | Engine metadata export and versioned parse API; Enka mapping path; preset parsing; independent boss resistance data; removal of input-path gcsim types | Existing representative builds, aliases, expressions and invalid inputs preserve intended behavior. Presets retain all build fields. A new-name fixture reaches the engine without gcsim recognizing the name. Audit imports and initialization paths, not only direct parser calls. |
 | 3a. Independent verification pilot | Library regression runner; all 918 probes retained with coverage map; evidence-backed mechanic tests; Arlecchino investigation and affected-team report | CI runs the proposed suite alongside the current gate. Controlled fixtures expose attack counts, damage, buffs, reactions and energy where relevant. The Arlecchino report reproduces and isolates the discrepancy, or explicitly records it as unresolved; it never tunes toward +20%. |
@@ -31,7 +31,7 @@ Step 6 corrections and engine-only new characters can proceed after the step 3 t
 
 ## Decisions and first work
 
-1. Resolve the existing-data policy with the owner; do not infer permission for a legacy exception from this roadmap.
+1. Existing-data policy: decided 2026-11-04 (kept as a documented legacy exception with explicit `legacy_gcsim` provenance; `docs/independence.md` §4, §7).
 2. Produce the released-character source pilot and list missing official or measured fields.
 3. Inventory Gscouter runtime imports and data initialization, including boss presets and full build parsing; define the metadata/parse contract before wiring consumers.
 4. Preserve the current probes and start the controlled Arlecchino investigation to inform the proposed evidence gate.

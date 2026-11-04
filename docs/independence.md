@@ -99,7 +99,7 @@ What not to take: its ICD, hitlag, hitboxes, durability and particles come from 
 
 ### Existing data
 
-`engine/src/data.rs` and `engine/src/gcsimdata/` (129 characters, 252 weapons, 55 sets) were generated from gcsim, whose pipeline reads extracted data. Whether to keep them as an explicit legacy exception, or replace them with independently sourced values, is the owner's decision (§7), before step 1 changes data ownership. Renaming files does not change their provenance. An official table can replace visible numbers but cannot establish the provenance of hidden values; those require measurements, explicit estimates or a documented legacy exception.
+`engine/src/data.rs` and `engine/src/gcsimdata/` (129 characters, 252 weapons, 55 sets), as well as Gscouter's existing `artifact_main_gen.json`, were generated from gcsim, whose pipeline reads extracted data. Decided by the owner (2026-11-04): they are kept as an explicit, documented legacy exception rather than replaced wholesale. Renaming files or moving them to repository-owned maintenance does not change their provenance, so legacy records retain an explicit `legacy_gcsim` provenance marker until an individual value is replaced by an official observation, measurement or step 6 correction. New content and post-independence corrections follow the no-datamining rules above.
 
 ## 5. Steps
 
@@ -107,7 +107,7 @@ Dependency first (owner, 2026-11-04): new characters wait until this is far enou
 
 | Step | Work | Size | When done |
 |---|---|---|---|
-| 0 | Existing-data policy and source pilot | decision + small pilot | Legacy treatment is recorded and one released character demonstrates the source workflow |
+| 0 | Source pilot | small pilot | Legacy exception is recorded (done, 2026-11-04) and one released character demonstrates the source workflow |
 | 1 | Engine data and keys | medium | Content data can be added, validated and consumed without gcsim source or generation tools |
 | 2 | Gscouter ①②③ | medium | The site's front no longer calls gcsim code |
 | 3 | Verification pilot, then approval transition | medium; owner's decisions | Independent checks and regression run in CI; the evidence gate and release policy are approved |
@@ -119,11 +119,11 @@ Step 0 precedes step 1. An Arlecchino investigation demonstrates the proposed ve
 
 ### Step 0: policy and source pilot
 
-Record the owner's choice for existing data and pilot the proposed official/measurement workflow on one released character. List unavailable fields and how each is handled; do not call the source pipeline complete when those fields are unaccounted for.
+The existing-data policy is decided (2026-11-04: documented legacy exception, §4). Pilot the proposed official/measurement workflow on one released character before step 1 finalizes the input format. List unavailable fields and how each is handled; do not call the source pipeline complete when those fields are unaccounted for.
 
 ### Step 1: engine data and keys
 
-- Under the step 0 policy, move `engine/src/data.rs` and `engine/src/gcsimdata/` to repository-owned maintenance and rename the module. Separate editable source records from converter output: remove the old generated warning only from manually maintained files; generated output still names its generator.
+- Under the legacy-data exception (§4), move `engine/src/data.rs` and `engine/src/gcsimdata/` to repository-owned maintenance, preserving explicit legacy provenance metadata, and rename the module. Separate editable source records from converter output: remove the old generated warning only from manually maintained files; generated output still names its generator.
 - Retire `reference/gendata` from the maintained data workflow once its replacement is demonstrated. The Rust engine already has no Cargo dependencies; building it alone is not proof that data maintenance is independent.
 - One key table, in `data.rs` (names, aliases, keys), from which Gscouter takes its keys too. New names are added there only.
 - An input format for new content (the values of §4 with their sources) and a converter to the engine's data.
@@ -132,7 +132,7 @@ Record the owner's choice for existing data and pilot the proposed official/meas
 
 | Where | What changes |
 |---|---|
-| `internal/enka/gen.sh` | Enka mappings and names straight from Enka, not gcsim's UI data. Not for speed: so a new character's showcase can be read without a gcsim update. `artifact_main_gen.json` is covered by the step 0 legacy-data decision too; keeping its values requires the documented exception or independent evidence |
+| `internal/enka/gen.sh` | Enka mappings and names straight from Enka, not gcsim's UI data. Not for speed: so a new character's showcase can be read without a gcsim update. `artifact_main_gen.json` stays under the step 0 legacy-data exception (§4) with its provenance noted |
 | `shortcut.*NameToKey` in `internal/config`, `library`, `pull`, `score` | The engine's key table |
 | gcsim's `parser` in the same packages | A versioned engine parse API through wazero: ordered party plus levels, ascension, constellations, talents, weapons, refinements, sets and stats needed by preset consumers; preserve alias, expression and error semantics |
 
@@ -176,7 +176,7 @@ gscouter-optimizer was planned on the engine from the start and has nothing to r
 
 ## 7. For the owner to decide
 
-1. The existing data (§4), before step 1: keep it as a documented legacy exception, or replace it with independently sourced values, including a policy for hidden values.
+1. **Existing data (§4): decided 2026-11-04.** Kept as a documented legacy exception (`legacy_gcsim` provenance); new content and step 6 corrections use the independent sources of §4.
 2. The game checks of step 3: what counts as enough evidence for a new character, and for a change of step 6.
 3. How far to measure the hidden values of layer 2, and where standard estimates are enough.
 4. Whether to add grammar to gcsl (§3). The roadmap defers extensions during migration; a later proposal can revisit this.
