@@ -99,6 +99,7 @@ crate::chars! {
     Xinyan => xinyan,
     Aino => aino,
     Flins => flins,
+    Lohen => lohen,
 }
 
 /// The characters whose modules have been checked against gcsim for a
