@@ -1,0 +1,3 @@
+# The dendro traveler (Lumine) at C4: the transfiguration's stacks, no C6.
+team kukishinobu-yelan-xingqiu-travelerdendro
+luminedendro char lvl=90/90 cons=4 talent=9,9,9;

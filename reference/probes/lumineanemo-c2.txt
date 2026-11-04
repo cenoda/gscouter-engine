@@ -1,0 +1,3 @@
+# The anemo traveler (Lumine) at C2: energy recharge, no C6 shred.
+team xiao-jean-venti-traveleranemo
+lumineanemo char lvl=80/90 cons=2 talent=9,9,9;
