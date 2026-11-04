@@ -144,7 +144,7 @@ on:
         description: 'A run id of this workflow, on any branch, whose gcsim chunks (artifacts gcsim-new-*, kept a day) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
       import_release:
-        description: 'A release tag of this repository whose gcsim-cache-*.tar.gz assets (gcsim run outside CI, reference/warm-host.sh) to add to this branch''s cache; runs nothing else. Dispatch on main.'
+        description: 'Release tags of this repository, comma-separated, whose gcsim-cache-*.tar.gz assets (gcsim run outside CI, reference/warm-host.sh, reference/warm-daemon.sh) to add to this branch''s cache; runs nothing else. Dispatch on main.'
         default: ""
 
 env:
@@ -255,7 +255,7 @@ jobs:
           echo "rerun_shards=[]" >> "$GITHUB_OUTPUT"
           IMPORT_RELEASE=$(printf %s "$IMPORT_RELEASE" | tr -d "[:space:]")
           if [ "$EVENT" = workflow_dispatch ] && [ -n "$IMPORT_RELEASE" ]; then
-            [[ $IMPORT_RELEASE =~ ^[A-Za-z0-9._-]+$ ]] || { echo "import_release: want a tag, got $IMPORT_RELEASE"; exit 1; }
+            [[ $IMPORT_RELEASE =~ ^[A-Za-z0-9._-]+(,[A-Za-z0-9._-]+)*$ ]] || { echo "import_release: want tags, comma-separated, got $IMPORT_RELEASE"; exit 1; }
           fi
           if [ "$EVENT" = workflow_dispatch ] && { [ -n "$IMPORT" ] || [ -n "$IMPORT_RELEASE" ]; }; then
             [ -z "$IMPORT" ] || [[ $IMPORT =~ ^[0-9]+$ ]] || { echo "import_run: want a run id, got $IMPORT"; exit 1; }
@@ -891,8 +891,14 @@ jobs:
           TAG: ${{ inputs.import_release }}
         run: |
           mkdir -p "$RUNNER_TEMP/release" "$RUNNER_TEMP/gcsim-new"
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern 'gcsim-cache-*.tar.gz' --dir "$RUNNER_TEMP/release"
-          for f in "$RUNNER_TEMP"/release/*.tar.gz; do tar -xzf "$f" -C "$RUNNER_TEMP/gcsim-new"; done
+          # one tag or several, comma-separated, each into its own directory
+          # (two releases can carry assets of the same name)
+          for t in $(printf %s "$TAG" | tr -d "[:space:]" | tr , ' '); do
+            mkdir -p "$RUNNER_TEMP/release/$t"
+            gh release download "$t" --repo "$GITHUB_REPOSITORY" --pattern 'gcsim-cache-*.tar.gz' --dir "$RUNNER_TEMP/release/$t"
+            for f in "$RUNNER_TEMP/release/$t"/*.tar.gz; do tar -xzf "$f" -C "$RUNNER_TEMP/gcsim-new"; done
+            echo "imported $t"
+          done
       - id: new
         run: echo "chunks=$(find "$RUNNER_TEMP/gcsim-new" -type f 2>/dev/null | wc -l)" >> "$GITHUB_OUTPUT"
       - uses: actions/cache/restore@v4
