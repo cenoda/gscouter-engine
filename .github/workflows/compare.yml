@@ -3,35 +3,26 @@
 # commit; gcsim is fixed by reference/go.mod (Gscouter's fork,
 # cenoda/gcsim@eb21884, the same commit Gscouter's go.mod pins).
 #
-# compare decides at Gscouter's accuracy (the site scores 50 iterations,
-# about 0.7% of standard error): a build runs 4,000 iterations, and up to
-# 32,000 when it fails or is inconclusive there; an interval still across
-# the bound at 32,000 is decided by its estimate. The variants, build space
-# and pages run a sample of 4 builds of each kind per team (compare
-# -sample 4; a page's one-pass configs are always run), chosen by a hash so
-# that different teams draw different builds and every item is reached
-# across the library. Each report gives the drift, the mean difference
-# over its builds; the release's approval.md gives it over all of them.
+# Verification is the library builds and their probes within 1% of gcsim,
+# nothing more (owner, 2026-11-04): support means any build a player enters
+# (constellation, weapon, refinement, set, stats) for content the engine
+# has. compare decides at Gscouter's accuracy (the site scores 50
+# iterations, about 0.7% of standard error): a build runs 4,000
+# iterations, and up to 32,000 when it fails or is inconclusive there; an
+# interval still across the bound at 32,000 is decided by its estimate.
 #
-# Every push compares the library builds and the probes, in four parallel
-# parts. The variants (builds with their stats moved) run on a schedule: the teams are split into PARTS
-# parts, and each day runs PER_DAY of them, so every team's variants run
-# every PARTS / PER_DAY days. A manual run can name the parts to run, e.g.
-# "0-39" for all of them, or "library" for the push run.
+# Every push compares the library builds and the probes, in 16 parallel
+# parts; a work branch reuses the verdicts of builds whose engine output
+# has not moved (compare -reuse), main runs every build and stores them.
 #
-# The build-space variants (builds that change one member's constellation,
-# refinement or weapon; compare -only buildspace) are about 34 runnable
-# builds per supported team, some 9,300 in all, so they run on the same
-# schedule in their own parts: BS_PARTS parts, BS_PER_DAY of them a day. A
-# manual run names them in "buildspace" ("0-79" for all).
-#
-# The pages (compare -only pages) are the other configs a result page runs:
-# every rotation and filler candidate its search tries and the one-pass
-# config, for the library build and for no ER from artifacts (about 40
-# per team; reference/compare/pages.go). They run on the same schedule in
-# PG_PARTS parts, PG_PER_DAY a day; a manual run names them in "pages"
-# ("0-79" for all). The library builds run only when a run names no parts
-# of any kind.
+# The variants (builds with their stats moved; PARTS parts), the
+# build-space variants (one member's constellation, refinement or weapon
+# changed; compare -only buildspace, BS_PARTS parts) and the pages (the
+# other configs a result page runs; compare -only pages, PG_PARTS parts)
+# are no longer verified and have no schedule; a manual run can still name
+# their parts ("parts", "buildspace", "pages": "0-39", "0-79", "3,7,12"),
+# each running a sample of 4 builds per team (compare -sample 4). The
+# library builds run only when a run names no parts of any kind.
 #
 # Variant and build-space jobs pass compare -deadline, below the job's
 # time limit: past it compare starts no more builds and grows none further,
@@ -70,30 +61,22 @@
 # chunks, as for the other jobs. A shard job that fails or stops at its
 # deadline leaves its seeds to the rerun job's gcsim.
 #
-# A manual run with "release" set to true runs every kind of build at one
-# commit: the library builds and probes, every variant part, every
-# build-space part and every page part. Its manifest job then builds the
-# WebAssembly module (wasm/) and writes the teams Gscouter may run on it
-# (reference/manifest: a team is verified when every build of every kind
-# that the engine runs passes), uploaded with the module as the artifact
-# "engine-release". Dispatch it on main. With "release_teams" (ids, or a
-# .txt file of them such as reference/release-batch-1.txt) every kind runs
+# A manual run with "release" set to true runs the library builds and
+# probes at one commit (release_kinds, "library" by default; other kinds
+# can be added by hand). Its manifest job then builds the WebAssembly
+# module (wasm/) and writes the teams Gscouter may run on it
+# (reference/manifest: a team is verified when every build of the kinds
+# run that the engine runs passes), uploaded with the module as the
+# artifact "engine-release". Dispatch it on main. With "release_teams" (ids, or a
+# .txt file of them such as reference/release-batch-1.txt) the kinds run
 # on those teams alone, in fewer parts, and the manifest has only them: a
-# release in batches, the other teams unverified and on gcsim. With
-# "release_kinds" (library for a library-only release) it runs and judges
-# only those kinds; the manifest records them (kinds, verified_kinds).
+# release in batches, the other teams unverified and on gcsim. The
+# manifest records the kinds run (kinds, verified_kinds).
 #
 # A run on a branch saves its chunks in that branch's cache, which main
 # cannot read. A manual run on main with "import_run" set to that run's id
 # adds the run's chunk artifacts (kept a day) to main's cache, and runs
 # nothing else.
-#
-# The schedule's jobs run at most 4 variant, 8 build-space and 8 page
-# jobs at once (max-parallel), half of what it starts: they take up to
-# six hours each, and the 40 the schedule starts would take every one of
-# the account's 40 concurrent GitHub runners and leave a push's library
-# jobs waiting. The other half start as the first finish. Manual runs are
-# not held back.
 #
 # Caches of one branch must not be saved by two cache jobs at once: each
 # restores the latest and adds its own chunks, so the one saved second
@@ -106,8 +89,6 @@ on:
   push:
     branches: [main, "claude/**"]
   pull_request:
-  schedule:
-    - cron: "17 3 * * *"
   workflow_dispatch:
     inputs:
       parts:
@@ -132,13 +113,13 @@ on:
         description: 'Jobs to split each rerun build''s gcsim between, over seeds [0, rerun_max_iter), before its compare; 1 for none. Builds times shards at most 256.'
         default: "1"
       release:
-        description: 'true runs every kind of build at this commit and writes the manifest of verified teams with the WebAssembly module (artifact engine-release). Dispatch on main.'
+        description: 'true runs the library builds and probes (release_kinds) at this commit and writes the manifest of verified teams with the WebAssembly module (artifact engine-release). Dispatch on main.'
         default: "false"
       release_kinds:
-        description: 'With release: the kinds of build to run and judge, comma-separated from library, variants, buildspace, pages ("library" for a library-only release, whose teams are verified on the others after it); empty for every kind.'
-        default: ""
+        description: 'With release: the kinds of build to run and judge, comma-separated from library, variants, buildspace, pages. Verification is the library builds and probes (owner, 2026-11-04); the others are for manual use.'
+        default: "library"
       release_teams:
-        description: 'With release: only these teams, comma-separated ids or the path of a file in this repository listing one per line (reference/release-batch-1.txt); every kind runs on them alone, in fewer parts, and the manifest has only them. Empty for every team.'
+        description: 'With release: only these teams, comma-separated ids or the path of a file in this repository listing one per line (reference/release-batch-1.txt); the kinds run on them alone, in fewer parts, and the manifest has only them. Empty for every team.'
         default: ""
       import_run:
         description: 'A run id of this workflow, on any branch, whose gcsim chunks (artifacts gcsim-new-*, kept a day) to add to this branch''s cache; runs nothing else. Dispatch on main.'
@@ -148,13 +129,10 @@ on:
         default: ""
 
 env:
-  GSCOUTER_COMMIT: 9dfe65d914be5e4edca8b52e06795046de04d7e6
+  GSCOUTER_COMMIT: 004ce0dda881eb149a23266465cb429e46e8b3a8
   PARTS: 40
-  PER_DAY: 8
   BS_PARTS: 80
-  BS_PER_DAY: 16
   PG_PARTS: 80
-  PG_PER_DAY: 16
   # inside the workspace: actions/cache refuses paths with ".."
   GCSIM_CACHE: ${{ github.workspace }}/gcsim-cache
 
@@ -302,7 +280,7 @@ jobs:
               echo "release_teams: $n teams; parts: variants $np, build space $nb, pages $ng"
               echo "teams=$RELEASE_TEAMS" >> "$GITHUB_OUTPUT"
             fi
-            RELEASE_KINDS=$(printf %s "${RELEASE_KINDS:-library,variants,buildspace,pages}" | tr -d "[:space:]")
+            RELEASE_KINDS=$(printf %s "${RELEASE_KINDS:-library}" | tr -d "[:space:]")
             [[ $RELEASE_KINDS =~ ^(library|variants|buildspace|pages)(,(library|variants|buildspace|pages))*$ ]] || { echo "release_kinds: want kinds from library, variants, buildspace, pages separated by commas, got $RELEASE_KINDS"; exit 1; }
             has() { [[ ,$RELEASE_KINDS, == *,$1,* ]]; }
             echo "kinds=$RELEASE_KINDS" >> "$GITHUB_OUTPUT"
@@ -315,15 +293,7 @@ jobs:
             if has library; then echo "library=true" >> "$GITHUB_OUTPUT"; else echo "library=false" >> "$GITHUB_OUTPUT"; fi
             exit 0
           fi
-          if [ "$EVENT" = schedule ]; then
-            day=$(( $(date -u +%s) / 86400 ))
-            first=$(( (day % (PARTS / PER_DAY)) * PER_DAY ))
-            parts=$(seq -s, $first $(( first + PER_DAY - 1 )))
-            first=$(( (day % (BS_PARTS / BS_PER_DAY)) * BS_PER_DAY ))
-            bs=$(seq -s, $first $(( first + BS_PER_DAY - 1 )))
-            first=$(( (day % (PG_PARTS / PG_PER_DAY)) * PG_PER_DAY ))
-            pg=$(seq -s, $first $(( first + PG_PER_DAY - 1 )))
-          elif [ "$EVENT" = workflow_dispatch ]; then
+          if [ "$EVENT" = workflow_dispatch ]; then
             if [ "$INPUT" != library ]; then
               parts=$(expand "$INPUT" "$PARTS") || exit 1
             fi
@@ -419,7 +389,7 @@ jobs:
     timeout-minutes: 355
     strategy:
       fail-fast: false
-      max-parallel: ${{ github.event_name == 'schedule' && 4 || 256 }}
+      max-parallel: 256
       matrix:
         part: ${{ fromJSON(needs.plan.outputs.parts) }}
     steps:
@@ -479,7 +449,7 @@ jobs:
     timeout-minutes: 355
     strategy:
       fail-fast: false
-      max-parallel: ${{ github.event_name == 'schedule' && 8 || 256 }}
+      max-parallel: 256
       matrix:
         part: ${{ fromJSON(needs.plan.outputs.bs_parts) }}
     steps:
@@ -539,7 +509,7 @@ jobs:
     timeout-minutes: 355
     strategy:
       fail-fast: false
-      max-parallel: ${{ github.event_name == 'schedule' && 8 || 256 }}
+      max-parallel: 256
       matrix:
         part: ${{ fromJSON(needs.plan.outputs.pg_parts) }}
     steps:
