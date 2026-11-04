@@ -4,7 +4,7 @@
 
 What it takes for this engine to score Gscouter's results. More characters alone is not enough: the engine also needs every weapon and set a player can bring, the rest of gcsim's systems, a way into Gscouter's code, and rules for scores that move.
 
-The next rotation-search plan is in [docs/rotation-search.md](rotation-search.md): the port's purpose is to make build-dependent cycle discovery affordable, including intermediate constellations such as Flins C1. It records the agreed standard builds, C0/C1/C2/C4/C6 search stages and the one-week, $500, 128-core budget. Implementation is proposed; this does not change the porting phases below.
+Rotation search now belongs to [gscouter-optimizer](https://github.com/cenoda/gscouter-optimizer), a separate application using this engine. Its [plan](https://github.com/cenoda/gscouter-optimizer/blob/main/docs/rotation-search.md) records standard builds, C0/C1/C2/C4/C6 search stages and the one-week, $500, 128-core budget. The optimizer currently contains documentation only; this does not change the porting phases below.
 
 ## 1. Why characters alone are not enough
 
