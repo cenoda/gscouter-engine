@@ -73,6 +73,15 @@ pub fn char_kind(name: &str) -> Option<CharKind> {
 fn weapon_params_known(w: WeaponKind) -> Option<&'static [&'static str]> {
     Some(match w {
         WeaponKind::SacrificialJade => &["stacks"],
+        WeaponKind::LostPrayerToTheSacredWinds => &["stacks"],
+        // the rest read none
+        WeaponKind::EverlastingMoonglow
+        | WeaponKind::EyeOfPerception
+        | WeaponKind::MappaMare
+        | WeaponKind::VividNotions
+        | WeaponKind::NightweaversLookingGlass
+        | WeaponKind::SurfsUp
+        | WeaponKind::TulaytullahsRemembrance => &[],
         // gcsim reads only melusines; Gscouter's library passes stacks,
         // which gcsim ignores
         WeaponKind::UltimateOverlordsMegaMagicSword => &["melusines", "stacks"],
