@@ -184,7 +184,7 @@ func TestLibraryOnly(t *testing.T) {
 		t.Errorf("b: %+v, verified %d, kinds %v", m.Teams["b"], m.Verified, m.Kinds)
 	}
 	sum := approvalSummary(m, nil)
-	for _, want := range []string{"Kinds judged: library. **A partial release**", "No one-pass page score", "**Group A to answer: 1**"} {
+	for _, want := range []string{"Kinds judged: library. Verification is the library build and the probes", "No one-pass page score", "**Group A to answer: 1**"} {
 		if !strings.Contains(sum, want) {
 			t.Errorf("summary lacks %q:\n%s", want, sum)
 		}
