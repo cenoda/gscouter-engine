@@ -1,0 +1,3 @@
+# ineffa with balladofthefjords R5: library build lines carry it at R1 (212) (a gap the coverage map found, 2026-11-05).
+team alhaitham-xingqiu-aino-ineffa
+ineffa add weapon="fjords" refine=5 lvl=90/90;

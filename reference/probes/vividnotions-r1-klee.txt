@@ -1,0 +1,3 @@
+# klee with vividnotions R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).
+team klee-citlali-xilonen-xianyun
+klee add weapon="vividnotions" refine=1 lvl=90/90;

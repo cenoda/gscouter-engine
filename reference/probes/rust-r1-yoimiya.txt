@@ -1,0 +1,3 @@
+# yoimiya with rust R1: library build lines carry it at R3 (87), R5 (2) (a gap the coverage map found, 2026-11-05).
+team bennett-furina-xiangling-yoimiya
+yoimiya add weapon="rust" refine=1 lvl=90/90;

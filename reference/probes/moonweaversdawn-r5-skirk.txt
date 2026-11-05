@@ -1,0 +1,3 @@
+# skirk with moonweaversdawn R5: library build lines carry it at R1 (3), R2 (35) (a gap the coverage map found, 2026-11-05).
+team arlecchino-citlali-skirk-bennett
+skirk add weapon="moonweaversdawn" refine=5 lvl=90/90;

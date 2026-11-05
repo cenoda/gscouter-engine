@@ -1,0 +1,3 @@
+# aloy at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).
+team aloy-bennett-xiangling-rosaria
+aloy char lvl=90/90 cons=2 talent=9,9,9;

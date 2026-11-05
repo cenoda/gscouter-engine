@@ -1,0 +1,3 @@
+# fischl with theviridescenthunt R5: library build lines carry it at R1 (114) (a gap the coverage map found, 2026-11-05).
+team aino-fischl-columbina-sucrose
+fischl add weapon="viridescenthunt" refine=5 lvl=90/90;

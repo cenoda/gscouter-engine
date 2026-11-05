@@ -1,0 +1,3 @@
+# travelercryo with exaiphanesblade R5: library build lines carry it at R1 (35) (a gap the coverage map found, 2026-11-05).
+team sandrone-alyosha-travelercryo-vodyanitsa
+travelercryo add weapon="exaiphanesblade" refine=5 lvl=90/90;

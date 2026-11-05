@@ -1,0 +1,3 @@
+# jean at C6: its library builds are C0 and C4 (a gap the coverage map found, 2026-11-05).
+team arlecchino-furina-yelan-jean
+jean char lvl=90/90 cons=6 talent=9,9,9;

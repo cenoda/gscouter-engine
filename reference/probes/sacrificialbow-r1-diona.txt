@@ -1,0 +1,3 @@
+# diona with sacrificialbow R1: library build lines carry it at R3 (3), R4 (1), R5 (34) (a gap the coverage map found, 2026-11-05).
+team amber-diona-bennett-rosaria
+diona add weapon="sacrificialbow" refine=1 lvl=90/90;

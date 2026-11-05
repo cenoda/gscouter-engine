@@ -1,0 +1,3 @@
+# xinyan with bloodstainedchivalry 4: the library and probes carry it at 2 pieces only (a gap the coverage map found, 2026-11-05).
+team xinyan-furina-raidenshogun-charlotte
+xinyan add set="bloodstainedchivalry" count=4;

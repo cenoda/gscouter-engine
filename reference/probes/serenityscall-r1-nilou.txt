@@ -1,0 +1,3 @@
+# nilou with serenityscall R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).
+team columbina-nilou-lauma-nahida
+nilou add weapon="serenityscall" refine=1 lvl=90/90;

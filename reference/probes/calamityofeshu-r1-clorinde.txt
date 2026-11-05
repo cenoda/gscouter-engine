@@ -1,0 +1,3 @@
+# clorinde with calamityofeshu R1: library build lines carry it at R5 (92) (a gap the coverage map found, 2026-11-05).
+team clorinde-chevreuse-fischl-nicole
+clorinde add weapon="eshu" refine=1 lvl=90/90;

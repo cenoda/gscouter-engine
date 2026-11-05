@@ -12,7 +12,7 @@ var testResolver = resolver{
 }
 
 func TestMembersAndReaches(t *testing.T) {
-	build := "arle char lvl=90/90 cons=2 talent=9,9,9;\narle add weapon=\"fjords\" refine=5 lvl=90/90;\narle add set=\"gt\" count=4;\nbennett char lvl=90/90 cons=6;\nbennett add weapon=\"x\" lvl=90/90;\n"
+	build := "arle char lvl=90/90 cons=2 talent=9,9,9;\narle add weapon=\"fjords\" refine=5 lvl=90/90;\narle add set =\"gt\" count=4;\nbennett char lvl=90/90 cons=6;\nbennett add weapon= \"x\" lvl=90/90 +params=[stacks=5];\n"
 	ms, err := testResolver.members(build)
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +61,7 @@ func TestApplyNamesChanged(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	out, changed, err := pr.apply("arle char cons=0;\narle add set=\"gt\" count=4;\nbennett char cons=6;\n")
+	out, changed, err := pr.apply("arle char cons=0;\narle add set =\"gt\" count=4;\nbennett char cons=6;\n")
 	if err != nil {
 		t.Fatal(err)
 	}

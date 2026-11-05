@@ -1,0 +1,3 @@
+# yanfei with mappamare R1: library build lines carry it at R3 (2) (a gap the coverage map found, 2026-11-05).
+team diona-nahida-yanfei-xingqiu
+yanfei add weapon="mappamare" refine=1 lvl=90/90;

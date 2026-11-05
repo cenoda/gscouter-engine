@@ -1,0 +1,3 @@
+# vesna at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).
+team vesna-columbina-ineffa-sucrose
+vesna char lvl=90/90 cons=4 talent=9,9,9;

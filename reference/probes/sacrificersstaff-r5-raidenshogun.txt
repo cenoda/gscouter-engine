@@ -1,0 +1,3 @@
+# raiden with sacrificersstaff R5: library build lines carry it at R1 (1) (a gap the coverage map found, 2026-11-05).
+team raidenshogun-ineffa-columbina-sucrose
+raiden add weapon="sacrificersstaff" refine=5 lvl=90/90;
