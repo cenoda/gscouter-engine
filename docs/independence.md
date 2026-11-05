@@ -125,7 +125,7 @@ Dependency first (owner, 2026-11-04): new characters wait until this is far enou
 | 5 | Fallback, then removal | medium | gcsim is gone from the site |
 | 6 | gcsim behaviour matched on purpose | per item | Accuracy starts going past gcsim's |
 
-Step 0 precedes step 1. An Arlecchino investigation demonstrates the proposed verification workflow before step 3 changes the active gate; it does not authorize a score-changing release under the current rules. New characters come in after step 3, on the normal path, engine only. Before step 4 they lack timelines and charts, and their failures cannot fall back to gcsim. Step 6 can start on existing teams as soon as step 3 is done; Arlecchino first.
+Step 0 precedes step 1. An Arlecchino investigation demonstrates the proposed verification workflow before step 3 changes the active gate; it does not authorize a score-changing release under the current rules. New characters come in last, after the other steps (owner, 2026-11-05), engine only; their hitlag and hit counts are measured from the owner's Test Run recordings (`docs/content-format.md` §8). Before step 4 they lack timelines and charts, and their failures cannot fall back to gcsim. Step 6 can start on existing teams as soon as step 3 is done; Arlecchino first.
 
 ### Step 0: policy and source pilot
 
