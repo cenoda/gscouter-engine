@@ -74,7 +74,7 @@ jobs:
   # the shards' results as one file, the form of regression/baseline.txt:
   # for an intended change whose baseline is to be taken from CI's machines
   results:
-    needs: run
+    needs: [build, run]
     if: always() && needs.build.result == 'success'
     runs-on: ubuntu-latest
     steps:
@@ -103,7 +103,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: The pinned Gscouter commit
         id: pin
-        run: echo "commit=$(sed -n 's/^  GSCOUTER_COMMIT: *//p' .github/workflows/compare.yml)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "commit=$(sed -n 's/^  GSCOUTER_COMMIT: *//p' .github/workflows/compare.yml)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
           repository: cenoda/Gscouter
