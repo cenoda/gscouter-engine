@@ -19,6 +19,13 @@
 // directory, adds to each package a file registering its variables, and
 // runs dumper/main.go there. gcsim itself is never modified.
 //
+// No longer part of the maintained data workflow (2026-11-05): data.rs and
+// gamedata are maintained by hand in the engine, with their provenance
+// (docs/porting.md §4). gendata is kept to reproduce the legacy_gcsim data
+// from gcsim eb21884; it overwrites the files it writes, hand edits and
+// provenance headers included, so run it into a copy of the engine and
+// diff.
+//
 // Usage: go run ./gendata [-engine ../engine]
 package main
 
