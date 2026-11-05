@@ -1,0 +1,3 @@
+# expect: unknown_set
+hutao char lvl=90/90 cons=0 talent=9,9,9;
+hutao add set="notaset" count=4;

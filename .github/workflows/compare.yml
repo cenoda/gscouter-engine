@@ -357,6 +357,16 @@ jobs:
       - name: WebAssembly module gives the engine's results
         if: matrix.part == 0
         run: wasm/parity.sh
+      - name: Parse API agrees with gcsim's parser
+        if: matrix.part == 0
+        working-directory: reference
+        # every library config and probe as compare assembles them, every
+        # build.txt of Gscouter's teams, the reference configs and the
+        # malformed fixtures, field by field (docs/parse-api.md)
+        run: |
+          go run ./compare -gscouter ../gscouter -gse ../engine/target/release/gse -only library,probes -dry-run -configs "$RUNNER_TEMP/parse-configs" -cache "" > "$RUNNER_TEMP/parse-dry.log" 2>&1 || { tail -20 "$RUNNER_TEMP/parse-dry.log"; exit 1; }
+          go run ./parsecheck -gse ../engine/target/release/gse parsecheck/malformed ../configs "$RUNNER_TEMP/parse-configs"
+          go run ./parsecheck -gse ../engine/target/release/gse -name build.txt ../gscouter/teams
       - name: Compare with gcsim
         working-directory: reference
         # work branches take the stored verdict of a build whose engine

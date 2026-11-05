@@ -1,7 +1,8 @@
 #!/bin/sh
 # Builds the WebAssembly module and checks that it gives, byte for byte, what
 # the engine gives natively (engine/examples/slice.rs) on the reference
-# configs. Run from the repository's root.
+# configs, and parses (gse --parse) the same on every config and
+# malformed fixture. Run from the repository's root.
 set -eu
 rustup target add wasm32-unknown-unknown >/dev/null 2>&1 || true
 (cd wasm && cargo build --release --target wasm32-unknown-unknown)
@@ -20,4 +21,14 @@ engine/target/release/gse --catalog > "$out/native.json"
 node wasm/run.mjs "$wasm" --catalog > "$out/wasm.json"
 cmp "$out/native.json" "$out/wasm.json"
 echo "catalog: identical"
+files=$(ls configs/*.txt reference/parsecheck/malformed/*.txt)
+for f in $files; do
+  st=0
+  engine/target/release/gse --parse "$f" > "$out/one.json" || st=1
+  printf '== %s %s\n' "$f" "$st"
+  cat "$out/one.json"
+done > "$out/native.json"
+node wasm/run.mjs "$wasm" --parse-many $files > "$out/wasm.json"
+cmp "$out/native.json" "$out/wasm.json"
+echo "parse: identical ($(echo $files | wc -w) configs)"
 ls -l "$wasm"

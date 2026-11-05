@@ -85,6 +85,8 @@ A key or field with no row is `legacy_gcsim`. Nothing in a fight reads the table
 
 **The catalog export.** `gse --catalog` (also `api::catalog` and the Wasm module's `gse_catalog`) prints the key table as versioned JSON (`engine/src/catalog.rs`): `catalog_version`, `provenance_default`, then `characters`, `weapons` and `sets`, each sorted by key with its `aliases`, whether the engine `implemented` it, and its data (a character's `rarity`, `element`, `weapon_class` and `burst_energy`; a weapon's `rarity` and `weapon_class`) and `provenance`. Removing or renaming a field raises `catalog_version`; adding one does not. On 2026-11-05 the export agreed with gcsim's `pkg/catalog` on every character's rarity, element, weapon class and burst energy cost and every weapon's rarity and class (Aloy's special rarity is 5 here).
 
+**The parse API.** `gse --parse` (also `api::parse` and `gse_parse`) gives what a config's setup lines say, with the catalog's keys, as versioned JSON (`parse_version`); the contract and its check against gcsim's parser are `docs/parse-api.md`. A change to gcsl's setup lines keeps `reference/parsecheck` agreeing.
+
 **New content** comes through the content records and converter of §5 below (`docs/content-format.md`), with the sources of `docs/independence.md` §4; its output names its generator, and its values carry their provenance.
 
 `reference/gendata` is no longer part of this workflow. It is kept to reproduce the legacy data from gcsim `eb21884`; running it overwrites `data.rs` and `gamedata/` with gcsim's values and the old headers, so run it only into a copy (`go run ./gendata -engine <copy of engine>`) to diff against.
