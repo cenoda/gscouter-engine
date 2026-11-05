@@ -10,6 +10,7 @@ What each document is for. The conventions are Gscouter's (its `docs/README.md`)
 | `CLAUDE.md` | The rules for working on it: scope, accuracy, the reference scores, branches and merges |
 | `docs/roadmap.md` | Where it stands, what done means, the phases and what remains |
 | `docs/verification.md` | How it is checked against gcsim: `compare`'s rules, probes, CI and its caches, releases |
+| `docs/regression.md` | The engine's own library regression (pilot, Phase 6 step 3): fixed configs and seeds against a committed baseline, its runner, CI and review rule |
 | `docs/porting.md` | How to port from gcsim, the gcsim behaviour matched on purpose, the pitfalls found so far, how the content data, its provenance and the key catalog are maintained (§4), and how to add new content from a record (§5) |
 | `docs/probe-coverage.md` | The probes' coverage map (`reference/coverage`, `reference/probes/coverage.json`): what each probe and the library reach, item by item, and the gaps |
 | `docs/parse-api.md` | The versioned parse API (`gse --parse`, `gse_parse`) Gscouter's input path reads in place of gcsim's parser, and its agreement check with gcsim (`reference/parsecheck`) |
@@ -20,6 +21,7 @@ What each document is for. The conventions are Gscouter's (its `docs/README.md`)
 | `docs/pilot-xiangling/` | Phase 6 step 0 source pilot on Xiangling: `official.md` (layer 1, HoYoWiki diffed against legacy data, with records and scripts) and `hidden.md` (layer 2, public evidence per mechanic and the effect of estimates) |
 | `docs/arlecchino/` | Phase 6 milestone 3a Arlecchino investigation: `report.md` (where the site's "about 20%" came from, official values and hand-checked hits against gcsim and the engine, affected teams, the evidence still needed), with fixtures and scripts |
 | `docs/mechanics-tests.md` | Phase 6 step 3a: mechanic checks from public evidence (`engine/tests/mechanics.rs`), their sources, tolerances and known differences |
+| `docs/verification-transition.md` | Phase 6 milestone 3b proposal (not active): the gate, score-moving changes, releases and approval without mandatory gcsim agreement, and the owner's decisions |
 | `docs/history.md` | Records of Phases 0 to 3: results tables, runs and measurements as they were taken |
 | `docs/rotation-search.md` | A pointer: rotation search moved to gscouter-optimizer |
 | `reference/audits/` | Audits of where characters read the player's position, for `MOVES_WITH_PLAYER` |

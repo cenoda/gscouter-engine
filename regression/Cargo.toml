@@ -1,0 +1,14 @@
+[package]
+name = "gse-regress"
+version = "0.1.0"
+edition = "2024"
+license = "AGPL-3.0-or-later"
+description = "The engine's own library regression: fixed configs and seeds against a committed baseline"
+
+# No dependencies, as the engine. The runner spawns `gse`; it needs neither
+# Go nor gcsim.
+[dependencies]
+
+[[bin]]
+name = "regress"
+path = "src/main.rs"
