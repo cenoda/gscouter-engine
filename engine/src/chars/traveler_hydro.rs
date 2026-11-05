@@ -17,7 +17,7 @@
 
 use super::traveler_common;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::traveler_common_hydro as g;
+use crate::gamedata::chars::traveler_common_hydro as g;
 use crate::sim::*;
 use crate::types::*;
 

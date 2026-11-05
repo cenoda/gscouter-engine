@@ -102,7 +102,7 @@ What not to take: its ICD, hitlag, hitboxes, durability and particles come from 
 
 ### Existing data
 
-`engine/src/data.rs` and `engine/src/gcsimdata/` (129 characters, 252 weapons, 55 sets), as well as Gscouter's existing `artifact_main_gen.json`, were generated from gcsim, whose pipeline reads extracted data. Decided by the owner (2026-11-04): they are kept as an explicit, documented legacy exception rather than replaced wholesale. Renaming files or moving them to repository-owned maintenance does not change their provenance, so legacy records retain an explicit `legacy_gcsim` provenance marker until an individual value is replaced by an official observation, measurement or step 6 correction. New content and post-independence corrections follow the no-datamining rules above.
+`engine/src/data.rs` and `engine/src/gamedata/` (formerly `gcsimdata/`; 129 characters, 252 weapons, 55 sets), as well as Gscouter's existing `artifact_main_gen.json`, were generated from gcsim, whose pipeline reads extracted data. Decided by the owner (2026-11-04): they are kept as an explicit, documented legacy exception rather than replaced wholesale. Renaming files or moving them to repository-owned maintenance does not change their provenance, so legacy records retain an explicit `legacy_gcsim` provenance marker until an individual value is replaced by an official observation, measurement or step 6 correction. New content and post-independence corrections follow the no-datamining rules above.
 
 ### Enka data
 
@@ -137,7 +137,7 @@ The existing-data policy is decided (2026-11-04: documented legacy exception, §
 
 ### Step 1: engine data and keys
 
-- Under the legacy-data exception (§4), move `engine/src/data.rs` and `engine/src/gcsimdata/` to repository-owned maintenance, preserving explicit legacy provenance metadata, and rename the module. Separate editable source records from converter output: remove the old generated warning only from manually maintained files; generated output still names its generator.
+- Under the legacy-data exception (§4), move `engine/src/data.rs` and `engine/src/gcsimdata/` (now `gamedata/`) to repository-owned maintenance, preserving explicit legacy provenance metadata, and rename the module. Separate editable source records from converter output: remove the old generated warning only from manually maintained files; generated output still names its generator.
 - Retire `reference/gendata` from the maintained data workflow once its replacement is demonstrated. The Rust engine already has no Cargo dependencies; building it alone is not proof that data maintenance is independent.
 - One key table, in `data.rs` (names, aliases, keys), from which Gscouter takes its keys too. New names are added there only.
 - An input format for new content (the values of §4 with their sources) and a converter to the engine's data.

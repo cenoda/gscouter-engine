@@ -9,7 +9,7 @@
 //! read the player's airborne state; the engine does the same.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::venti as g;
+use crate::gamedata::chars::venti as g;
 use crate::sim::*;
 use crate::types::*;
 

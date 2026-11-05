@@ -13,7 +13,7 @@
 
 use crate::chars::plunge;
 use crate::content::Character;
-use crate::gcsimdata::chars::ayaka as g;
+use crate::gamedata::chars::ayaka as g;
 use crate::sim::*;
 use crate::types::*;
 

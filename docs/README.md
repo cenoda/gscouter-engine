@@ -10,7 +10,7 @@ What each document is for. The conventions are Gscouter's (its `docs/README.md`)
 | `CLAUDE.md` | The rules for working on it: scope, accuracy, the reference scores, branches and merges |
 | `docs/roadmap.md` | Where it stands, what done means, the phases and what remains |
 | `docs/verification.md` | How it is checked against gcsim: `compare`'s rules, probes, CI and its caches, releases |
-| `docs/porting.md` | How to port from gcsim, the gcsim behaviour matched on purpose, and the pitfalls found so far |
+| `docs/porting.md` | How to port from gcsim, the gcsim behaviour matched on purpose, the pitfalls found so far, and how the content data, its provenance and the key catalog are maintained |
 | `docs/phase4-approval.md` | How the owner approves teams for Gscouter: groups A and B, carry-forward, the owner's decisions |
 | `docs/independence.md` | The plan to stop depending on gcsim (Phase 6): why, what stays, where data comes from, the steps, what remains |
 | `docs/independence-roadmap.md` | Phase 6 execution order, milestone deliverables, completion evidence and unresolved decisions |

@@ -10,7 +10,7 @@
 //! lands, where the player stands then, as gcsim's attackBuff does.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::sara as g;
+use crate::gamedata::chars::sara as g;
 use crate::sim::*;
 use crate::types::*;
 

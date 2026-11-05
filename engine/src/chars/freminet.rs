@@ -8,7 +8,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::freminet as g;
+use crate::gamedata::chars::freminet as g;
 use crate::sim::*;
 use crate::types::*;
 

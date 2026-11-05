@@ -5,7 +5,7 @@
 //! index plus one, 0 for none.
 
 use crate::content::{Event, SetImpl};
-use crate::gcsimdata::icd;
+use crate::gamedata::icd;
 use crate::sim::*;
 use crate::types::*;
 

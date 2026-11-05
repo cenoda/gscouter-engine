@@ -10,7 +10,7 @@
 //! Stellar-Conduct DMG 200% CRIT DMG. Plunges from Xianyun's airborne state.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::yaemiko as g;
+use crate::gamedata::chars::yaemiko as g;
 use crate::chars::plunge;
 use crate::gcsl::Num;
 use crate::sim::*;

@@ -14,7 +14,7 @@
 use super::traveler_common;
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::traveler_common_cryo as g;
+use crate::gamedata::chars::traveler_common_cryo as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::stellar::{POLESTAR_FIELD, RADIANCE_SWIRL};
@@ -108,7 +108,7 @@ impl<const G: u8> Character for Char<G> {
     fn new_state(cs: &CharSetup) -> State<G> {
         // Freezing Ice reads the param as on when above 0 (the story's
         // buffs, only at 1)
-        let true_moon = cs.params.iter().find(|p| p.0 == crate::gcsimdata::chars::traveler_common::TRUE_MOON_PARAM).is_none_or(|p| p.1 > 0);
+        let true_moon = cs.params.iter().find(|p| p.0 == crate::gamedata::chars::traveler_common::TRUE_MOON_PARAM).is_none_or(|p| p.1 > 0);
         State(Inner { gender: G as usize, skill_src: 0, frostglow: 0, skill_travel: 0, true_moon, icepoint: 0, c6_stacks: 0, story: traveler_common::Story::new(cs) })
     }
 

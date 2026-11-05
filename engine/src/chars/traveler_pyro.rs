@@ -18,7 +18,7 @@
 use super::traveler_common;
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::traveler_common_pyro as g;
+use crate::gamedata::chars::traveler_common_pyro as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

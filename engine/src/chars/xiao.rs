@@ -12,7 +12,7 @@
 //! and the low plunge's hitmark is the high one's.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::xiao as g;
+use crate::gamedata::chars::xiao as g;
 use crate::sim::*;
 use crate::types::*;
 

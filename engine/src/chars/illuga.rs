@@ -9,7 +9,7 @@
 //! one), so only the constructs present as the burst lands count.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::illuga as g;
+use crate::gamedata::chars::illuga as g;
 use crate::sim::*;
 use crate::types::*;
 

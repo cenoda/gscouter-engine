@@ -4,7 +4,7 @@
 //! electro and hydro bonuses, A1 and A4, and constellations 1 to 6.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::nahida as g;
+use crate::gamedata::chars::nahida as g;
 use crate::sim::*;
 use crate::types::*;
 

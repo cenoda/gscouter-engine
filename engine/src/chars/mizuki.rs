@@ -9,7 +9,7 @@
 //! the start of each frame (`Sim::collide_gadgets`).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::mizuki as g;
+use crate::gamedata::chars::mizuki as g;
 use crate::sim::*;
 use crate::types::*;
 

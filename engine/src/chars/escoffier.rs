@@ -7,7 +7,7 @@
 
 use crate::content::{Character, Event, EventKind, Owner};
 use crate::gcsl::Num;
-use crate::gcsimdata::chars::escoffier as g;
+use crate::gamedata::chars::escoffier as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

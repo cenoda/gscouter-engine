@@ -10,7 +10,7 @@
 //! the active character on the enemy (gcsim's OnLunarCrystallize).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::gorou as g;
+use crate::gamedata::chars::gorou as g;
 use crate::sim::*;
 use crate::types::*;
 

@@ -8,7 +8,7 @@
 use crate::chars::traveler::{self, Normals};
 use crate::chars::CharState;
 use crate::content::Character;
-use crate::gcsimdata::chars::traveler_common_geo as g;
+use crate::gamedata::chars::traveler_common_geo as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

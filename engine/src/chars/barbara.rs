@@ -8,7 +8,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::barbara as g;
+use crate::gamedata::chars::barbara as g;
 use crate::sim::*;
 use crate::types::*;
 

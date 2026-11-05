@@ -18,7 +18,7 @@
 //! that names them.
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::amber as g;
+use crate::gamedata::chars::amber as g;
 use crate::sim::*;
 use crate::types::*;
 

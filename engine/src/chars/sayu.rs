@@ -6,7 +6,7 @@
 //! scaling). gcsim gives her no charged attack and no plunges.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::sayu as g;
+use crate::gamedata::chars::sayu as g;
 use crate::sim::*;
 use crate::types::*;
 

@@ -14,7 +14,7 @@
 //! gcsim forbids the low one then).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::xilonen as g;
+use crate::gamedata::chars::xilonen as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

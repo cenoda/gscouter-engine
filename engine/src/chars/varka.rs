@@ -10,7 +10,7 @@
 //! `cd` and `charge` conditions read it then, as his overrides do.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::varka as g;
+use crate::gamedata::chars::varka as g;
 use crate::sim::*;
 use crate::types::*;
 

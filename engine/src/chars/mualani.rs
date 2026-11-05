@@ -7,7 +7,7 @@
 //! it as prey and gives a Momentum stack; three make the Surging Bite.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::mualani as g;
+use crate::gamedata::chars::mualani as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

@@ -12,7 +12,7 @@
 //! at 0.2 points or after 16 s.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::iansan as g;
+use crate::gamedata::chars::iansan as g;
 use crate::sim::*;
 use crate::types::*;
 

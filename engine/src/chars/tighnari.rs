@@ -5,7 +5,7 @@
 //! constellation.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::tighnari as g;
+use crate::gamedata::chars::tighnari as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

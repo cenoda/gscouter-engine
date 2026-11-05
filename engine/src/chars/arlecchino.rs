@@ -14,7 +14,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::arlecchino as g;
+use crate::gamedata::chars::arlecchino as g;
 use crate::sim::*;
 use crate::types::*;
 

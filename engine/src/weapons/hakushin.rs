@@ -11,7 +11,7 @@
 //! superconduct, and Lunar-Charged as hydro, like electro-charged.
 
 use crate::content::{Event, EventKind, Owner, WeaponImpl};
-use crate::gcsimdata::weapons::catalyst_hakushin::{BUFF_KEY, ICD_KEY};
+use crate::gamedata::weapons::catalyst_hakushin::{BUFF_KEY, ICD_KEY};
 use crate::sim::*;
 use crate::types::*;
 

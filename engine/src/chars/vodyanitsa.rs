@@ -16,7 +16,7 @@
 //! so it does the same.
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::vodyanitsa as g;
+use crate::gamedata::chars::vodyanitsa as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::stellar::RADIANCE_SWIRL;

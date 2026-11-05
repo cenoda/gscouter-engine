@@ -14,7 +14,7 @@
 //! only. Its heals give A4 to the character healed.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::baizhu as g;
+use crate::gamedata::chars::baizhu as g;
 use crate::sim::*;
 use crate::types::*;
 

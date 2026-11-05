@@ -15,7 +15,7 @@
 //! Flins replaced by Xingqiu (C0, C6) or Bennett (C2, C6: pyro A1).
 
 use crate::content::{Character, Owner};
-use crate::gcsimdata::chars::jahoda as g;
+use crate::gamedata::chars::jahoda as g;
 use crate::sim::*;
 use crate::types::*;
 

@@ -5,7 +5,7 @@
 //! and the plunges from Xianyun's airborne state.
 
 use crate::content::Character;
-use crate::gcsimdata::chars::xiangling as g;
+use crate::gamedata::chars::xiangling as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

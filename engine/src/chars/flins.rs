@@ -21,7 +21,7 @@
 //!   (OnApplyAttack) and on Lunar-Charged contributions.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::flins as g;
+use crate::gamedata::chars::flins as g;
 use crate::sim::*;
 use crate::types::*;
 

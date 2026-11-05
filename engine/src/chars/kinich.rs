@@ -16,7 +16,7 @@
 
 use crate::content::{Character, Event};
 use crate::gcsl::Num;
-use crate::gcsimdata::chars::kinich as g;
+use crate::gamedata::chars::kinich as g;
 use crate::nightsoul::NIGHTSOUL_BLESSING;
 use crate::sim::*;
 use crate::types::*;

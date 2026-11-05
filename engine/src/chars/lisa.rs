@@ -8,7 +8,7 @@
 use std::cell::Cell;
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::lisa as g;
+use crate::gamedata::chars::lisa as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

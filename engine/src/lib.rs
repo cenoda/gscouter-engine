@@ -3,15 +3,17 @@
 //! modules (see there why); a test checks that the two lists agree.
 
 pub mod api;
+pub mod catalog;
 mod chars;
 pub mod check;
 mod content;
 mod data;
 pub mod eval;
-mod gcsimdata;
+mod gamedata;
 pub mod gcsl;
 mod nightsoul;
 pub mod profile;
+pub mod provenance;
 mod queue;
 mod rng;
 mod sets;

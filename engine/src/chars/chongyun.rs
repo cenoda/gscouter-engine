@@ -7,7 +7,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::chongyun as g;
+use crate::gamedata::chars::chongyun as g;
 use crate::sim::*;
 use crate::types::*;
 

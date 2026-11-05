@@ -108,7 +108,7 @@ The page (entry 5654) states:
 - Transformative reactions: Burgeon, Hyperbloom and Shatter 300%, Overloaded 275%, Bloom and Electro-Charged 200%, Superconduct 150%, Swirl 60%, Burning 25%. Their EM bonus is `16·EM/(EM+2000)`, and the page gives the level multiplier at Lv.60/70/80/85/90/95/100.
 - It also has a Lunar reactions section and long lists of which effects fall in which term; neither was examined.
 
-Each item matches `engine/src/sim.rs` (`calc`, `reaction_attack`, the reaction functions) and `engine/src/gcsimdata/combat.rs` `REACTION_LVL_BASE` (e.g. Lv.90: 1446.8535 vs 1446.85). Not checked: where the engine puts "Damage Taken Multiplier"; and the engine caps a DEF increase (`defadj.min(0.9)`), which the page does not mention.
+Each item matches `engine/src/sim.rs` (`calc`, `reaction_attack`, the reaction functions) and `engine/src/gamedata/combat.rs` `REACTION_LVL_BASE` (e.g. Lv.90: 1446.8535 vs 1446.85). Not checked: where the engine puts "Damage Taken Multiplier"; and the engine caps a DEF increase (`defadj.min(0.9)`), which the page does not mention.
 
 ## 4. Derived values: growth ratios
 
@@ -141,7 +141,7 @@ None. Every one of the 301 compared values agrees at the page's precision. The d
 |---|---|---|
 | Xiangling's Enka `avatarId` | 10000023 (`character.dm.json`) | **Unresolved**: needs one showcase with Xiangling (§8) |
 | Enka base-stat check for Xiangling | – | **Unresolved**, with the above; method demonstrated on 4 other characters |
-| Talent values to full precision | `gcsimdata/chars/xiangling.rs` | **Kept legacy**; the official page confirms them to display precision (§4) |
+| Talent values to full precision | `gamedata/chars/xiangling.rs` | **Kept legacy**; the official page confirms them to display precision (§4) |
 | Normal attack Lv.12–15, skill and burst Lv.14–15 | legacy arrays | **Not needed**: unreachable for Xiangling |
 | Base-stat growth between breakpoints | `CURVES` 22, 32 | **Kept legacy**; checked at the 14 breakpoints only |
 | Game version of the values | – | **Partly**: page revision 2025-12-08, no version stated |

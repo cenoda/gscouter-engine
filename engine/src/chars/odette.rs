@@ -17,7 +17,7 @@
 //! and reduction read that slot (`Sim::cd_action`), as her overrides do.
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::odette as g;
+use crate::gamedata::chars::odette as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::stellar::{POLESTAR_FIELD, RADIANCE_SWIRL};

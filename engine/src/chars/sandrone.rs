@@ -14,7 +14,7 @@
 //! of that kind instead. No plunges.
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::sandrone as g;
+use crate::gamedata::chars::sandrone as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::stellar::{POLESTAR_FIELD, RADIANCE_SWIRL};

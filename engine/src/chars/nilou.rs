@@ -9,7 +9,7 @@
 //! a dendro hit on the player gives the party 100 EM.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::nilou as g;
+use crate::gamedata::chars::nilou as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

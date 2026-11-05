@@ -9,7 +9,7 @@
 //! on field is the generated `anim_delay`, not code here.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::kuki as g;
+use crate::gamedata::chars::kuki as g;
 use crate::sim::*;
 use crate::types::*;
 

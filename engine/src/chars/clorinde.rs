@@ -11,7 +11,7 @@
 //! reads the active character's).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::clorinde as g;
+use crate::gamedata::chars::clorinde as g;
 use crate::sim::*;
 use crate::types::*;
 

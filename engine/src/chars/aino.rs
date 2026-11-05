@@ -16,7 +16,7 @@
 //!   she is off field and her burst lasts, once every 5 s.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::aino as g;
+use crate::gamedata::chars::aino as g;
 use crate::sim::*;
 use crate::types::*;
 

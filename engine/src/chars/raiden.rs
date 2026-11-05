@@ -5,7 +5,7 @@
 //! with and without Musou Isshin.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::raiden as g;
+use crate::gamedata::chars::raiden as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

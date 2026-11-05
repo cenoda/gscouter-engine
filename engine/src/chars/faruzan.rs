@@ -10,7 +10,7 @@
 //! within 40 of where the cast was.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::faruzan as g;
+use crate::gamedata::chars::faruzan as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

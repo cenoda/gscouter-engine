@@ -11,7 +11,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::lanyan as g;
+use crate::gamedata::chars::lanyan as g;
 use crate::sim::*;
 use crate::types::*;
 

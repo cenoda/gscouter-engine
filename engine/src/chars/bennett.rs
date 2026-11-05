@@ -4,7 +4,7 @@
 //! airborne state.
 
 use crate::content::Character;
-use crate::gcsimdata::chars::bennett as g;
+use crate::gamedata::chars::bennett as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

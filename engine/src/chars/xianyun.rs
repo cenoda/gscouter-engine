@@ -9,7 +9,7 @@
 //! reset it, so it heals with the ratio of zero leaps.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::xianyun as g;
+use crate::gamedata::chars::xianyun as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

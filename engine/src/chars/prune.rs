@@ -11,7 +11,7 @@
 //! is made, and it falls on the enemy the hammer hit.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::prune as g;
+use crate::gamedata::chars::prune as g;
 use crate::sim::*;
 use crate::types::*;
 

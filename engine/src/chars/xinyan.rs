@@ -12,7 +12,7 @@
 
 use crate::chars::plunge;
 use crate::content::Character;
-use crate::gcsimdata::chars::xinyan as g;
+use crate::gamedata::chars::xinyan as g;
 use crate::sim::*;
 use crate::types::*;
 

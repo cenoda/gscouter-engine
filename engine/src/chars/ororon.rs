@@ -17,7 +17,7 @@
 //! to 3 and none of 4 or more).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::ororon as g;
+use crate::gamedata::chars::ororon as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

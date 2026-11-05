@@ -6,7 +6,7 @@
 //! Arrows.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::yoimiya as g;
+use crate::gamedata::chars::yoimiya as g;
 use crate::sim::*;
 use crate::types::*;
 

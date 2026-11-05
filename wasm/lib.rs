@@ -15,6 +15,8 @@
 //! - `gse_check(cfg, len)`: what the config needs that the engine does
 //!   not implement, as a JSON array of strings, empty when the engine can
 //!   run it; an error is the config's parse error.
+//! - `gse_catalog()`: the key catalog (`gse --catalog`, the engine's
+//!   `catalog.rs`) as versioned JSON; never an error.
 
 use gse::api;
 
@@ -63,6 +65,11 @@ pub unsafe extern "C" fn gse_check(cfg: *const u8, len: u32) -> *mut u8 {
         let items: Vec<String> = list.iter().map(|s| api::json_string(s)).collect();
         format!("[{}]", items.join(","))
     }))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn gse_catalog() -> *mut u8 {
+    result(Ok(api::catalog()))
 }
 
 unsafe fn text<'a>(ptr: *const u8, len: u32) -> Result<&'a str, String> {

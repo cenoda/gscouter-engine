@@ -3345,7 +3345,7 @@ impl Sim {
         let ci = ai.actor as usize;
         let em = self.stat(ci, st::EM);
         let lvl = self.chars[ci].level;
-        ai.flat_dmg = (1.0 + (16.0 * em) / (2000.0 + em) + self.react_bonus(ci, &ai)) * crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
+        ai.flat_dmg = (1.0 + (16.0 * em) / (2000.0 + em) + self.react_bonus(ci, &ai)) * crate::gamedata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
         let mut atk = AttackEvent::new(ai, 0);
         atk.stats[st::EM] = em;
         atk.char_lvl = lvl;
@@ -3592,7 +3592,7 @@ impl Sim {
         let em = self.stat(ci, st::EM);
         ev.info.catalyzed = Some(r);
         let lvl = self.chars[ci].level;
-        let base = (1.0 + (5.0 * em) / (1200.0 + em) + self.react_bonus(ci, &ev.info)) * crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
+        let base = (1.0 + (5.0 * em) / (1200.0 + em) + self.react_bonus(ci, &ev.info)) * crate::gamedata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
         ev.info.flat_dmg += if r == Reaction::Aggravate { 1.15 } else { 1.25 } * base;
     }
 
@@ -3929,7 +3929,7 @@ impl Sim {
         let g = self.gadgets.remove(k);
         self.core_type_limit();
         let f = self.f;
-        self.push_gadget(Gadget { owner: CORE, id: SEED_CORE, timer: 0, duration: crate::gcsimdata::chars::nefer::SEED_DURATION, aura: Aura::new(), src: f, x: g.x, y: g.y, r: 2.0, actor: 0, takes_hits: false, enemy_camp: true, collides_player: false, key: 0 });
+        self.push_gadget(Gadget { owner: CORE, id: SEED_CORE, timer: 0, duration: crate::gamedata::chars::nefer::SEED_DURATION, aura: Aura::new(), src: f, x: g.x, y: g.y, r: 2.0, actor: 0, takes_hits: false, enemy_camp: true, collides_player: false, key: 0 });
     }
 
     /// Nefer's convertExistingDendroCores: every dendro core and Bountiful
@@ -4022,7 +4022,7 @@ impl Sim {
         // Faruzan's Pressurized Collapse reaches it (guoba.go's Attack)
         let swirler = match self.chars[ev.info.actor as usize].kind {
             crate::chars::CharKind::Sucrose => true,
-            crate::chars::CharKind::Faruzan => ev.info.abil == crate::gcsimdata::chars::faruzan::VORTEX_ABIL_NAME,
+            crate::chars::CharKind::Faruzan => ev.info.abil == crate::gamedata::chars::faruzan::VORTEX_ABIL_NAME,
             _ => false,
         };
         if ev.info.tag == AttackTag::ElementalArt && swirler {
@@ -4271,7 +4271,7 @@ impl Sim {
             typ: ShieldType::Crystallize,
             target: -1,
             ele: if ele == Element::Frozen { Element::Cryo } else { ele },
-            hp: crate::gcsimdata::crystallize::SHIELD_BASE_HP[lvl],
+            hp: crate::gamedata::crystallize::SHIELD_BASE_HP[lvl],
             expiry: -1,
             em_bonus: (40.0 / 9.0) * (em / (1400.0 + em)),
         };
@@ -4586,7 +4586,7 @@ impl Sim {
             let react = self.react_bonus(ci, &ev.info);
             let lvl = self.chars[ci].level;
             // gcsim's CalcSpecialReactionDmg
-            let base = crate::gcsimdata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
+            let base = crate::gamedata::combat::REACTION_LVL_BASE[(lvl - 1).clamp(0, 99) as usize];
             let mut dmg = scale * ((mult * (1.0 + (6.0 * em) / (2000.0 + em) + react) * base * (1.0 + base_bonus) + ev.info.flat_dmg) * (1.0 + ev.elevation as f64 / 1000.0));
             let mut crit = false;
             if self.rng.float64() <= cr {
@@ -4951,7 +4951,7 @@ impl Sim {
         let saved = g.aura;
         let a = &mut self.gadgets[k].aura;
         a.dur[AURA_PYRO] = [0.0; 4];
-        a.dur[AURA_PYRO][0] = crate::gcsimdata::chars::xiangling::INFUSE_DURABILITY as f64;
+        a.dur[AURA_PYRO][0] = crate::gamedata::chars::xiangling::INFUSE_DURABILITY as f64;
         a.decay[AURA_PYRO] = 0.0;
         a.live |= 1 << AURA_PYRO;
         // TrySwirlPyro
@@ -6237,15 +6237,15 @@ impl Sim {
                 // the enemy's tags (gcsim's GetTag, 0 when unset): those of
                 // ported characters the engine keeps, or an error
                 match fields[2].as_str() {
-                    crate::gcsimdata::chars::lisa::CONDUCTIVE_TAG => Ok(int(crate::chars::lisa::conductive(self))),
+                    crate::gamedata::chars::lisa::CONDUCTIVE_TAG => Ok(int(crate::chars::lisa::conductive(self))),
                     // the frame the current Blood Blossom started
-                    crate::gcsimdata::chars::hutao::BB_DEBUFF => Ok(int(crate::chars::hutao::bb_tag(self))),
+                    crate::gamedata::chars::hutao::BB_DEBUFF => Ok(int(crate::chars::hutao::bb_tag(self))),
                     // Yelan marks and unmarks in two tasks of the same
                     // frame, so no condition sees the mark
-                    crate::gcsimdata::chars::yelan::SKILL_MARKED_TAG => Ok(int(0)),
+                    crate::gamedata::chars::yelan::SKILL_MARKED_TAG => Ok(int(0)),
                     // gcsim's held skill never calls the function that
                     // sets it (see `chars::lynette`)
-                    crate::gcsimdata::chars::lynette::SKILL_TAG => Ok(int(0)),
+                    crate::gamedata::chars::lynette::SKILL_TAG => Ok(int(0)),
                     _ => Ok(int(0)),
                 }
             }
@@ -6356,10 +6356,10 @@ impl Sim {
                     "tags" => {
                         need(3, &what)?;
                         match fields[2].as_str() {
-                            crate::gcsimdata::chars::shenhe::QUILL_KEY => Ok(int(crate::chars::shenhe::quill_tag(self, ci))),
-                            crate::gcsimdata::chars::xilonen::C4KEY => Ok(int(crate::chars::xilonen::c4_tag(self, ci))),
-                            crate::gcsimdata::chars::yunjin::BURST_BUFF_KEY => Ok(int(crate::chars::yunjin::burst_tag(self, ci))),
-                            t @ (crate::gcsimdata::chars::xianyun::A1_KEY | crate::gcsimdata::chars::xianyun::C6_KEY) => Ok(int(crate::chars::xianyun::tag(self, ci, t))),
+                            crate::gamedata::chars::shenhe::QUILL_KEY => Ok(int(crate::chars::shenhe::quill_tag(self, ci))),
+                            crate::gamedata::chars::xilonen::C4KEY => Ok(int(crate::chars::xilonen::c4_tag(self, ci))),
+                            crate::gamedata::chars::yunjin::BURST_BUFF_KEY => Ok(int(crate::chars::yunjin::burst_tag(self, ci))),
+                            t @ (crate::gamedata::chars::xianyun::A1_KEY | crate::gamedata::chars::xianyun::C6_KEY) => Ok(int(crate::chars::xianyun::tag(self, ci, t))),
                             _ => Ok(int(0)),
                         }
                     }

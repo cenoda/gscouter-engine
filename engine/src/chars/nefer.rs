@@ -19,7 +19,7 @@
 //! stops with an error if one moves the player anyway.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::nefer as g;
+use crate::gamedata::chars::nefer as g;
 use crate::sim::*;
 use crate::types::*;
 

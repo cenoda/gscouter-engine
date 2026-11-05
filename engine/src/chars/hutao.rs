@@ -1,7 +1,7 @@
 //! Hu Tao, from gcsim's internal/characters/hutao.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::hutao as g;
+use crate::gamedata::chars::hutao as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

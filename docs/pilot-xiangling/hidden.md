@@ -4,7 +4,7 @@
 
 This document checks whether Xiangling's hidden values (ICD, durability, hitlag, strike type and poise, hitboxes, particles, frames) can come from public measurements of the game or from the standard estimates of `docs/independence.md` §4 layer 2 step 1. It diffs each one against the legacy values. The layer 1 values (talent tables, stats, descriptions) are in `docs/pilot-xiangling/official.md`.
 
-Legacy means gcsim's `internal/characters/xiangling` at `cenoda/gcsim@eb21884` (the commit `reference/go.mod` fixes), and the engine's port of it: `engine/src/chars/xiangling.rs`, plus `engine/src/gcsimdata/chars/xiangling.rs`, which is generated from that package. Legacy values are what this pilot compares against. They are not evidence.
+Legacy means gcsim's `internal/characters/xiangling` at `cenoda/gcsim@eb21884` (the commit `reference/go.mod` fixes), and the engine's port of it: `engine/src/chars/xiangling.rs`, plus `engine/src/gamedata/chars/xiangling.rs`, which is generated from that package. Legacy values are what this pilot compares against. They are not evidence.
 
 ## 1. Sources read
 

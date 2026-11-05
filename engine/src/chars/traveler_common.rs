@@ -3,7 +3,7 @@
 //! element's NewTraveler adds, each buff on unless its param is given and
 //! not 1.
 
-use crate::gcsimdata::chars::traveler_common as g;
+use crate::gamedata::chars::traveler_common as g;
 use crate::sim::*;
 use crate::types::*;
 
