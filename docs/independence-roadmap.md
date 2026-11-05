@@ -1,6 +1,6 @@
 # Independence execution roadmap
 
-> Status: Milestone 0 complete (2026-11-05); milestones 1 to 6 planned. Existing verification and approval rules remain active.
+> Status: Milestones 0 and 1 complete (2026-11-05); milestones 2 to 6 planned. Existing verification and approval rules remain active.
 
 This is the execution companion to [the independence plan](independence.md), Phase 6 of [the project roadmap](roadmap.md). Milestone numbers match the plan. Engine changes belong here; site changes belong on Gscouter's own `claude/...` branches under its rules. This roadmap does not approve unresolved policy choices or a production release.
 
@@ -39,7 +39,7 @@ Step 6 corrections and engine-only new characters can proceed after the step 3 t
 
 ## Progress reporting
 
-For each milestone, record its status, implementation commits, validation report and remaining blockers here. Mark a milestone complete only with the completion evidence above. Milestones 1 to 6 are planned; no simulator code, data, active accuracy rule or production approval has changed.
+For each milestone, record its status, implementation commits, validation report and remaining blockers here. Mark a milestone complete only with the completion evidence above. Milestones 2 to 6 are planned; no simulator code, data, active accuracy rule or production approval has changed.
 
 ### Milestone 0: complete (2026-11-05)
 
@@ -49,3 +49,14 @@ For each milestone, record its status, implementation commits, validation report
 - **Estimate sensitivity** (a test team, against §7.2's 5% check): Pyronado hit rate team +16 to +28%, Xiangling +46 to +57%; standard ICD on the spin team −4.9%, Xiangling −12%; C0 spin count team −3.4%, Xiangling −12%; one fewer Guoba particle −27% on an energy-starved build, under 0.4% otherwise. A new character like Xiangling built on standard estimates would be marked highly uncertain until its geometry and ICD are measured.
 - **Dispositions:** Xiangling's Enka `avatarId` was not observed; new IDs come from Gscouter's received showcases in step 2 (§4, Enka data). Full-precision talent values and growth between breakpoints stay legacy.
 - **Carried forward, not blockers for step 1:** measure Pyronado against a single enemy of Gscouter's target size; count Guoba's breaths and the burst's cast frames; the owner's decision on whether "by analogy with an existing character" is an allowed estimate for hitlag and hitboxes; the C0 spin-count disagreement as a step 6 candidate.
+
+### Milestone 1: complete (2026-11-05)
+
+- **Commits:** `claude/independence-data-ownership` (`be4c73f`, `c542eee`, `1050c64`, `20ae527`; CI run 477 passed) and `claude/independence-content-format` (`6652cab`; CI run 478 passed), merged together in `4f4dbf5` (CI run 479 passed on the merge).
+- **Repository-owned data:** `engine/src/gcsimdata` renamed to `gamedata`; `data.rs` and all 232 data files carry a `legacy_gcsim` provenance header instead of "generated, do not edit" (values and code unchanged, checked file by file). `engine/src/provenance.rs` records any value that replaces legacy (empty so far; no row means `legacy_gcsim`; nothing in a fight reads it). `docs/porting.md` §4.
+- **One key catalog:** `data.rs`'s name and key tables equal gcsim's `pkg/shortcut` at `eb21884` entry for entry (781 names); no alias was missing. `gse --catalog`, `api::catalog` and the Wasm export `gse_catalog` give versioned JSON (`catalog_version` 1) with keys, aliases, rarity, element, weapon class and burst energy, for Gscouter's step 2. Native and Wasm outputs are byte-identical (`wasm/parity.sh`).
+- **Input format and converter:** `content/` (crate `gse-content`, no dependencies, binary `gsc`: `check`, `status`, `convert`, `import`); format reference `docs/content-format.md`; adding a character `docs/porting.md` §5. Xiangling's record reproduces her engine data byte for byte with the legacy selection; the official-rounded selection differs only within display rounding (at most 0.38%); her status as new content is `high_uncertainty`, as the pilot found. Every character's legacy data round-trips through `import` and `convert`.
+- **`reference/gendata`** is out of the maintained workflow, kept only to reproduce the legacy data.
+- **Scores:** both reference scores to the last digit (72,247.45, 24,589.24); CI passed on each branch and the merge.
+- **Decided after it** (`docs/content-format.md` §8): new base stats from HoYoWiki's integers, refined from showcases; unreachable talent levels not filled; layer 2 values held in logic go into tables for new content; weapon and set conversion when first needed.
+- **Open:** how hitlag and hitboxes of new content are obtained. Estimates by analogy were rejected by the owner (2026-11-05). A test on 302 sampled library builds (hitlag off against on, 1,000 iterations): of 288 compared teams, 149 moved by more than 2% and 76 by more than 5%; 10 rotations broke. So hitlag cannot default to zero; it must be measured for each new character.
