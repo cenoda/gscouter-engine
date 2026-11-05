@@ -12,7 +12,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::qiqi as g;
+use crate::gamedata::chars::qiqi as g;
 use crate::sim::*;
 use crate::stellar::{POLESTAR_FIELD, RADIANCE_SWIRL};
 use crate::types::*;

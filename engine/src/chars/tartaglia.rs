@@ -9,7 +9,7 @@
 //! periodic Flash or Slash, C6's cooldown reset).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::tartaglia as g;
+use crate::gamedata::chars::tartaglia as g;
 use crate::sim::*;
 use crate::types::*;
 

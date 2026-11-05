@@ -20,7 +20,7 @@
 
 use crate::chars::neuvillette;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::sigewinne as g;
+use crate::gamedata::chars::sigewinne as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

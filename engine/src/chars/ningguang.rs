@@ -8,7 +8,7 @@
 //! start delay for Xingqiu's N0. gcsim has no plunges for her.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::ningguang as g;
+use crate::gamedata::chars::ningguang as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

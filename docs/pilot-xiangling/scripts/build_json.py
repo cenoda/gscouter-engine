@@ -19,7 +19,7 @@ def rec(key, unit, official, legacy, legacy_src, agree, note='', evidence='offic
             'legacy_provenance': PROV, 'agree': agree, 'difference': diff, 'note': note}
 
 out = []
-XL = 'engine/src/gcsimdata/chars/xiangling.rs'
+XL = 'engine/src/gamedata/chars/xiangling.rs'
 for r in talents['talent_records']:
     out.append(rec(r['key'] + '@lv%d' % r['level'], 'fraction of ATK (page shows %)', r['official'], r['legacy'], XL,
                    r['agree'], 'compared at display precision: legacy rounded half-up to the shown decimals = ' + r['legacy_rounded'],
@@ -92,11 +92,11 @@ formula = [
 for k, o, l, a, n in formula:
     out.append(rec(k, 'formula', o, l, 'engine/src/sim.rs', a, n, url=FORMULA, diff='none'))
 lvl_tab = {60: 492.88, 70: 765.64, 80: 1077.44, 85: 1253.84, 90: 1446.85, 95: 1561.47, 100: 1674.81}
-m = re.search(r'REACTION_LVL_BASE: &\[f64\] = &\[([^\]]+)\]', open(sys.argv[2].replace('data.rs', 'gcsimdata/combat.rs')).read())
+m = re.search(r'REACTION_LVL_BASE: &\[f64\] = &\[([^\]]+)\]', open(sys.argv[2].replace('data.rs', 'gamedata/combat.rs')).read())
 rl = [float(x) for x in m.group(1).split(',')]
 for L, v in lvl_tab.items():
     lv = rl[L - 1]
-    out.append(rec('formula.level_multiplier@lv%d' % L, 'points', v, lv, 'engine/src/gcsimdata/combat.rs REACTION_LVL_BASE', round(lv, 2) == v, '', url=FORMULA, diff='%.4f' % (lv - v)))
+    out.append(rec('formula.level_multiplier@lv%d' % L, 'points', v, lv, 'engine/src/gamedata/combat.rs REACTION_LVL_BASE', round(lv, 2) == v, '', url=FORMULA, diff='%.4f' % (lv - v)))
 
 out.append(rec('xiangling.enka.avatarId', 'id', None, 10000023, 'Gscouter internal/enka/data/character.dm.json (sub_id 2301)', None,
                'UNRESOLVED: no saved showcase in Gscouter has Xiangling; the one request made (UID 618285856, Enka API docs example) does not show her', evidence='unavailable', url=ENKA))

@@ -10,7 +10,7 @@
 use crate::chars::plunge;
 use crate::content::{Character, Event};
 use crate::gcsl::Num;
-use crate::gcsimdata::chars::navia as g;
+use crate::gamedata::chars::navia as g;
 use crate::sim::*;
 use crate::types::*;
 

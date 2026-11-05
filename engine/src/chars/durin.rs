@@ -17,7 +17,7 @@
 //! on it, and the burst's ticks hit it.
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::durin as g;
+use crate::gamedata::chars::durin as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

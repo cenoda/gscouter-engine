@@ -14,7 +14,7 @@
 //! while the state itself is extended by hitlag; he has no high plunge.
 
 use crate::content::Character;
-use crate::gcsimdata::chars::wanderer as g;
+use crate::gamedata::chars::wanderer as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

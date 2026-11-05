@@ -5,7 +5,7 @@
 //! the field) does nothing, as in gcsim, which logs it as not implemented.
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::jean as g;
+use crate::gamedata::chars::jean as g;
 use crate::sim::*;
 use crate::types::*;
 

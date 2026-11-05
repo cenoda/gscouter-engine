@@ -14,7 +14,7 @@
 //! Nilou's Bountiful Core, which the engine does not have.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::lauma as g;
+use crate::gamedata::chars::lauma as g;
 use crate::sim::*;
 use crate::types::*;
 

@@ -9,7 +9,7 @@
 //! direct Stellar Swirl DMG instead. No plunges (gcsim has none).
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::vesna as g;
+use crate::gamedata::chars::vesna as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::stellar::RADIANCE_SWIRL;

@@ -34,8 +34,8 @@
 use std::cell::Cell;
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::chasca as g;
-use crate::gcsimdata::icd;
+use crate::gamedata::chars::chasca as g;
+use crate::gamedata::icd;
 use crate::gcsl::Num;
 use crate::nightsoul::CB_EXIT;
 use crate::sim::*;

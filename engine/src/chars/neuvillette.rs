@@ -25,7 +25,7 @@
 
 use crate::content::{Character, Event};
 use crate::gcsl::Num;
-use crate::gcsimdata::chars::neuvillette as g;
+use crate::gamedata::chars::neuvillette as g;
 use crate::sim::*;
 use crate::types::*;
 

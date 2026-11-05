@@ -14,7 +14,7 @@
 
 use super::watch::Watcher;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::thoma as g;
+use crate::gamedata::chars::thoma as g;
 use crate::sim::*;
 use crate::types::*;
 

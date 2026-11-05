@@ -8,7 +8,7 @@ pub mod check;
 mod content;
 mod data;
 pub mod eval;
-mod gcsimdata;
+mod gamedata;
 pub mod gcsl;
 mod nightsoul;
 pub mod profile;

@@ -279,7 +279,7 @@ impl AttackTag {
     }
 }
 
-pub use crate::gcsimdata::icd::{self, IcdGroup, IcdTag};
+pub use crate::gamedata::icd::{self, IcdGroup, IcdTag};
 
 impl IcdGroup {
     pub fn reset_timer(self) -> i32 {

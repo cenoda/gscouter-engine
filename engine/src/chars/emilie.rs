@@ -11,7 +11,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::emilie as g;
+use crate::gamedata::chars::emilie as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

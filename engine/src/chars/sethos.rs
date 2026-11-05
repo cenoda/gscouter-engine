@@ -9,7 +9,7 @@
 //! refuses others), so it never does, as in gcsim with one target.
 
 use crate::content::{Character, Event, EventKind};
-use crate::gcsimdata::chars::sethos as g;
+use crate::gamedata::chars::sethos as g;
 use crate::sim::*;
 use crate::types::*;
 

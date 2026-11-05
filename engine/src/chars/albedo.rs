@@ -7,7 +7,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::albedo as g;
+use crate::gamedata::chars::albedo as g;
 use crate::sim::*;
 use crate::types::*;
 use crate::gcsl::Num;

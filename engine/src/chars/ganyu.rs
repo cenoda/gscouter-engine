@@ -11,7 +11,7 @@
 use std::cell::Cell;
 
 use crate::content::Character;
-use crate::gcsimdata::chars::ganyu as g;
+use crate::gamedata::chars::ganyu as g;
 use crate::sim::*;
 use crate::types::*;
 

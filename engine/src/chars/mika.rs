@@ -11,7 +11,7 @@
 //! gcsim against one enemy).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::mika as g;
+use crate::gamedata::chars::mika as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

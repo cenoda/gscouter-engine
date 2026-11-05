@@ -7,9 +7,9 @@
 //     NewChar and Init set (element, weapon class, body, energy, normal
 //     hit count, the constellations that raise skill and burst, animation
 //     start delays).
-//   - engine/src/gcsimdata/icd.rs: every ICD tag and group, with the groups'
+//   - engine/src/gamedata/icd.rs: every ICD tag and group, with the groups'
 //     timers and sequences.
-//   - engine/src/gcsimdata/{chars,weapons,artifacts}/<package>.rs: the package
+//   - engine/src/gamedata/{chars,weapons,artifacts}/<package>.rs: the package
 //     variables and constants of every character, weapon and artifact
 //     package: talent multipliers, frame tables (as gcsim's init functions
 //     build them), hitmarks, hitlag, ICD and the rest.
@@ -90,7 +90,7 @@ func main() {
 	check(dec.Decode(&d))
 
 	writeData(&d, filepath.Join(*engine, "src", "data.rs"))
-	writeGen(&d, filepath.Join(*engine, "src", "gcsimdata"))
+	writeGen(&d, filepath.Join(*engine, "src", "gamedata"))
 }
 
 func check(err error) {
@@ -352,7 +352,7 @@ pub struct CharData {
     pub cons: [i32; 3],
     /// AnimationStartDelay by gcsim's AnimationDelayKey.
     pub anim_delay: [i32; 3],
-    /// The package of its logic and data, under gcsimdata::chars.
+    /// The package of its logic and data, under gamedata::chars.
     pub module: &'static str,
 }
 
@@ -386,7 +386,7 @@ pub const ZONE_NATLAN: u8 = %d;
 		fmt.Fprintln(os.Stderr, "warning: character not set up:", f)
 	}
 
-	w("pub struct WeaponData {\n    pub key: &'static str,\n    pub class: u8,\n    pub rarity: u8,\n    pub props: &'static [(usize, f64, u32)],\n    pub promo: &'static [(u32, &'static [(usize, f64)])],\n    /// The package of its logic and data, under gcsimdata::weapons.\n    pub module: &'static str,\n}\n\n")
+	w("pub struct WeaponData {\n    pub key: &'static str,\n    pub class: u8,\n    pub rarity: u8,\n    pub props: &'static [(usize, f64, u32)],\n    pub promo: &'static [(u32, &'static [(usize, f64)])],\n    /// The package of its logic and data, under gamedata::weapons.\n    pub module: &'static str,\n}\n\n")
 	w("pub static WEAPONS: &[WeaponData] = &[\n")
 	for _, it := range d.Weapons {
 		k := keys.Weapon(it.ID)
@@ -405,7 +405,7 @@ pub const ZONE_NATLAN: u8 = %d;
 	}
 	w("];\n\n")
 
-	w("/// The artifact sets gcsim implements, and the package of each under gcsimdata::artifacts.\n")
+	w("/// The artifact sets gcsim implements, and the package of each under gamedata::artifacts.\n")
 	w("pub static SETS: &[(&str, &str)] = &[\n")
 	for _, it := range d.Sets {
 		w("    (%q, %q),\n", keys.Set(it.ID).String(), moduleName(it.Package))
@@ -424,7 +424,7 @@ pub const ZONE_NATLAN: u8 = %d;
 	writeFile(path, b.String())
 }
 
-// moduleName is a package's module name under gcsimdata: its path below
+// moduleName is a package's module name under gamedata: its path below
 // internal/<kind>/, with / as _.
 func moduleName(pkg string) string {
 	for _, root := range exportRoots {

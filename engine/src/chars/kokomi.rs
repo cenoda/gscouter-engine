@@ -10,7 +10,7 @@
 //! seconds), as gcsim re-applies its one AttackEvent.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::kokomi as g;
+use crate::gamedata::chars::kokomi as g;
 use crate::sim::*;
 use crate::types::*;
 

@@ -6,7 +6,7 @@
 //! and gives her no plunges.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::yunjin as g;
+use crate::gamedata::chars::yunjin as g;
 use crate::sim::*;
 use crate::types::*;
 

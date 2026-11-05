@@ -9,7 +9,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::charlotte as g;
+use crate::gamedata::chars::charlotte as g;
 use crate::sim::*;
 use crate::types::*;
 

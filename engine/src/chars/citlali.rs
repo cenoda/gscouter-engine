@@ -14,7 +14,7 @@
 //! for her), so they are not here either.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::citlali as g;
+use crate::gamedata::chars::citlali as g;
 use crate::sim::*;
 use crate::types::*;
 

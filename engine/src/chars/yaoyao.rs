@@ -20,7 +20,7 @@
 //!   neither C1 nor A4.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::yaoyao as g;
+use crate::gamedata::chars::yaoyao as g;
 use crate::sim::*;
 use crate::types::*;
 

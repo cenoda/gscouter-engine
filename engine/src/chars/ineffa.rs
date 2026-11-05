@@ -18,7 +18,7 @@
 //! subscribers (gcsim's Unsubscribe and Subscribe with the same key).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::ineffa as g;
+use crate::gamedata::chars::ineffa as g;
 use crate::sim::*;
 use crate::types::*;
 

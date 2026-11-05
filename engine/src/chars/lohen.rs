@@ -22,7 +22,7 @@
 //!   the next Masterstroke.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::lohen as g;
+use crate::gamedata::chars::lohen as g;
 use crate::sim::*;
 use crate::types::*;
 

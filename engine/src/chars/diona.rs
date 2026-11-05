@@ -4,7 +4,7 @@
 //! charged aimed shots in the field). gcsim does not implement A4.
 
 use crate::content::Character;
-use crate::gcsimdata::chars::diona as g;
+use crate::gamedata::chars::diona as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

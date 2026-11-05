@@ -4,7 +4,7 @@
 //! Dawn (the burst), A1 and A4. gcsim gives her no constellations.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::aloy as g;
+use crate::gamedata::chars::aloy as g;
 use crate::sim::*;
 use crate::types::*;
 

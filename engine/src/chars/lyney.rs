@@ -12,7 +12,7 @@
 //! above 3, as 3 (in 0 to 3 it is read into a variable gcsim drops).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::lyney as g;
+use crate::gamedata::chars::lyney as g;
 use crate::sim::*;
 use crate::types::*;
 

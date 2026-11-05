@@ -19,7 +19,7 @@
 //! stands within 10 of the player.
 
 use crate::content::{Character, Event, EventKind, Owner};
-use crate::gcsimdata::chars::nicole as g;
+use crate::gamedata::chars::nicole as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

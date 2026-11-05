@@ -21,7 +21,7 @@ mod check;
 mod content;
 mod data;
 mod eval;
-mod gcsimdata;
+mod gamedata;
 mod gcsl;
 mod nightsoul;
 mod profile;

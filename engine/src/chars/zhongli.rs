@@ -6,7 +6,7 @@
 //! the active character when it takes damage.
 
 use crate::content::Character;
-use crate::gcsimdata::chars::zhongli as g;
+use crate::gamedata::chars::zhongli as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

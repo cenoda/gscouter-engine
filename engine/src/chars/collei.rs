@@ -8,7 +8,7 @@
 //! gcsim counts them (three in all).
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::collei as g;
+use crate::gamedata::chars::collei as g;
 use crate::sim::*;
 use crate::types::*;
 

@@ -8,7 +8,7 @@
 
 use crate::chars::plunge;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::yanfei as g;
+use crate::gamedata::chars::yanfei as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

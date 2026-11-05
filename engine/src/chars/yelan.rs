@@ -5,7 +5,7 @@
 
 use super::watch::Watcher;
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::yelan as g;
+use crate::gamedata::chars::yelan as g;
 use crate::gcsl::Num;
 use crate::sim::*;
 use crate::types::*;

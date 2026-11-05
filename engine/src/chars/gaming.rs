@@ -4,7 +4,7 @@
 //! Xianyun's airborne state.
 
 use crate::content::{template_invalid, Character, Event};
-use crate::gcsimdata::chars::gaming as g;
+use crate::gamedata::chars::gaming as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

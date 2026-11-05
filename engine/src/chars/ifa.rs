@@ -11,7 +11,7 @@
 //! Nothing costs stamina in it and he cannot swap out while he has points.
 
 use crate::content::Character;
-use crate::gcsimdata::chars::ifa as g;
+use crate::gamedata::chars::ifa as g;
 use crate::sim::*;
 use crate::types::*;
 

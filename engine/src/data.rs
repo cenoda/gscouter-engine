@@ -1263,7 +1263,7 @@ pub struct CharData {
     pub cons: [i32; 3],
     /// AnimationStartDelay by gcsim's AnimationDelayKey.
     pub anim_delay: [i32; 3],
-    /// The package of its logic and data, under gcsimdata::chars.
+    /// The package of its logic and data, under gamedata::chars.
     pub module: &'static str,
 }
 
@@ -1413,7 +1413,7 @@ pub struct WeaponData {
     pub rarity: u8,
     pub props: &'static [(usize, f64, u32)],
     pub promo: &'static [(u32, &'static [(usize, f64)])],
-    /// The package of its logic and data, under gcsimdata::weapons.
+    /// The package of its logic and data, under gamedata::weapons.
     pub module: &'static str,
 }
 
@@ -1672,7 +1672,7 @@ pub static WEAPONS: &[WeaponData] = &[
     WeaponData { key: "xiphosmoonlight", class: 0, rarity: 4, props: &[(24, 42.401, 1201), (8, 36.0, 2201)], promo: &[(20, &[]), (40, &[(24, 25.9)]), (50, &[(24, 51.9)]), (60, &[(24, 77.8)]), (70, &[(24, 103.7)]), (80, &[(24, 129.7)]), (90, &[(24, 155.6)])], module: "sword_xiphos" },
 ];
 
-/// The artifact sets gcsim implements, and the package of each under gcsimdata::artifacts.
+/// The artifact sets gcsim implements, and the package of each under gamedata::artifacts.
 pub static SETS: &[(&str, &str)] = &[
     ("adaycarvedfromrisingwinds", "adaycarvedfromrisingwinds"),
     ("archaicpetra", "archaic"),

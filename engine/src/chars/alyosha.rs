@@ -4,7 +4,7 @@
 //! Radiance: Stellar-Conduct bonus, A1, A4 and every constellation.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::alyosha as g;
+use crate::gamedata::chars::alyosha as g;
 use crate::sim::*;
 use crate::types::*;
 

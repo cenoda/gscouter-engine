@@ -5,7 +5,7 @@
 //! constellation, and the plunges from Xianyun's airborne state.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::furina as g;
+use crate::gamedata::chars::furina as g;
 use crate::chars::plunge;
 use crate::gcsl::Num;
 use crate::sim::*;

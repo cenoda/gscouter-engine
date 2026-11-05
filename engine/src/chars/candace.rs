@@ -4,7 +4,7 @@
 //! attacks. The plunges from Xianyun's airborne state.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::candace as g;
+use crate::gamedata::chars::candace as g;
 use crate::chars::plunge;
 use crate::sim::*;
 use crate::types::*;

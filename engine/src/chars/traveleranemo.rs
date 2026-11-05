@@ -9,7 +9,7 @@
 use crate::chars::traveler::{self, Normals};
 use crate::chars::CharState;
 use crate::content::{Character, Event, Owner};
-use crate::gcsimdata::chars::traveler_common_anemo as g;
+use crate::gamedata::chars::traveler_common_anemo as g;
 use crate::sim::*;
 use crate::types::*;
 

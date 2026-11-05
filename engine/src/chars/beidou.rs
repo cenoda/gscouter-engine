@@ -9,7 +9,7 @@
 //! there is none, and no draw is made.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::beidou as g;
+use crate::gamedata::chars::beidou as g;
 use crate::sim::*;
 use crate::types::*;
 

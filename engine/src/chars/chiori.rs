@@ -8,7 +8,7 @@
 //! position draws are kept, not the position.
 
 use crate::content::{Character, Event};
-use crate::gcsimdata::chars::chiori as g;
+use crate::gamedata::chars::chiori as g;
 use crate::sim::*;
 use crate::types::*;
 
