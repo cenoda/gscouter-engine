@@ -1,6 +1,6 @@
 # Independence execution roadmap
 
-> Status: Milestones 0 to 2 complete (2026-11-05); milestone 3a in progress (2026-11-05); 3b proposed (`docs/verification-transition.md`, not active); 4 to 6 planned. Existing verification and approval rules remain active.
+> Status: Milestones 0 to 2 complete (2026-11-05); milestone 3a complete (2026-11-05); 3b proposed (`docs/verification-transition.md`, not active); 4 to 6 planned. Existing verification and approval rules remain active.
 
 This is the execution companion to [the independence plan](independence.md), Phase 6 of [the project roadmap](roadmap.md). Milestone numbers match the plan. Engine changes belong here; site changes belong on Gscouter's own `claude/...` branches under its rules. This roadmap does not approve unresolved policy choices or a production release.
 
@@ -74,12 +74,12 @@ For each milestone, record its status, implementation commits, validation report
 - **Scores:** both reference scores to the last digit.
 - **Left on gcsim:** chart, preview, timeline and `score/chasca.go` (step 4); scoring itself (step 5).
 
-### Milestone 3a: in progress (2026-11-05)
+### Milestone 3a: complete (2026-11-05)
 
-Coordinated from session `session_016SbXBvSdoo1YTxHP8RxQfX`; the active gate is unchanged.
+Coordinated from session `session_016SbXBvSdoo1YTxHP8RxQfX`; the active gate is unchanged. Every part runs in CI beside `compare`.
 
-- **Library regression runner** (`docs/regression.md`): `claude/independence-regression` (`3bde194`, `98dd05d`, `ccc6bb1`; compare runs 486 and 487 and regression run 2 passed). Every library build and probe, committed as configs at the pinned Gscouter commit, 50 iterations from seed 1, against a versioned baseline; about 6 minutes in CI, no Go or gcsim in the runner. Merge pending main's run.
-- **Probe coverage map** (`docs/probe-coverage.md`): merged in `b6593b1` (compare run 484). It found 114 items no probe or verified library build reached, against `docs/verification.md` §3's former claim. `claude/independence-probe-gaps` adds 108 probes (1,026 in all); aethercryo C1–C6 stays a gap (no library team has it). CI pending.
-- **Mechanic tests** (`docs/mechanics-tests.md`): merged in `65370ae` (compare run 485). Xiangling: hit counts, damage per hit (within the sources' rounding), energy; one known difference (C0 spin hits: engine 9, evidence 8).
-- **Arlecchino investigation** (`docs/arlecchino/report.md`): merged in `73d5b34`. No damage error reproduced; the site's "about 20%" came from a looped-rotation measurement of 2026-10-26 (the owner does not remember another source, 2026-11-05). The owner asked to remove the note (2026-11-05); the Gscouter change waits for this session's access to Gscouter.
-- **Left for 3a:** merge the regression runner and the new probes, with the probes' inputs and baseline regenerated; more mechanic tests.
+- **Library regression runner** (`docs/regression.md`): `claude/independence-regression`, merged in `519e69d` (main's compare run 490 and regression run 3 passed). Every library build and probe, committed as configs at the pinned Gscouter commit (5,596 configs, 402 KB), 50 iterations from seed 1, against a versioned baseline; about 6 minutes in CI, no Go or gcsim in the runner. A change that moves scores commits the regenerated baseline and its diff.
+- **Probes retained and mapped** (`docs/probe-coverage.md`): the coverage map merged in `b6593b1` (compare run 484) found 114 items reached by no probe or verified library build, against `docs/verification.md` §3's former claim. `claude/independence-probe-gaps` (`375fd21`, `cf4e3b4`; compare runs 489 and 491, regression run 4 passed) added 108 probes, all within 1% of gcsim: 1,026 probes, all 918 old ones kept. Of 1,412 items, 975 are reached by library builds and 431 by probes only; 6 are gaps with a reason (the cryo Traveler's C1–C6: no library team has him; his module is the one `luminecryo`'s probes run); 54 covered items keep partial gaps (kills, enemy HP, damage to the party).
+- **Mechanic tests** (`docs/mechanics-tests.md`): merged in `65370ae` (compare run 485, main's 488). Xiangling: hit counts, damage per hit within the sources' rounding, energy; one known difference (C0 spin hits: engine 9, evidence 8).
+- **Arlecchino investigation** (`docs/arlecchino/report.md`): merged in `73d5b34`. No damage error reproduced; the site's "about 20%" came from a looped-rotation measurement of 2026-10-26 (the owner remembers no other source, 2026-11-05). The owner asked to remove the note (2026-11-05); the Gscouter change (`b8e108ad`, local) waits for this session's access to Gscouter.
+- **Next:** 3b, the owner's decisions in `docs/verification-transition.md` §6.

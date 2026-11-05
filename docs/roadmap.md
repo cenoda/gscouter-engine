@@ -18,7 +18,7 @@ Measured 2026-11-04 (release run of `e6c8a07`, Gscouter at `e4d5796`):
 | Not verified | 121 idle rotations, 1 unsupported at the release (`amber-furina-bennett-rosaria`), 1 error in both engines (`mavuika-citlali-xilonen-bennett`) |
 | Drift over 5,365 builds | −0.01% (bound ±0.2%) |
 | Content | every library character (C0 to C6), 252 weapons, 55 sets, every resonance and reaction |
-| Probes | 918 |
+| Probes | 918 at the release; 1,026 on `main` since 2026-11-05 (every constellation, refinement and set count reached but the cryo Traveler's C1–C6, `docs/probe-coverage.md`) |
 
 At the start (October 2026) the engine had four characters and two supported teams; the census of that time, and why characters alone were not enough, are `docs/history.md` §1.
 
