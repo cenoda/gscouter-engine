@@ -1,6 +1,6 @@
 # Independence execution roadmap
 
-> Status: Milestones 0 and 1 complete (2026-11-05); milestones 2 to 6 planned. Existing verification and approval rules remain active.
+> Status: Milestones 0 to 2 complete (2026-11-05); milestone 3a next, in a new coordinator session; 3b to 6 planned. Existing verification and approval rules remain active.
 
 This is the execution companion to [the independence plan](independence.md), Phase 6 of [the project roadmap](roadmap.md). Milestone numbers match the plan. Engine changes belong here; site changes belong on Gscouter's own `claude/...` branches under its rules. This roadmap does not approve unresolved policy choices or a production release.
 
