@@ -181,12 +181,16 @@ Not converted yet; the validator rejects `kind = "weapon"` and `"set"`. The form
 - **Status as new content: `high_uncertainty`**, from the Pyronado spin's ICD (stated, against the standard estimate: team −4.9%, Xiangling −12%), its hits per rotation (unmeasured for Gscouter's target: up to +28% / +57%), its C0 hit count (stated), Guoba's particles (stated: −27% on an energy-starved build) and breath interval (stated: Xiangling +7.2%), as `hidden.md` §5 concluded.
 - **Every character's legacy data round-trips**: `gsc import` then `gsc convert` gives back all 129 rows and tables modules: 125 byte for byte; 4 (Clorinde, Gaming, Lyney, Sigewinne) with the same values in other float text (gendata printed Go's `1e-07` and broke a tie in the 17th digit to even).
 
-## 8. Open questions
+## 8. Decisions and open questions
 
-For the owner or the coordinator:
+Decided by the owner (2026-11-05):
 
-1. **Full-precision base stats for new content.** HoYoWiki shows base stats as integers. Rounded breakpoints fix neither `base` nor the ascension bonuses to full precision (an error of 0.5 at Lv.1 grows with the curve). Enka showcases carry base HP and DEF to float precision at the showcase's level (`docs/pilot-xiangling/official.md` §6): `base = fightProp / CURVES[curve][level − 1]` (minus the phase's bonus) is a `derived` value with the showcase as its input. That makes a new character's base stats wait for a showcase; ATK needs the weapon's unrounded base ATK.
-2. **Talent levels past the page.** The format requires 15 levels, as the engine's tables have. For a new character, normal attack 12–15 and skill and burst 14–15 are unreachable but must be filled: `derived` by the family's shared ratio (the pilot found that plunges leave the normal-attack sequence at Lv.11), or the engine's tables could hold only reachable levels.
-3. **Estimates by analogy** with an existing character for hitlag and hitboxes are written `estimated` with `analogy`; whether they are allowed is still the owner's (`docs/independence-roadmap.md`, milestone 0, carried forward).
-4. **Values in the engine's logic.** A layer 2 value with `engine = …` is recorded and checked, not converted: the logic holds it (ICD tags, Guoba's lifetime, the spin period). New content should put such values in its tables module so the record decides them; the item types have no ICD tag or element yet.
-5. **The key catalog.** The validator reads `CHAR_NAMES` from `data.rs`; once step 1's key catalog lands, it reads that instead.
+1. **Base stats of new content** use HoYoWiki's integers at the breakpoints at once (`official_rounded`; the rounding is at most about 0.2% of a stat) and are refined from an Enka showcase when one is observed (`derived`, `base = fightProp / CURVES[curve][level − 1]` minus the phase's bonus, the showcase as its input). A new character does not wait for a showcase.
+2. **Unreachable talent levels are not filled.** A new character's tables hold only the levels the game reaches (normal attack to 11, skill and burst to 13 with their constellations); the converter and the engine reject a level beyond them as an error that names it, instead of a made-up value. To do when the first new character is converted: the format's 15-level requirement becomes "the reachable levels".
+3. **Layer 2 values held in logic** (ICD tags, gadget lifetimes, periods) go in the new character's tables module, so the record decides them and each carries its provenance. The item types for ICD tags and elements are added with the first new character.
+4. **Weapons and sets** keep the format as it is (`weapon.<field>`, `by = "refinement"`); their conversion is built when the first new weapon or set needs it.
+
+Open:
+
+5. **Estimates by analogy** with an existing character for hitlag and hitboxes are written `estimated` with `analogy`; whether they are allowed is still the owner's (`docs/independence-roadmap.md`, milestone 0, carried forward).
+6. **The key catalog.** The validator reads `CHAR_NAMES` from `data.rs`, which is now the one key table with its export (`gse --catalog`); reading the export instead is optional.
