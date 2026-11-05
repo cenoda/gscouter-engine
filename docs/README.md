@@ -19,6 +19,7 @@ What each document is for. The conventions are Gscouter's (its `docs/README.md`)
 | `docs/independence-roadmap.md` | Phase 6 execution order, milestone deliverables, completion evidence and unresolved decisions |
 | `docs/pilot-xiangling/` | Phase 6 step 0 source pilot on Xiangling: `official.md` (layer 1, HoYoWiki diffed against legacy data, with records and scripts) and `hidden.md` (layer 2, public evidence per mechanic and the effect of estimates) |
 | `docs/arlecchino/` | Phase 6 milestone 3a Arlecchino investigation: `report.md` (where the site's "about 20%" came from, official values and hand-checked hits against gcsim and the engine, affected teams, the evidence still needed), with fixtures and scripts |
+| `docs/mechanics-tests.md` | Phase 6 step 3a: mechanic checks from public evidence (`engine/tests/mechanics.rs`), their sources, tolerances and known differences |
 | `docs/history.md` | Records of Phases 0 to 3: results tables, runs and measurements as they were taken |
 | `docs/rotation-search.md` | A pointer: rotation search moved to gscouter-optimizer |
 | `reference/audits/` | Audits of where characters read the player's position, for `MOVES_WITH_PLAYER` |
