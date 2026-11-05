@@ -1,0 +1,14 @@
+[package]
+name = "gse-content"
+version = "0.1.0"
+edition = "2024"
+license = "AGPL-3.0-or-later"
+description = "Content records with provenance: their validator and their converter to the engine's data"
+
+# No dependencies, as the engine: records are parsed by the subset of TOML
+# in src/toml.rs, and the engine's catalogs are read from its source.
+[dependencies]
+
+[[bin]]
+name = "gsc"
+path = "src/main.rs"

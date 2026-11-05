@@ -1,8 +1,8 @@
 # Porting from gcsim
 
-> Status: In use · Last updated: 2026-11-04
+> Status: In use · Last updated: 2026-11-05
 
-How to port a character, weapon, set or system from gcsim, the gcsim behaviour the engine matches on purpose, and the pitfalls found so far. Moved from `CLAUDE.md` on 2026-11-04. How a port is verified is `docs/verification.md`; how branches are run and merged is `CLAUDE.md`.
+How to port a character, weapon, set or system from gcsim, how to add one from a content record (§4), the gcsim behaviour the engine matches on purpose, and the pitfalls found so far. Moved from `CLAUDE.md` on 2026-11-04. How a port is verified is `docs/verification.md`; how branches are run and merged is `CLAUDE.md`.
 
 ## 1. Order of work
 
@@ -68,3 +68,17 @@ Check new code for each of these.
 
 - The engine's modules are listed twice, in `engine/src/main.rs` and `engine/src/lib.rs` (the library Gscouter links): a new top-level module goes in both.
 - Keep the hot path free of allocation and dynamic dispatch: characters, weapons and sets dispatch through the macro-generated `match`es of `chars!`, `weapons!` and `sets!` (`README.md`, "How it works").
+
+## 4. Adding a character from a content record
+
+How new content is added without gcsim (Phase 6, `docs/independence.md` §4–5). The record format, its checks and its selections are `docs/content-format.md`. Until step 3's transition, a character added this way has no gcsim to be compared with, so it is not released to Gscouter under the current rules; the steps below make its data, not its approval.
+
+1. **Its name.** Add the key and its aliases to the engine's key table first (`data.rs` `CHAR_NAMES` and `CHAR_KEYS`, or step 1's key catalog once it lands). The validator rejects a record whose key is not there.
+2. **Layer 1 from official pages.** Read the character's HoYoWiki page as the step 0 pilot did (`docs/pilot-xiangling/official.md` §2: render it, one load, an identifying User-Agent, within `docs/independence.md` §4's rules). Write each talent row as an `official_rounded` observation with `shown` exactly as the page prints it, the energy cost, the cooldowns and durations, the constellations that raise talents, and the numbers in the passives and constellations. Record the base stats at the 14 breakpoints as `check = true` values. Levels the page does not show are `derived` (formula, inputs) or `estimated`.
+3. **Layer 2 from public evidence.** For each mechanic of the contribution checklist (normal and charged attacks, skill, burst, A1, A4, C1–C6; hitlag, ICD, strike type, poise, hitboxes, durability, particles, frames), give a `measured` or `stated` observation with its source, or the standard `estimated` value (`docs/independence.md` §4, Layer 2) with its `basis`, or `unresolved` with why. Frames are counted from video at 60 fps (gcsim's `frames.md` procedure); a video source gives the timestamp. For a consequential estimate (ICD of persistent attacks, particles, geometry), run the plausible alternatives on a representative team and write each as a `[[value.sensitivity]]`; over 5% marks the result as highly uncertain (`docs/independence.md` §7.2).
+4. **Targets.** Declare the tables module's items in `[items]` (with `len`) and give each value its `target`; values the character's logic will read go in the tables module, not in the logic.
+5. **Check and convert.** `gsc check`, `gsc status` (it should read `provisional` or `high_uncertainty` until layer 2 is measured), then `gsc convert <record> --select independent --out engine/src/gcsimdata/chars/` (the directory is `gamedata` after the rename). Add the module to `chars/mod.rs` and the printed row to `data.rs` `CHARS`, in key order. Do not edit generated output by hand: change the record and convert again.
+6. **The logic** goes in `engine/src/chars/`, on the hooks of `engine/src/content.rs`, reading only the generated tables. What it does not implement is an error that names it (`gse --check`).
+7. **Tests** follow the evidence (`docs/independence.md` §5 step 3): public damage numbers reproduced with the same build within 1% per hit, measured frames and ICD, and per-ability hits and damage.
+
+An existing character keeps `select = "legacy"`: its record reproduces its engine data exactly, and an official or measured value replaces a legacy one only as a step 6 change (`content/tests/xiangling.rs` shows both on Xiangling). `gsc import <key>` writes a draft record from a character's legacy data to start from; its units are guesses to review, and what it cannot classify is `unclassified`.
