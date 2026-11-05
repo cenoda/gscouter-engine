@@ -55,7 +55,10 @@ These are not dependencies to remove:
 
 - **No datamining** (owner, 2026-11-04). Nothing is extracted from the game client, and no pre-release, beta or leaked data is used. The terms of service forbid reverse engineering, and HoYoverse has acted on it (the 2021 notice to the Honey Hunter wiki). Databases built from extracted data (Honey Hunter, genshin-db, AnimeGameData, gcsim's newly generated data) are not used either: not extracting it ourselves does not change where it comes from.
 - So a new character is implemented **after its release**. Being earlier than gcsim comes from our speed, not from early data.
-- **No crawler.** HoYoLAB's rules on automated access were not found. Official pages are read the way a person reads them: one page per new character, by the session that implements it.
+- **Polite automated reading, within robots.txt** (owner, 2026-11-05). The aim is fairness, not inefficiency. `wiki.hoyolab.com/robots.txt` disallows nothing and publishes sitemaps of its character pages (checked 2026-11-05), so automated reading of those official pages is allowed under these conditions: an identifying User-Agent (a generic client name, no personal contact details), at most one request per second, each page cached and not fetched again without reason, released content only.
+  - The site's internal JSON API (`sg-wiki-api...`) is not a published interface: use it only as far as rendering a page in a browser calls it; a tool does not call it directly in a loop.
+  - Paths robots.txt disallows are not read (`www.hoyolab.com` disallows `/genshin`).
+  - HoYoLAB's and HoYoverse's terms on automated access were not found (2026-11-05). That is open, not a confirmation; if a prohibition is found, automated reading stops and this rule is revisited.
 - Each value records its source (an official page, a measurement with its video, a community test, or an estimate). Estimates are marked as such and replaced when measurements appear.
 
 ### Source feasibility and provenance
@@ -129,7 +132,7 @@ Step 0 precedes step 1. An Arlecchino investigation demonstrates the proposed ve
 The existing-data policy is decided (2026-11-04: documented legacy exception, §4; Enka data, 2026-11-05). Pilot the proposed official/measurement workflow on one released character before step 1 finalizes the input format. List unavailable fields and how each is handled; do not call the source pipeline complete when those fields are unaccounted for.
 
 - **The pilot character is one already in the legacy data**, so each value read from official pages can be diffed against its `legacy_gcsim` value. Agreement checks the workflow; a difference is explained (rounding, derivation, a game change) before the workflow is trusted. A new character would need implementing, which waits until after step 3.
-- **Record how the official pages are read.** HoYoWiki renders its pages in the browser; if a session can read them only through the site's own API, record that, and whether it stays within "one page per character, read as a person reads it" (§4), before the workflow is adopted.
+- **Record how the official pages are read.** HoYoWiki renders its pages in the browser; record the method used (page rendering, and which requests it made) and that it stays within §4's rule on automated reading, before the workflow is adopted.
 - **Include the Enka mapping** of the pilot character as observed from a showcase (§4, Enka data), and check it against the legacy mapping.
 
 ### Step 1: engine data and keys
@@ -193,4 +196,5 @@ gscouter-optimizer was planned on the engine from the start and has nothing to r
 2. The game checks of step 3: what counts as enough evidence for a new character, and for a change of step 6.
 3. How far to measure the hidden values of layer 2, and where standard estimates are enough.
 4. Whether to add grammar to gcsl (§3). The roadmap defers extensions during migration; a later proposal can revisit this.
-5. **Enka data (§4): decided 2026-11-05.** The showcase API stays; existing store-derived mappings are legacy data; new mappings are recorded from observed showcases.
+5. **Automated reading (§4): decided 2026-11-05.** Allowed within robots.txt, politely; the terms on automated access remain to be found.
+6. **Enka data (§4): decided 2026-11-05.** The showcase API stays; existing store-derived mappings are legacy data; new mappings are recorded from observed showcases.
