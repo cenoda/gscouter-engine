@@ -49,16 +49,17 @@ A shard is chosen by a hash of the build's id, so it does not depend on the othe
 - `results`: the shards' results merged into one file (artifact `regression-baseline`), the baseline as CI's machines give it.
 - `inputs`: the committed inputs are what `compare -dry-run` assembles at the pinned Gscouter commit, and the baseline was made at that commit.
 
-Measured wall times are in §6.
+Measured wall times are in §6. Its total is about 6 minutes, most of it building the engine.
 
 ## 5. Review rule
 
 - **A change meant to keep scores** leaves `baseline.txt` as it is, and CI's `run` passes. The two reference scores of `CLAUDE.md` stay as they are.
 - **A change meant to move scores** commits the regenerated `baseline.txt` in the same commit as the change, with the diff of `update.sh baseline` (or its summary and the largest moves, when long) in the commit message or a report beside it, and an explanation: which mechanic changed, why, and the evidence. A reviewer checks that every build that moved is one the change reaches, and that nothing else moved. Never regenerate the baseline to make CI pass without that explanation.
 - **New inputs** (a pin move, a new probe, a newly supported team) regenerate the inputs and then the baseline; the diff should show only new, missing or changed builds of the configs that changed.
-- **A baseline taken from CI** (the `regression-baseline` artifact) is for when the local machine gives other bits than CI's; say so in the commit. Both have agreed so far (§6).
+- **A baseline taken from CI** (the `regression-baseline` artifact) is for when the local machine gives other bits than CI's; say so in the commit. Both agreed on 2026-11-05 (§6).
 - While this is a pilot, `compare` against gcsim stays the verdict; a score-moving change still needs its library builds within 1% of gcsim and the owner's answer for its teams (`docs/phase4-approval.md`).
 
 ## 6. Measurements
 
 - 2026-11-05, local container (4 cores): all 5,488 builds in 408 s (26 CPU-minutes); 666 builds of one shard on 3 jobs gave the same lines as the full run on 4.
+- 2026-11-05, CI (`regression` run 2, `98dd05d`, GitHub's `ubuntu-latest`): passed against the baseline made locally, so the local container and CI give the same bits. Wall time 6 min: `build` 4 min (the engine with LTO), the 8 `run` shards 29 to 59 s each, `inputs` 49 s (running beside them), `results` 6 s.
