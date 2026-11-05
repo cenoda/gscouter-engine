@@ -1,0 +1,136 @@
+# The engine's own library regression (docs/regression.md): a pilot beside
+# compare.yml, which stays the gate (docs/independence.md step 3).
+#
+# Every library build and probe (regression/inputs.tar.xz, assembled at the
+# Gscouter commit compare.yml pins) runs on the engine alone, at the
+# iterations and seeds regression/baseline.txt records, one thread each,
+# and must give the baseline's output to the last bit. Neither Go nor gcsim
+# is needed to run it; the "inputs" job alone uses them, to check that the
+# committed inputs are still what compare -dry-run assembles.
+name: regression
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  SHARDS: 8
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the engine
+        working-directory: engine
+        run: cargo build --release
+      - name: Runner tests and build
+        working-directory: regression
+        run: cargo test --release && cargo build --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: regression-bin
+          path: |
+            engine/target/release/gse
+            regression/target/release/regress
+          retention-days: 1
+
+  run:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: regression-bin
+          path: bin
+      - name: Run the shard and compare it with the baseline
+        run: |
+          chmod +x bin/engine/target/release/gse bin/regression/target/release/regress
+          mkdir -p "$RUNNER_TEMP/in" && tar -xJf regression/inputs.tar.xz -C "$RUNNER_TEMP/in"
+          b=regression/baseline.txt
+          get() { sed -n "s/^# $1 //p" "$b"; }
+          bin/regression/target/release/regress run --gse bin/engine/target/release/gse --configs "$RUNNER_TEMP/in/configs" \
+            --iter "$(get iterations)" --warmup "$(get warmup)" --seed "$(get seed)" --shard ${{ matrix.shard }}/$SHARDS \
+            --engine "$GITHUB_SHA" --gscouter "$(cat "$RUNNER_TEMP/in/gscouter-commit")" -o results.txt
+          bin/regression/target/release/regress diff "$b" results.txt --shard ${{ matrix.shard }}/$SHARDS > diff.md && s=0 || s=$?
+          cat diff.md >> "$GITHUB_STEP_SUMMARY"
+          head -40 diff.md
+          exit $s
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-results-${{ matrix.shard }}
+          path: results.txt
+          retention-days: 7
+
+  # the shards' results as one file, the form of regression/baseline.txt:
+  # for an intended change whose baseline is to be taken from CI's machines
+  results:
+    needs: run
+    if: always() && needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: regression-bin
+          path: bin
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: regression-results-*
+          path: results
+      - name: Merge
+        run: |
+          chmod +x bin/regression/target/release/regress
+          bin/regression/target/release/regress merge results/*/results.txt -o baseline.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: regression-baseline
+          path: baseline.txt
+          retention-days: 7
+
+  inputs:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: The pinned Gscouter commit
+        id: pin
+        run: echo "commit=$(sed -n 's/^  GSCOUTER_COMMIT: *//p' .github/workflows/compare.yml)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: cenoda/Gscouter
+          ref: ${{ steps.pin.outputs.commit }}
+          path: gscouter
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: reference/go.mod
+          cache-dependency-path: |
+            reference/go.sum
+            gscouter/go.sum
+      - uses: actions/download-artifact@v4
+        with:
+          name: regression-bin
+          path: bin
+      - name: The committed inputs are what compare assembles
+        run: |
+          chmod +x bin/engine/target/release/gse
+          pin=${{ steps.pin.outputs.commit }}
+          mkdir -p "$RUNNER_TEMP/in" && tar -xJf regression/inputs.tar.xz -C "$RUNNER_TEMP/in"
+          ok=1
+          [ "$(cat "$RUNNER_TEMP/in/gscouter-commit")" = "$pin" ] || { echo "inputs.tar.xz was assembled at Gscouter $(cat "$RUNNER_TEMP/in/gscouter-commit"), compare.yml pins $pin"; ok=0; }
+          [ "$(sed -n 's/^# gscouter //p' regression/baseline.txt)" = "$pin" ] || { echo "baseline.txt was made at another Gscouter commit than $pin"; ok=0; }
+          (cd reference && go run ./compare -gscouter ../gscouter -gse ../bin/engine/target/release/gse -only library,probes -dry-run -configs "$RUNNER_TEMP/now" -cache "" > "$RUNNER_TEMP/dry.log" 2>&1) || { tail -20 "$RUNNER_TEMP/dry.log"; exit 1; }
+          if ! diff -rq "$RUNNER_TEMP/in/configs" "$RUNNER_TEMP/now" > "$RUNNER_TEMP/stale.txt"; then
+            echo "regression/inputs.tar.xz is stale ($(wc -l < "$RUNNER_TEMP/stale.txt") configs differ); run regression/update.sh inputs, then baseline:"
+            head -30 "$RUNNER_TEMP/stale.txt"
+            ok=0
+          fi
+          [ $ok = 1 ]
