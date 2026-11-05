@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 to 3 done for the library; Phase 4 live in Gscouter (4,447 teams on release `e6c8a07`, approved 2026-11-04); Phase 5, upkeep, now; Phase 6, independence from gcsim, planned · Last updated: 2026-11-05
+> Status: Phases 0 to 3 done for the library; Phase 4 live in Gscouter (4,447 teams on release `211d588`, approved 2026-11-04, carried 2026-11-05); Phase 5, upkeep, now; Phase 6, independence from gcsim, under way (steps 0 to 2 done) · Last updated: 2026-11-05
 
 What it takes for this engine to score Gscouter's results, and where that stands. The measurements and step-by-step records of the finished phases are in `docs/history.md`.
 
@@ -62,7 +62,7 @@ Every character the library uses, then every weapon and set of gcsim's catalog, 
 
 ### Phase 4: into Gscouter (live, 2026-11-04)
 
-Done in Gscouter (its `docs/engine.md`): the engine's WebAssembly module runs in the browser's helper workers and, on wazero, on the server, so both give the same result. A team runs on the engine only when the pinned release verifies it and the owner has approved it (`docs/phase4-approval.md`); a config the engine refuses or fails on runs on gcsim. Engine teams run their own filler search, ranked on 50 iterations (owner, 2026-11-04). Release `e6c8a07` is pinned, with 4,447 teams approved.
+Done in Gscouter (its `docs/engine.md`): the engine's WebAssembly module runs in the browser's helper workers and, on wazero, on the server, so both give the same result. A team runs on the engine only when the pinned release verifies it and the owner has approved it (`docs/phase4-approval.md`); a config the engine refuses or fails on runs on gcsim. Engine teams run their own filler search, ranked on 50 iterations (owner, 2026-11-04). Release `211d588` is pinned (2026-11-05), with 4,447 teams approved; group B approvals carry forward when the old and new modules score a team identically.
 
 ### Phase 5: upkeep (now)
 
@@ -74,7 +74,7 @@ Done in Gscouter (its `docs/engine.md`): the engine's WebAssembly module runs in
 - **A lead, not a failure**: Raiden as a filler on `neuvillette-fischl-nahida-raidenshogun`'s page configs leaned +0.3% to +0.7%, in the tail of fights whose blooms go on past 150 s (`docs/history.md` §3, Phase 2, "Known inconclusive builds"). Page configs are no longer verified.
 - **Source validation** (`cmd/validate` in Gscouter) stays on gcsim: it runs each entry under its source's conditions (several targets, other enemies, `hurt`), which scoring does not need.
 
-### Phase 6: independence from gcsim (planned, 2026-11-04)
+### Phase 6: independence from gcsim (under way; planned 2026-11-04, steps 0 to 2 done 2026-11-05)
 
 The direction is agreed with the owner; implementation has not started. The reviewed plan is [independence.md](independence.md), and the deliverables and completion gates are in [independence-roadmap.md](independence-roadmap.md).
 

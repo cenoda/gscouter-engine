@@ -31,7 +31,7 @@ Step 6 corrections and engine-only new characters can proceed after the step 3 t
 
 ## Decisions and first work
 
-1. Existing-data policy: decided 2026-11-04 (kept as a documented legacy exception with explicit `legacy_gcsim` provenance; `docs/independence.md` §4, §7). Enka data: decided 2026-11-05 (showcase API stays; store-derived mappings are legacy; new mappings observed from showcases).
+1. Existing-data policy: decided 2026-11-04 (kept as a documented legacy exception with explicit `legacy_gcsim` provenance; `docs/independence.md` §4, §7). Enka data: decided 2026-11-05 (showcase API stays; store-derived mappings are legacy; new mappings read from a showcase the owner chooses; nothing recorded from users' showcases).
 2. Produce the source pilot on a released character already in the legacy data, diff it against that data, and list missing official or measured fields.
 3. Inventory Gscouter runtime imports and data initialization (first pass recorded in `docs/independence.md` step 2, 2026-11-05), including boss presets and full build parsing; define the metadata/parse contract before wiring consumers.
 4. Preserve the current probes and start the controlled Arlecchino investigation to inform the proposed evidence gate.
@@ -39,7 +39,7 @@ Step 6 corrections and engine-only new characters can proceed after the step 3 t
 
 ## Progress reporting
 
-For each milestone, record its status, implementation commits, validation report and remaining blockers here. Mark a milestone complete only with the completion evidence above. Milestones 2 to 6 are planned; no simulator code, data, active accuracy rule or production approval has changed.
+For each milestone, record its status, implementation commits, validation report and remaining blockers here. Mark a milestone complete only with the completion evidence above. Milestones 3 to 6 are planned; no simulator code, data, active accuracy rule or production approval has changed.
 
 ### Milestone 0: complete (2026-11-05)
 
@@ -47,7 +47,7 @@ For each milestone, record its status, implementation commits, validation report
 - **Layer 1:** 301 official values compared with `legacy_gcsim`; 301 agree at the page's display precision, none differs. The page covers every reachable talent level, so nothing was derived; growth ratios are shared within a family of rows only (plunges leave the normal-attack sequence at Lv.11). The page must be rendered in a browser; the reading method and its requests are recorded. Deviation: the pilot's browser loads used the default User-Agent (the rule changed mid-pilot).
 - **Layer 2:** 47 rows: 12 measured, 8 stated, 7 fixed by official text, 3 standard estimates, 17 unresolved (hitlag, strike type and hitboxes have no public source). Public evidence disagrees with legacy in four places (C0 spin hits 8 vs 9; two spin hits per rotation against large enemies; a snapshot frame; Guoba's breath interval read literally). The standard ICD estimate is wrong for the spin and Guoba.
 - **Estimate sensitivity** (a test team, against §7.2's 5% check): Pyronado hit rate team +16 to +28%, Xiangling +46 to +57%; standard ICD on the spin team −4.9%, Xiangling −12%; C0 spin count team −3.4%, Xiangling −12%; one fewer Guoba particle −27% on an energy-starved build, under 0.4% otherwise. A new character like Xiangling built on standard estimates would be marked highly uncertain until its geometry and ICD are measured.
-- **Dispositions:** Xiangling's Enka `avatarId` was not observed; new IDs come from Gscouter's received showcases in step 2 (§4, Enka data). Full-precision talent values and growth between breakpoints stay legacy.
+- **Dispositions:** Xiangling's Enka `avatarId` was not observed; new IDs come from a showcase the owner chooses, read when the character is ported (§4, Enka data). Full-precision talent values and growth between breakpoints stay legacy.
 - **Carried forward, not blockers for step 1:** measure Pyronado against a single enemy of Gscouter's target size; count Guoba's breaths and the burst's cast frames; the owner's decision on whether "by analogy with an existing character" is an allowed estimate for hitlag and hitboxes; the C0 spin-count disagreement as a step 6 candidate.
 
 ### Milestone 1: complete (2026-11-05)
@@ -60,3 +60,16 @@ For each milestone, record its status, implementation commits, validation report
 - **Scores:** both reference scores to the last digit (72,247.45, 24,589.24); CI passed on each branch and the merge.
 - **Decided after it** (`docs/content-format.md` §8): new base stats from HoYoWiki's integers, refined from showcases; unreachable talent levels not filled; layer 2 values held in logic go into tables for new content; weapon and set conversion when first needed.
 - **Open:** how hitlag and hitboxes of new content are obtained. Estimates by analogy were rejected by the owner (2026-11-05). A test on 302 sampled library builds (hitlag off against on, 1,000 iterations): of 288 compared teams, 149 moved by more than 2% and 76 by more than 5%; 10 rotations broke. So hitlag cannot default to zero; it must be measured for each new character.
+
+### Milestone 2: complete (2026-11-05)
+
+- **Engine:** the versioned parse API (`docs/parse-api.md`, `parse_version` 1): `gse --parse`, `api::parse`, Wasm export `gse_parse`. `claude/independence-parse-api` (`684483d`, CI run 481 passed), merged in `211d588` (CI run 482 passed). `reference/parsecheck` compares every field with gcsim `eb21884`'s parser: 5,510 configs and Gscouter's 4,817 `build.txt` files agree; the one declared difference is `add stats random` (refused as `unsupported`; no library build uses it). CI runs it in part 0.
+- **Release:** `211d588` (module `db01704ce071`), run 483: 4,447 teams verified, drift −0.011% ± 0.002% over 5,365 builds.
+- **Gscouter** (`main` `3959000`, the owner's go of 2026-11-05):
+  - Keys from the engine's catalog (`internal/gamekeys`, byte-identical to `gse --catalog` at `8a3c580`).
+  - Enka mappings kept as legacy data with their provenance; nothing recorded from users' showcases.
+  - Boss resistances as Gscouter's own legacy table, checked row by row against gcsim.
+  - Setup lines read with `gse_parse` (`internal/gse`); gcsim's parser kept only in a test that checks agreement.
+  - Release `211d588` pinned. Group B approvals now carry forward when the old and new modules score the team identically (owner, 2026-11-05); all 11 carried.
+- **Scores:** both reference scores to the last digit.
+- **Left on gcsim:** chart, preview, timeline and `score/chasca.go` (step 4); scoring itself (step 5).
