@@ -1,0 +1,3 @@
+# venti with polarstar R5: library build lines carry it at R1 (2) (a gap the coverage map found, 2026-11-05).
+team venti-faruzan-furina-bennett
+venti add weapon="polarstar" refine=5 lvl=90/90;

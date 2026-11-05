@@ -1,0 +1,3 @@
+# xiangling with thecatch R1: library build lines carry it at R5 (276) (a gap the coverage map found, 2026-11-05).
+team albedo-bennett-xiangling-noelle
+xiangling add weapon="thecatch" refine=1 lvl=90/90;

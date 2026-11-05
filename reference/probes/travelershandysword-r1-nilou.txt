@@ -1,0 +1,3 @@
+# nilou with travelershandysword R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).
+team xingqiu-nilou-collei-yelan
+nilou add weapon="travelershandysword" refine=1 lvl=90/90;

@@ -1,0 +1,3 @@
+# chevreuse with symphonistofscents R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).
+team clorinde-citlali-mavuika-chevreuse
+chevreuse add weapon="symphonistofscents" refine=1 lvl=90/90;

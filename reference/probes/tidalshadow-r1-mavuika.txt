@@ -1,0 +1,3 @@
+# mavuika with tidalshadow R1: library build lines carry it at R5 (62) (a gap the coverage map found, 2026-11-05).
+team chasca-furina-sigewinne-mavuika
+mavuika add weapon="tidalshadow" refine=1 lvl=90/90;

@@ -1,0 +1,3 @@
+# kokomi with everlastingmoonglow R5: library build lines carry it at R1 (2) (a gap the coverage map found, 2026-11-05).
+team chiori-furina-gorou-sangonomiyakokomi
+kokomi add weapon="everlastingmoonglow" refine=5 lvl=90/90;

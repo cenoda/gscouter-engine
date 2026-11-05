@@ -1,0 +1,3 @@
+# kokomi with fruitoffulfillment R1: library build lines carry it at R3 (1), R5 (41) (a gap the coverage map found, 2026-11-05).
+team alhaitham-nilou-furina-sangonomiyakokomi
+kokomi add weapon="fruitoffulfillment" refine=1 lvl=90/90;

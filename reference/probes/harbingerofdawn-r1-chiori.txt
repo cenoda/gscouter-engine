@@ -1,0 +1,3 @@
+# chiori with harbingerofdawn R1: library build lines carry it at R5 (346) (a gap the coverage map found, 2026-11-05).
+team albedo-furina-chiori-noelle
+chiori add weapon="harbinger" refine=1 lvl=90/90;

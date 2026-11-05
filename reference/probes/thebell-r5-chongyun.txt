@@ -1,0 +1,3 @@
+# chongyun with thebell R5: no library build (a gap the coverage map found, 2026-11-05).
+team clorinde-nahida-chongyun-fischl
+chongyun add weapon= "thebell" refine=5 lvl=90/90;

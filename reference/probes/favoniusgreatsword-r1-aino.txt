@@ -1,0 +1,3 @@
+# aino with favoniusgreatsword R1: library build lines carry it at R3 (231), R5 (19) (a gap the coverage map found, 2026-11-05).
+team aino-fischl-columbina-sucrose
+aino add weapon="favoniusgreatsword" refine=1 lvl=90/90;

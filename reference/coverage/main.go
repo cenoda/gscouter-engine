@@ -118,7 +118,7 @@ type pc struct {
 var (
 	buildLine  = regexp.MustCompile(`^\s*(\S+)\s+(char|add\s+weapon|add\s+set|add\s+stats)\b(.*)$`)
 	actionName = regexp.MustCompile(`^[a-z_]+(\[[^\]]*\])?(:\d+)?$`)
-	param      = regexp.MustCompile(`(\w+)=("[^"]*"|[^\s;]+)`)
+	param      = regexp.MustCompile(`(\w+)\s*=\s*("[^"]*"|[^\s;]+)`)
 )
 
 type resolver struct {

@@ -1,0 +1,3 @@
+# arlecchino with primordialjadewingedspear R5: library build lines carry it at R1 (1), R2 (1) (a gap the coverage map found, 2026-11-05).
+team arlecchino-durin-fischl-mualani
+arlecchino add weapon="primordialjadewingedspear" refine=5 lvl=90/90;

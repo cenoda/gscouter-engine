@@ -1,0 +1,3 @@
+# mualani with surfsup R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).
+team mualani-nilou-mavuika-xilonen
+mualani add weapon="surfsup" refine=1 lvl=90/90;

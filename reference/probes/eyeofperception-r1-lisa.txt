@@ -1,0 +1,3 @@
+# lisa with eyeofperception R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).
+team lisa-fischl-mika-nahida
+lisa add weapon="eyeofperception" refine=1 lvl=90/90;

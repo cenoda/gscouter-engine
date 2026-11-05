@@ -1,0 +1,3 @@
+# ineffa with prospectorsshovel R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).
+team zibai-linnea-columbina-ineffa
+ineffa add weapon="prospectorsshovel" refine=1 lvl=90/90;

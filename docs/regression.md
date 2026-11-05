@@ -8,7 +8,7 @@ The engine's own regression: every library build and every probe on fixed config
 
 `regression/`:
 
-- `inputs.tar.xz`: the looped config of each library build and probe, as `compare -only library,probes -dry-run -configs` writes them (`configs/<team>-library.txt`, `configs/<team>-probe-<name>.txt`), and `gscouter-commit`, the Gscouter commit they were assembled at (the one `compare.yml` pins). 5,488 configs (4,570 library builds, 918 probes), 22 MB as files, 399 KB compressed (2026-11-05).
+- `inputs.tar.xz`: the looped config of each library build and probe, as `compare -only library,probes -dry-run -configs` writes them (`configs/<team>-library.txt`, `configs/<team>-probe-<name>.txt`), and `gscouter-commit`, the Gscouter commit they were assembled at (the one `compare.yml` pins). 5,596 configs (4,570 library builds, 1,026 probes), 22 MB as files, 402 KB compressed (2026-11-05).
 - `baseline.txt`: one line per build, sorted, after a header recording the format, the engine commit the baseline was made from (`+changes`: the working tree's engine differed from that commit, as when the baseline is committed with the change), the Gscouter commit, the hash of the inputs, and the iterations, warmup, threads and first seed. Each line has the hash of the engine's whole output (`sha`: the JSON `gse` prints, its timing left out, with exit status and error text; 128 bits), team DPS and each character's DPS as `gse` prints them (4 decimals), the waits by character and reason, the frames, and the error of a build the engine refuses. 1.9 MB (2026-11-05).
 - `src/`: the runner `regress` (crate `gse-regress`, no dependencies): `run`, `diff`, `merge`.
 - `update.sh`: regenerates the inputs or the baseline.

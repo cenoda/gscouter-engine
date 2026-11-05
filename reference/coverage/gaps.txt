@@ -6,7 +6,8 @@
 #           partial:   the item is reached, but a part of its code is not
 #   reason  kills, enemy-hp, enemy-attacks, range, stamina, stellar,
 #           moondrift, hexerei, moonsign, bond-of-life, heal-target, error
-#           (from docs/roadmap.md §3, Phase 3), or new: found by this map,
+#           (from docs/roadmap.md §3, Phase 3); no-member: no library team
+#           has the character, so no probe can reach it; or new: found by this map,
 #           with no reason in the documents yet (the note says what the
 #           library and probes carry)
 #
@@ -66,118 +67,16 @@ weapon:otherworldlystory:r5 partial heal-target it heals slot 0; on its probe th
 weapon:gestofthemightywolf:r5 partial error on Noelle, Itto or Mavuika it needs gcsim's StateChange segmented flag: an error at fight setup, not listed by gse --check
 weapon:cloudforged:r5 partial error on Sethos, or with Shimenawa 4pc, it needs gcsim's OnEnergyChange: an error at fight setup, not listed by gse --check
 
-# ---- unreached, new: found by the map (2026-11-05). Counts are library build lines of every team, verified or not.
-char:aethercryo:c1 unreached new no library build; no probe sets cons 1 or more
-char:aethercryo:c2 unreached new no library build; no probe sets cons 2 or more
-char:aethercryo:c3 unreached new no library build; no probe sets cons 3 or more
-char:aethercryo:c4 unreached new no library build; no probe sets cons 4 or more
-char:aethercryo:c5 unreached new no library build; no probe sets cons 5 or more
-char:aethercryo:c6 unreached new no library build; no probe sets cons 6 or more
-char:aloy:c1 unreached new library build lines at C0 (6); no probe sets cons 1 or more
-char:aloy:c2 unreached new library build lines at C0 (6); no probe sets cons 2 or more
-char:aloy:c3 unreached new library build lines at C0 (6); no probe sets cons 3 or more
-char:aloy:c4 unreached new library build lines at C0 (6); no probe sets cons 4 or more
-char:aloy:c5 unreached new library build lines at C0 (6); no probe sets cons 5 or more
-char:aloy:c6 unreached new library build lines at C0 (6); no probe sets cons 6 or more
-char:escoffier:c1 unreached new library build lines at C0 (325); no probe sets cons 1 or more
-char:escoffier:c2 unreached new library build lines at C0 (325); no probe sets cons 2 or more
-char:escoffier:c3 unreached new library build lines at C0 (325); no probe sets cons 3 or more
-char:escoffier:c4 unreached new library build lines at C0 (325); no probe sets cons 4 or more
-char:escoffier:c5 unreached new library build lines at C0 (325); no probe sets cons 5 or more
-char:escoffier:c6 unreached new library build lines at C0 (325); no probe sets cons 6 or more
-char:illuga:c1 unreached new library build lines at C0 (4); no probe sets cons 1 or more
-char:illuga:c2 unreached new library build lines at C0 (4); no probe sets cons 2 or more
-char:illuga:c3 unreached new library build lines at C0 (4); no probe sets cons 3 or more
-char:illuga:c4 unreached new library build lines at C0 (4); no probe sets cons 4 or more
-char:illuga:c5 unreached new library build lines at C0 (4); no probe sets cons 5 or more
-char:illuga:c6 unreached new library build lines at C0 (4); no probe sets cons 6 or more
-char:jean:c5 unreached new library build lines at C0 (97), C4 (7); no probe sets cons 5 or more
-char:jean:c6 unreached new library build lines at C0 (97), C4 (7); no probe sets cons 6 or more
-char:luminecryo:c1 unreached new library build lines at C0 (34); no probe sets cons 1 or more
-char:luminecryo:c2 unreached new library build lines at C0 (34); no probe sets cons 2 or more
-char:luminecryo:c3 unreached new library build lines at C0 (34); no probe sets cons 3 or more
-char:luminecryo:c4 unreached new library build lines at C0 (34); no probe sets cons 4 or more
-char:luminecryo:c5 unreached new library build lines at C0 (34); no probe sets cons 5 or more
-char:luminecryo:c6 unreached new library build lines at C0 (34); no probe sets cons 6 or more
-char:sandrone:c1 unreached new library build lines at C0 (21); no probe sets cons 1 or more
-char:sandrone:c2 unreached new library build lines at C0 (21); no probe sets cons 2 or more
-char:sandrone:c3 unreached new library build lines at C0 (21); no probe sets cons 3 or more
-char:sandrone:c4 unreached new library build lines at C0 (21); no probe sets cons 4 or more
-char:sandrone:c5 unreached new library build lines at C0 (21); no probe sets cons 5 or more
-char:sandrone:c6 unreached new library build lines at C0 (21); no probe sets cons 6 or more
-char:varka:c1 unreached new library build lines at C0 (4); no probe sets cons 1 or more
-char:varka:c2 unreached new library build lines at C0 (4); no probe sets cons 2 or more
-char:varka:c3 unreached new library build lines at C0 (4); no probe sets cons 3 or more
-char:varka:c4 unreached new library build lines at C0 (4); no probe sets cons 4 or more
-char:varka:c5 unreached new library build lines at C0 (4); no probe sets cons 5 or more
-char:varka:c6 unreached new library build lines at C0 (4); no probe sets cons 6 or more
-char:vesna:c1 unreached new library build lines at C0 (75); no probe sets cons 1 or more
-char:vesna:c2 unreached new library build lines at C0 (75); no probe sets cons 2 or more
-char:vesna:c3 unreached new library build lines at C0 (75); no probe sets cons 3 or more
-char:vesna:c4 unreached new library build lines at C0 (75); no probe sets cons 4 or more
-char:vesna:c5 unreached new library build lines at C0 (75); no probe sets cons 5 or more
-char:vesna:c6 unreached new library build lines at C0 (75); no probe sets cons 6 or more
-char:zibai:c1 unreached new library build lines at C0 (7); no probe sets cons 1 or more
-char:zibai:c2 unreached new library build lines at C0 (7); no probe sets cons 2 or more
-char:zibai:c3 unreached new library build lines at C0 (7); no probe sets cons 3 or more
-char:zibai:c4 unreached new library build lines at C0 (7); no probe sets cons 4 or more
-char:zibai:c5 unreached new library build lines at C0 (7); no probe sets cons 5 or more
-char:zibai:c6 unreached new library build lines at C0 (7); no probe sets cons 6 or more
-weapon:angelosheptades:r1 unreached new library build lines at R5 (8); no probe at R1
-weapon:balladofthefjords:r5 unreached new library build lines at R1 (212); no probe at R5
-weapon:beyondthechrysalis:r5 unreached new library build lines at R1 (75); no probe at R5
-weapon:blackmarrowlantern:r1 unreached new library build lines at R5 (4); no probe at R1
-weapon:blacktassel:r1 unreached new library build lines at R5 (2); no probe at R1
-weapon:calamityofeshu:r1 unreached new library build lines at R5 (92); no probe at R1
-weapon:calamityqueller:r1 unreached new library build lines at R5 (2); no probe at R1
-weapon:cinnabarspindle:r1 unreached new library build lines at R5 (141); no probe at R1
-weapon:everlastingmoonglow:r5 unreached new library build lines at R1 (2); no probe at R5
-weapon:exaiphanesblade:r5 unreached new library build lines at R1 (35); no probe at R5
-weapon:eyeofperception:r1 unreached new library build lines at R5 (2); no probe at R1
-weapon:fadingtwilight:r1 unreached new library build lines at R5 (107); no probe at R1
-weapon:favoniusgreatsword:r1 unreached new library build lines at R3 (231), R5 (19); no probe at R1
-weapon:festeringdesire:r1 unreached new library build lines at R3 (1), R5 (510); no probe at R1
-weapon:fracturedhalo:r1 unreached new library build lines at R5 (3); no probe at R1
-weapon:fruitoffulfillment:r1 unreached new library build lines at R3 (1), R5 (41); no probe at R1
-weapon:hamayumi:r1 unreached new library build lines at R5 (70); no probe at R1
-weapon:harbingerofdawn:r1 unreached new library build lines at R5 (346); no probe at R1
-weapon:hunterspath:r1 unreached new library build lines at R5 (1); no probe at R1
-weapon:katsuragikirinagamasa:r1 unreached new library build lines at R5 (8); no probe at R1
-weapon:kitaincrossspear:r1 unreached new library build lines at R3 (1), R5 (85); no probe at R1
-weapon:lostprayertothesacredwinds:r5 unreached new library build lines at R1 (2); no probe at R5
-weapon:mappamare:r1 unreached new library build lines at R3 (2); no probe at R1
-weapon:mappamare:r5 unreached new library build lines at R3 (2); no probe at R5
-weapon:moonweaversdawn:r5 unreached new library build lines at R1 (3), R2 (35); no probe at R5
-weapon:nightweaverslookingglass:r1 unreached new library build lines at R5 (1); no probe at R1
-weapon:polarstar:r5 unreached new library build lines at R1 (2); no probe at R5
-weapon:primordialjadewingedspear:r5 unreached new library build lines at R1 (1), R2 (1); no probe at R5
-weapon:prospectorsshovel:r1 unreached new library build lines at R5 (1); no probe at R1
-weapon:prototypestarglitter:r5 unreached new library build lines at R1 (2); no probe at R5
-weapon:rust:r1 unreached new library build lines at R3 (87), R5 (2); no probe at R1
-weapon:sacrificersstaff:r5 unreached new library build lines at R1 (1); no probe at R5
-weapon:sacrificialbow:r1 unreached new library build lines at R3 (3), R4 (1), R5 (34); no probe at R1
-weapon:sacrificialsword:r1 unreached new library build lines at R3 (3), R4 (1), R5 (2); no probe at R1
-weapon:serenityscall:r1 unreached new library build lines at R5 (1); no probe at R1
-weapon:sharpshootersoath:r1 unreached new library build lines at R5 (1); no probe at R1
-weapon:sharpshootersoath:r5 unreached new library build lines at R5 (1); the R5 build(s) are on unverified teams; no probe at R5
-weapon:skywardharp:r5 unreached new library build lines at R1 (2); no probe at R5
-weapon:skywardpride:r5 unreached new library build lines at R1 (4); no probe at R5
-weapon:snowtombedstarsilver:r1 unreached new library build lines at R5 (2); no probe at R1
-weapon:songofstillness:r1 unreached new library build lines at R3 (1), R5 (107); no probe at R1
-weapon:surfsup:r1 unreached new library build lines at R5 (1); no probe at R1
-weapon:symphonistofscents:r1 unreached new library build lines at R5 (2); no probe at R1
-weapon:talkingstick:r5 unreached new library build lines at R1 (1); no probe at R5
-weapon:thebell:r1 unreached new no library build; no probe at R1
-weapon:thebell:r5 unreached new no library build; no probe at R5
-weapon:theblacksword:r5 unreached new library build lines at R1 (65), R3 (1); no probe at R5
-weapon:thecatch:r1 unreached new library build lines at R5 (276); no probe at R1
-weapon:thefirstgreatmagic:r5 unreached new library build lines at R1 (1); no probe at R5
-weapon:theviridescenthunt:r5 unreached new library build lines at R1 (114); no probe at R5
-weapon:thrillingtalesofdragonslayers:r1 unreached new library build lines at R5 (503); no probe at R1
-weapon:tidalshadow:r1 unreached new library build lines at R5 (62); no probe at R1
-weapon:travelershandysword:r1 unreached new library build lines at R5 (1); no probe at R1
-weapon:tulaytullahsremembrance:r5 unreached new library build lines at R1 (1); no probe at R5
-weapon:vividnotions:r1 unreached new library build lines at R5 (2); no probe at R1
-weapon:whitetassel:r1 unreached new library build lines at R5 (1); no probe at R1
-weapon:wolfsgravestone:r5 unreached new library build lines at R1 (1); no probe at R5
-set:bloodstainedchivalry:4 unreached new library builds and probes carry 2 pieces only (bloodstained-rosaria is 2+2)
+# ---- partial: reached by the probes added for the map's gaps (2026-11-05)
+weapon:thebell:r1 partial enemy-attacks the shield needs damage to the party from outside; library fights have none
+weapon:thebell:r5 partial enemy-attacks the shield needs damage to the party from outside; library fights have none
+weapon:wolfsgravestone:r5 partial enemy-hp the team ATK bonus needs an enemy at 30% HP or less, which only damage mode has
+set:bloodstainedchivalry:4 partial kills the 4-piece follows a kill, which ends the engine's fight against its one enemy
+
+# ---- unreached: no probe can reach these (2026-11-05)
+char:aethercryo:c1 unreached no-member no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)
+char:aethercryo:c2 unreached no-member no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)
+char:aethercryo:c3 unreached no-member no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)
+char:aethercryo:c4 unreached no-member no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)
+char:aethercryo:c5 unreached no-member no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)
+char:aethercryo:c6 unreached no-member no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)

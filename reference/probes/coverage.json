@@ -3,17 +3,17 @@
  "gscouter_commit": "e4d5796bc32fb4d8b2b79678c7e67b1b40ab150f",
  "release_engine_commit": "c0a324820f6a490d925b51ac03d0433906f9bcc0",
  "counts": {
-  "probes": 918,
-  "probes_on_verified_teams": 906,
+  "probes": 1026,
+  "probes_on_verified_teams": 1014,
   "library_teams": 4570,
   "library_teams_verified": 4430,
   "items": 1412,
   "covered_by_library": 975,
-  "covered_by_probe_only": 323,
-  "gaps_explained": 0,
-  "gaps_new": 114,
+  "covered_by_probe_only": 431,
+  "gaps_explained": 6,
+  "gaps_new": 0,
   "gaps_unexplained": 0,
-  "covered_with_partial_gaps": 50
+  "covered_with_partial_gaps": 54
  },
  "probes": [
   {
@@ -503,6 +503,171 @@
    ]
   },
   {
+   "name": "aloy-c1",
+   "team": "aloy-bennett-xiangling-rosaria",
+   "description": "aloy at C1: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "aloy",
+     "cons": 1,
+     "weapon": "thestringless",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "instructor",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:aloy:c1",
+    "set:instructor:2",
+    "set:instructor:4"
+   ]
+  },
+  {
+   "name": "aloy-c2",
+   "team": "aloy-bennett-xiangling-rosaria",
+   "description": "aloy at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "aloy",
+     "cons": 2,
+     "weapon": "thestringless",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "instructor",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:aloy:c1",
+    "char:aloy:c2",
+    "set:instructor:2",
+    "set:instructor:4"
+   ]
+  },
+  {
+   "name": "aloy-c3",
+   "team": "aloy-bennett-xiangling-rosaria",
+   "description": "aloy at C3: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "aloy",
+     "cons": 3,
+     "weapon": "thestringless",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "instructor",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:aloy:c1",
+    "char:aloy:c2",
+    "char:aloy:c3",
+    "set:instructor:2",
+    "set:instructor:4"
+   ]
+  },
+  {
+   "name": "aloy-c4",
+   "team": "aloy-bennett-xiangling-rosaria",
+   "description": "aloy at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "aloy",
+     "cons": 4,
+     "weapon": "thestringless",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "instructor",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:aloy:c1",
+    "char:aloy:c2",
+    "char:aloy:c3",
+    "char:aloy:c4",
+    "set:instructor:2",
+    "set:instructor:4"
+   ]
+  },
+  {
+   "name": "aloy-c5",
+   "team": "aloy-bennett-xiangling-rosaria",
+   "description": "aloy at C5: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "aloy",
+     "cons": 5,
+     "weapon": "thestringless",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "instructor",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:aloy:c1",
+    "char:aloy:c2",
+    "char:aloy:c3",
+    "char:aloy:c4",
+    "char:aloy:c5",
+    "set:instructor:2",
+    "set:instructor:4"
+   ]
+  },
+  {
+   "name": "aloy-c6",
+   "team": "aloy-bennett-xiangling-rosaria",
+   "description": "aloy at C6: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "aloy",
+     "cons": 6,
+     "weapon": "thestringless",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "instructor",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:aloy:c1",
+    "char:aloy:c2",
+    "char:aloy:c3",
+    "char:aloy:c4",
+    "char:aloy:c5",
+    "char:aloy:c6",
+    "set:instructor:2",
+    "set:instructor:4"
+   ]
+  },
+  {
    "name": "alyosha-c6",
    "team": "sandrone-alyosha-diona-sucrose",
    "description": "Alyosha C6: C1 energy on electro reactions, C2 marks from the field and a longer burst, C4 heals, C6 two stacks of Hunter's Precision and EM.",
@@ -579,6 +744,37 @@
     "weapon:amenomakageuchi:r1",
     "set:blizzardstrayer:2",
     "set:blizzardstrayer:4"
+   ]
+  },
+  {
+   "name": "angelosheptades-r1-nicole",
+   "team": "arlecchino-nicole-xilonen-citlali",
+   "description": "nicole with angelosheptades R1: library build lines carry it at R5 (8) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "nicole",
+     "cons": 6,
+     "weapon": "angelosheptades",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "archaicpetra",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:nicole:c1",
+    "char:nicole:c2",
+    "char:nicole:c3",
+    "char:nicole:c4",
+    "char:nicole:c5",
+    "char:nicole:c6",
+    "weapon:angelosheptades:r1",
+    "set:archaicpetra:2",
+    "set:archaicpetra:4"
    ]
   },
   {
@@ -1545,6 +1741,31 @@
    ]
   },
   {
+   "name": "balladofthefjords-r5-ineffa",
+   "team": "alhaitham-xingqiu-aino-ineffa",
+   "description": "ineffa with balladofthefjords R5: library build lines carry it at R1 (212) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "ineffa",
+     "cons": 0,
+     "weapon": "balladofthefjords",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "flowerofparadiselost",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:balladofthefjords:r5",
+    "set:flowerofparadiselost:2",
+    "set:flowerofparadiselost:4"
+   ]
+  },
+  {
    "name": "barbara-c0",
    "team": "barbara-kukishinobu-nahida-fischl",
    "description": "Barbara at C0: no C1 energy, C2 bonus and cooldown, or C4 energy.",
@@ -1906,7 +2127,7 @@
     {
      "char": "hutao",
      "cons": 0,
-     "weapon": "",
+     "weapon": "deathmatch",
      "refine": 1,
      "sets": [
       {
@@ -1917,8 +2138,34 @@
     }
    ],
    "reaches": [
+    "weapon:deathmatch:r1",
     "set:berserker:2",
     "set:berserker:4"
+   ]
+  },
+  {
+   "name": "beyondthechrysalis-r5-vesna",
+   "team": "vesna-columbina-ineffa-sucrose",
+   "description": "vesna with beyondthechrysalis R5: library build lines carry it at R1 (75) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "vesna",
+     "cons": 0,
+     "weapon": "beyondthechrysalis",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:beyondthechrysalis:r5",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
    ]
   },
   {
@@ -2205,6 +2452,56 @@
    ]
   },
   {
+   "name": "blackmarrowlantern-r1-vodyanitsa",
+   "team": "nilou-lauma-nahida-vodyanitsa",
+   "description": "vodyanitsa with blackmarrowlantern R1: library build lines carry it at R5 (4) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "vodyanitsa",
+     "cons": 0,
+     "weapon": "blackmarrowlantern",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "flowerofparadiselost",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:blackmarrowlantern:r1",
+    "set:flowerofparadiselost:2",
+    "set:flowerofparadiselost:4"
+   ]
+  },
+  {
+   "name": "blacktassel-r1-zhongli",
+   "team": "furina-zhongli-nahida-kukishinobu",
+   "description": "zhongli with blacktassel R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "zhongli",
+     "cons": 0,
+     "weapon": "blacktassel",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "tenacityofthemillelith",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:blacktassel:r1",
+    "set:tenacityofthemillelith:2",
+    "set:tenacityofthemillelith:4"
+   ]
+  },
+  {
    "name": "bladeofatonement-r1-sandrone",
    "team": "sandrone-beidou-diona-sucrose",
    "description": "Sandrone with Blade of Atonement R1.",
@@ -2340,6 +2637,37 @@
     "weapon:deathmatch:r1",
     "set:bloodstainedchivalry:2",
     "set:paleflame:2"
+   ]
+  },
+  {
+   "name": "bloodstainedchivalry-4pc-xinyan",
+   "team": "xinyan-furina-raidenshogun-charlotte",
+   "description": "xinyan with bloodstainedchivalry 4: the library and probes carry it at 2 pieces only (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "xinyan",
+     "cons": 6,
+     "weapon": "ultimateoverlordsmegamagicsword",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "bloodstainedchivalry",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:xinyan:c1",
+    "char:xinyan:c2",
+    "char:xinyan:c3",
+    "char:xinyan:c4",
+    "char:xinyan:c5",
+    "char:xinyan:c6",
+    "weapon:ultimateoverlordsmegamagicsword:r5",
+    "set:bloodstainedchivalry:2",
+    "set:bloodstainedchivalry:4"
    ]
   },
   {
@@ -2568,6 +2896,66 @@
     "weapon:calamityofeshu:r5",
     "set:goldentroupe:2",
     "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "calamityofeshu-r1-clorinde",
+   "team": "clorinde-chevreuse-fischl-nicole",
+   "description": "clorinde with calamityofeshu R1: library build lines carry it at R5 (92) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "clorinde",
+     "cons": 0,
+     "weapon": "calamityofeshu",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "echoesofanoffering",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:calamityofeshu:r1",
+    "set:echoesofanoffering:2",
+    "set:echoesofanoffering:4"
+   ]
+  },
+  {
+   "name": "calamityqueller-r1-shenhe",
+   "team": "chiori-zhongli-shenhe-chongyun",
+   "description": "shenhe with calamityqueller R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "shenhe",
+     "cons": 6,
+     "weapon": "calamityqueller",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "gladiatorsfinale",
+       "count": 2
+      },
+      {
+       "set": "emblemofseveredfate",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:shenhe:c1",
+    "char:shenhe:c2",
+    "char:shenhe:c3",
+    "char:shenhe:c4",
+    "char:shenhe:c5",
+    "char:shenhe:c6",
+    "weapon:calamityqueller:r1",
+    "set:gladiatorsfinale:2",
+    "set:emblemofseveredfate:2"
    ]
   },
   {
@@ -3717,6 +4105,31 @@
     "weapon:staffofhoma:r1",
     "set:scrolloftheheroofcindercity:2",
     "set:scrolloftheheroofcindercity:4"
+   ]
+  },
+  {
+   "name": "cinnabarspindle-r1-albedo",
+   "team": "albedo-bennett-xiangling-noelle",
+   "description": "albedo with cinnabarspindle R1: library build lines carry it at R5 (141) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "albedo",
+     "cons": 0,
+     "weapon": "cinnabarspindle",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "huskofopulentdreams",
+       "count": 5
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:cinnabarspindle:r1",
+    "set:huskofopulentdreams:2",
+    "set:huskofopulentdreams:4"
    ]
   },
   {
@@ -7043,6 +7456,177 @@
    ]
   },
   {
+   "name": "escoffier-c1",
+   "team": "aratakiitto-escoffier-yelan-furina",
+   "description": "escoffier at C1: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "escoffier",
+     "cons": 1,
+     "weapon": "tamayurateinoohanashi",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:escoffier:c1",
+    "weapon:tamayurateinoohanashi:r5",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "escoffier-c2",
+   "team": "aratakiitto-escoffier-yelan-furina",
+   "description": "escoffier at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "escoffier",
+     "cons": 2,
+     "weapon": "tamayurateinoohanashi",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:escoffier:c1",
+    "char:escoffier:c2",
+    "weapon:tamayurateinoohanashi:r5",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "escoffier-c3",
+   "team": "aratakiitto-escoffier-yelan-furina",
+   "description": "escoffier at C3: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "escoffier",
+     "cons": 3,
+     "weapon": "tamayurateinoohanashi",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:escoffier:c1",
+    "char:escoffier:c2",
+    "char:escoffier:c3",
+    "weapon:tamayurateinoohanashi:r5",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "escoffier-c4",
+   "team": "aratakiitto-escoffier-yelan-furina",
+   "description": "escoffier at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "escoffier",
+     "cons": 4,
+     "weapon": "tamayurateinoohanashi",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:escoffier:c1",
+    "char:escoffier:c2",
+    "char:escoffier:c3",
+    "char:escoffier:c4",
+    "weapon:tamayurateinoohanashi:r5",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "escoffier-c5",
+   "team": "aratakiitto-escoffier-yelan-furina",
+   "description": "escoffier at C5: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "escoffier",
+     "cons": 5,
+     "weapon": "tamayurateinoohanashi",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:escoffier:c1",
+    "char:escoffier:c2",
+    "char:escoffier:c3",
+    "char:escoffier:c4",
+    "char:escoffier:c5",
+    "weapon:tamayurateinoohanashi:r5",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "escoffier-c6",
+   "team": "aratakiitto-escoffier-yelan-furina",
+   "description": "escoffier at C6: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "escoffier",
+     "cons": 6,
+     "weapon": "tamayurateinoohanashi",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:escoffier:c1",
+    "char:escoffier:c2",
+    "char:escoffier:c3",
+    "char:escoffier:c4",
+    "char:escoffier:c5",
+    "char:escoffier:c6",
+    "weapon:tamayurateinoohanashi:r5",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
+   ]
+  },
+  {
    "name": "escoffier-charge",
    "team": "bennett-furina-rosaria-escoffier",
    "description": "Escoffier's charged attack after a normal attack (no library rotation charges with her).",
@@ -7397,6 +7981,124 @@
    ]
   },
   {
+   "name": "everlastingmoonglow-r5-sangonomiyakokomi",
+   "team": "chiori-furina-gorou-sangonomiyakokomi",
+   "description": "kokomi with everlastingmoonglow R5: library build lines carry it at R1 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sangonomiyakokomi",
+     "cons": 6,
+     "weapon": "everlastingmoonglow",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "oceanhuedclam",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:sangonomiyakokomi:c1",
+    "char:sangonomiyakokomi:c2",
+    "char:sangonomiyakokomi:c3",
+    "char:sangonomiyakokomi:c4",
+    "char:sangonomiyakokomi:c5",
+    "char:sangonomiyakokomi:c6",
+    "weapon:everlastingmoonglow:r5",
+    "set:oceanhuedclam:2",
+    "set:oceanhuedclam:4"
+   ]
+  },
+  {
+   "name": "exaiphanesblade-r5-luminecryo",
+   "team": "sandrone-alyosha-travelercryo-vodyanitsa",
+   "description": "travelercryo with exaiphanesblade R5: library build lines carry it at R1 (35) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "luminecryo",
+     "cons": 0,
+     "weapon": "exaiphanesblade",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:exaiphanesblade:r5",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "eyeofperception-r1-lisa",
+   "team": "lisa-fischl-mika-nahida",
+   "description": "lisa with eyeofperception R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "lisa",
+     "cons": 6,
+     "weapon": "eyeofperception",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "paleflame",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:lisa:c1",
+    "char:lisa:c2",
+    "char:lisa:c3",
+    "char:lisa:c4",
+    "char:lisa:c5",
+    "char:lisa:c6",
+    "weapon:eyeofperception:r1",
+    "set:paleflame:2",
+    "set:paleflame:4"
+   ]
+  },
+  {
+   "name": "fadingtwilight-r1-fischl",
+   "team": "alhaitham-nahida-fischl-xianyun",
+   "description": "fischl with fadingtwilight R1: library build lines carry it at R5 (107) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "fischl",
+     "cons": 6,
+     "weapon": "fadingtwilight",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:fischl:c1",
+    "char:fischl:c2",
+    "char:fischl:c3",
+    "char:fischl:c4",
+    "char:fischl:c5",
+    "char:fischl:c6",
+    "weapon:fadingtwilight:r1",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
+   ]
+  },
+  {
    "name": "faruzan-aim",
    "team": "kaedeharakazuha-faruzan-bennett-furina",
    "description": "Faruzan's physical aimed shot (which spends a Hurricane Arrow in Manifest Gale) and a fully charged shot on a weak spot.",
@@ -7562,6 +8264,37 @@
     "char:faruzan:c4",
     "set:goldentroupe:2",
     "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "favoniusgreatsword-r1-aino",
+   "team": "aino-fischl-columbina-sucrose",
+   "description": "aino with favoniusgreatsword R1: library build lines carry it at R3 (231), R5 (19) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "aino",
+     "cons": 6,
+     "weapon": "favoniusgreatsword",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "silkenmoonsserenade",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:aino:c1",
+    "char:aino:c2",
+    "char:aino:c3",
+    "char:aino:c4",
+    "char:aino:c5",
+    "char:aino:c6",
+    "weapon:favoniusgreatsword:r1",
+    "set:silkenmoonsserenade:2",
+    "set:silkenmoonsserenade:4"
    ]
   },
   {
@@ -7745,6 +8478,31 @@
     "weapon:ferrousshadow:r5",
     "set:marechausseehunter:2",
     "set:marechausseehunter:4"
+   ]
+  },
+  {
+   "name": "festeringdesire-r1-furina",
+   "team": "alhaitham-furina-fischl-baizhu",
+   "description": "furina with festeringdesire R1: library build lines carry it at R3 (1), R5 (510) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "furina",
+     "cons": 0,
+     "weapon": "festeringdesire",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "tenacityofthemillelith",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:festeringdesire:r1",
+    "set:tenacityofthemillelith:2",
+    "set:tenacityofthemillelith:4"
    ]
   },
   {
@@ -8209,6 +8967,37 @@
    ]
   },
   {
+   "name": "fracturedhalo-r1-ineffa",
+   "team": "flins-ineffa-columbina-nicole",
+   "description": "ineffa with fracturedhalo R1: library build lines carry it at R5 (3) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "ineffa",
+     "cons": 6,
+     "weapon": "fracturedhalo",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "aubadeofmorningstarandmoon",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:ineffa:c1",
+    "char:ineffa:c2",
+    "char:ineffa:c3",
+    "char:ineffa:c4",
+    "char:ineffa:c5",
+    "char:ineffa:c6",
+    "weapon:fracturedhalo:r1",
+    "set:aubadeofmorningstarandmoon:2",
+    "set:aubadeofmorningstarandmoon:4"
+   ]
+  },
+  {
    "name": "fracturedhalo-r5-ineffa",
    "team": "gaming-furina-ineffa-bennett",
    "description": "Ineffa with Fractured Halo R5 (her shield gives Electrifying Edict) on a Lunar-Charged team.",
@@ -8637,6 +9426,31 @@
     "weapon:fruitfulhook:r5",
     "set:marechausseehunter:2",
     "set:marechausseehunter:4"
+   ]
+  },
+  {
+   "name": "fruitoffulfillment-r1-sangonomiyakokomi",
+   "team": "alhaitham-nilou-furina-sangonomiyakokomi",
+   "description": "kokomi with fruitoffulfillment R1: library build lines carry it at R3 (1), R5 (41) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sangonomiyakokomi",
+     "cons": 0,
+     "weapon": "fruitoffulfillment",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "oceanhuedclam",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:fruitoffulfillment:r1",
+    "set:oceanhuedclam:2",
+    "set:oceanhuedclam:4"
    ]
   },
   {
@@ -9755,6 +10569,34 @@
    ]
   },
   {
+   "name": "hamayumi-r1-amber",
+   "team": "amber-bennett-ganyu-sucrose",
+   "description": "amber with hamayumi R1: library build lines carry it at R5 (70) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "amber",
+     "cons": 3,
+     "weapon": "hamayumi",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "wandererstroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:amber:c1",
+    "char:amber:c2",
+    "char:amber:c3",
+    "weapon:hamayumi:r1",
+    "set:wandererstroupe:2",
+    "set:wandererstroupe:4"
+   ]
+  },
+  {
    "name": "hamayumi-yoimiya",
    "team": "yoimiya-bennett-zhongli-yelan",
    "description": "Yoimiya with Hamayumi R5 on her normal attacks.",
@@ -9827,6 +10669,31 @@
     "weapon:harangeppakufutsu:r5",
     "set:echoesofanoffering:2",
     "set:echoesofanoffering:4"
+   ]
+  },
+  {
+   "name": "harbingerofdawn-r1-chiori",
+   "team": "albedo-furina-chiori-noelle",
+   "description": "chiori with harbingerofdawn R1: library build lines carry it at R5 (346) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "chiori",
+     "cons": 0,
+     "weapon": "harbingerofdawn",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:harbingerofdawn:r1",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
    ]
   },
   {
@@ -10224,6 +11091,37 @@
    ]
   },
   {
+   "name": "hunterspath-r1-tighnari",
+   "team": "tighnari-nahida-furina-fischl",
+   "description": "tighnari with hunterspath R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "tighnari",
+     "cons": 6,
+     "weapon": "hunterspath",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "wandererstroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:tighnari:c1",
+    "char:tighnari:c2",
+    "char:tighnari:c3",
+    "char:tighnari:c4",
+    "char:tighnari:c5",
+    "char:tighnari:c6",
+    "weapon:hunterspath:r1",
+    "set:wandererstroupe:2",
+    "set:wandererstroupe:4"
+   ]
+  },
+  {
    "name": "husk-2pc",
    "team": "klee-chiori-xilonen-furina",
    "description": "Chiori with Husk of Opulent Dreams 2 and Tenacity of the Millelith 2.",
@@ -10286,7 +11184,7 @@
     {
      "char": "hutao",
      "cons": 6,
-     "weapon": "",
+     "weapon": "deathmatch",
      "refine": 1,
      "sets": [
       {
@@ -10303,6 +11201,7 @@
     "char:hutao:c4",
     "char:hutao:c5",
     "char:hutao:c6",
+    "weapon:deathmatch:r1",
     "set:shimenawasreminiscence:2",
     "set:shimenawasreminiscence:4"
    ]
@@ -10466,6 +11365,195 @@
     "weapon:wanderingevenstar:r1",
     "set:viridescentvenerer:2",
     "set:viridescentvenerer:4"
+   ]
+  },
+  {
+   "name": "illuga-c1",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "illuga at C1: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "illuga",
+     "cons": 1,
+     "weapon": "favoniuslance",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 2
+      },
+      {
+       "set": "wandererstroupe",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:illuga:c1",
+    "set:gildeddreams:2",
+    "set:wandererstroupe:2"
+   ]
+  },
+  {
+   "name": "illuga-c2",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "illuga at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "illuga",
+     "cons": 2,
+     "weapon": "favoniuslance",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 2
+      },
+      {
+       "set": "wandererstroupe",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:illuga:c1",
+    "char:illuga:c2",
+    "set:gildeddreams:2",
+    "set:wandererstroupe:2"
+   ]
+  },
+  {
+   "name": "illuga-c3",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "illuga at C3: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "illuga",
+     "cons": 3,
+     "weapon": "favoniuslance",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 2
+      },
+      {
+       "set": "wandererstroupe",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:illuga:c1",
+    "char:illuga:c2",
+    "char:illuga:c3",
+    "set:gildeddreams:2",
+    "set:wandererstroupe:2"
+   ]
+  },
+  {
+   "name": "illuga-c4",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "illuga at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "illuga",
+     "cons": 4,
+     "weapon": "favoniuslance",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 2
+      },
+      {
+       "set": "wandererstroupe",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:illuga:c1",
+    "char:illuga:c2",
+    "char:illuga:c3",
+    "char:illuga:c4",
+    "set:gildeddreams:2",
+    "set:wandererstroupe:2"
+   ]
+  },
+  {
+   "name": "illuga-c5",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "illuga at C5: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "illuga",
+     "cons": 5,
+     "weapon": "favoniuslance",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 2
+      },
+      {
+       "set": "wandererstroupe",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:illuga:c1",
+    "char:illuga:c2",
+    "char:illuga:c3",
+    "char:illuga:c4",
+    "char:illuga:c5",
+    "set:gildeddreams:2",
+    "set:wandererstroupe:2"
+   ]
+  },
+  {
+   "name": "illuga-c6",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "illuga at C6: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "illuga",
+     "cons": 6,
+     "weapon": "favoniuslance",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 2
+      },
+      {
+       "set": "wandererstroupe",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:illuga:c1",
+    "char:illuga:c2",
+    "char:illuga:c3",
+    "char:illuga:c4",
+    "char:illuga:c5",
+    "char:illuga:c6",
+    "set:gildeddreams:2",
+    "set:wandererstroupe:2"
    ]
   },
   {
@@ -11032,6 +12120,65 @@
    ]
   },
   {
+   "name": "jean-c5",
+   "team": "arlecchino-furina-yelan-jean",
+   "description": "jean at C5: its library builds are C0 and C4 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "jean",
+     "cons": 5,
+     "weapon": "favoniussword",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:jean:c1",
+    "char:jean:c2",
+    "char:jean:c3",
+    "char:jean:c4",
+    "char:jean:c5",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
+   "name": "jean-c6",
+   "team": "arlecchino-furina-yelan-jean",
+   "description": "jean at C6: its library builds are C0 and C4 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "jean",
+     "cons": 6,
+     "weapon": "favoniussword",
+     "refine": 3,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:jean:c1",
+    "char:jean:c2",
+    "char:jean:c3",
+    "char:jean:c4",
+    "char:jean:c5",
+    "char:jean:c6",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
    "name": "jean-rancour-r1",
    "team": "jean-rosaria-fischl-beidou",
    "description": "Jean with Prototype Rancour R1.",
@@ -11189,6 +12336,37 @@
     "char:kaeya:c5",
     "set:noblesseoblige:2",
     "set:noblesseoblige:4"
+   ]
+  },
+  {
+   "name": "katsuragikirinagamasa-r1-beidou",
+   "team": "beidou-sangonomiyakokomi-nahida-xiangling",
+   "description": "beidou with katsuragikirinagamasa R1: library build lines carry it at R5 (8) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "beidou",
+     "cons": 6,
+     "weapon": "katsuragikirinagamasa",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "emblemofseveredfate",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:beidou:c1",
+    "char:beidou:c2",
+    "char:beidou:c3",
+    "char:beidou:c4",
+    "char:beidou:c5",
+    "char:beidou:c6",
+    "weapon:katsuragikirinagamasa:r1",
+    "set:emblemofseveredfate:2",
+    "set:emblemofseveredfate:4"
    ]
   },
   {
@@ -11976,6 +13154,37 @@
     "char:kirara:c5",
     "set:tenacityofthemillelith:2",
     "set:tenacityofthemillelith:4"
+   ]
+  },
+  {
+   "name": "kitaincrossspear-r1-thoma",
+   "team": "albedo-nahida-xingqiu-thoma",
+   "description": "thoma with kitaincrossspear R1: library build lines carry it at R3 (1), R5 (85) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "thoma",
+     "cons": 6,
+     "weapon": "kitaincrossspear",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "flowerofparadiselost",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:thoma:c1",
+    "char:thoma:c2",
+    "char:thoma:c3",
+    "char:thoma:c4",
+    "char:thoma:c5",
+    "char:thoma:c6",
+    "weapon:kitaincrossspear:r1",
+    "set:flowerofparadiselost:2",
+    "set:flowerofparadiselost:4"
    ]
   },
   {
@@ -13430,6 +14639,35 @@
    ]
   },
   {
+   "name": "lostprayertothesacredwinds-r5-baizhu",
+   "team": "baizhu-nahida-fischl-beidou",
+   "description": "baizhu with lostprayertothesacredwinds R5: library build lines carry it at R1 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "baizhu",
+     "cons": 0,
+     "weapon": "lostprayertothesacredwinds",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "gladiatorsfinale",
+       "count": 2
+      },
+      {
+       "set": "deepwoodmemories",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:lostprayertothesacredwinds:r5",
+    "set:gladiatorsfinale:2",
+    "set:deepwoodmemories:2"
+   ]
+  },
+  {
    "name": "lumidouce-r5-emilie",
    "team": "emilie-furina-mavuika-bennett",
    "description": "Emilie with Lumidouce Elegy R5.",
@@ -13478,6 +14716,177 @@
     "char:lumineanemo:c2",
     "set:noblesseoblige:2",
     "set:noblesseoblige:4"
+   ]
+  },
+  {
+   "name": "luminecryo-c1",
+   "team": "sandrone-alyosha-travelercryo-vodyanitsa",
+   "description": "luminecryo at C1: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "luminecryo",
+     "cons": 1,
+     "weapon": "exaiphanesblade",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:luminecryo:c1",
+    "weapon:exaiphanesblade:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "luminecryo-c2",
+   "team": "sandrone-alyosha-travelercryo-vodyanitsa",
+   "description": "luminecryo at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "luminecryo",
+     "cons": 2,
+     "weapon": "exaiphanesblade",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:luminecryo:c1",
+    "char:luminecryo:c2",
+    "weapon:exaiphanesblade:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "luminecryo-c3",
+   "team": "sandrone-alyosha-travelercryo-vodyanitsa",
+   "description": "luminecryo at C3: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "luminecryo",
+     "cons": 3,
+     "weapon": "exaiphanesblade",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:luminecryo:c1",
+    "char:luminecryo:c2",
+    "char:luminecryo:c3",
+    "weapon:exaiphanesblade:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "luminecryo-c4",
+   "team": "sandrone-alyosha-travelercryo-vodyanitsa",
+   "description": "luminecryo at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "luminecryo",
+     "cons": 4,
+     "weapon": "exaiphanesblade",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:luminecryo:c1",
+    "char:luminecryo:c2",
+    "char:luminecryo:c3",
+    "char:luminecryo:c4",
+    "weapon:exaiphanesblade:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "luminecryo-c5",
+   "team": "sandrone-alyosha-travelercryo-vodyanitsa",
+   "description": "luminecryo at C5: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "luminecryo",
+     "cons": 5,
+     "weapon": "exaiphanesblade",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:luminecryo:c1",
+    "char:luminecryo:c2",
+    "char:luminecryo:c3",
+    "char:luminecryo:c4",
+    "char:luminecryo:c5",
+    "weapon:exaiphanesblade:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "luminecryo-c6",
+   "team": "sandrone-alyosha-travelercryo-vodyanitsa",
+   "description": "luminecryo at C6: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "luminecryo",
+     "cons": 6,
+     "weapon": "exaiphanesblade",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:luminecryo:c1",
+    "char:luminecryo:c2",
+    "char:luminecryo:c3",
+    "char:luminecryo:c4",
+    "char:luminecryo:c5",
+    "char:luminecryo:c6",
+    "weapon:exaiphanesblade:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
    ]
   },
   {
@@ -13929,6 +15338,68 @@
     "weapon:mailedflower:r1",
     "set:obsidiancodex:2",
     "set:obsidiancodex:4"
+   ]
+  },
+  {
+   "name": "mappamare-r1-yanfei",
+   "team": "diona-nahida-yanfei-xingqiu",
+   "description": "yanfei with mappamare R1: library build lines carry it at R3 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "yanfei",
+     "cons": 6,
+     "weapon": "mappamare",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:yanfei:c1",
+    "char:yanfei:c2",
+    "char:yanfei:c3",
+    "char:yanfei:c4",
+    "char:yanfei:c5",
+    "char:yanfei:c6",
+    "weapon:mappamare:r1",
+    "set:gildeddreams:2",
+    "set:gildeddreams:4"
+   ]
+  },
+  {
+   "name": "mappamare-r5-yanfei",
+   "team": "diona-nahida-yanfei-xingqiu",
+   "description": "yanfei with mappamare R5: library build lines carry it at R3 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "yanfei",
+     "cons": 6,
+     "weapon": "mappamare",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:yanfei:c1",
+    "char:yanfei:c2",
+    "char:yanfei:c3",
+    "char:yanfei:c4",
+    "char:yanfei:c5",
+    "char:yanfei:c6",
+    "weapon:mappamare:r5",
+    "set:gildeddreams:2",
+    "set:gildeddreams:4"
    ]
   },
   {
@@ -14858,6 +16329,31 @@
     "weapon:prototypeamber:r5",
     "set:oceanhuedclam:2",
     "set:oceanhuedclam:4"
+   ]
+  },
+  {
+   "name": "moonweaversdawn-r5-skirk",
+   "team": "arlecchino-citlali-skirk-bennett",
+   "description": "skirk with moonweaversdawn R5: library build lines carry it at R1 (3), R2 (35) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "skirk",
+     "cons": 0,
+     "weapon": "moonweaversdawn",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "finaleofthedeepgalleries",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:moonweaversdawn:r5",
+    "set:finaleofthedeepgalleries:2",
+    "set:finaleofthedeepgalleries:4"
    ]
   },
   {
@@ -16065,6 +17561,41 @@
     "weapon:wolffang:r1",
     "set:nighttimewhispersintheechoingwoods:2",
     "set:nighttimewhispersintheechoingwoods:4"
+   ]
+  },
+  {
+   "name": "nightweaverslookingglass-r1-lauma",
+   "team": "columbina-nilou-emilie-lauma",
+   "description": "lauma with nightweaverslookingglass R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "lauma",
+     "cons": 6,
+     "weapon": "nightweaverslookingglass",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 2
+      },
+      {
+       "set": "wandererstroupe",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:lauma:c1",
+    "char:lauma:c2",
+    "char:lauma:c3",
+    "char:lauma:c4",
+    "char:lauma:c5",
+    "char:lauma:c6",
+    "weapon:nightweaverslookingglass:r1",
+    "set:gildeddreams:2",
+    "set:wandererstroupe:2"
    ]
   },
   {
@@ -17502,6 +19033,37 @@
    ]
   },
   {
+   "name": "polarstar-r5-venti",
+   "team": "venti-faruzan-furina-bennett",
+   "description": "venti with polarstar R5: library build lines carry it at R1 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "venti",
+     "cons": 6,
+     "weapon": "polarstar",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:venti:c1",
+    "char:venti:c2",
+    "char:venti:c3",
+    "char:venti:c4",
+    "char:venti:c5",
+    "char:venti:c6",
+    "weapon:polarstar:r5",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
    "name": "portablepowersaw-r1-razor",
    "team": "razor-chevreuse-xiangling-bennett",
    "description": "Razor with Portable Power Saw R1.",
@@ -17664,6 +19226,57 @@
    ]
   },
   {
+   "name": "primordialjadewingedspear-r5-arlecchino",
+   "team": "arlecchino-durin-fischl-mualani",
+   "description": "arlecchino with primordialjadewingedspear R5: library build lines carry it at R1 (1), R2 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "arlecchino",
+     "cons": 1,
+     "weapon": "primordialjadewingedspear",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "gladiatorsfinale",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:arlecchino:c1",
+    "weapon:primordialjadewingedspear:r5",
+    "set:gladiatorsfinale:2",
+    "set:gladiatorsfinale:4"
+   ]
+  },
+  {
+   "name": "prospectorsshovel-r1-ineffa",
+   "team": "zibai-linnea-columbina-ineffa",
+   "description": "ineffa with prospectorsshovel R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "ineffa",
+     "cons": 0,
+     "weapon": "prospectorsshovel",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "gildeddreams",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:prospectorsshovel:r1",
+    "set:gildeddreams:2",
+    "set:gildeddreams:4"
+   ]
+  },
+  {
    "name": "prototypeamber-r1-nahida",
    "team": "raidenshogun-furina-nahida-zhongli",
    "description": "Nahida with Prototype Amber R1 (library builds are R5).",
@@ -17803,6 +19416,37 @@
     "weapon:prototypecrescent:r1",
     "set:goldentroupe:2",
     "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "prototypestarglitter-r5-yunjin",
+   "team": "navia-rosaria-yunjin-layla",
+   "description": "yunjin with prototypestarglitter R5: library build lines carry it at R1 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "yunjin",
+     "cons": 6,
+     "weapon": "prototypestarglitter",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "huskofopulentdreams",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:yunjin:c1",
+    "char:yunjin:c2",
+    "char:yunjin:c3",
+    "char:yunjin:c4",
+    "char:yunjin:c5",
+    "char:yunjin:c6",
+    "weapon:prototypestarglitter:r5",
+    "set:huskofopulentdreams:2",
+    "set:huskofopulentdreams:4"
    ]
   },
   {
@@ -18560,7 +20204,7 @@
     {
      "char": "rosaria",
      "cons": 0,
-     "weapon": "",
+     "weapon": "deathmatch",
      "refine": 1,
      "sets": [
       {
@@ -18571,6 +20215,7 @@
     }
    ],
    "reaches": [
+    "weapon:deathmatch:r1",
     "set:crimsonwitchofflames:2",
     "set:crimsonwitchofflames:4"
    ]
@@ -18857,6 +20502,87 @@
    ]
   },
   {
+   "name": "rust-r1-yoimiya",
+   "team": "bennett-furina-xiangling-yoimiya",
+   "description": "yoimiya with rust R1: library build lines carry it at R3 (87), R5 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "yoimiya",
+     "cons": 0,
+     "weapon": "rust",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "marechausseehunter",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:rust:r1",
+    "set:marechausseehunter:2",
+    "set:marechausseehunter:4"
+   ]
+  },
+  {
+   "name": "sacrificersstaff-r5-raidenshogun",
+   "team": "raidenshogun-ineffa-columbina-sucrose",
+   "description": "raiden with sacrificersstaff R5: library build lines carry it at R1 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "raidenshogun",
+     "cons": 0,
+     "weapon": "sacrificersstaff",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "nightoftheskysunveiling",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:sacrificersstaff:r5",
+    "set:nightoftheskysunveiling:2",
+    "set:nightoftheskysunveiling:4"
+   ]
+  },
+  {
+   "name": "sacrificialbow-r1-diona",
+   "team": "amber-diona-bennett-rosaria",
+   "description": "diona with sacrificialbow R1: library build lines carry it at R3 (3), R4 (1), R5 (34) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "diona",
+     "cons": 6,
+     "weapon": "sacrificialbow",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "songofdayspast",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:diona:c1",
+    "char:diona:c2",
+    "char:diona:c3",
+    "char:diona:c4",
+    "char:diona:c5",
+    "char:diona:c6",
+    "weapon:sacrificialbow:r1",
+    "set:songofdayspast:2",
+    "set:songofdayspast:4"
+   ]
+  },
+  {
    "name": "sacrificialgreatsword-r1-dehya",
    "team": "arlecchino-yaemiko-chevreuse-dehya",
    "description": "Dehya with Sacrificial Greatsword R1.",
@@ -18954,6 +20680,202 @@
     "weapon:sacrificialjade:r1",
     "set:tenacityofthemillelith:2",
     "set:tenacityofthemillelith:4"
+   ]
+  },
+  {
+   "name": "sacrificialsword-r1-nilou",
+   "team": "arlecchino-nilou-kaedeharakazuha-bennett",
+   "description": "nilou with sacrificialsword R1: library build lines carry it at R3 (3), R4 (1), R5 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "nilou",
+     "cons": 0,
+     "weapon": "sacrificialsword",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "instructor",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:sacrificialsword:r1",
+    "set:instructor:2",
+    "set:instructor:4"
+   ]
+  },
+  {
+   "name": "sandrone-c1",
+   "team": "sandrone-alyosha-charlotte-sucrose",
+   "description": "sandrone at C1: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sandrone",
+     "cons": 1,
+     "weapon": "ateaspoonoftranscendence",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:sandrone:c1",
+    "weapon:ateaspoonoftranscendence:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "sandrone-c2",
+   "team": "sandrone-alyosha-charlotte-sucrose",
+   "description": "sandrone at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sandrone",
+     "cons": 2,
+     "weapon": "ateaspoonoftranscendence",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:sandrone:c1",
+    "char:sandrone:c2",
+    "weapon:ateaspoonoftranscendence:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "sandrone-c3",
+   "team": "sandrone-alyosha-charlotte-sucrose",
+   "description": "sandrone at C3: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sandrone",
+     "cons": 3,
+     "weapon": "ateaspoonoftranscendence",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:sandrone:c1",
+    "char:sandrone:c2",
+    "char:sandrone:c3",
+    "weapon:ateaspoonoftranscendence:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "sandrone-c4",
+   "team": "sandrone-alyosha-charlotte-sucrose",
+   "description": "sandrone at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sandrone",
+     "cons": 4,
+     "weapon": "ateaspoonoftranscendence",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:sandrone:c1",
+    "char:sandrone:c2",
+    "char:sandrone:c3",
+    "char:sandrone:c4",
+    "weapon:ateaspoonoftranscendence:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "sandrone-c5",
+   "team": "sandrone-alyosha-charlotte-sucrose",
+   "description": "sandrone at C5: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sandrone",
+     "cons": 5,
+     "weapon": "ateaspoonoftranscendence",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:sandrone:c1",
+    "char:sandrone:c2",
+    "char:sandrone:c3",
+    "char:sandrone:c4",
+    "char:sandrone:c5",
+    "weapon:ateaspoonoftranscendence:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
+   ]
+  },
+  {
+   "name": "sandrone-c6",
+   "team": "sandrone-alyosha-charlotte-sucrose",
+   "description": "sandrone at C6: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sandrone",
+     "cons": 6,
+     "weapon": "ateaspoonoftranscendence",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "disenchantmentindeepshadow",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:sandrone:c1",
+    "char:sandrone:c2",
+    "char:sandrone:c3",
+    "char:sandrone:c4",
+    "char:sandrone:c5",
+    "char:sandrone:c6",
+    "weapon:ateaspoonoftranscendence:r1",
+    "set:disenchantmentindeepshadow:2",
+    "set:disenchantmentindeepshadow:4"
    ]
   },
   {
@@ -19239,6 +21161,32 @@
    ]
   },
   {
+   "name": "serenityscall-r1-nilou",
+   "team": "columbina-nilou-lauma-nahida",
+   "description": "nilou with serenityscall R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "nilou",
+     "cons": 1,
+     "weapon": "serenityscall",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "silkenmoonsserenade",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:nilou:c1",
+    "weapon:serenityscall:r1",
+    "set:silkenmoonsserenade:2",
+    "set:silkenmoonsserenade:4"
+   ]
+  },
+  {
    "name": "sethos-aims",
    "team": "sethos-chevreuse-fischl-bennett",
    "description": "Sethos's physical and weak spot aimed shots.",
@@ -19491,6 +21439,68 @@
     "weapon:slingshot:r5",
     "set:wandererstroupe:2",
     "set:wandererstroupe:4"
+   ]
+  },
+  {
+   "name": "sharpshootersoath-r1-fischl",
+   "team": "aino-fischl-columbina-sucrose",
+   "description": "fischl with sharpshootersoath R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "fischl",
+     "cons": 6,
+     "weapon": "sharpshootersoath",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:fischl:c1",
+    "char:fischl:c2",
+    "char:fischl:c3",
+    "char:fischl:c4",
+    "char:fischl:c5",
+    "char:fischl:c6",
+    "weapon:sharpshootersoath:r1",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
+   ]
+  },
+  {
+   "name": "sharpshootersoath-r5-fischl",
+   "team": "aino-fischl-columbina-sucrose",
+   "description": "fischl with sharpshootersoath R5: library build lines carry it at R5 (1); the R5 build(s) are on unverified teams (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "fischl",
+     "cons": 6,
+     "weapon": "sharpshootersoath",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:fischl:c1",
+    "char:fischl:c2",
+    "char:fischl:c3",
+    "char:fischl:c4",
+    "char:fischl:c5",
+    "char:fischl:c6",
+    "weapon:sharpshootersoath:r5",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
    ]
   },
   {
@@ -20112,6 +22122,67 @@
    ]
   },
   {
+   "name": "skywardharp-r5-fischl",
+   "team": "baizhu-nahida-fischl-beidou",
+   "description": "fischl with skywardharp R5: library build lines carry it at R1 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "fischl",
+     "cons": 6,
+     "weapon": "skywardharp",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "thunderingfury",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:fischl:c1",
+    "char:fischl:c2",
+    "char:fischl:c3",
+    "char:fischl:c4",
+    "char:fischl:c5",
+    "char:fischl:c6",
+    "weapon:skywardharp:r5",
+    "set:thunderingfury:2"
+   ]
+  },
+  {
+   "name": "skywardpride-r5-beidou",
+   "team": "baizhu-nahida-fischl-beidou",
+   "description": "beidou with skywardpride R5: library build lines carry it at R1 (4) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "beidou",
+     "cons": 6,
+     "weapon": "skywardpride",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "emblemofseveredfate",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:beidou:c1",
+    "char:beidou:c2",
+    "char:beidou:c3",
+    "char:beidou:c4",
+    "char:beidou:c5",
+    "char:beidou:c6",
+    "weapon:skywardpride:r5",
+    "set:emblemofseveredfate:2",
+    "set:emblemofseveredfate:4"
+   ]
+  },
+  {
    "name": "skywardspine-r1-hutao",
    "team": "hutao-fischl-yelan-bennett",
    "description": "Hu Tao with Skyward Spine R1.",
@@ -20224,6 +22295,41 @@
    ]
   },
   {
+   "name": "snowtombedstarsilver-r1-xinyan",
+   "team": "xinyan-rosaria-raidenshogun-bennett",
+   "description": "xinyan with snowtombedstarsilver R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "xinyan",
+     "cons": 6,
+     "weapon": "snowtombedstarsilver",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "paleflame",
+       "count": 2
+      },
+      {
+       "set": "bloodstainedchivalry",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:xinyan:c1",
+    "char:xinyan:c2",
+    "char:xinyan:c3",
+    "char:xinyan:c4",
+    "char:xinyan:c5",
+    "char:xinyan:c6",
+    "weapon:snowtombedstarsilver:r1",
+    "set:paleflame:2",
+    "set:bloodstainedchivalry:2"
+   ]
+  },
+  {
    "name": "solarpearl-r5-mona",
    "team": "mona-citlali-escoffier-furina",
    "description": "Mona with Solar Pearl R5.",
@@ -20246,6 +22352,37 @@
     "weapon:solarpearl:r5",
     "set:marechausseehunter:2",
     "set:marechausseehunter:4"
+   ]
+  },
+  {
+   "name": "songofstillness-r1-amber",
+   "team": "amber-diona-bennett-rosaria",
+   "description": "amber with songofstillness R1: library build lines carry it at R3 (1), R5 (107) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "amber",
+     "cons": 6,
+     "weapon": "songofstillness",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "crimsonwitchofflames",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:amber:c1",
+    "char:amber:c2",
+    "char:amber:c3",
+    "char:amber:c4",
+    "char:amber:c5",
+    "char:amber:c6",
+    "weapon:songofstillness:r1",
+    "set:crimsonwitchofflames:2",
+    "set:crimsonwitchofflames:4"
    ]
   },
   {
@@ -20556,6 +22693,37 @@
    ]
   },
   {
+   "name": "surfsup-r1-mualani",
+   "team": "mualani-nilou-mavuika-xilonen",
+   "description": "mualani with surfsup R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "mualani",
+     "cons": 6,
+     "weapon": "surfsup",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "obsidiancodex",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:mualani:c1",
+    "char:mualani:c2",
+    "char:mualani:c3",
+    "char:mualani:c4",
+    "char:mualani:c5",
+    "char:mualani:c6",
+    "weapon:surfsup:r1",
+    "set:obsidiancodex:2",
+    "set:obsidiancodex:4"
+   ]
+  },
+  {
    "name": "swordofdescension-r1-luminedendro",
    "team": "kukishinobu-yelan-xingqiu-travelerdendro",
    "description": "Dendro Traveler with Sword of Descension R1.",
@@ -20659,6 +22827,68 @@
     "weapon:swordofnarzissenkreuz:r5",
     "set:thunderingfury:2",
     "set:thunderingfury:4"
+   ]
+  },
+  {
+   "name": "symphonistofscents-r1-chevreuse",
+   "team": "clorinde-citlali-mavuika-chevreuse",
+   "description": "chevreuse with symphonistofscents R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "chevreuse",
+     "cons": 6,
+     "weapon": "symphonistofscents",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "noblesseoblige",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:chevreuse:c1",
+    "char:chevreuse:c2",
+    "char:chevreuse:c3",
+    "char:chevreuse:c4",
+    "char:chevreuse:c5",
+    "char:chevreuse:c6",
+    "weapon:symphonistofscents:r1",
+    "set:noblesseoblige:2",
+    "set:noblesseoblige:4"
+   ]
+  },
+  {
+   "name": "talkingstick-r5-razor",
+   "team": "razor-furina-nahida-bennett",
+   "description": "razor with talkingstick R5: library build lines carry it at R1 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "razor",
+     "cons": 6,
+     "weapon": "talkingstick",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "unfinishedreverie",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:razor:c1",
+    "char:razor:c2",
+    "char:razor:c3",
+    "char:razor:c4",
+    "char:razor:c5",
+    "char:razor:c6",
+    "weapon:talkingstick:r5",
+    "set:unfinishedreverie:2",
+    "set:unfinishedreverie:4"
    ]
   },
   {
@@ -20787,6 +23017,124 @@
    "reaches": []
   },
   {
+   "name": "thebell-r1-chongyun",
+   "team": "clorinde-nahida-chongyun-fischl",
+   "description": "chongyun with thebell R1: no library build (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "chongyun",
+     "cons": 6,
+     "weapon": "thebell",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "scrolloftheheroofcindercity",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:chongyun:c1",
+    "char:chongyun:c2",
+    "char:chongyun:c3",
+    "char:chongyun:c4",
+    "char:chongyun:c5",
+    "char:chongyun:c6",
+    "weapon:thebell:r1",
+    "set:scrolloftheheroofcindercity:2",
+    "set:scrolloftheheroofcindercity:4"
+   ]
+  },
+  {
+   "name": "thebell-r5-chongyun",
+   "team": "clorinde-nahida-chongyun-fischl",
+   "description": "chongyun with thebell R5: no library build (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "chongyun",
+     "cons": 6,
+     "weapon": "thebell",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "scrolloftheheroofcindercity",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:chongyun:c1",
+    "char:chongyun:c2",
+    "char:chongyun:c3",
+    "char:chongyun:c4",
+    "char:chongyun:c5",
+    "char:chongyun:c6",
+    "weapon:thebell:r5",
+    "set:scrolloftheheroofcindercity:2",
+    "set:scrolloftheheroofcindercity:4"
+   ]
+  },
+  {
+   "name": "theblacksword-r5-kamisatoayato",
+   "team": "beidou-kamisatoayato-nahida-travelerelectro",
+   "description": "ayato with theblacksword R5: library build lines carry it at R1 (65), R3 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "kamisatoayato",
+     "cons": 0,
+     "weapon": "theblacksword",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "thunderingfury",
+       "count": 5
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:theblacksword:r5",
+    "set:thunderingfury:2",
+    "set:thunderingfury:4"
+   ]
+  },
+  {
+   "name": "thecatch-r1-xiangling",
+   "team": "albedo-bennett-xiangling-noelle",
+   "description": "xiangling with thecatch R1: library build lines carry it at R5 (276) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "xiangling",
+     "cons": 6,
+     "weapon": "thecatch",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "emblemofseveredfate",
+       "count": 5
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:xiangling:c1",
+    "char:xiangling:c2",
+    "char:xiangling:c3",
+    "char:xiangling:c4",
+    "char:xiangling:c5",
+    "char:xiangling:c6",
+    "weapon:thecatch:r1",
+    "set:emblemofseveredfate:2",
+    "set:emblemofseveredfate:4"
+   ]
+  },
+  {
    "name": "thedaybreakchronicles-r1-yoimiya",
    "team": "bennett-furina-xiangling-yoimiya",
    "description": "Yoimiya with The Daybreak Chronicles R1.",
@@ -20865,6 +23213,31 @@
     "weapon:finaleofthedeep:r5",
     "set:theexile:2",
     "set:theexile:4"
+   ]
+  },
+  {
+   "name": "thefirstgreatmagic-r5-lyney",
+   "team": "lyney-chevreuse-fischl-bennett",
+   "description": "lyney with thefirstgreatmagic R5: library build lines carry it at R1 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "lyney",
+     "cons": 0,
+     "weapon": "thefirstgreatmagic",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "marechausseehunter",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:thefirstgreatmagic:r5",
+    "set:marechausseehunter:2",
+    "set:marechausseehunter:4"
    ]
   },
   {
@@ -20965,6 +23338,37 @@
     "weapon:theunforged:r5",
     "set:paleflame:2",
     "set:paleflame:4"
+   ]
+  },
+  {
+   "name": "theviridescenthunt-r5-fischl",
+   "team": "aino-fischl-columbina-sucrose",
+   "description": "fischl with theviridescenthunt R5: library build lines carry it at R1 (114) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "fischl",
+     "cons": 6,
+     "weapon": "theviridescenthunt",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "goldentroupe",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:fischl:c1",
+    "char:fischl:c2",
+    "char:fischl:c3",
+    "char:fischl:c4",
+    "char:fischl:c5",
+    "char:fischl:c6",
+    "weapon:theviridescenthunt:r5",
+    "set:goldentroupe:2",
+    "set:goldentroupe:4"
    ]
   },
   {
@@ -21162,6 +23566,37 @@
    ]
   },
   {
+   "name": "thrillingtalesofdragonslayers-r1-sucrose",
+   "team": "alhaitham-furina-sucrose-kukishinobu",
+   "description": "sucrose with thrillingtalesofdragonslayers R1: library build lines carry it at R5 (503) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "sucrose",
+     "cons": 6,
+     "weapon": "thrillingtalesofdragonslayers",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "instructor",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:sucrose:c1",
+    "char:sucrose:c2",
+    "char:sucrose:c3",
+    "char:sucrose:c4",
+    "char:sucrose:c5",
+    "char:sucrose:c6",
+    "weapon:thrillingtalesofdragonslayers:r1",
+    "set:instructor:2",
+    "set:instructor:4"
+   ]
+  },
+  {
    "name": "thunderingfury-hyperbloom",
    "team": "fischl-nahida-yoimiya-xingqiu",
    "description": "Fischl with Thundering Fury 4 on a bloom team: Oz sets off dendro cores, hyperbloom DMG +40% and the cooldown cut from a gadget's reaction.",
@@ -21270,6 +23705,31 @@
     "weapon:theviridescenthunt:r1",
     "set:thunderingfury:2",
     "set:thunderingfury:4"
+   ]
+  },
+  {
+   "name": "tidalshadow-r1-mavuika",
+   "team": "chasca-furina-sigewinne-mavuika",
+   "description": "mavuika with tidalshadow R1: library build lines carry it at R5 (62) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "mavuika",
+     "cons": 0,
+     "weapon": "tidalshadow",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "scrolloftheheroofcindercity",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:tidalshadow:r1",
+    "set:scrolloftheheroofcindercity:2",
+    "set:scrolloftheheroofcindercity:4"
    ]
   },
   {
@@ -21490,6 +23950,60 @@
     "weapon:toukaboushigure:r1",
     "set:deepwoodmemories:2",
     "set:deepwoodmemories:4"
+   ]
+  },
+  {
+   "name": "travelershandysword-r1-nilou",
+   "team": "xingqiu-nilou-collei-yelan",
+   "description": "nilou with travelershandysword R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "nilou",
+     "cons": 0,
+     "weapon": "travelershandysword",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "tenacityofthemillelith",
+       "count": 2
+      },
+      {
+       "set": "wandererstroupe",
+       "count": 2
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:travelershandysword:r1",
+    "set:tenacityofthemillelith:2",
+    "set:wandererstroupe:2"
+   ]
+  },
+  {
+   "name": "tulaytullahsremembrance-r5-wanderer",
+   "team": "wanderer-furina-faruzan-bennett",
+   "description": "wanderer with tulaytullahsremembrance R5: the library carries it at R1 only, on a team whose rotation does almost nothing (gcsim 176 DPS), so the probe moves it to a team that fights (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "wanderer",
+     "cons": 0,
+     "weapon": "tulaytullahsremembrance",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "marechausseehunter",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:tulaytullahsremembrance:r5",
+    "set:marechausseehunter:2",
+    "set:marechausseehunter:4"
    ]
   },
   {
@@ -21846,6 +24360,177 @@
    "reaches": [
     "set:longnightsoath:2",
     "set:longnightsoath:4"
+   ]
+  },
+  {
+   "name": "varka-c1",
+   "team": "varka-prune-furina-vodyanitsa",
+   "description": "varka at C1: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "varka",
+     "cons": 1,
+     "weapon": "serpentspine",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "adaycarvedfromrisingwinds",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:varka:c1",
+    "weapon:serpentspine:r1",
+    "set:adaycarvedfromrisingwinds:2",
+    "set:adaycarvedfromrisingwinds:4"
+   ]
+  },
+  {
+   "name": "varka-c2",
+   "team": "varka-prune-furina-vodyanitsa",
+   "description": "varka at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "varka",
+     "cons": 2,
+     "weapon": "serpentspine",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "adaycarvedfromrisingwinds",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:varka:c1",
+    "char:varka:c2",
+    "weapon:serpentspine:r1",
+    "set:adaycarvedfromrisingwinds:2",
+    "set:adaycarvedfromrisingwinds:4"
+   ]
+  },
+  {
+   "name": "varka-c3",
+   "team": "varka-prune-furina-vodyanitsa",
+   "description": "varka at C3: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "varka",
+     "cons": 3,
+     "weapon": "serpentspine",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "adaycarvedfromrisingwinds",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:varka:c1",
+    "char:varka:c2",
+    "char:varka:c3",
+    "weapon:serpentspine:r1",
+    "set:adaycarvedfromrisingwinds:2",
+    "set:adaycarvedfromrisingwinds:4"
+   ]
+  },
+  {
+   "name": "varka-c4",
+   "team": "varka-prune-furina-vodyanitsa",
+   "description": "varka at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "varka",
+     "cons": 4,
+     "weapon": "serpentspine",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "adaycarvedfromrisingwinds",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:varka:c1",
+    "char:varka:c2",
+    "char:varka:c3",
+    "char:varka:c4",
+    "weapon:serpentspine:r1",
+    "set:adaycarvedfromrisingwinds:2",
+    "set:adaycarvedfromrisingwinds:4"
+   ]
+  },
+  {
+   "name": "varka-c5",
+   "team": "varka-prune-furina-vodyanitsa",
+   "description": "varka at C5: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "varka",
+     "cons": 5,
+     "weapon": "serpentspine",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "adaycarvedfromrisingwinds",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:varka:c1",
+    "char:varka:c2",
+    "char:varka:c3",
+    "char:varka:c4",
+    "char:varka:c5",
+    "weapon:serpentspine:r1",
+    "set:adaycarvedfromrisingwinds:2",
+    "set:adaycarvedfromrisingwinds:4"
+   ]
+  },
+  {
+   "name": "varka-c6",
+   "team": "varka-prune-furina-vodyanitsa",
+   "description": "varka at C6: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "varka",
+     "cons": 6,
+     "weapon": "serpentspine",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "adaycarvedfromrisingwinds",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:varka:c1",
+    "char:varka:c2",
+    "char:varka:c3",
+    "char:varka:c4",
+    "char:varka:c5",
+    "char:varka:c6",
+    "weapon:serpentspine:r1",
+    "set:adaycarvedfromrisingwinds:2",
+    "set:adaycarvedfromrisingwinds:4"
    ]
   },
   {
@@ -22242,6 +24927,208 @@
     "weapon:verdict:r5",
     "set:gladiatorsfinale:2",
     "set:emblemofseveredfate:2"
+   ]
+  },
+  {
+   "name": "vesna-c1",
+   "team": "vesna-columbina-ineffa-sucrose",
+   "description": "vesna at C1: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "vesna",
+     "cons": 1,
+     "weapon": "beyondthechrysalis",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:vesna:c1",
+    "weapon:beyondthechrysalis:r1",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
+   "name": "vesna-c2",
+   "team": "vesna-columbina-ineffa-sucrose",
+   "description": "vesna at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "vesna",
+     "cons": 2,
+     "weapon": "beyondthechrysalis",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:vesna:c1",
+    "char:vesna:c2",
+    "weapon:beyondthechrysalis:r1",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
+   "name": "vesna-c3",
+   "team": "vesna-columbina-ineffa-sucrose",
+   "description": "vesna at C3: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "vesna",
+     "cons": 3,
+     "weapon": "beyondthechrysalis",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:vesna:c1",
+    "char:vesna:c2",
+    "char:vesna:c3",
+    "weapon:beyondthechrysalis:r1",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
+   "name": "vesna-c4",
+   "team": "vesna-columbina-ineffa-sucrose",
+   "description": "vesna at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "vesna",
+     "cons": 4,
+     "weapon": "beyondthechrysalis",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:vesna:c1",
+    "char:vesna:c2",
+    "char:vesna:c3",
+    "char:vesna:c4",
+    "weapon:beyondthechrysalis:r1",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
+   "name": "vesna-c5",
+   "team": "vesna-columbina-ineffa-sucrose",
+   "description": "vesna at C5: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "vesna",
+     "cons": 5,
+     "weapon": "beyondthechrysalis",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:vesna:c1",
+    "char:vesna:c2",
+    "char:vesna:c3",
+    "char:vesna:c4",
+    "char:vesna:c5",
+    "weapon:beyondthechrysalis:r1",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
+   "name": "vesna-c6",
+   "team": "vesna-columbina-ineffa-sucrose",
+   "description": "vesna at C6: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "vesna",
+     "cons": 6,
+     "weapon": "beyondthechrysalis",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "viridescentvenerer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:vesna:c1",
+    "char:vesna:c2",
+    "char:vesna:c3",
+    "char:vesna:c4",
+    "char:vesna:c5",
+    "char:vesna:c6",
+    "weapon:beyondthechrysalis:r1",
+    "set:viridescentvenerer:2",
+    "set:viridescentvenerer:4"
+   ]
+  },
+  {
+   "name": "vividnotions-r1-klee",
+   "team": "klee-citlali-xilonen-xianyun",
+   "description": "klee with vividnotions R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "klee",
+     "cons": 6,
+     "weapon": "vividnotions",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "longnightsoath",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:klee:c1",
+    "char:klee:c2",
+    "char:klee:c3",
+    "char:klee:c4",
+    "char:klee:c5",
+    "char:klee:c6",
+    "weapon:vividnotions:r1",
+    "set:longnightsoath:2",
+    "set:longnightsoath:4"
    ]
   },
   {
@@ -23334,6 +26221,31 @@
    ]
   },
   {
+   "name": "whitetassel-r1-zhongli",
+   "team": "zhongli-yunjin-chongyun-shenhe",
+   "description": "zhongli with whitetassel R1: library build lines carry it at R5 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "zhongli",
+     "cons": 0,
+     "weapon": "whitetassel",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "blizzardstrayer",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:whitetassel:r1",
+    "set:blizzardstrayer:2",
+    "set:blizzardstrayer:4"
+   ]
+  },
+  {
    "name": "widsith",
    "team": "bennett-nahida-yoimiya-xingqiu",
    "description": "Nahida with The Widsith R1 (a random buff on each swap in), on a bloom team whose rotation checks her burst.",
@@ -23468,6 +26380,31 @@
     "weapon:wintersheavyheart:r5",
     "set:gildeddreams:2",
     "set:gildeddreams:4"
+   ]
+  },
+  {
+   "name": "wolfsgravestone-r5-mavuika",
+   "team": "faruzan-bennett-wanderer-mavuika",
+   "description": "mavuika with wolfsgravestone R5: library build lines carry it at R1 (1) (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "mavuika",
+     "cons": 0,
+     "weapon": "wolfsgravestone",
+     "refine": 5,
+     "sets": [
+      {
+       "set": "obsidiancodex",
+       "count": 5
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "weapon:wolfsgravestone:r5",
+    "set:obsidiancodex:2",
+    "set:obsidiancodex:4"
    ]
   },
   {
@@ -25777,6 +28714,177 @@
     "set:archaicpetra:2",
     "set:archaicpetra:4"
    ]
+  },
+  {
+   "name": "zibai-c1",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "zibai at C1: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "zibai",
+     "cons": 1,
+     "weapon": "lightbearingmoonshard",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "nightoftheskysunveiling",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:zibai:c1",
+    "weapon:lightbearingmoonshard:r1",
+    "set:nightoftheskysunveiling:2",
+    "set:nightoftheskysunveiling:4"
+   ]
+  },
+  {
+   "name": "zibai-c2",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "zibai at C2: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "zibai",
+     "cons": 2,
+     "weapon": "lightbearingmoonshard",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "nightoftheskysunveiling",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:zibai:c1",
+    "char:zibai:c2",
+    "weapon:lightbearingmoonshard:r1",
+    "set:nightoftheskysunveiling:2",
+    "set:nightoftheskysunveiling:4"
+   ]
+  },
+  {
+   "name": "zibai-c3",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "zibai at C3: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "zibai",
+     "cons": 3,
+     "weapon": "lightbearingmoonshard",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "nightoftheskysunveiling",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:zibai:c1",
+    "char:zibai:c2",
+    "char:zibai:c3",
+    "weapon:lightbearingmoonshard:r1",
+    "set:nightoftheskysunveiling:2",
+    "set:nightoftheskysunveiling:4"
+   ]
+  },
+  {
+   "name": "zibai-c4",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "zibai at C4: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "zibai",
+     "cons": 4,
+     "weapon": "lightbearingmoonshard",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "nightoftheskysunveiling",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:zibai:c1",
+    "char:zibai:c2",
+    "char:zibai:c3",
+    "char:zibai:c4",
+    "weapon:lightbearingmoonshard:r1",
+    "set:nightoftheskysunveiling:2",
+    "set:nightoftheskysunveiling:4"
+   ]
+  },
+  {
+   "name": "zibai-c5",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "zibai at C5: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "zibai",
+     "cons": 5,
+     "weapon": "lightbearingmoonshard",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "nightoftheskysunveiling",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:zibai:c1",
+    "char:zibai:c2",
+    "char:zibai:c3",
+    "char:zibai:c4",
+    "char:zibai:c5",
+    "weapon:lightbearingmoonshard:r1",
+    "set:nightoftheskysunveiling:2",
+    "set:nightoftheskysunveiling:4"
+   ]
+  },
+  {
+   "name": "zibai-c6",
+   "team": "zibai-illuga-linnea-aino",
+   "description": "zibai at C6: its library builds are C0 (a gap the coverage map found, 2026-11-05).",
+   "team_verified": true,
+   "changed": [
+    {
+     "char": "zibai",
+     "cons": 6,
+     "weapon": "lightbearingmoonshard",
+     "refine": 1,
+     "sets": [
+      {
+       "set": "nightoftheskysunveiling",
+       "count": 4
+      }
+     ]
+    }
+   ],
+   "reaches": [
+    "char:zibai:c1",
+    "char:zibai:c2",
+    "char:zibai:c3",
+    "char:zibai:c4",
+    "char:zibai:c5",
+    "char:zibai:c6",
+    "weapon:lightbearingmoonshard:r1",
+    "set:nightoftheskysunveiling:2",
+    "set:nightoftheskysunveiling:4"
+   ]
   }
  ],
  "items": [
@@ -25812,73 +28920,73 @@
   },
   {
    "id": "char:aethercryo:c1",
-   "status": "gap-new",
+   "status": "gap",
    "library_builds": 0,
    "gaps": [
     {
      "kind": "unreached",
-     "reason": "new",
-     "note": "no library build; no probe sets cons 1 or more"
+     "reason": "no-member",
+     "note": "no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)"
     }
    ]
   },
   {
    "id": "char:aethercryo:c2",
-   "status": "gap-new",
+   "status": "gap",
    "library_builds": 0,
    "gaps": [
     {
      "kind": "unreached",
-     "reason": "new",
-     "note": "no library build; no probe sets cons 2 or more"
+     "reason": "no-member",
+     "note": "no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)"
     }
    ]
   },
   {
    "id": "char:aethercryo:c3",
-   "status": "gap-new",
+   "status": "gap",
    "library_builds": 0,
    "gaps": [
     {
      "kind": "unreached",
-     "reason": "new",
-     "note": "no library build; no probe sets cons 3 or more"
+     "reason": "no-member",
+     "note": "no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)"
     }
    ]
   },
   {
    "id": "char:aethercryo:c4",
-   "status": "gap-new",
+   "status": "gap",
    "library_builds": 0,
    "gaps": [
     {
      "kind": "unreached",
-     "reason": "new",
-     "note": "no library build; no probe sets cons 4 or more"
+     "reason": "no-member",
+     "note": "no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)"
     }
    ]
   },
   {
    "id": "char:aethercryo:c5",
-   "status": "gap-new",
+   "status": "gap",
    "library_builds": 0,
    "gaps": [
     {
      "kind": "unreached",
-     "reason": "new",
-     "note": "no library build; no probe sets cons 5 or more"
+     "reason": "no-member",
+     "note": "no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)"
     }
    ]
   },
   {
    "id": "char:aethercryo:c6",
-   "status": "gap-new",
+   "status": "gap",
    "library_builds": 0,
    "gaps": [
     {
      "kind": "unreached",
-     "reason": "new",
-     "note": "no library build; no probe sets cons 6 or more"
+     "reason": "no-member",
+     "note": "no library team has the male cryo Traveler (the library's travelercryo resolves to luminecryo), and a probe changes only the lines of its team's members; its constellations are the code luminecryo-c1 to c6 reach (one module, chars/traveler_cryo.rs, by gender)"
     }
    ]
   },
@@ -26036,37 +29144,55 @@
    "id": "char:aino:c1",
    "status": "library",
    "library_builds": 24,
-   "library_builds_unverified": 6
+   "library_builds_unverified": 6,
+   "probes": [
+    "favoniusgreatsword-r1-aino"
+   ]
   },
   {
    "id": "char:aino:c2",
    "status": "library",
    "library_builds": 24,
-   "library_builds_unverified": 6
+   "library_builds_unverified": 6,
+   "probes": [
+    "favoniusgreatsword-r1-aino"
+   ]
   },
   {
    "id": "char:aino:c3",
    "status": "library",
    "library_builds": 24,
-   "library_builds_unverified": 6
+   "library_builds_unverified": 6,
+   "probes": [
+    "favoniusgreatsword-r1-aino"
+   ]
   },
   {
    "id": "char:aino:c4",
    "status": "library",
    "library_builds": 24,
-   "library_builds_unverified": 6
+   "library_builds_unverified": 6,
+   "probes": [
+    "favoniusgreatsword-r1-aino"
+   ]
   },
   {
    "id": "char:aino:c5",
    "status": "library",
    "library_builds": 24,
-   "library_builds_unverified": 6
+   "library_builds_unverified": 6,
+   "probes": [
+    "favoniusgreatsword-r1-aino"
+   ]
   },
   {
    "id": "char:aino:c6",
    "status": "library",
    "library_builds": 24,
-   "library_builds_unverified": 6
+   "library_builds_unverified": 6,
+   "probes": [
+    "favoniusgreatsword-r1-aino"
+   ]
   },
   {
    "id": "char:albedo:c1",
@@ -26196,74 +29322,65 @@
   },
   {
    "id": "char:aloy:c1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (6); no probe sets cons 1 or more"
-    }
+   "probes": [
+    "aloy-c1",
+    "aloy-c2",
+    "aloy-c3",
+    "aloy-c4",
+    "aloy-c5",
+    "aloy-c6"
    ]
   },
   {
    "id": "char:aloy:c2",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (6); no probe sets cons 2 or more"
-    }
+   "probes": [
+    "aloy-c2",
+    "aloy-c3",
+    "aloy-c4",
+    "aloy-c5",
+    "aloy-c6"
    ]
   },
   {
    "id": "char:aloy:c3",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (6); no probe sets cons 3 or more"
-    }
+   "probes": [
+    "aloy-c3",
+    "aloy-c4",
+    "aloy-c5",
+    "aloy-c6"
    ]
   },
   {
    "id": "char:aloy:c4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (6); no probe sets cons 4 or more"
-    }
+   "probes": [
+    "aloy-c4",
+    "aloy-c5",
+    "aloy-c6"
    ]
   },
   {
    "id": "char:aloy:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (6); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "aloy-c5",
+    "aloy-c6"
    ]
   },
   {
    "id": "char:aloy:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (6); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "aloy-c6"
    ]
   },
   {
@@ -26320,10 +29437,12 @@
    "library_builds": 24,
    "library_builds_unverified": 1,
    "probes": [
+    "hamayumi-r1-amber",
     "ibispiercer-r1-amber",
     "ibispiercer-r5-amber",
     "messenger-r1-amber",
-    "messenger-r5-amber"
+    "messenger-r5-amber",
+    "songofstillness-r1-amber"
    ]
   },
   {
@@ -26331,10 +29450,12 @@
    "status": "library",
    "library_builds": 24,
    "probes": [
+    "hamayumi-r1-amber",
     "ibispiercer-r1-amber",
     "ibispiercer-r5-amber",
     "messenger-r1-amber",
-    "messenger-r5-amber"
+    "messenger-r5-amber",
+    "songofstillness-r1-amber"
    ]
   },
   {
@@ -26342,26 +29463,37 @@
    "status": "library",
    "library_builds": 21,
    "probes": [
+    "hamayumi-r1-amber",
     "ibispiercer-r1-amber",
     "ibispiercer-r5-amber",
     "messenger-r1-amber",
-    "messenger-r5-amber"
+    "messenger-r5-amber",
+    "songofstillness-r1-amber"
    ]
   },
   {
    "id": "char:amber:c4",
    "status": "library",
-   "library_builds": 13
+   "library_builds": 13,
+   "probes": [
+    "songofstillness-r1-amber"
+   ]
   },
   {
    "id": "char:amber:c5",
    "status": "library",
-   "library_builds": 11
+   "library_builds": 11,
+   "probes": [
+    "songofstillness-r1-amber"
+   ]
   },
   {
    "id": "char:amber:c6",
    "status": "library",
-   "library_builds": 11
+   "library_builds": 11,
+   "probes": [
+    "songofstillness-r1-amber"
+   ]
   },
   {
    "id": "char:aratakiitto:c1",
@@ -26436,7 +29568,8 @@
     "arlecchino-c3",
     "arlecchino-c4",
     "arlecchino-c5",
-    "arlecchino-c6"
+    "arlecchino-c6",
+    "primordialjadewingedspear-r5-arlecchino"
    ]
   },
   {
@@ -26593,7 +29726,9 @@
     "beidou-c4",
     "beidou-c5",
     "beidou-counter0",
-    "beidou-sealord-r1"
+    "beidou-sealord-r1",
+    "katsuragikirinagamasa-r1-beidou",
+    "skywardpride-r5-beidou"
    ]
   },
   {
@@ -26606,7 +29741,9 @@
     "beidou-c4",
     "beidou-c5",
     "beidou-counter0",
-    "beidou-sealord-r1"
+    "beidou-sealord-r1",
+    "katsuragikirinagamasa-r1-beidou",
+    "skywardpride-r5-beidou"
    ]
   },
   {
@@ -26617,7 +29754,9 @@
     "beidou-c3",
     "beidou-c4",
     "beidou-c5",
-    "beidou-counter0"
+    "beidou-counter0",
+    "katsuragikirinagamasa-r1-beidou",
+    "skywardpride-r5-beidou"
    ]
   },
   {
@@ -26627,7 +29766,9 @@
    "probes": [
     "beidou-c4",
     "beidou-c5",
-    "beidou-counter0"
+    "beidou-counter0",
+    "katsuragikirinagamasa-r1-beidou",
+    "skywardpride-r5-beidou"
    ]
   },
   {
@@ -26636,7 +29777,9 @@
    "library_builds": 92,
    "probes": [
     "beidou-c5",
-    "beidou-counter0"
+    "beidou-counter0",
+    "katsuragikirinagamasa-r1-beidou",
+    "skywardpride-r5-beidou"
    ]
   },
   {
@@ -26644,7 +29787,9 @@
    "status": "library",
    "library_builds": 92,
    "probes": [
-    "beidou-counter0"
+    "beidou-counter0",
+    "katsuragikirinagamasa-r1-beidou",
+    "skywardpride-r5-beidou"
    ]
   },
   {
@@ -26963,7 +30108,8 @@
    "probes": [
     "chevreuse-charge",
     "dialogues-r1-chevreuse",
-    "rightfulreward-r1-chevreuse"
+    "rightfulreward-r1-chevreuse",
+    "symphonistofscents-r1-chevreuse"
    ]
   },
   {
@@ -26973,7 +30119,8 @@
    "probes": [
     "chevreuse-charge",
     "dialogues-r1-chevreuse",
-    "rightfulreward-r1-chevreuse"
+    "rightfulreward-r1-chevreuse",
+    "symphonistofscents-r1-chevreuse"
    ]
   },
   {
@@ -26983,7 +30130,8 @@
    "probes": [
     "chevreuse-charge",
     "dialogues-r1-chevreuse",
-    "rightfulreward-r1-chevreuse"
+    "rightfulreward-r1-chevreuse",
+    "symphonistofscents-r1-chevreuse"
    ]
   },
   {
@@ -26993,7 +30141,8 @@
    "probes": [
     "chevreuse-charge",
     "dialogues-r1-chevreuse",
-    "rightfulreward-r1-chevreuse"
+    "rightfulreward-r1-chevreuse",
+    "symphonistofscents-r1-chevreuse"
    ]
   },
   {
@@ -27003,7 +30152,8 @@
    "probes": [
     "chevreuse-charge",
     "dialogues-r1-chevreuse",
-    "rightfulreward-r1-chevreuse"
+    "rightfulreward-r1-chevreuse",
+    "symphonistofscents-r1-chevreuse"
    ]
   },
   {
@@ -27013,7 +30163,8 @@
    "probes": [
     "chevreuse-charge",
     "dialogues-r1-chevreuse",
-    "rightfulreward-r1-chevreuse"
+    "rightfulreward-r1-chevreuse",
+    "symphonistofscents-r1-chevreuse"
    ]
   },
   {
@@ -27075,7 +30226,9 @@
     "chongyun-c2",
     "chongyun-c3",
     "chongyun-c4",
-    "chongyun-c5"
+    "chongyun-c5",
+    "thebell-r1-chongyun",
+    "thebell-r5-chongyun"
    ]
   },
   {
@@ -27087,7 +30240,9 @@
     "chongyun-c2",
     "chongyun-c3",
     "chongyun-c4",
-    "chongyun-c5"
+    "chongyun-c5",
+    "thebell-r1-chongyun",
+    "thebell-r5-chongyun"
    ]
   },
   {
@@ -27098,7 +30253,9 @@
    "probes": [
     "chongyun-c3",
     "chongyun-c4",
-    "chongyun-c5"
+    "chongyun-c5",
+    "thebell-r1-chongyun",
+    "thebell-r5-chongyun"
    ]
   },
   {
@@ -27108,7 +30265,9 @@
    "library_builds_unverified": 13,
    "probes": [
     "chongyun-c4",
-    "chongyun-c5"
+    "chongyun-c5",
+    "thebell-r1-chongyun",
+    "thebell-r5-chongyun"
    ]
   },
   {
@@ -27117,14 +30276,20 @@
    "library_builds": 87,
    "library_builds_unverified": 13,
    "probes": [
-    "chongyun-c5"
+    "chongyun-c5",
+    "thebell-r1-chongyun",
+    "thebell-r5-chongyun"
    ]
   },
   {
    "id": "char:chongyun:c6",
    "status": "library",
    "library_builds": 87,
-   "library_builds_unverified": 13
+   "library_builds_unverified": 13,
+   "probes": [
+    "thebell-r1-chongyun",
+    "thebell-r5-chongyun"
+   ]
   },
   {
    "id": "char:citlali:c1",
@@ -27614,7 +30779,8 @@
     "breezebornerefrain-r1-diona",
     "breezebornerefrain-r5-diona",
     "diona-aim",
-    "diona-c3-aim"
+    "diona-c3-aim",
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -27626,7 +30792,8 @@
     "breezebornerefrain-r1-diona",
     "breezebornerefrain-r5-diona",
     "diona-aim",
-    "diona-c3-aim"
+    "diona-c3-aim",
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -27638,7 +30805,8 @@
     "breezebornerefrain-r1-diona",
     "breezebornerefrain-r5-diona",
     "diona-aim",
-    "diona-c3-aim"
+    "diona-c3-aim",
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -27649,7 +30817,8 @@
    "probes": [
     "breezebornerefrain-r1-diona",
     "breezebornerefrain-r5-diona",
-    "diona-aim"
+    "diona-aim",
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -27660,7 +30829,8 @@
    "probes": [
     "breezebornerefrain-r1-diona",
     "breezebornerefrain-r5-diona",
-    "diona-aim"
+    "diona-aim",
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -27671,7 +30841,8 @@
    "probes": [
     "breezebornerefrain-r1-diona",
     "breezebornerefrain-r5-diona",
-    "diona-aim"
+    "diona-aim",
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -27869,74 +31040,65 @@
   },
   {
    "id": "char:escoffier:c1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (325); no probe sets cons 1 or more"
-    }
+   "probes": [
+    "escoffier-c1",
+    "escoffier-c2",
+    "escoffier-c3",
+    "escoffier-c4",
+    "escoffier-c5",
+    "escoffier-c6"
    ]
   },
   {
    "id": "char:escoffier:c2",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (325); no probe sets cons 2 or more"
-    }
+   "probes": [
+    "escoffier-c2",
+    "escoffier-c3",
+    "escoffier-c4",
+    "escoffier-c5",
+    "escoffier-c6"
    ]
   },
   {
    "id": "char:escoffier:c3",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (325); no probe sets cons 3 or more"
-    }
+   "probes": [
+    "escoffier-c3",
+    "escoffier-c4",
+    "escoffier-c5",
+    "escoffier-c6"
    ]
   },
   {
    "id": "char:escoffier:c4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (325); no probe sets cons 4 or more"
-    }
+   "probes": [
+    "escoffier-c4",
+    "escoffier-c5",
+    "escoffier-c6"
    ]
   },
   {
    "id": "char:escoffier:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (325); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "escoffier-c5",
+    "escoffier-c6"
    ]
   },
   {
    "id": "char:escoffier:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (325); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "escoffier-c6"
    ]
   },
   {
@@ -28078,6 +31240,7 @@
     "celestialgift-fischl",
     "celestialgift-rite",
     "disenchantment-fischl",
+    "fadingtwilight-r1-fischl",
     "fischl",
     "fischl-aim-weakspot",
     "hakushin-superconduct",
@@ -28086,8 +31249,12 @@
     "hexerei-off",
     "jadevista-r5-fischl",
     "prototypecrescent-fischl",
+    "sharpshootersoath-r1-fischl",
+    "sharpshootersoath-r5-fischl",
+    "skywardharp-r5-fischl",
     "snarehook-r1-fischl",
     "snarehook-r5-fischl",
+    "theviridescenthunt-r5-fischl",
     "thunderingfury-hyperbloom",
     "thunderingfury-superconduct",
     "xianyun-kazuha-plunge"
@@ -28102,6 +31269,7 @@
     "celestialgift-fischl",
     "celestialgift-rite",
     "disenchantment-fischl",
+    "fadingtwilight-r1-fischl",
     "fischl",
     "fischl-aim-weakspot",
     "hakushin-superconduct",
@@ -28110,8 +31278,12 @@
     "hexerei-off",
     "jadevista-r5-fischl",
     "prototypecrescent-fischl",
+    "sharpshootersoath-r1-fischl",
+    "sharpshootersoath-r5-fischl",
+    "skywardharp-r5-fischl",
     "snarehook-r1-fischl",
     "snarehook-r5-fischl",
+    "theviridescenthunt-r5-fischl",
     "thunderingfury-hyperbloom",
     "thunderingfury-superconduct",
     "xianyun-kazuha-plunge"
@@ -28126,6 +31298,7 @@
     "celestialgift-fischl",
     "celestialgift-rite",
     "disenchantment-fischl",
+    "fadingtwilight-r1-fischl",
     "fischl",
     "fischl-aim-weakspot",
     "hakushin-superconduct",
@@ -28134,8 +31307,12 @@
     "hexerei-off",
     "jadevista-r5-fischl",
     "prototypecrescent-fischl",
+    "sharpshootersoath-r1-fischl",
+    "sharpshootersoath-r5-fischl",
+    "skywardharp-r5-fischl",
     "snarehook-r1-fischl",
     "snarehook-r5-fischl",
+    "theviridescenthunt-r5-fischl",
     "thunderingfury-hyperbloom",
     "thunderingfury-superconduct",
     "xianyun-kazuha-plunge"
@@ -28150,6 +31327,7 @@
     "celestialgift-fischl",
     "celestialgift-rite",
     "disenchantment-fischl",
+    "fadingtwilight-r1-fischl",
     "fischl",
     "fischl-aim-weakspot",
     "hakushin-superconduct",
@@ -28158,8 +31336,12 @@
     "hexerei-off",
     "jadevista-r5-fischl",
     "prototypecrescent-fischl",
+    "sharpshootersoath-r1-fischl",
+    "sharpshootersoath-r5-fischl",
+    "skywardharp-r5-fischl",
     "snarehook-r1-fischl",
     "snarehook-r5-fischl",
+    "theviridescenthunt-r5-fischl",
     "thunderingfury-hyperbloom",
     "thunderingfury-superconduct",
     "xianyun-kazuha-plunge"
@@ -28174,6 +31356,7 @@
     "celestialgift-fischl",
     "celestialgift-rite",
     "disenchantment-fischl",
+    "fadingtwilight-r1-fischl",
     "fischl",
     "fischl-aim-weakspot",
     "hakushin-superconduct",
@@ -28182,8 +31365,12 @@
     "hexerei-off",
     "jadevista-r5-fischl",
     "prototypecrescent-fischl",
+    "sharpshootersoath-r1-fischl",
+    "sharpshootersoath-r5-fischl",
+    "skywardharp-r5-fischl",
     "snarehook-r1-fischl",
     "snarehook-r5-fischl",
+    "theviridescenthunt-r5-fischl",
     "thunderingfury-hyperbloom",
     "thunderingfury-superconduct",
     "xianyun-kazuha-plunge"
@@ -28198,14 +31385,19 @@
     "celestialgift-fischl",
     "celestialgift-rite",
     "disenchantment-fischl",
+    "fadingtwilight-r1-fischl",
     "fischl",
     "fischl-aim-weakspot",
     "hakushin-superconduct",
     "hexerei-off",
     "jadevista-r5-fischl",
     "prototypecrescent-fischl",
+    "sharpshootersoath-r1-fischl",
+    "sharpshootersoath-r5-fischl",
+    "skywardharp-r5-fischl",
     "snarehook-r1-fischl",
     "snarehook-r5-fischl",
+    "theviridescenthunt-r5-fischl",
     "thunderingfury-hyperbloom",
     "thunderingfury-superconduct",
     "xianyun-kazuha-plunge"
@@ -28725,74 +31917,65 @@
   },
   {
    "id": "char:illuga:c1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 1 or more"
-    }
+   "probes": [
+    "illuga-c1",
+    "illuga-c2",
+    "illuga-c3",
+    "illuga-c4",
+    "illuga-c5",
+    "illuga-c6"
    ]
   },
   {
    "id": "char:illuga:c2",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 2 or more"
-    }
+   "probes": [
+    "illuga-c2",
+    "illuga-c3",
+    "illuga-c4",
+    "illuga-c5",
+    "illuga-c6"
    ]
   },
   {
    "id": "char:illuga:c3",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 3 or more"
-    }
+   "probes": [
+    "illuga-c3",
+    "illuga-c4",
+    "illuga-c5",
+    "illuga-c6"
    ]
   },
   {
    "id": "char:illuga:c4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 4 or more"
-    }
+   "probes": [
+    "illuga-c4",
+    "illuga-c5",
+    "illuga-c6"
    ]
   },
   {
    "id": "char:illuga:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "illuga-c5",
+    "illuga-c6"
    ]
   },
   {
    "id": "char:illuga:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "illuga-c6"
    ]
   },
   {
@@ -28800,6 +31983,7 @@
    "status": "library",
    "library_builds": 4,
    "probes": [
+    "fracturedhalo-r1-ineffa",
     "ineffa-c1",
     "ineffa-c2",
     "ineffa-c3",
@@ -28813,6 +31997,7 @@
    "status": "library",
    "library_builds": 4,
    "probes": [
+    "fracturedhalo-r1-ineffa",
     "ineffa-c2",
     "ineffa-c3",
     "ineffa-c4",
@@ -28825,6 +32010,7 @@
    "status": "library",
    "library_builds": 4,
    "probes": [
+    "fracturedhalo-r1-ineffa",
     "ineffa-c3",
     "ineffa-c4",
     "ineffa-c5",
@@ -28836,6 +32022,7 @@
    "status": "library",
    "library_builds": 4,
    "probes": [
+    "fracturedhalo-r1-ineffa",
     "ineffa-c4",
     "ineffa-c5",
     "ineffa-c6"
@@ -28846,6 +32033,7 @@
    "status": "library",
    "library_builds": 4,
    "probes": [
+    "fracturedhalo-r1-ineffa",
     "ineffa-c5",
     "ineffa-c6"
    ]
@@ -28855,6 +32043,7 @@
    "status": "library",
    "library_builds": 4,
    "probes": [
+    "fracturedhalo-r1-ineffa",
     "ineffa-c6"
    ]
   },
@@ -28893,46 +32082,53 @@
    "status": "library",
    "library_builds": 7,
    "probes": [
-    "jean-c1-hold"
+    "jean-c1-hold",
+    "jean-c5",
+    "jean-c6"
    ]
   },
   {
    "id": "char:jean:c2",
    "status": "library",
-   "library_builds": 7
+   "library_builds": 7,
+   "probes": [
+    "jean-c5",
+    "jean-c6"
+   ]
   },
   {
    "id": "char:jean:c3",
    "status": "library",
-   "library_builds": 7
+   "library_builds": 7,
+   "probes": [
+    "jean-c5",
+    "jean-c6"
+   ]
   },
   {
    "id": "char:jean:c4",
    "status": "library",
-   "library_builds": 7
+   "library_builds": 7,
+   "probes": [
+    "jean-c5",
+    "jean-c6"
+   ]
   },
   {
    "id": "char:jean:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (97), C4 (7); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "jean-c5",
+    "jean-c6"
    ]
   },
   {
    "id": "char:jean:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (97), C4 (7); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "jean-c6"
    ]
   },
   {
@@ -29348,32 +32544,50 @@
   {
    "id": "char:klee:c1",
    "status": "library",
-   "library_builds": 7
+   "library_builds": 7,
+   "probes": [
+    "vividnotions-r1-klee"
+   ]
   },
   {
    "id": "char:klee:c2",
    "status": "library",
-   "library_builds": 6
+   "library_builds": 6,
+   "probes": [
+    "vividnotions-r1-klee"
+   ]
   },
   {
    "id": "char:klee:c3",
    "status": "library",
-   "library_builds": 2
+   "library_builds": 2,
+   "probes": [
+    "vividnotions-r1-klee"
+   ]
   },
   {
    "id": "char:klee:c4",
    "status": "library",
-   "library_builds": 2
+   "library_builds": 2,
+   "probes": [
+    "vividnotions-r1-klee"
+   ]
   },
   {
    "id": "char:klee:c5",
    "status": "library",
-   "library_builds": 2
+   "library_builds": 2,
+   "probes": [
+    "vividnotions-r1-klee"
+   ]
   },
   {
    "id": "char:klee:c6",
    "status": "library",
-   "library_builds": 2
+   "library_builds": 2,
+   "probes": [
+    "vividnotions-r1-klee"
+   ]
   },
   {
    "id": "char:kujousara:c1",
@@ -29577,7 +32791,8 @@
     "lauma-c6-normals",
     "lauma-nascent-c1",
     "lauma-nascent-c2",
-    "lauma-nascent-c6"
+    "lauma-nascent-c6",
+    "nightweaverslookingglass-r1-lauma"
    ]
   },
   {
@@ -29592,7 +32807,8 @@
     "lauma-c6",
     "lauma-c6-normals",
     "lauma-nascent-c2",
-    "lauma-nascent-c6"
+    "lauma-nascent-c6",
+    "nightweaverslookingglass-r1-lauma"
    ]
   },
   {
@@ -29605,7 +32821,8 @@
     "lauma-c5",
     "lauma-c6",
     "lauma-c6-normals",
-    "lauma-nascent-c6"
+    "lauma-nascent-c6",
+    "nightweaverslookingglass-r1-lauma"
    ]
   },
   {
@@ -29617,7 +32834,8 @@
     "lauma-c5",
     "lauma-c6",
     "lauma-c6-normals",
-    "lauma-nascent-c6"
+    "lauma-nascent-c6",
+    "nightweaverslookingglass-r1-lauma"
    ]
   },
   {
@@ -29628,7 +32846,8 @@
     "lauma-c5",
     "lauma-c6",
     "lauma-c6-normals",
-    "lauma-nascent-c6"
+    "lauma-nascent-c6",
+    "nightweaverslookingglass-r1-lauma"
    ]
   },
   {
@@ -29638,7 +32857,8 @@
    "probes": [
     "lauma-c6",
     "lauma-c6-normals",
-    "lauma-nascent-c6"
+    "lauma-nascent-c6",
+    "nightweaverslookingglass-r1-lauma"
    ]
   },
   {
@@ -29768,6 +32988,7 @@
    "probes": [
     "desertpavilion-lisa",
     "etherlight-lisa",
+    "eyeofperception-r1-lisa",
     "hakushin-hyperbloom",
     "hakushin-r1",
     "hakushin-superconduct",
@@ -29782,6 +33003,7 @@
    "probes": [
     "desertpavilion-lisa",
     "etherlight-lisa",
+    "eyeofperception-r1-lisa",
     "hakushin-hyperbloom",
     "hakushin-r1",
     "hakushin-superconduct",
@@ -29796,6 +33018,7 @@
    "probes": [
     "desertpavilion-lisa",
     "etherlight-lisa",
+    "eyeofperception-r1-lisa",
     "hakushin-hyperbloom",
     "hakushin-superconduct",
     "lisa-c3",
@@ -29809,6 +33032,7 @@
    "probes": [
     "desertpavilion-lisa",
     "etherlight-lisa",
+    "eyeofperception-r1-lisa",
     "hakushin-hyperbloom",
     "hakushin-superconduct",
     "wandererstroupe-lisa"
@@ -29821,6 +33045,7 @@
    "probes": [
     "desertpavilion-lisa",
     "etherlight-lisa",
+    "eyeofperception-r1-lisa",
     "hakushin-hyperbloom",
     "hakushin-superconduct",
     "wandererstroupe-lisa"
@@ -29833,6 +33058,7 @@
    "probes": [
     "desertpavilion-lisa",
     "etherlight-lisa",
+    "eyeofperception-r1-lisa",
     "hakushin-hyperbloom",
     "hakushin-superconduct",
     "wandererstroupe-lisa"
@@ -29924,74 +33150,65 @@
   },
   {
    "id": "char:luminecryo:c1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (34); no probe sets cons 1 or more"
-    }
+   "probes": [
+    "luminecryo-c1",
+    "luminecryo-c2",
+    "luminecryo-c3",
+    "luminecryo-c4",
+    "luminecryo-c5",
+    "luminecryo-c6"
    ]
   },
   {
    "id": "char:luminecryo:c2",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (34); no probe sets cons 2 or more"
-    }
+   "probes": [
+    "luminecryo-c2",
+    "luminecryo-c3",
+    "luminecryo-c4",
+    "luminecryo-c5",
+    "luminecryo-c6"
    ]
   },
   {
    "id": "char:luminecryo:c3",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (34); no probe sets cons 3 or more"
-    }
+   "probes": [
+    "luminecryo-c3",
+    "luminecryo-c4",
+    "luminecryo-c5",
+    "luminecryo-c6"
    ]
   },
   {
    "id": "char:luminecryo:c4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (34); no probe sets cons 4 or more"
-    }
+   "probes": [
+    "luminecryo-c4",
+    "luminecryo-c5",
+    "luminecryo-c6"
    ]
   },
   {
    "id": "char:luminecryo:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (34); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "luminecryo-c5",
+    "luminecryo-c6"
    ]
   },
   {
    "id": "char:luminecryo:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (34); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "luminecryo-c6"
    ]
   },
   {
@@ -30473,7 +33690,8 @@
     "mualani-c1",
     "mualani-c2",
     "mualani-c4",
-    "mualani-c6"
+    "mualani-c6",
+    "surfsup-r1-mualani"
    ]
   },
   {
@@ -30484,7 +33702,8 @@
     "mualani-asc0",
     "mualani-c2",
     "mualani-c4",
-    "mualani-c6"
+    "mualani-c6",
+    "surfsup-r1-mualani"
    ]
   },
   {
@@ -30494,7 +33713,8 @@
    "probes": [
     "mualani-asc0",
     "mualani-c4",
-    "mualani-c6"
+    "mualani-c6",
+    "surfsup-r1-mualani"
    ]
   },
   {
@@ -30504,7 +33724,8 @@
    "probes": [
     "mualani-asc0",
     "mualani-c4",
-    "mualani-c6"
+    "mualani-c6",
+    "surfsup-r1-mualani"
    ]
   },
   {
@@ -30513,7 +33734,8 @@
    "library_builds": 1,
    "probes": [
     "mualani-asc0",
-    "mualani-c6"
+    "mualani-c6",
+    "surfsup-r1-mualani"
    ]
   },
   {
@@ -30522,7 +33744,8 @@
    "library_builds": 1,
    "probes": [
     "mualani-asc0",
-    "mualani-c6"
+    "mualani-c6",
+    "surfsup-r1-mualani"
    ]
   },
   {
@@ -30749,6 +33972,7 @@
    "library_builds": 7,
    "library_builds_unverified": 1,
    "probes": [
+    "angelosheptades-r1-nicole",
     "nicole-c1",
     "nicole-c2",
     "nicole-c3",
@@ -30763,6 +33987,7 @@
    "library_builds": 7,
    "library_builds_unverified": 1,
    "probes": [
+    "angelosheptades-r1-nicole",
     "nicole-c2",
     "nicole-c3",
     "nicole-c4",
@@ -30776,6 +34001,7 @@
    "library_builds": 7,
    "library_builds_unverified": 1,
    "probes": [
+    "angelosheptades-r1-nicole",
     "nicole-c3",
     "nicole-c4",
     "nicole-c5",
@@ -30788,6 +34014,7 @@
    "library_builds": 7,
    "library_builds_unverified": 1,
    "probes": [
+    "angelosheptades-r1-nicole",
     "nicole-c4",
     "nicole-c5",
     "nicole-c6"
@@ -30799,6 +34026,7 @@
    "library_builds": 7,
    "library_builds_unverified": 1,
    "probes": [
+    "angelosheptades-r1-nicole",
     "nicole-c5",
     "nicole-c6"
    ]
@@ -30809,6 +34037,7 @@
    "library_builds": 7,
    "library_builds_unverified": 1,
    "probes": [
+    "angelosheptades-r1-nicole",
     "nicole-c6"
    ]
   },
@@ -30820,7 +34049,8 @@
     "keyofkhajnisut-r5",
     "nilou-c1",
     "nilou-c4",
-    "nilou-c6"
+    "nilou-c6",
+    "serenityscall-r1-nilou"
    ]
   },
   {
@@ -31306,7 +34536,8 @@
     "razor-hexerei-c4",
     "razor-hexerei-off",
     "razor-hold",
-    "razor-low-plunge"
+    "razor-low-plunge",
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -31333,7 +34564,8 @@
     "razor-hexerei-c4",
     "razor-hexerei-off",
     "razor-hold",
-    "razor-low-plunge"
+    "razor-low-plunge",
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -31359,7 +34591,8 @@
     "razor-hexerei-c4",
     "razor-hexerei-off",
     "razor-hold",
-    "razor-low-plunge"
+    "razor-low-plunge",
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -31384,7 +34617,8 @@
     "razor-hexerei-c4",
     "razor-hexerei-off",
     "razor-hold",
-    "razor-low-plunge"
+    "razor-low-plunge",
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -31407,7 +34641,8 @@
     "razor-c5",
     "razor-hexerei-off",
     "razor-hold",
-    "razor-low-plunge"
+    "razor-low-plunge",
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -31429,7 +34664,8 @@
     "portablepowersaw-r5-razor",
     "razor-hexerei-off",
     "razor-hold",
-    "razor-low-plunge"
+    "razor-low-plunge",
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -31536,74 +34772,65 @@
   },
   {
    "id": "char:sandrone:c1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (21); no probe sets cons 1 or more"
-    }
+   "probes": [
+    "sandrone-c1",
+    "sandrone-c2",
+    "sandrone-c3",
+    "sandrone-c4",
+    "sandrone-c5",
+    "sandrone-c6"
    ]
   },
   {
    "id": "char:sandrone:c2",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (21); no probe sets cons 2 or more"
-    }
+   "probes": [
+    "sandrone-c2",
+    "sandrone-c3",
+    "sandrone-c4",
+    "sandrone-c5",
+    "sandrone-c6"
    ]
   },
   {
    "id": "char:sandrone:c3",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (21); no probe sets cons 3 or more"
-    }
+   "probes": [
+    "sandrone-c3",
+    "sandrone-c4",
+    "sandrone-c5",
+    "sandrone-c6"
    ]
   },
   {
    "id": "char:sandrone:c4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (21); no probe sets cons 4 or more"
-    }
+   "probes": [
+    "sandrone-c4",
+    "sandrone-c5",
+    "sandrone-c6"
    ]
   },
   {
    "id": "char:sandrone:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (21); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "sandrone-c5",
+    "sandrone-c6"
    ]
   },
   {
    "id": "char:sandrone:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (21); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "sandrone-c6"
    ]
   },
   {
@@ -31611,6 +34838,7 @@
    "status": "library",
    "library_builds": 6,
    "probes": [
+    "everlastingmoonglow-r5-sangonomiyakokomi",
     "kokomi-c1",
     "kokomi-c2",
     "kokomi-c4",
@@ -31622,6 +34850,7 @@
    "status": "library",
    "library_builds": 2,
    "probes": [
+    "everlastingmoonglow-r5-sangonomiyakokomi",
     "kokomi-c2",
     "kokomi-c4",
     "kokomi-c6"
@@ -31632,6 +34861,7 @@
    "status": "library",
    "library_builds": 2,
    "probes": [
+    "everlastingmoonglow-r5-sangonomiyakokomi",
     "kokomi-c4",
     "kokomi-c6"
    ]
@@ -31641,6 +34871,7 @@
    "status": "library",
    "library_builds": 2,
    "probes": [
+    "everlastingmoonglow-r5-sangonomiyakokomi",
     "kokomi-c4",
     "kokomi-c6"
    ]
@@ -31650,6 +34881,7 @@
    "status": "library",
    "library_builds": 2,
    "probes": [
+    "everlastingmoonglow-r5-sangonomiyakokomi",
     "kokomi-c6"
    ]
   },
@@ -31658,6 +34890,7 @@
    "status": "library",
    "library_builds": 2,
    "probes": [
+    "everlastingmoonglow-r5-sangonomiyakokomi",
     "kokomi-c6"
    ]
   },
@@ -31774,32 +35007,50 @@
   {
    "id": "char:shenhe:c1",
    "status": "library",
-   "library_builds": 8
+   "library_builds": 8,
+   "probes": [
+    "calamityqueller-r1-shenhe"
+   ]
   },
   {
    "id": "char:shenhe:c2",
    "status": "library",
-   "library_builds": 6
+   "library_builds": 6,
+   "probes": [
+    "calamityqueller-r1-shenhe"
+   ]
   },
   {
    "id": "char:shenhe:c3",
    "status": "library",
-   "library_builds": 6
+   "library_builds": 6,
+   "probes": [
+    "calamityqueller-r1-shenhe"
+   ]
   },
   {
    "id": "char:shenhe:c4",
    "status": "library",
-   "library_builds": 6
+   "library_builds": 6,
+   "probes": [
+    "calamityqueller-r1-shenhe"
+   ]
   },
   {
    "id": "char:shenhe:c5",
    "status": "library",
-   "library_builds": 6
+   "library_builds": 6,
+   "probes": [
+    "calamityqueller-r1-shenhe"
+   ]
   },
   {
    "id": "char:shenhe:c6",
    "status": "library",
-   "library_builds": 6
+   "library_builds": 6,
+   "probes": [
+    "calamityqueller-r1-shenhe"
+   ]
   },
   {
    "id": "char:shikanoinheizou:c1",
@@ -31980,6 +35231,7 @@
     "celestialgift-rite",
     "guoba-swirl-sucrose",
     "prototypeamber-r1",
+    "thrillingtalesofdragonslayers-r1-sucrose",
     "wineandsong-r1-sucrose",
     "wineandsong-r5-sucrose"
    ]
@@ -31993,6 +35245,7 @@
     "celestialgift-rite",
     "guoba-swirl-sucrose",
     "prototypeamber-r1",
+    "thrillingtalesofdragonslayers-r1-sucrose",
     "wineandsong-r1-sucrose",
     "wineandsong-r5-sucrose"
    ]
@@ -32006,6 +35259,7 @@
     "celestialgift-rite",
     "guoba-swirl-sucrose",
     "prototypeamber-r1",
+    "thrillingtalesofdragonslayers-r1-sucrose",
     "wineandsong-r1-sucrose",
     "wineandsong-r5-sucrose"
    ]
@@ -32019,6 +35273,7 @@
     "celestialgift-rite",
     "guoba-swirl-sucrose",
     "prototypeamber-r1",
+    "thrillingtalesofdragonslayers-r1-sucrose",
     "wineandsong-r1-sucrose",
     "wineandsong-r5-sucrose"
    ]
@@ -32032,6 +35287,7 @@
     "celestialgift-rite",
     "guoba-swirl-sucrose",
     "prototypeamber-r1",
+    "thrillingtalesofdragonslayers-r1-sucrose",
     "wineandsong-r1-sucrose",
     "wineandsong-r5-sucrose"
    ]
@@ -32045,6 +35301,7 @@
     "celestialgift-rite",
     "guoba-swirl-sucrose",
     "prototypeamber-r1",
+    "thrillingtalesofdragonslayers-r1-sucrose",
     "wineandsong-r1-sucrose",
     "wineandsong-r5-sucrose"
    ]
@@ -32112,6 +35369,7 @@
    "status": "library",
    "library_builds": 101,
    "probes": [
+    "kitaincrossspear-r1-thoma",
     "thoma-c1",
     "thoma-c2",
     "thoma-c3",
@@ -32125,6 +35383,7 @@
    "status": "library",
    "library_builds": 101,
    "probes": [
+    "kitaincrossspear-r1-thoma",
     "thoma-c2",
     "thoma-c3",
     "thoma-c4",
@@ -32137,6 +35396,7 @@
    "status": "library",
    "library_builds": 101,
    "probes": [
+    "kitaincrossspear-r1-thoma",
     "thoma-c3",
     "thoma-c4",
     "thoma-c5",
@@ -32148,6 +35408,7 @@
    "status": "library",
    "library_builds": 101,
    "probes": [
+    "kitaincrossspear-r1-thoma",
     "thoma-c4",
     "thoma-c5",
     "thoma-charge"
@@ -32158,6 +35419,7 @@
    "status": "library",
    "library_builds": 101,
    "probes": [
+    "kitaincrossspear-r1-thoma",
     "thoma-c5",
     "thoma-charge"
    ]
@@ -32167,6 +35429,7 @@
    "status": "library",
    "library_builds": 101,
    "probes": [
+    "kitaincrossspear-r1-thoma",
     "thoma-charge"
    ]
   },
@@ -32175,6 +35438,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "hunterspath-r1-tighnari",
     "tighnari-c1",
     "tighnari-c2",
     "tighnari-c4",
@@ -32186,6 +35450,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "hunterspath-r1-tighnari",
     "tighnari-c2",
     "tighnari-c4",
     "tighnari-c6"
@@ -32196,6 +35461,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "hunterspath-r1-tighnari",
     "tighnari-c4",
     "tighnari-c6"
    ]
@@ -32205,6 +35471,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "hunterspath-r1-tighnari",
     "tighnari-c4",
     "tighnari-c6"
    ]
@@ -32214,6 +35481,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "hunterspath-r1-tighnari",
     "tighnari-c6"
    ]
   },
@@ -32222,6 +35490,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "hunterspath-r1-tighnari",
     "tighnari-c6"
    ]
   },
@@ -32296,74 +35565,65 @@
   },
   {
    "id": "char:varka:c1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 1 or more"
-    }
+   "probes": [
+    "varka-c1",
+    "varka-c2",
+    "varka-c3",
+    "varka-c4",
+    "varka-c5",
+    "varka-c6"
    ]
   },
   {
    "id": "char:varka:c2",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 2 or more"
-    }
+   "probes": [
+    "varka-c2",
+    "varka-c3",
+    "varka-c4",
+    "varka-c5",
+    "varka-c6"
    ]
   },
   {
    "id": "char:varka:c3",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 3 or more"
-    }
+   "probes": [
+    "varka-c3",
+    "varka-c4",
+    "varka-c5",
+    "varka-c6"
    ]
   },
   {
    "id": "char:varka:c4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 4 or more"
-    }
+   "probes": [
+    "varka-c4",
+    "varka-c5",
+    "varka-c6"
    ]
   },
   {
    "id": "char:varka:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "varka-c5",
+    "varka-c6"
    ]
   },
   {
    "id": "char:varka:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (4); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "varka-c6"
    ]
   },
   {
@@ -32371,6 +35631,7 @@
    "status": "library",
    "library_builds": 2,
    "probes": [
+    "polarstar-r5-venti",
     "venti-c1",
     "venti-c1-aims",
     "venti-c2",
@@ -32387,6 +35648,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "polarstar-r5-venti",
     "venti-c2",
     "venti-c3",
     "venti-c4",
@@ -32401,6 +35663,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "polarstar-r5-venti",
     "venti-c3",
     "venti-c4",
     "venti-c5",
@@ -32414,6 +35677,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "polarstar-r5-venti",
     "venti-c4",
     "venti-c5",
     "venti-c6",
@@ -32426,6 +35690,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "polarstar-r5-venti",
     "venti-c5",
     "venti-c6",
     "venti-c6-hydro",
@@ -32437,6 +35702,7 @@
    "status": "library",
    "library_builds": 1,
    "probes": [
+    "polarstar-r5-venti",
     "venti-c6",
     "venti-c6-hydro",
     "venti-c6-pyro"
@@ -32444,74 +35710,65 @@
   },
   {
    "id": "char:vesna:c1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (75); no probe sets cons 1 or more"
-    }
+   "probes": [
+    "vesna-c1",
+    "vesna-c2",
+    "vesna-c3",
+    "vesna-c4",
+    "vesna-c5",
+    "vesna-c6"
    ]
   },
   {
    "id": "char:vesna:c2",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (75); no probe sets cons 2 or more"
-    }
+   "probes": [
+    "vesna-c2",
+    "vesna-c3",
+    "vesna-c4",
+    "vesna-c5",
+    "vesna-c6"
    ]
   },
   {
    "id": "char:vesna:c3",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (75); no probe sets cons 3 or more"
-    }
+   "probes": [
+    "vesna-c3",
+    "vesna-c4",
+    "vesna-c5",
+    "vesna-c6"
    ]
   },
   {
    "id": "char:vesna:c4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (75); no probe sets cons 4 or more"
-    }
+   "probes": [
+    "vesna-c4",
+    "vesna-c5",
+    "vesna-c6"
    ]
   },
   {
    "id": "char:vesna:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (75); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "vesna-c5",
+    "vesna-c6"
    ]
   },
   {
    "id": "char:vesna:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (75); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "vesna-c6"
    ]
   },
   {
@@ -32704,6 +35961,7 @@
    "probes": [
     "mountainbracingbolt-r1-xiangling",
     "mountainbracingbolt-r5-xiangling",
+    "thecatch-r1-xiangling",
     "xiangling-c4"
    ]
   },
@@ -32714,6 +35972,7 @@
    "probes": [
     "mountainbracingbolt-r1-xiangling",
     "mountainbracingbolt-r5-xiangling",
+    "thecatch-r1-xiangling",
     "xiangling-c4"
    ]
   },
@@ -32724,6 +35983,7 @@
    "probes": [
     "mountainbracingbolt-r1-xiangling",
     "mountainbracingbolt-r5-xiangling",
+    "thecatch-r1-xiangling",
     "xiangling-c4"
    ]
   },
@@ -32734,6 +35994,7 @@
    "probes": [
     "mountainbracingbolt-r1-xiangling",
     "mountainbracingbolt-r5-xiangling",
+    "thecatch-r1-xiangling",
     "xiangling-c4"
    ]
   },
@@ -32743,7 +36004,8 @@
    "library_builds": 379,
    "probes": [
     "mountainbracingbolt-r1-xiangling",
-    "mountainbracingbolt-r5-xiangling"
+    "mountainbracingbolt-r5-xiangling",
+    "thecatch-r1-xiangling"
    ]
   },
   {
@@ -32752,7 +36014,8 @@
    "library_builds": 379,
    "probes": [
     "mountainbracingbolt-r1-xiangling",
-    "mountainbracingbolt-r5-xiangling"
+    "mountainbracingbolt-r5-xiangling",
+    "thecatch-r1-xiangling"
    ]
   },
   {
@@ -33061,6 +36324,8 @@
    "status": "library",
    "library_builds": 45,
    "probes": [
+    "bloodstainedchivalry-4pc-xinyan",
+    "snowtombedstarsilver-r1-xinyan",
     "xinyan-c1",
     "xinyan-c2",
     "xinyan-c4",
@@ -33072,6 +36337,8 @@
    "status": "library",
    "library_builds": 45,
    "probes": [
+    "bloodstainedchivalry-4pc-xinyan",
+    "snowtombedstarsilver-r1-xinyan",
     "xinyan-c2",
     "xinyan-c4",
     "xinyan-c5"
@@ -33082,6 +36349,8 @@
    "status": "library",
    "library_builds": 45,
    "probes": [
+    "bloodstainedchivalry-4pc-xinyan",
+    "snowtombedstarsilver-r1-xinyan",
     "xinyan-c4",
     "xinyan-c5"
    ]
@@ -33091,6 +36360,8 @@
    "status": "library",
    "library_builds": 45,
    "probes": [
+    "bloodstainedchivalry-4pc-xinyan",
+    "snowtombedstarsilver-r1-xinyan",
     "xinyan-c4",
     "xinyan-c5"
    ]
@@ -33100,13 +36371,19 @@
    "status": "library",
    "library_builds": 45,
    "probes": [
+    "bloodstainedchivalry-4pc-xinyan",
+    "snowtombedstarsilver-r1-xinyan",
     "xinyan-c5"
    ]
   },
   {
    "id": "char:xinyan:c6",
    "status": "library",
-   "library_builds": 45
+   "library_builds": 45,
+   "probes": [
+    "bloodstainedchivalry-4pc-xinyan",
+    "snowtombedstarsilver-r1-xinyan"
+   ]
   },
   {
    "id": "char:yaemiko:c1",
@@ -33161,6 +36438,8 @@
    "status": "library",
    "library_builds": 28,
    "probes": [
+    "mappamare-r1-yanfei",
+    "mappamare-r5-yanfei",
     "yanfei-c1",
     "yanfei-c4"
    ]
@@ -33170,6 +36449,8 @@
    "status": "library",
    "library_builds": 28,
    "probes": [
+    "mappamare-r1-yanfei",
+    "mappamare-r5-yanfei",
     "yanfei-c4"
    ]
   },
@@ -33178,6 +36459,8 @@
    "status": "library",
    "library_builds": 28,
    "probes": [
+    "mappamare-r1-yanfei",
+    "mappamare-r5-yanfei",
     "yanfei-c4"
    ]
   },
@@ -33186,18 +36469,28 @@
    "status": "library",
    "library_builds": 28,
    "probes": [
+    "mappamare-r1-yanfei",
+    "mappamare-r5-yanfei",
     "yanfei-c4"
    ]
   },
   {
    "id": "char:yanfei:c5",
    "status": "library",
-   "library_builds": 28
+   "library_builds": 28,
+   "probes": [
+    "mappamare-r1-yanfei",
+    "mappamare-r5-yanfei"
+   ]
   },
   {
    "id": "char:yanfei:c6",
    "status": "library",
-   "library_builds": 28
+   "library_builds": 28,
+   "probes": [
+    "mappamare-r1-yanfei",
+    "mappamare-r5-yanfei"
+   ]
   },
   {
    "id": "char:yaoyao:c1",
@@ -33419,6 +36712,7 @@
    "library_builds": 65,
    "probes": [
     "footprintoftherainbow-r1-yunjin",
+    "prototypestarglitter-r5-yunjin",
     "yunjin-c1",
     "yunjin-c1-perfect",
     "yunjin-c2",
@@ -33436,6 +36730,7 @@
    "library_builds": 65,
    "probes": [
     "footprintoftherainbow-r1-yunjin",
+    "prototypestarglitter-r5-yunjin",
     "yunjin-c2",
     "yunjin-c3",
     "yunjin-c4",
@@ -33451,6 +36746,7 @@
    "library_builds": 65,
    "probes": [
     "footprintoftherainbow-r1-yunjin",
+    "prototypestarglitter-r5-yunjin",
     "yunjin-c3",
     "yunjin-c4",
     "yunjin-c5",
@@ -33465,6 +36761,7 @@
    "library_builds": 65,
    "probes": [
     "footprintoftherainbow-r1-yunjin",
+    "prototypestarglitter-r5-yunjin",
     "yunjin-c4",
     "yunjin-c5",
     "yunjin-charge",
@@ -33478,6 +36775,7 @@
    "library_builds": 65,
    "probes": [
     "footprintoftherainbow-r1-yunjin",
+    "prototypestarglitter-r5-yunjin",
     "yunjin-c5",
     "yunjin-charge",
     "yunjin-hold1",
@@ -33490,6 +36788,7 @@
    "library_builds": 65,
    "probes": [
     "footprintoftherainbow-r1-yunjin",
+    "prototypestarglitter-r5-yunjin",
     "yunjin-charge",
     "yunjin-hold1",
     "yunjin-hold2"
@@ -33549,74 +36848,65 @@
   },
   {
    "id": "char:zibai:c1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (7); no probe sets cons 1 or more"
-    }
+   "probes": [
+    "zibai-c1",
+    "zibai-c2",
+    "zibai-c3",
+    "zibai-c4",
+    "zibai-c5",
+    "zibai-c6"
    ]
   },
   {
    "id": "char:zibai:c2",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (7); no probe sets cons 2 or more"
-    }
+   "probes": [
+    "zibai-c2",
+    "zibai-c3",
+    "zibai-c4",
+    "zibai-c5",
+    "zibai-c6"
    ]
   },
   {
    "id": "char:zibai:c3",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (7); no probe sets cons 3 or more"
-    }
+   "probes": [
+    "zibai-c3",
+    "zibai-c4",
+    "zibai-c5",
+    "zibai-c6"
    ]
   },
   {
    "id": "char:zibai:c4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (7); no probe sets cons 4 or more"
-    }
+   "probes": [
+    "zibai-c4",
+    "zibai-c5",
+    "zibai-c6"
    ]
   },
   {
    "id": "char:zibai:c5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (7); no probe sets cons 5 or more"
-    }
+   "probes": [
+    "zibai-c5",
+    "zibai-c6"
    ]
   },
   {
    "id": "char:zibai:c6",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at C0 (7); no probe sets cons 6 or more"
-    }
+   "probes": [
+    "zibai-c6"
    ]
   },
   {
@@ -33686,14 +36976,10 @@
   },
   {
    "id": "weapon:angelosheptades:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (8); no probe at R1"
-    }
+   "probes": [
+    "angelosheptades-r1-nicole"
    ]
   },
   {
@@ -33764,7 +37050,15 @@
   {
    "id": "weapon:ateaspoonoftranscendence:r1",
    "status": "library",
-   "library_builds": 21
+   "library_builds": 21,
+   "probes": [
+    "sandrone-c1",
+    "sandrone-c2",
+    "sandrone-c3",
+    "sandrone-c4",
+    "sandrone-c5",
+    "sandrone-c6"
+   ]
   },
   {
    "id": "weapon:ateaspoonoftranscendence:r5",
@@ -33835,7 +37129,7 @@
   {
    "id": "weapon:balladofthefjords:r1",
    "status": "library",
-   "library_builds": 207,
+   "library_builds": 209,
    "library_builds_unverified": 1,
    "probes": [
     "arlecchino-burst",
@@ -33863,14 +37157,10 @@
   },
   {
    "id": "weapon:balladofthefjords:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (212); no probe at R5"
-    }
+   "probes": [
+    "balladofthefjords-r5-ineffa"
    ]
   },
   {
@@ -33924,19 +37214,21 @@
    "status": "library",
    "library_builds": 75,
    "probes": [
-    "beyondthechrysalis-xingqiu"
+    "beyondthechrysalis-xingqiu",
+    "vesna-c1",
+    "vesna-c2",
+    "vesna-c3",
+    "vesna-c4",
+    "vesna-c5",
+    "vesna-c6"
    ]
   },
   {
    "id": "weapon:beyondthechrysalis:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (75); no probe at R5"
-    }
+   "probes": [
+    "beyondthechrysalis-r5-vesna"
    ]
   },
   {
@@ -34091,14 +37383,10 @@
   },
   {
    "id": "weapon:blackmarrowlantern:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (4); no probe at R1"
-    }
+   "probes": [
+    "blackmarrowlantern-r1-vodyanitsa"
    ]
   },
   {
@@ -34108,14 +37396,10 @@
   },
   {
    "id": "weapon:blacktassel:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (2); no probe at R1"
-    }
+   "probes": [
+    "blacktassel-r1-zhongli"
    ]
   },
   {
@@ -34187,14 +37471,10 @@
   },
   {
    "id": "weapon:calamityofeshu:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (92); no probe at R1"
-    }
+   "probes": [
+    "calamityofeshu-r1-clorinde"
    ]
   },
   {
@@ -34208,14 +37488,10 @@
   },
   {
    "id": "weapon:calamityqueller:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (2); no probe at R1"
-    }
+   "probes": [
+    "calamityqueller-r1-shenhe"
    ]
   },
   {
@@ -34261,14 +37537,10 @@
   },
   {
    "id": "weapon:cinnabarspindle:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (141); no probe at R1"
-    }
+   "probes": [
+    "cinnabarspindle-r1-albedo"
    ]
   },
   {
@@ -34459,9 +37731,10 @@
   {
    "id": "weapon:deathmatch:r1",
    "status": "library",
-   "library_builds": 914,
+   "library_builds": 923,
    "library_builds_unverified": 20,
    "probes": [
+    "berserker-hutao",
     "bloodstained-rosaria",
     "chevreuse-c0",
     "chevreuse-charge",
@@ -34478,8 +37751,10 @@
     "emilie-skill",
     "escoffier-charge",
     "flins-c6",
+    "hutao-c6",
     "paleflame-rosaria",
     "reverie-2pc",
+    "rosaria-c0",
     "thoma-c1",
     "thunderingfury-raiden",
     "xiao-xianyun-plunge"
@@ -34727,43 +38002,39 @@
   },
   {
    "id": "weapon:everlastingmoonglow:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (2); no probe at R5"
-    }
+   "probes": [
+    "everlastingmoonglow-r5-sangonomiyakokomi"
    ]
   },
   {
    "id": "weapon:exaiphanesblade:r1",
    "status": "library",
-   "library_builds": 35
+   "library_builds": 35,
+   "probes": [
+    "luminecryo-c1",
+    "luminecryo-c2",
+    "luminecryo-c3",
+    "luminecryo-c4",
+    "luminecryo-c5",
+    "luminecryo-c6"
+   ]
   },
   {
    "id": "weapon:exaiphanesblade:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (35); no probe at R5"
-    }
+   "probes": [
+    "exaiphanesblade-r5-luminecryo"
    ]
   },
   {
    "id": "weapon:eyeofperception:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (2); no probe at R1"
-    }
+   "probes": [
+    "eyeofperception-r1-lisa"
    ]
   },
   {
@@ -34773,14 +38044,10 @@
   },
   {
    "id": "weapon:fadingtwilight:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (107); no probe at R1"
-    }
+   "probes": [
+    "fadingtwilight-r1-fischl"
    ]
   },
   {
@@ -34827,20 +38094,16 @@
   },
   {
    "id": "weapon:favoniusgreatsword:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (231), R5 (19); no probe at R1"
-    }
+   "probes": [
+    "favoniusgreatsword-r1-aino"
    ]
   },
   {
    "id": "weapon:favoniusgreatsword:r5",
    "status": "library",
-   "library_builds": 19
+   "library_builds": 20
   },
   {
    "id": "weapon:favoniuslance:r1",
@@ -34929,14 +38192,10 @@
   },
   {
    "id": "weapon:festeringdesire:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (1), R5 (510); no probe at R1"
-    }
+   "probes": [
+    "festeringdesire-r1-furina"
    ]
   },
   {
@@ -35134,14 +38393,10 @@
   },
   {
    "id": "weapon:fracturedhalo:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (3); no probe at R1"
-    }
+   "probes": [
+    "fracturedhalo-r1-ineffa"
    ]
   },
   {
@@ -35227,14 +38482,10 @@
   },
   {
    "id": "weapon:fruitoffulfillment:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (1), R5 (41); no probe at R1"
-    }
+   "probes": [
+    "fruitoffulfillment-r1-sangonomiyakokomi"
    ]
   },
   {
@@ -35354,14 +38605,10 @@
   },
   {
    "id": "weapon:hamayumi:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (70); no probe at R1"
-    }
+   "probes": [
+    "hamayumi-r1-amber"
    ]
   },
   {
@@ -35390,14 +38637,10 @@
   },
   {
    "id": "weapon:harbingerofdawn:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (346); no probe at R1"
-    }
+   "probes": [
+    "harbingerofdawn-r1-chiori"
    ]
   },
   {
@@ -35452,14 +38695,10 @@
   },
   {
    "id": "weapon:hunterspath:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); no probe at R1"
-    }
+   "probes": [
+    "hunterspath-r1-tighnari"
    ]
   },
   {
@@ -35579,14 +38818,10 @@
   },
   {
    "id": "weapon:katsuragikirinagamasa:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (8); no probe at R1"
-    }
+   "probes": [
+    "katsuragikirinagamasa-r1-beidou"
    ]
   },
   {
@@ -35642,14 +38877,10 @@
   },
   {
    "id": "weapon:kitaincrossspear:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (1), R5 (85); no probe at R1"
-    }
+   "probes": [
+    "kitaincrossspear-r1-thoma"
    ]
   },
   {
@@ -35669,7 +38900,15 @@
   {
    "id": "weapon:lightbearingmoonshard:r1",
    "status": "library",
-   "library_builds": 7
+   "library_builds": 7,
+   "probes": [
+    "zibai-c1",
+    "zibai-c2",
+    "zibai-c3",
+    "zibai-c4",
+    "zibai-c5",
+    "zibai-c6"
+   ]
   },
   {
    "id": "weapon:lightbearingmoonshard:r5",
@@ -35735,14 +38974,10 @@
   },
   {
    "id": "weapon:lostprayertothesacredwinds:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (2); no probe at R5"
-    }
+   "probes": [
+    "lostprayertothesacredwinds-r5-baizhu"
    ]
   },
   {
@@ -35810,26 +39045,18 @@
   },
   {
    "id": "weapon:mappamare:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (2); no probe at R1"
-    }
+   "probes": [
+    "mappamare-r1-yanfei"
    ]
   },
   {
    "id": "weapon:mappamare:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (2); no probe at R5"
-    }
+   "probes": [
+    "mappamare-r5-yanfei"
    ]
   },
   {
@@ -35957,14 +39184,10 @@
   },
   {
    "id": "weapon:moonweaversdawn:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (3), R2 (35); no probe at R5"
-    }
+   "probes": [
+    "moonweaversdawn-r5-skirk"
    ]
   },
   {
@@ -36014,14 +39237,10 @@
   },
   {
    "id": "weapon:nightweaverslookingglass:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); no probe at R1"
-    }
+   "probes": [
+    "nightweaverslookingglass-r1-lauma"
    ]
   },
   {
@@ -36140,14 +39359,10 @@
   },
   {
    "id": "weapon:polarstar:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (2); no probe at R5"
-    }
+   "probes": [
+    "polarstar-r5-venti"
    ]
   },
   {
@@ -36205,14 +39420,10 @@
   },
   {
    "id": "weapon:primordialjadewingedspear:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (1), R2 (1); no probe at R5"
-    }
+   "probes": [
+    "primordialjadewingedspear-r5-arlecchino"
    ]
   },
   {
@@ -36230,14 +39441,10 @@
   },
   {
    "id": "weapon:prospectorsshovel:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); no probe at R1"
-    }
+   "probes": [
+    "prospectorsshovel-r1-ineffa"
    ]
   },
   {
@@ -36325,14 +39532,10 @@
   },
   {
    "id": "weapon:prototypestarglitter:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (2); no probe at R5"
-    }
+   "probes": [
+    "prototypestarglitter-r5-yunjin"
    ]
   },
   {
@@ -36540,14 +39743,10 @@
   },
   {
    "id": "weapon:rust:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (87), R5 (2); no probe at R1"
-    }
+   "probes": [
+    "rust-r1-yoimiya"
    ]
   },
   {
@@ -36562,26 +39761,18 @@
   },
   {
    "id": "weapon:sacrificersstaff:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (1); no probe at R5"
-    }
+   "probes": [
+    "sacrificersstaff-r5-raidenshogun"
    ]
   },
   {
    "id": "weapon:sacrificialbow:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (3), R4 (1), R5 (34); no probe at R1"
-    }
+   "probes": [
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -36675,14 +39866,10 @@
   },
   {
    "id": "weapon:sacrificialsword:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (3), R4 (1), R5 (2); no probe at R1"
-    }
+   "probes": [
+    "sacrificialsword-r1-nilou"
    ]
   },
   {
@@ -36751,14 +39938,10 @@
   },
   {
    "id": "weapon:serenityscall:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); no probe at R1"
-    }
+   "probes": [
+    "serenityscall-r1-nilou"
    ]
   },
   {
@@ -36769,7 +39952,7 @@
   {
    "id": "weapon:serpentspine:r1",
    "status": "library",
-   "library_builds": 936,
+   "library_builds": 938,
    "library_builds_unverified": 1,
    "probes": [
     "beidou-c0",
@@ -36841,6 +40024,12 @@
     "razor-hexerei-c4",
     "razor-hexerei-off",
     "razor-low-plunge",
+    "varka-c1",
+    "varka-c2",
+    "varka-c3",
+    "varka-c4",
+    "varka-c5",
+    "varka-c6",
     "xianyun-diluc-plunge",
     "xinyan-c0",
     "xinyan-c1",
@@ -36856,27 +40045,19 @@
   },
   {
    "id": "weapon:sharpshootersoath:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); no probe at R1"
-    }
+   "probes": [
+    "sharpshootersoath-r1-fischl"
    ]
   },
   {
    "id": "weapon:sharpshootersoath:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
    "library_builds_unverified": 1,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); the R5 build(s) are on unverified teams; no probe at R5"
-    }
+   "probes": [
+    "sharpshootersoath-r5-fischl"
    ]
   },
   {
@@ -37012,14 +40193,10 @@
   },
   {
    "id": "weapon:skywardharp:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (2); no probe at R5"
-    }
+   "probes": [
+    "skywardharp-r5-fischl"
    ]
   },
   {
@@ -37029,14 +40206,10 @@
   },
   {
    "id": "weapon:skywardpride:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (4); no probe at R5"
-    }
+   "probes": [
+    "skywardpride-r5-beidou"
    ]
   },
   {
@@ -37120,14 +40293,10 @@
   },
   {
    "id": "weapon:snowtombedstarsilver:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (2); no probe at R1"
-    }
+   "probes": [
+    "snowtombedstarsilver-r1-xinyan"
    ]
   },
   {
@@ -37160,14 +40329,10 @@
   },
   {
    "id": "weapon:songofstillness:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R3 (1), R5 (107); no probe at R1"
-    }
+   "probes": [
+    "songofstillness-r1-amber"
    ]
   },
   {
@@ -37240,7 +40405,7 @@
   {
    "id": "weapon:staffofhoma:r1",
    "status": "library",
-   "library_builds": 5,
+   "library_builds": 6,
    "probes": [
     "cindercity-zhongli",
     "fischl",
@@ -37353,14 +40518,10 @@
   },
   {
    "id": "weapon:surfsup:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); no probe at R1"
-    }
+   "probes": [
+    "surfsup-r1-mualani"
    ]
   },
   {
@@ -37402,14 +40563,10 @@
   },
   {
    "id": "weapon:symphonistofscents:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (2); no probe at R1"
-    }
+   "probes": [
+    "symphonistofscents-r1-chevreuse"
    ]
   },
   {
@@ -37424,14 +40581,10 @@
   },
   {
    "id": "weapon:talkingstick:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (1); no probe at R5"
-    }
+   "probes": [
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -37445,7 +40598,15 @@
   {
    "id": "weapon:tamayurateinoohanashi:r5",
    "status": "library",
-   "library_builds": 10
+   "library_builds": 10,
+   "probes": [
+    "escoffier-c1",
+    "escoffier-c2",
+    "escoffier-c3",
+    "escoffier-c4",
+    "escoffier-c5",
+    "escoffier-c6"
+   ]
   },
   {
    "id": "weapon:thealleyflash:r1",
@@ -37464,25 +40625,31 @@
   },
   {
    "id": "weapon:thebell:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
+   "probes": [
+    "thebell-r1-chongyun"
+   ],
    "gaps": [
     {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "no library build; no probe at R1"
+     "kind": "partial",
+     "reason": "enemy-attacks",
+     "note": "the shield needs damage to the party from outside; library fights have none"
     }
    ]
   },
   {
    "id": "weapon:thebell:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
+   "probes": [
+    "thebell-r5-chongyun"
+   ],
    "gaps": [
     {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "no library build; no probe at R5"
+     "kind": "partial",
+     "reason": "enemy-attacks",
+     "note": "the shield needs damage to the party from outside; library fights have none"
     }
    ]
   },
@@ -37494,26 +40661,18 @@
   },
   {
    "id": "weapon:theblacksword:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (65), R3 (1); no probe at R5"
-    }
+   "probes": [
+    "theblacksword-r5-kamisatoayato"
    ]
   },
   {
    "id": "weapon:thecatch:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (276); no probe at R1"
-    }
+   "probes": [
+    "thecatch-r1-xiangling"
    ]
   },
   {
@@ -37575,14 +40734,10 @@
   },
   {
    "id": "weapon:thefirstgreatmagic:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (1); no probe at R5"
-    }
+   "probes": [
+    "thefirstgreatmagic-r5-lyney"
    ]
   },
   {
@@ -37657,14 +40812,10 @@
   },
   {
    "id": "weapon:theviridescenthunt:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (114); no probe at R5"
-    }
+   "probes": [
+    "theviridescenthunt-r5-fischl"
    ]
   },
   {
@@ -37683,14 +40834,10 @@
   },
   {
    "id": "weapon:thrillingtalesofdragonslayers:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (503); no probe at R1"
-    }
+   "probes": [
+    "thrillingtalesofdragonslayers-r1-sucrose"
    ]
   },
   {
@@ -37715,14 +40862,10 @@
   },
   {
    "id": "weapon:tidalshadow:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (62); no probe at R1"
-    }
+   "probes": [
+    "tidalshadow-r1-mavuika"
    ]
   },
   {
@@ -37758,14 +40901,10 @@
   },
   {
    "id": "weapon:travelershandysword:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); no probe at R1"
-    }
+   "probes": [
+    "travelershandysword-r1-nilou"
    ]
   },
   {
@@ -37780,14 +40919,10 @@
   },
   {
    "id": "weapon:tulaytullahsremembrance:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (1); no probe at R5"
-    }
+   "probes": [
+    "tulaytullahsremembrance-r5-wanderer"
    ]
   },
   {
@@ -37833,6 +40968,7 @@
    "status": "library",
    "library_builds": 48,
    "probes": [
+    "bloodstainedchivalry-4pc-xinyan",
     "ultimateoverlord-melusines"
    ]
   },
@@ -37861,14 +40997,10 @@
   },
   {
    "id": "weapon:vividnotions:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (2); no probe at R1"
-    }
+   "probes": [
+    "vividnotions-r1-klee"
    ]
   },
   {
@@ -38034,14 +41166,10 @@
   },
   {
    "id": "weapon:whitetassel:r1",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
-   "gaps": [
-    {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R5 (1); no probe at R1"
-    }
+   "probes": [
+    "whitetassel-r1-zhongli"
    ]
   },
   {
@@ -38150,13 +41278,16 @@
   },
   {
    "id": "weapon:wolfsgravestone:r5",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
+   "probes": [
+    "wolfsgravestone-r5-mavuika"
+   ],
    "gaps": [
     {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library build lines at R1 (1); no probe at R5"
+     "kind": "partial",
+     "reason": "enemy-hp",
+     "note": "the team ATK bonus needs an enemy at 30% HP or less, which only damage mode has"
     }
    ]
   },
@@ -38189,7 +41320,13 @@
     "gestofthemightywolf-r5-razor",
     "lohen-c6",
     "masterkey-r1-razor",
-    "masterkey-r5-razor"
+    "masterkey-r5-razor",
+    "varka-c1",
+    "varka-c2",
+    "varka-c3",
+    "varka-c4",
+    "varka-c5",
+    "varka-c6"
    ]
   },
   {
@@ -38203,7 +41340,13 @@
     "gestofthemightywolf-r5-razor",
     "lohen-c6",
     "masterkey-r1-razor",
-    "masterkey-r5-razor"
+    "masterkey-r5-razor",
+    "varka-c1",
+    "varka-c2",
+    "varka-c3",
+    "varka-c4",
+    "varka-c5",
+    "varka-c6"
    ]
   },
   {
@@ -38219,6 +41362,7 @@
     "albedo-c5",
     "albedo-c6",
     "albedo-charge",
+    "angelosheptades-r1-nicole",
     "jadefallssplendor-r1-baizhu",
     "jadefallssplendor-r5-baizhu",
     "lauma-nascent-c1",
@@ -38267,6 +41411,7 @@
     "albedo-c5",
     "albedo-c6",
     "albedo-charge",
+    "angelosheptades-r1-nicole",
     "jadefallssplendor-r1-baizhu",
     "jadefallssplendor-r5-baizhu",
     "lauma-nascent-c1",
@@ -38308,7 +41453,8 @@
    "library_builds": 95,
    "library_builds_unverified": 1,
    "probes": [
-    "aubade-ineffa"
+    "aubade-ineffa",
+    "fracturedhalo-r1-ineffa"
    ]
   },
   {
@@ -38317,7 +41463,8 @@
    "library_builds": 95,
    "library_builds_unverified": 1,
    "probes": [
-    "aubade-ineffa"
+    "aubade-ineffa",
+    "fracturedhalo-r1-ineffa"
    ]
   },
   {
@@ -38355,7 +41502,8 @@
     "rosaria-prospectorsdrill-r5",
     "sturdybone-r1-ayaka",
     "sturdybone-r5-ayaka",
-    "wavebreakersfin-r5-rosaria"
+    "wavebreakersfin-r5-rosaria",
+    "whitetassel-r1-zhongli"
    ]
   },
   {
@@ -38376,7 +41524,8 @@
     "rosaria-prospectorsdrill-r5",
     "sturdybone-r1-ayaka",
     "sturdybone-r5-ayaka",
-    "wavebreakersfin-r5-rosaria"
+    "wavebreakersfin-r5-rosaria",
+    "whitetassel-r1-zhongli"
    ]
   },
   {
@@ -38385,6 +41534,8 @@
    "library_builds": 7,
    "probes": [
     "bloodstained-rosaria",
+    "bloodstainedchivalry-4pc-xinyan",
+    "snowtombedstarsilver-r1-xinyan",
     "xinyan-c0",
     "xinyan-c1",
     "xinyan-c4"
@@ -38392,13 +41543,16 @@
   },
   {
    "id": "set:bloodstainedchivalry:4",
-   "status": "gap-new",
+   "status": "probe",
    "library_builds": 0,
+   "probes": [
+    "bloodstainedchivalry-4pc-xinyan"
+   ],
    "gaps": [
     {
-     "kind": "unreached",
-     "reason": "new",
-     "note": "library builds and probes carry 2 pieces only (bloodstained-rosaria is 2+2)"
+     "kind": "partial",
+     "reason": "kills",
+     "note": "the 4-piece follows a kill, which ends the engine's fight against its one enemy"
     }
    ]
   },
@@ -38502,6 +41656,7 @@
     "royalgreatsword-r1-diluc",
     "royalgreatsword-r5-diluc",
     "sacrificialjade-r5",
+    "songofstillness-r1-amber",
     "whimsy-2pc",
     "xianyun-diluc-plunge",
     "yanfei-c0",
@@ -38522,6 +41677,7 @@
     "royalgreatsword-r1-diluc",
     "royalgreatsword-r5-diluc",
     "sacrificialjade-r5",
+    "songofstillness-r1-amber",
     "xianyun-diluc-plunge",
     "yanfei-c0",
     "yanfei-c1",
@@ -38553,6 +41709,7 @@
     "emilie-c4",
     "emilie-c6",
     "emilie-skill",
+    "lostprayertothesacredwinds-r5-baizhu",
     "luminedendro-c4",
     "oathsworneye-r1-nahida",
     "prototypeamber-r1-nahida",
@@ -38665,8 +41822,21 @@
     "bladeofatonement-r1-sandrone",
     "bladeofatonement-r5-sandrone",
     "disenchantment-fischl",
+    "exaiphanesblade-r5-luminecryo",
     "forgedbythegoldenmelody-r1-sandrone",
     "forgedbythegoldenmelody-r5-sandrone",
+    "luminecryo-c1",
+    "luminecryo-c2",
+    "luminecryo-c3",
+    "luminecryo-c4",
+    "luminecryo-c5",
+    "luminecryo-c6",
+    "sandrone-c1",
+    "sandrone-c2",
+    "sandrone-c3",
+    "sandrone-c4",
+    "sandrone-c5",
+    "sandrone-c6",
     "sandrone-teaspoon-r5"
    ]
   },
@@ -38678,8 +41848,21 @@
     "bladeofatonement-r1-sandrone",
     "bladeofatonement-r5-sandrone",
     "disenchantment-fischl",
+    "exaiphanesblade-r5-luminecryo",
     "forgedbythegoldenmelody-r1-sandrone",
     "forgedbythegoldenmelody-r5-sandrone",
+    "luminecryo-c1",
+    "luminecryo-c2",
+    "luminecryo-c3",
+    "luminecryo-c4",
+    "luminecryo-c5",
+    "luminecryo-c6",
+    "sandrone-c1",
+    "sandrone-c2",
+    "sandrone-c3",
+    "sandrone-c4",
+    "sandrone-c5",
+    "sandrone-c6",
     "sandrone-teaspoon-r5"
    ]
   },
@@ -38690,6 +41873,7 @@
    "probes": [
     "bloodtaintedgreatsword-r1-razor",
     "bloodtaintedgreatsword-r5-razor",
+    "calamityofeshu-r1-clorinde",
     "clorinde-absolution-r1",
     "debateclub-r1-razor",
     "debateclub-r5-razor",
@@ -38706,6 +41890,7 @@
    "probes": [
     "bloodtaintedgreatsword-r1-razor",
     "bloodtaintedgreatsword-r5-razor",
+    "calamityofeshu-r1-clorinde",
     "clorinde-absolution-r1",
     "debateclub-r1-razor",
     "debateclub-r5-razor",
@@ -38718,7 +41903,7 @@
   {
    "id": "set:emblemofseveredfate:2",
    "status": "library",
-   "library_builds": 1433,
+   "library_builds": 1434,
    "library_builds_unverified": 28,
    "probes": [
     "akuoumaru-r5-dehya",
@@ -38731,6 +41916,7 @@
     "beidou-counter0",
     "beidou-sealord-r1",
     "beyondthechrysalis-xingqiu",
+    "calamityqueller-r1-shenhe",
     "chainbreaker-r1-two",
     "engulfing-r1-raiden",
     "engulfing-r5-raiden",
@@ -38739,6 +41925,7 @@
     "furina-c6",
     "furina-hutao",
     "goldentroupe-yelan",
+    "katsuragikirinagamasa-r1-beidou",
     "lisa-c3",
     "luminedendro-c1",
     "mona-asc0",
@@ -38752,6 +41939,8 @@
     "mouunsmoon-r5-sara",
     "noblesse-2pc",
     "peakpatrolsong-xingqiu",
+    "skywardpride-r5-beidou",
+    "thecatch-r1-xiangling",
     "thoma-c1",
     "verdict-r5-navia",
     "xiangling-c0",
@@ -38786,6 +41975,7 @@
     "favoniussword-xingqiu-er0",
     "furina-c6",
     "furina-hutao",
+    "katsuragikirinagamasa-r1-beidou",
     "lisa-c3",
     "luminedendro-c1",
     "mona-asc0",
@@ -38798,6 +41988,8 @@
     "mountainbracingbolt-r5-xiangling",
     "mouunsmoon-r5-sara",
     "peakpatrolsong-xingqiu",
+    "skywardpride-r5-beidou",
+    "thecatch-r1-xiangling",
     "thoma-c1",
     "xiangling-c0",
     "xiangling-c4",
@@ -38816,6 +42008,7 @@
    "probes": [
     "azurelight-r5-skirk",
     "finale-2pc",
+    "moonweaversdawn-r5-skirk",
     "skirk-c6",
     "skirk-hold"
    ]
@@ -38827,6 +42020,7 @@
    "library_builds_unverified": 76,
    "probes": [
     "azurelight-r5-skirk",
+    "moonweaversdawn-r5-skirk",
     "skirk-c6",
     "skirk-hold"
    ]
@@ -38836,8 +42030,11 @@
    "status": "library",
    "library_builds": 290,
    "probes": [
+    "balladofthefjords-r5-ineffa",
+    "blackmarrowlantern-r1-vodyanitsa",
     "flameforged-r1-razor",
     "hakushin-hyperbloom",
+    "kitaincrossspear-r1-thoma",
     "kuki-c1",
     "kuki-c4",
     "kuki-c5",
@@ -38856,8 +42053,11 @@
    "status": "library",
    "library_builds": 287,
    "probes": [
+    "balladofthefjords-r5-ineffa",
+    "blackmarrowlantern-r1-vodyanitsa",
     "flameforged-r1-razor",
     "hakushin-hyperbloom",
+    "kitaincrossspear-r1-thoma",
     "kuki-c1",
     "kuki-c4",
     "kuki-c5",
@@ -38982,6 +42182,12 @@
     "echoesoftheheart-r5-yaemiko",
     "hexerei-fischl-c5-overload",
     "hexerei-off",
+    "illuga-c1",
+    "illuga-c2",
+    "illuga-c3",
+    "illuga-c4",
+    "illuga-c5",
+    "illuga-c6",
     "ineffa-c1",
     "ineffa-c2",
     "ineffa-c3",
@@ -38997,8 +42203,12 @@
     "lauma-c6",
     "lauma-c6-normals",
     "lauma-charge",
+    "mappamare-r1-yanfei",
+    "mappamare-r5-yanfei",
     "mizuki-c1",
     "mizuki-c6",
+    "nightweaverslookingglass-r1-lauma",
+    "prospectorsshovel-r1-ineffa",
     "razor-c0",
     "razor-c1",
     "razor-c2",
@@ -39043,8 +42253,11 @@
     "ineffa-c5",
     "ineffa-c6",
     "ineffa-charge",
+    "mappamare-r1-yanfei",
+    "mappamare-r5-yanfei",
     "mizuki-c1",
     "mizuki-c6",
+    "prospectorsshovel-r1-ineffa",
     "razor-c0",
     "razor-c1",
     "razor-c2",
@@ -39074,9 +42287,12 @@
    "library_builds": 59,
    "probes": [
     "braveheart-2pc-diluc",
+    "calamityqueller-r1-shenhe",
     "defenderswill-2pc-noelle",
     "gambler-2pc-albedo",
+    "lostprayertothesacredwinds-r5-baizhu",
     "martialartist-2pc-keqing",
+    "primordialjadewingedspear-r5-arlecchino",
     "resolutionofsojourner-2pc-neuvillette",
     "scholar-2pc-neuvillette",
     "verdict-r5-navia"
@@ -39085,7 +42301,10 @@
   {
    "id": "set:gladiatorsfinale:4",
    "status": "library",
-   "library_builds": 20
+   "library_builds": 20,
+   "probes": [
+    "primordialjadewingedspear-r5-arlecchino"
+   ]
   },
   {
    "id": "set:goldentroupe:2",
@@ -39097,7 +42316,14 @@
     "chevreuse-charge",
     "chiori-c6-low-plunge",
     "chiori-low-plunge",
+    "escoffier-c1",
+    "escoffier-c2",
+    "escoffier-c3",
+    "escoffier-c4",
+    "escoffier-c5",
+    "escoffier-c6",
     "escoffier-charge",
+    "fadingtwilight-r1-fischl",
     "faruzan-aim",
     "faruzan-asc0",
     "faruzan-c0",
@@ -39115,15 +42341,19 @@
     "goldentroupe-xingqiu",
     "goldentroupe-yelan",
     "hakushin-superconduct",
+    "harbingerofdawn-r1-chiori",
     "jadevista-r5-fischl",
     "luminegeo-c2",
     "magicguide-r1-nahida",
     "prototypecrescent-fischl",
+    "sharpshootersoath-r1-fischl",
+    "sharpshootersoath-r5-fischl",
     "silken-2pc",
     "snarehook-r1-fischl",
     "snarehook-r5-fischl",
     "splendor-r1-furina",
     "splendor-r5-furina",
+    "theviridescenthunt-r5-fischl",
     "xianyun-escoffier-plunge",
     "xianyun-furina-c6-plunge",
     "xianyun-kazuha-plunge",
@@ -39140,7 +42370,14 @@
     "chevreuse-charge",
     "chiori-c6-low-plunge",
     "chiori-low-plunge",
+    "escoffier-c1",
+    "escoffier-c2",
+    "escoffier-c3",
+    "escoffier-c4",
+    "escoffier-c5",
+    "escoffier-c6",
     "escoffier-charge",
+    "fadingtwilight-r1-fischl",
     "faruzan-aim",
     "faruzan-asc0",
     "faruzan-c0",
@@ -39158,14 +42395,18 @@
     "goldentroupe-xingqiu",
     "goldentroupe-yelan",
     "hakushin-superconduct",
+    "harbingerofdawn-r1-chiori",
     "jadevista-r5-fischl",
     "luminegeo-c2",
     "magicguide-r1-nahida",
     "prototypecrescent-fischl",
+    "sharpshootersoath-r1-fischl",
+    "sharpshootersoath-r5-fischl",
     "snarehook-r1-fischl",
     "snarehook-r5-fischl",
     "splendor-r1-furina",
     "splendor-r5-furina",
+    "theviridescenthunt-r5-fischl",
     "xianyun-escoffier-plunge",
     "xianyun-furina-c6-plunge",
     "xianyun-kazuha-plunge",
@@ -39239,6 +42480,7 @@
    "library_builds": 162,
    "library_builds_unverified": 2,
    "probes": [
+    "cinnabarspindle-r1-albedo",
     "footprintoftherainbow-r1-yunjin",
     "husk-2pc",
     "husk-stacks-0",
@@ -39253,6 +42495,7 @@
     "linnea-c2",
     "linnea-c6",
     "nighttime-2pc",
+    "prototypestarglitter-r5-yunjin",
     "redhorn-r5-itto",
     "whiteblind-r1-itto"
    ]
@@ -39263,6 +42506,7 @@
    "library_builds": 158,
    "library_builds_unverified": 2,
    "probes": [
+    "cinnabarspindle-r1-albedo",
     "footprintoftherainbow-r1-yunjin",
     "husk-stacks-0",
     "itto-c1",
@@ -39275,6 +42519,7 @@
     "linnea-c1",
     "linnea-c2",
     "linnea-c6",
+    "prototypestarglitter-r5-yunjin",
     "redhorn-r5-itto",
     "whiteblind-r1-itto"
    ]
@@ -39285,6 +42530,12 @@
    "library_builds": 314,
    "library_builds_unverified": 8,
    "probes": [
+    "aloy-c1",
+    "aloy-c2",
+    "aloy-c3",
+    "aloy-c4",
+    "aloy-c5",
+    "aloy-c6",
     "chongyun-c0",
     "chongyun-c1",
     "chongyun-c1-normals",
@@ -39296,7 +42547,9 @@
     "forestregalia-r1-razor",
     "kirara-c0",
     "kirara-c3",
-    "kirara-c4"
+    "kirara-c4",
+    "sacrificialsword-r1-nilou",
+    "thrillingtalesofdragonslayers-r1-sucrose"
    ]
   },
   {
@@ -39305,6 +42558,12 @@
    "library_builds": 314,
    "library_builds_unverified": 8,
    "probes": [
+    "aloy-c1",
+    "aloy-c2",
+    "aloy-c3",
+    "aloy-c4",
+    "aloy-c5",
+    "aloy-c6",
     "chongyun-c0",
     "chongyun-c1",
     "chongyun-c1-normals",
@@ -39316,7 +42575,9 @@
     "forestregalia-r1-razor",
     "kirara-c0",
     "kirara-c3",
-    "kirara-c4"
+    "kirara-c4",
+    "sacrificialsword-r1-nilou",
+    "thrillingtalesofdragonslayers-r1-sucrose"
    ]
   },
   {
@@ -39388,6 +42649,7 @@
     "varesa-c6-low-plunge",
     "varesa-low-plunge",
     "varesa-normals",
+    "vividnotions-r1-klee",
     "xiao-xianyun-plunge",
     "xinyan-c2",
     "xinyan-c5"
@@ -39411,6 +42673,7 @@
     "varesa-c6-low-plunge",
     "varesa-low-plunge",
     "varesa-normals",
+    "vividnotions-r1-klee",
     "xiao-xianyun-plunge",
     "xinyan-c2",
     "xinyan-c5"
@@ -39511,9 +42774,12 @@
     "royalbow-r5-yoimiya",
     "royalspear-r1-hutao",
     "royalspear-r5-hutao",
+    "rust-r1-yoimiya",
     "solarpearl-r5-mona",
     "thedaybreakchronicles-r1-yoimiya",
     "thedaybreakchronicles-r5-yoimiya",
+    "thefirstgreatmagic-r5-lyney",
+    "tulaytullahsremembrance-r5-wanderer",
     "ultimateoverlord-diluc",
     "ultimateoverlord-melusines",
     "waveridingwhirl-r1-neuvillette",
@@ -39612,9 +42878,12 @@
     "royalbow-r5-yoimiya",
     "royalspear-r1-hutao",
     "royalspear-r5-hutao",
+    "rust-r1-yoimiya",
     "solarpearl-r5-mona",
     "thedaybreakchronicles-r1-yoimiya",
     "thedaybreakchronicles-r5-yoimiya",
+    "thefirstgreatmagic-r5-lyney",
+    "tulaytullahsremembrance-r5-wanderer",
     "ultimateoverlord-diluc",
     "ultimateoverlord-melusines",
     "waveridingwhirl-r1-neuvillette",
@@ -39668,7 +42937,14 @@
     "nefer-charge",
     "nightofskys-ineffa",
     "nocturnes-r1-columbina",
-    "sethos-c0-lunar"
+    "sacrificersstaff-r5-raidenshogun",
+    "sethos-c0-lunar",
+    "zibai-c1",
+    "zibai-c2",
+    "zibai-c3",
+    "zibai-c4",
+    "zibai-c5",
+    "zibai-c6"
    ]
   },
   {
@@ -39688,7 +42964,14 @@
     "nefer-charge",
     "nightofskys-ineffa",
     "nocturnes-r1-columbina",
-    "sethos-c0-lunar"
+    "sacrificersstaff-r5-raidenshogun",
+    "sethos-c0-lunar",
+    "zibai-c1",
+    "zibai-c2",
+    "zibai-c3",
+    "zibai-c4",
+    "zibai-c5",
+    "zibai-c6"
    ]
   },
   {
@@ -39743,7 +43026,7 @@
   {
    "id": "set:noblesseoblige:2",
    "status": "library",
-   "library_builds": 1976,
+   "library_builds": 1979,
    "library_builds_unverified": 108,
    "probes": [
     "blizzard-2pc",
@@ -39795,6 +43078,7 @@
     "reverie-2pc",
     "songofthevigil-r1-rosaria",
     "songofthevigil-r5-rosaria",
+    "symphonistofscents-r1-chevreuse",
     "tamayuratei-r1-shenhe",
     "thoma-c0",
     "thoma-c2",
@@ -39808,7 +43092,7 @@
   {
    "id": "set:noblesseoblige:4",
    "status": "library",
-   "library_builds": 1976,
+   "library_builds": 1979,
    "library_builds_unverified": 108,
    "probes": [
     "breezebornerefrain-r1-diona",
@@ -39857,6 +43141,7 @@
     "noblesse-bennett",
     "songofthevigil-r1-rosaria",
     "songofthevigil-r5-rosaria",
+    "symphonistofscents-r1-chevreuse",
     "tamayuratei-r1-shenhe",
     "thoma-c0",
     "thoma-c2",
@@ -39912,7 +43197,9 @@
     "mualani-c6",
     "mualani-moves",
     "mualani-yaxche-r1",
-    "obsidiancodex-2pc"
+    "obsidiancodex-2pc",
+    "surfsup-r1-mualani",
+    "wolfsgravestone-r5-mavuika"
    ]
   },
   {
@@ -39940,7 +43227,9 @@
     "mualani-c4",
     "mualani-c6",
     "mualani-moves",
-    "mualani-yaxche-r1"
+    "mualani-yaxche-r1",
+    "surfsup-r1-mualani",
+    "wolfsgravestone-r5-mavuika"
    ]
   },
   {
@@ -39951,6 +43240,8 @@
    "probes": [
     "ballad-r1-kokomi",
     "barbara-c0",
+    "everlastingmoonglow-r5-sangonomiyakokomi",
+    "fruitoffulfillment-r1-sangonomiyakokomi",
     "kaveh-c2",
     "kokomi-asc0",
     "kokomi-c1",
@@ -39989,6 +43280,8 @@
    "probes": [
     "ballad-r1-kokomi",
     "barbara-c0",
+    "everlastingmoonglow-r5-sangonomiyakokomi",
+    "fruitoffulfillment-r1-sangonomiyakokomi",
     "kaveh-c2",
     "kokomi-asc0",
     "kokomi-c1",
@@ -40034,6 +43327,7 @@
     "eula-c5",
     "eula-c6",
     "eula-n5",
+    "eyeofperception-r1-lisa",
     "oldmercspal-r1-eula",
     "oldmercspal-r5-eula",
     "paleflame-rosaria",
@@ -40041,6 +43335,7 @@
     "prototypearchaic-r5-eula",
     "skyridergreatsword-r1-eula",
     "skyridergreatsword-r5-eula",
+    "snowtombedstarsilver-r1-xinyan",
     "theunforged-r1-eula",
     "theunforged-r5-eula",
     "wastergreatsword-r1-eula",
@@ -40065,6 +43360,7 @@
     "eula-c5",
     "eula-c6",
     "eula-n5",
+    "eyeofperception-r1-lisa",
     "oldmercspal-r1-eula",
     "oldmercspal-r5-eula",
     "paleflame-rosaria",
@@ -40155,6 +43451,49 @@
   {
    "id": "set:scrolloftheheroofcindercity:2",
    "status": "library",
+   "library_builds": 1376,
+   "library_builds_unverified": 117,
+   "probes": [
+    "aethergeo-c0",
+    "cindercity-bennett",
+    "cindercity-lunarcharged",
+    "cindercity-zhongli",
+    "citlali-c1",
+    "citlali-c2",
+    "citlali-c3",
+    "citlali-c4",
+    "citlali-c5",
+    "citlali-c6",
+    "citlali-c6-frozen",
+    "citlali-charge",
+    "earthshaker-r1-mavuika",
+    "iansan-c6",
+    "lightbearingmoonshard-r5-xilonen",
+    "ororon-aim",
+    "ororon-asc0",
+    "ororon-asc3",
+    "ororon-rainbowserpent-r1",
+    "qiqi-c0-swirl",
+    "qiqi-c6-conduct",
+    "starcaller-r1-citlali",
+    "thebell-r1-chongyun",
+    "thebell-r5-chongyun",
+    "tidalshadow-r1-mavuika",
+    "xianyun-xilonen-plunge",
+    "xilonen-c0-dash",
+    "xilonen-c1",
+    "xilonen-c2",
+    "xilonen-c2-electro",
+    "xilonen-c3",
+    "xilonen-c4",
+    "xilonen-c5",
+    "xilonen-c6",
+    "xilonen-c6-long"
+   ]
+  },
+  {
+   "id": "set:scrolloftheheroofcindercity:4",
+   "status": "library",
    "library_builds": 1375,
    "library_builds_unverified": 117,
    "probes": [
@@ -40180,46 +43519,9 @@
     "qiqi-c0-swirl",
     "qiqi-c6-conduct",
     "starcaller-r1-citlali",
-    "xianyun-xilonen-plunge",
-    "xilonen-c0-dash",
-    "xilonen-c1",
-    "xilonen-c2",
-    "xilonen-c2-electro",
-    "xilonen-c3",
-    "xilonen-c4",
-    "xilonen-c5",
-    "xilonen-c6",
-    "xilonen-c6-long"
-   ]
-  },
-  {
-   "id": "set:scrolloftheheroofcindercity:4",
-   "status": "library",
-   "library_builds": 1374,
-   "library_builds_unverified": 117,
-   "probes": [
-    "aethergeo-c0",
-    "cindercity-bennett",
-    "cindercity-lunarcharged",
-    "cindercity-zhongli",
-    "citlali-c1",
-    "citlali-c2",
-    "citlali-c3",
-    "citlali-c4",
-    "citlali-c5",
-    "citlali-c6",
-    "citlali-c6-frozen",
-    "citlali-charge",
-    "earthshaker-r1-mavuika",
-    "iansan-c6",
-    "lightbearingmoonshard-r5-xilonen",
-    "ororon-aim",
-    "ororon-asc0",
-    "ororon-asc3",
-    "ororon-rainbowserpent-r1",
-    "qiqi-c0-swirl",
-    "qiqi-c6-conduct",
-    "starcaller-r1-citlali",
+    "thebell-r1-chongyun",
+    "thebell-r5-chongyun",
+    "tidalshadow-r1-mavuika",
     "xianyun-xilonen-plunge",
     "xilonen-c0-dash",
     "xilonen-c1",
@@ -40326,6 +43628,8 @@
     "columbina-lcr-c2",
     "columbina-lcr-c4",
     "columbina-lcr-c6",
+    "favoniusgreatsword-r1-aino",
+    "serenityscall-r1-nilou",
     "silken-2pc",
     "silken-no-moonsign"
    ]
@@ -40348,6 +43652,8 @@
     "columbina-lcr-c2",
     "columbina-lcr-c4",
     "columbina-lcr-c6",
+    "favoniusgreatsword-r1-aino",
+    "serenityscall-r1-nilou",
     "silken-no-moonsign"
    ]
   },
@@ -40359,7 +43665,8 @@
    "probes": [
     "diona-aim",
     "diona-c3-aim",
-    "rightfulreward-r1-chevreuse"
+    "rightfulreward-r1-chevreuse",
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -40370,7 +43677,8 @@
    "probes": [
     "diona-aim",
     "diona-c3-aim",
-    "rightfulreward-r1-chevreuse"
+    "rightfulreward-r1-chevreuse",
+    "sacrificialbow-r1-diona"
    ]
   },
   {
@@ -40379,6 +43687,7 @@
    "library_builds": 1317,
    "library_builds_unverified": 106,
    "probes": [
+    "blacktassel-r1-zhongli",
     "bloodsoakedruins-r1-ineffa",
     "collei-asc0",
     "collei-attacks",
@@ -40389,6 +43698,7 @@
     "disasterandremorse-r1-ineffa",
     "dockhand-r5",
     "favoniuslance",
+    "festeringdesire-r1-furina",
     "fracturedhalo-r5-ineffa",
     "husk-2pc",
     "hymnofthemaelstrom-r1-kokomi",
@@ -40409,6 +43719,7 @@
     "sacrificialgreatsword-r1-dehya",
     "sacrificialjade-r1",
     "sacrificialjade-stacks",
+    "travelershandysword-r1-nilou",
     "vodyanitsa-c1",
     "vodyanitsa-c2",
     "vodyanitsa-c2-stellar",
@@ -40427,6 +43738,7 @@
    "library_builds": 1247,
    "library_builds_unverified": 106,
    "probes": [
+    "blacktassel-r1-zhongli",
     "bloodsoakedruins-r1-ineffa",
     "collei-asc0",
     "collei-attacks",
@@ -40436,6 +43748,7 @@
     "collei-c4",
     "disasterandremorse-r1-ineffa",
     "favoniuslance",
+    "festeringdesire-r1-furina",
     "fracturedhalo-r5-ineffa",
     "hymnofthemaelstrom-r1-kokomi",
     "hymnofthemaelstrom-r5-kokomi",
@@ -40507,9 +43820,11 @@
     "royallongsword-r5-keqing",
     "skyridersword-r1-keqing",
     "skyridersword-r5-keqing",
+    "skywardharp-r5-fischl",
     "swordofdescension-r5-keqing",
     "swordofnarzissenkreuz-r1-keqing",
     "swordofnarzissenkreuz-r5-keqing",
+    "theblacksword-r5-kamisatoayato",
     "theflute-r1-keqing",
     "theflute-r5-keqing",
     "thunderingfury-hyperbloom",
@@ -40548,6 +43863,7 @@
     "swordofdescension-r5-keqing",
     "swordofnarzissenkreuz-r1-keqing",
     "swordofnarzissenkreuz-r5-keqing",
+    "theblacksword-r5-kamisatoayato",
     "theflute-r1-keqing",
     "theflute-r5-keqing",
     "thunderingfury-hyperbloom",
@@ -40594,7 +43910,8 @@
     "razor-hexerei-c4",
     "razor-hexerei-off",
     "reverie-2pc",
-    "reverie-no-burning"
+    "reverie-no-burning",
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -40624,7 +43941,8 @@
     "lumidouce-r5-emilie",
     "razor-hexerei-c4",
     "razor-hexerei-off",
-    "reverie-no-burning"
+    "reverie-no-burning",
+    "talkingstick-r5-razor"
    ]
   },
   {
@@ -40643,6 +43961,7 @@
    "library_builds": 1290,
    "probes": [
     "aetheranemo-c0",
+    "beyondthechrysalis-r5-vesna",
     "finale-r1-jean",
     "guoba-swirl-sucrose",
     "heizou-c0",
@@ -40651,8 +43970,11 @@
     "heizou-hold",
     "ifa-c0",
     "jean-c1-hold",
+    "jean-c5",
+    "jean-c6",
     "jean-rancour-r1",
     "lynette-hold",
+    "polarstar-r5-venti",
     "prototypeamber-r1",
     "prune-c0",
     "prune-c3",
@@ -40675,6 +43997,12 @@
     "venti-c6",
     "venti-c6-hydro",
     "venti-plunge",
+    "vesna-c1",
+    "vesna-c2",
+    "vesna-c3",
+    "vesna-c4",
+    "vesna-c5",
+    "vesna-c6",
     "wineandsong-r1-sucrose",
     "wineandsong-r5-sucrose",
     "xianyun-c1",
@@ -40700,6 +44028,7 @@
    "library_builds": 1287,
    "probes": [
     "aetheranemo-c0",
+    "beyondthechrysalis-r5-vesna",
     "finale-r1-jean",
     "guoba-swirl-sucrose",
     "heizou-c0",
@@ -40708,8 +44037,11 @@
     "heizou-hold",
     "ifa-c0",
     "jean-c1-hold",
+    "jean-c5",
+    "jean-c6",
     "jean-rancour-r1",
     "lynette-hold",
+    "polarstar-r5-venti",
     "prototypeamber-r1",
     "prune-c0",
     "prune-c3",
@@ -40732,6 +44064,12 @@
     "venti-c6",
     "venti-c6-hydro",
     "venti-plunge",
+    "vesna-c1",
+    "vesna-c2",
+    "vesna-c3",
+    "vesna-c4",
+    "vesna-c5",
+    "vesna-c6",
     "wineandsong-r1-sucrose",
     "wineandsong-r5-sucrose",
     "xianyun-c1",
@@ -40783,8 +44121,16 @@
    "library_builds_unverified": 1,
    "probes": [
     "ganyu-amos-r5",
+    "hamayumi-r1-amber",
+    "hunterspath-r1-tighnari",
     "ibispiercer-r1-amber",
     "ibispiercer-r5-amber",
+    "illuga-c1",
+    "illuga-c2",
+    "illuga-c3",
+    "illuga-c4",
+    "illuga-c5",
+    "illuga-c6",
     "lauma-c1",
     "lauma-c2",
     "lauma-c3",
@@ -40795,6 +44141,7 @@
     "lauma-charge",
     "messenger-r1-amber",
     "messenger-r5-amber",
+    "nightweaverslookingglass-r1-lauma",
     "sethos-aims",
     "sethos-c0",
     "sethos-c1",
@@ -40803,6 +44150,7 @@
     "sethos-c3",
     "sethos-c4",
     "sethos-c5",
+    "travelershandysword-r1-nilou",
     "wandererstroupe-lisa"
    ]
   },
@@ -40813,6 +44161,8 @@
    "library_builds_unverified": 1,
    "probes": [
     "ganyu-amos-r5",
+    "hamayumi-r1-amber",
+    "hunterspath-r1-tighnari",
     "ibispiercer-r1-amber",
     "ibispiercer-r5-amber",
     "messenger-r1-amber",

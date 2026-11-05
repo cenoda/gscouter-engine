@@ -1,0 +1,3 @@
+# thoma with kitaincrossspear R1: library build lines carry it at R3 (1), R5 (85) (a gap the coverage map found, 2026-11-05).
+team albedo-nahida-xingqiu-thoma
+thoma add weapon="kitaincrossspear" refine=1 lvl=90/90;

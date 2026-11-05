@@ -1,0 +1,3 @@
+# vesna with beyondthechrysalis R5: library build lines carry it at R1 (75) (a gap the coverage map found, 2026-11-05).
+team vesna-columbina-ineffa-sucrose
+vesna add weapon="beyondthechrysalis" refine=5 lvl=90/90;

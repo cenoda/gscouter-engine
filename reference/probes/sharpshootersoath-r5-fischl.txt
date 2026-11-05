@@ -1,0 +1,3 @@
+# fischl with sharpshootersoath R5: library build lines carry it at R5 (1); the R5 build(s) are on unverified teams (a gap the coverage map found, 2026-11-05).
+team aino-fischl-columbina-sucrose
+fischl add weapon="sharpshootersoath" refine=5 lvl=90/90;

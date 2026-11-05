@@ -1,0 +1,3 @@
+# zhongli with blacktassel R1: library build lines carry it at R5 (2) (a gap the coverage map found, 2026-11-05).
+team furina-zhongli-nahida-kukishinobu
+zhongli add weapon="blacktassel" refine=1 lvl=90/90;
