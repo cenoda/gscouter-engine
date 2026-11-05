@@ -5,17 +5,19 @@
 //!
 //!   gse <config> [iterations] [warmup] [threads] [--seed N]
 //!   gse --check <config>
+//!   gse --catalog
 //!
 //! iterations defaults to the config's `options iteration`; iteration i
 //! uses seed N + i (N defaults to 1). --check prints what the config needs
 //! that the engine does not implement, as {"unsupported": [...]}, without
-//! running it.
+//! running it. --catalog prints the key catalog (`catalog.rs`) as JSON.
 
 // The modules are compiled into the command itself, not taken from the
 // library (`lib.rs`): through the library the same fights ran 0.4% more
 // instructions. What only the library uses is dead code here; the
 // library's build reports dead code.
 #![allow(dead_code)]
+mod catalog;
 mod chars;
 mod check;
 mod content;
@@ -25,6 +27,7 @@ mod gamedata;
 mod gcsl;
 mod nightsoul;
 mod profile;
+mod provenance;
 mod queue;
 mod rng;
 mod sets;
@@ -50,6 +53,10 @@ struct Row {
 
 fn main() {
     let mut args: Vec<String> = std::env::args().skip(1).collect();
+    if args.iter().any(|a| a == "--catalog") {
+        print!("{}", catalog::json());
+        return;
+    }
     let mut seed: u64 = 1;
     if let Some(i) = args.iter().position(|a| a == "--seed") {
         seed = args.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or_else(|| fail("--seed needs a number"));
@@ -63,7 +70,7 @@ fn main() {
         None => false,
     };
     let Some(path) = args.first() else {
-        eprintln!("usage: gse <config> [iterations] [warmup] [threads] [--seed N]\n       gse --check <config>");
+        eprintln!("usage: gse <config> [iterations] [warmup] [threads] [--seed N]\n       gse --check <config>\n       gse --catalog");
         std::process::exit(2);
     };
     let src = std::fs::read_to_string(path).unwrap_or_else(|e| fail(&format!("{path}: {e}")));

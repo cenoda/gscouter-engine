@@ -77,6 +77,12 @@ pub fn unsupported(src: &str) -> Result<Vec<String>, String> {
     }
 }
 
+/// The key catalog as versioned JSON (`catalog.rs`): characters, weapons
+/// and sets with their keys, aliases and data, as `gse --catalog` prints it.
+pub fn catalog() -> String {
+    crate::catalog::json()
+}
+
 /// Gscouter's `summarize` of one fight.
 fn summarize(sim: &sim::Sim, names: &[&'static str]) -> Iteration {
     let n = names.len();

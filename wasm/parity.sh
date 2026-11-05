@@ -15,4 +15,9 @@ for args in "team-looped.txt 150 1 0 100" "hutao-solo-looped.txt 150 7 40 60" "t
   cmp "$out/native.json" "$out/wasm.json"
   echo "$1: identical"
 done
+(cd engine && cargo build --release --bin gse)
+engine/target/release/gse --catalog > "$out/native.json"
+node wasm/run.mjs "$wasm" --catalog > "$out/wasm.json"
+cmp "$out/native.json" "$out/wasm.json"
+echo "catalog: identical"
 ls -l "$wasm"
