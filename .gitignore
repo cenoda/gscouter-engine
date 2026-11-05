@@ -1,3 +1,4 @@
 engine/target/
 wasm/target/
 content/target/
+regression/target/
