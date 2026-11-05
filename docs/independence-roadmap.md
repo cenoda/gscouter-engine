@@ -1,6 +1,6 @@
 # Independence execution roadmap
 
-> Status: Planned; documentation updated 2026-11-04, no implementation milestone complete. Existing verification and approval rules remain active.
+> Status: Planned; documentation updated 2026-11-05, no implementation milestone complete. Existing verification and approval rules remain active.
 
 This is the execution companion to [the independence plan](independence.md), Phase 6 of [the project roadmap](roadmap.md). Milestone numbers match the plan. Engine changes belong here; site changes belong on Gscouter's own `claude/...` branches under its rules. This roadmap does not approve unresolved policy choices or a production release.
 
@@ -12,9 +12,9 @@ Step 6 corrections and engine-only new characters can proceed after the step 3 t
 
 | Milestone | Deliverables | Completion evidence |
 |---|---|---|
-| 0. Data policy and source pilot | Legacy extracted data policy recorded (done, 2026-11-04: documented legacy exception); one released character's source inventory; official/derived/measured/estimated classification | Every required field has evidence or an explicit unresolved disposition; official table coverage and derivations have been checked; the legacy exception is recorded in `docs/independence.md`. |
+| 0. Data policy and source pilot | Legacy extracted data policy recorded (done, 2026-11-04: documented legacy exception; Enka data, 2026-11-05); source inventory of one released character already in the legacy data; official/derived/measured/estimated classification; how official pages are read; the character's Enka mapping observed from a showcase | Every required field has evidence or an explicit unresolved disposition; official table coverage and derivations have been checked; each official value is diffed against its `legacy_gcsim` value and every difference explained; the reading method is recorded and within §4's rules; the legacy exception is recorded in `docs/independence.md`. |
 | 1. Independent data maintenance | Provenance-bearing input format and converter; maintained data and canonical key/alias catalog; replacement for `reference/gendata` | Add or update a content-data fixture without gcsim source or tools. Validate units, keys, references and source metadata. Pure ownership changes preserve existing scores. |
-| 2. Site input migration | Engine metadata export and versioned parse API; Enka mapping path; preset parsing; independent boss resistance data; removal of input-path gcsim types | Existing representative builds, aliases, expressions and invalid inputs preserve intended behavior. Presets retain all build fields. A new-name fixture reaches the engine without gcsim recognizing the name. Audit imports and initialization paths, not only direct parser calls. |
+| 2. Site input migration | Engine metadata export and versioned parse API; Enka mappings kept as legacy data, new IDs from the key table; preset parsing; independent boss resistance data; removal of input-path gcsim types | Existing representative builds, aliases, expressions and invalid inputs preserve intended behavior. Presets retain all build fields. A new-name fixture reaches the engine without gcsim recognizing the name. Audit imports and initialization paths, not only direct parser calls. gcsim's `parser` and `eval` remain in `internal/score` for the gcsim simulation path until step 5. |
 | 3a. Independent verification pilot | Library regression runner; all 918 probes retained with coverage map; evidence-backed mechanic tests; Arlecchino investigation and affected-team report | CI runs the proposed suite alongside the current gate. Controlled fixtures expose attack counts, damage, buffs, reactions and energy where relevant. The Arlecchino report reproduces and isolates the discrepancy, or explicitly records it as unresolved; it never tunes toward +20%. |
 | 3b. Verification and release transition | Approved evidence requirements and provisional-result policy; revised release approval, manifest and baseline process; updated active rules | The replacement CI/release path works, preserves module identity and native/Wasm parity checks, and has an approved pilot demonstrating a justified correction. An unresolved Arlecchino investigation needs another demonstrated correction before this gate. Only then remove mandatory gcsim agreement. |
 | 4. Result-page migration | Versioned event/stat output; engine timelines, character details, charts and chart editor; migration of `score/chasca.go` | Consumer checks cover frame/window semantics and totals. Tracing leaves score output and random draws unchanged. Measure score-only performance and trace overhead separately. New-content pages clearly handle unavailable views until migration completes. |
@@ -31,9 +31,9 @@ Step 6 corrections and engine-only new characters can proceed after the step 3 t
 
 ## Decisions and first work
 
-1. Existing-data policy: decided 2026-11-04 (kept as a documented legacy exception with explicit `legacy_gcsim` provenance; `docs/independence.md` §4, §7).
-2. Produce the released-character source pilot and list missing official or measured fields.
-3. Inventory Gscouter runtime imports and data initialization, including boss presets and full build parsing; define the metadata/parse contract before wiring consumers.
+1. Existing-data policy: decided 2026-11-04 (kept as a documented legacy exception with explicit `legacy_gcsim` provenance; `docs/independence.md` §4, §7). Enka data: decided 2026-11-05 (showcase API stays; store-derived mappings are legacy; new mappings observed from showcases).
+2. Produce the source pilot on a released character already in the legacy data, diff it against that data, and list missing official or measured fields.
+3. Inventory Gscouter runtime imports and data initialization (first pass recorded in `docs/independence.md` step 2, 2026-11-05), including boss presets and full build parsing; define the metadata/parse contract before wiring consumers.
 4. Preserve the current probes and start the controlled Arlecchino investigation to inform the proposed evidence gate.
 5. Finalize evidence sufficiency, provisional-result behavior and release approval at step 3b. Defer gcsl grammar extensions during migration.
 

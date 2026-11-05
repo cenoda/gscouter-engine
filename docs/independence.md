@@ -1,6 +1,6 @@
 # Independence from gcsim
 
-> Status: Direction agreed with the owner; reviewed plan and execution roadmap updated on 2026-11-04, implementation not started. Open policy decisions remain in §7. Nothing here is done; the rules in `CLAUDE.md` and `docs/verification.md` still hold until each step below changes them · Last updated: 2026-11-04
+> Status: Direction agreed with the owner; reviewed plan and execution roadmap updated on 2026-11-05, implementation not started. Open policy decisions remain in §7. Nothing here is done; the rules in `CLAUDE.md` and `docs/verification.md` still hold until each step below changes them · Last updated: 2026-11-05
 
 How Gscouter and this engine stop depending on gcsim, in what order, and what stays. This is Phase 6 of `docs/roadmap.md`. The parts in Gscouter are listed here so the plan is in one place; they are made on Gscouter's `claude/...` branches under its own rules.
 
@@ -101,6 +101,13 @@ What not to take: its ICD, hitlag, hitboxes, durability and particles come from 
 
 `engine/src/data.rs` and `engine/src/gcsimdata/` (129 characters, 252 weapons, 55 sets), as well as Gscouter's existing `artifact_main_gen.json`, were generated from gcsim, whose pipeline reads extracted data. Decided by the owner (2026-11-04): they are kept as an explicit, documented legacy exception rather than replaced wholesale. Renaming files or moving them to repository-owned maintenance does not change their provenance, so legacy records retain an explicit `legacy_gcsim` provenance marker until an individual value is replaced by an official observation, measurement or step 6 correction. New content and post-independence corrections follow the no-datamining rules above.
 
+### Enka data
+
+Two kinds of Enka data are used, and they are treated differently (owner, 2026-11-05):
+
+- **The showcase API** (a player's build from their UID) returns what the game's own Character Showcase publishes. It is official data the player chose to show, not extracted data, and it stays the site's input.
+- **Enka's store data** (`EnkaNetwork/API-docs`, `store/gi/`: ID-to-name mappings, in-game names; read by Gscouter's `internal/enka/gennames`) and gcsim's UI copies of Enka mappings (`character.dm.json`, `weapon.dm.json`, `artifact.dm.json`) are built from the game's files. The existing mappings are kept under the same legacy exception as above, with their provenance recorded. New mappings are not taken from them: for a new character or weapon, the session that adds it reads one showcase that has it and records the observed `avatarId` (or weapon `itemId`) against the key, with the showcase as the source. This is an observation of the official API, not extracted data.
+
 ## 5. Steps
 
 Dependency first (owner, 2026-11-04): new characters wait until this is far enough along; they are not implemented on the fork meanwhile. A character neither engine has simply has no library teams, so waiting costs coverage, not wrong scores. Each step keeps the two reference scores of `CLAUDE.md` to the last digit unless it says otherwise.
@@ -119,7 +126,11 @@ Step 0 precedes step 1. An Arlecchino investigation demonstrates the proposed ve
 
 ### Step 0: policy and source pilot
 
-The existing-data policy is decided (2026-11-04: documented legacy exception, §4). Pilot the proposed official/measurement workflow on one released character before step 1 finalizes the input format. List unavailable fields and how each is handled; do not call the source pipeline complete when those fields are unaccounted for.
+The existing-data policy is decided (2026-11-04: documented legacy exception, §4; Enka data, 2026-11-05). Pilot the proposed official/measurement workflow on one released character before step 1 finalizes the input format. List unavailable fields and how each is handled; do not call the source pipeline complete when those fields are unaccounted for.
+
+- **The pilot character is one already in the legacy data**, so each value read from official pages can be diffed against its `legacy_gcsim` value. Agreement checks the workflow; a difference is explained (rounding, derivation, a game change) before the workflow is trusted. A new character would need implementing, which waits until after step 3.
+- **Record how the official pages are read.** HoYoWiki renders its pages in the browser; if a session can read them only through the site's own API, record that, and whether it stays within "one page per character, read as a person reads it" (§4), before the workflow is adopted.
+- **Include the Enka mapping** of the pilot character as observed from a showcase (§4, Enka data), and check it against the legacy mapping.
 
 ### Step 1: engine data and keys
 
@@ -132,11 +143,13 @@ The existing-data policy is decided (2026-11-04: documented legacy exception, §
 
 | Where | What changes |
 |---|---|
-| `internal/enka/gen.sh` | Enka mappings and names straight from Enka, not gcsim's UI data. Not for speed: so a new character's showcase can be read without a gcsim update. `artifact_main_gen.json` stays under the step 0 legacy-data exception (§4) with its provenance noted |
-| `shortcut.*NameToKey` in `internal/config`, `library`, `pull`, `score` | The engine's key table |
-| gcsim's `parser` in the same packages | A versioned engine parse API through wazero: ordered party plus levels, ascension, constellations, talents, weapons, refinements, sets and stats needed by preset consumers; preserve alias, expression and error semantics |
+| `internal/enka/gen.sh`, `internal/enka/gennames` | The existing Enka mappings, names and `artifact_main_gen.json` stop being copied from gcsim's module and Enka's store; they are kept in Gscouter as legacy data with their provenance (§4, Enka data). New IDs come from the key table of step 1, recorded from an observed showcase. Not for speed: so a new character's showcase can be read without a gcsim update |
+| `shortcut` in `internal/config/weapon.go` (with `core/keys`) and `internal/library/library.go` | The engine's key table |
+| gcsim's `parser` and `ast` in `internal/config/config.go` and `internal/pull/preset.go` | A versioned engine parse API through wazero: ordered party plus levels, ascension, constellations, talents, weapons, refinements, sets and stats needed by preset consumers; preserve alias, expression and error semantics |
 
-Also migrate `internal/config/bosses.go`, which initializes boss resistances through gcsim enemy code, and inventory remaining imports of gcsim attributes, keys and profile types. Give replacement boss data the same provenance policy. A party-only API does not replace `internal/pull/preset.go`. Verify representative presets and malformed inputs against existing behavior, and keep parsing separate from simulation support checks.
+Also migrate `internal/config/bosses.go`, which initializes boss resistances through gcsim's `enemy`, `info` and `attributes`, and the `attributes` uses in `pull/preset.go`. Give replacement boss data the same provenance policy. A party-only API does not replace `internal/pull/preset.go`. Verify representative presets and malformed inputs against existing behavior, and keep parsing separate from simulation support checks.
+
+Scope: step 2 removes gcsim from the input path ①②③ only. `internal/score` (`score.go`, `requests.go`) parses and evaluates configs with gcsim's `parser` and `eval` to run gcsim itself; that use goes with the gcsim simulation path in steps 4 and 5, not here. The inventory of imports (2026-11-05, at Gscouter `2df20b3`, non-test files): `config` (`weapon.go`, `config.go`, `bosses.go`), `library`, `pull/preset.go` for step 2; `chart` (`start.go`: `catalog`, `model`, `shortcut`; `preview.go`), `timeline` (`stats`), `score/chasca.go` for step 4; `score.go`, `requests.go` for step 5. `internal/web`'s message files only link to gcsim's repository.
 
 ### Step 3: verification and approval
 
@@ -149,13 +162,13 @@ Also migrate `internal/config/bosses.go`, which initializes boss resistances thr
 ### Step 4: result page ⑤
 
 - The engine writes the events and stats that timelines, character details and charts need. Define a versioned event/stat contract, with units, frame timestamps and warmup semantics. Detailed traces are opt-in so normal score runs do not pay their allocation or serialization cost; check that tracing preserves scores and random draws.
-- `internal/timeline`, `internal/chart` (`preview.go`, `start.go`) and the character details move to it; so does `internal/score/chasca.go`, which reaches into gcsim's internals.
+- `internal/timeline`, `internal/chart` (`preview.go`; `start.go`, which also uses gcsim's `catalog`, `model` and `shortcut`) and the character details move to it; so does `internal/score/chasca.go`, which reaches into gcsim's internals.
 
 ### Step 5: fallback, then removal
 
 - Port what the engine refuses (`README.md`, "What it does not do"; `gse --check`) in the order Gscouter's fallback log shows it is needed.
 - Before removal, define the observed fallback coverage and observation period, explicit behavior for remaining unsupported inputs, rollback and old-link recalculation policies. An engine-only character cannot fall back to gcsim; report its unsupported configuration or failure explicitly.
-- Then remove from Gscouter: gcsim's path in `score.RunIterations` and the filler search, the browser build of gcsim (`cmd/wasm`), the fork (`go.mod`'s `replace`, `library.ForkOnly`, `ForkOnlyWeapons`, the teams' `gcsim_fork`, `docs/fork.md`), cache keys and share links that record gcsim's version (`gcsimModule`, `share.GcsimFork`; old links need a recalculation policy), `regression.yml` and `cmd/compare` moved to the engine's regression.
+- Then remove from Gscouter: gcsim's path in `score.RunIterations` and the filler search, the browser build of gcsim (`cmd/wasm`), the fork (`go.mod`'s `replace`, `library.ForkOnly`, `ForkOnlyWeapons`, the teams' `gcsim_fork`, `docs/fork.md`), cache keys and share links that record gcsim's version (`gcsimModule`, `share.GcsimFork`; old links need a recalculation policy), `regression.yml` and `cmd/compare` moved to the engine's regression, and the tests that import gcsim (`internal/config`, `internal/weights` and `internal/score` through its `parser`; `internal/chart` and `score/chasca_test.go` through its core packages) moved to the engine's APIs.
 - The site's words: `about.scores` ("within 1% of gcsim"), `issue.arlecchino` once fixed, the messages in each language that name gcsim, and a `/updates` entry.
 - Documents: Gscouter's `design.md`, `engine.md`, `fork.md`; here `README.md`, `CLAUDE.md`, `docs/porting.md`, `docs/verification.md`, `docs/roadmap.md`.
 
@@ -180,3 +193,4 @@ gscouter-optimizer was planned on the engine from the start and has nothing to r
 2. The game checks of step 3: what counts as enough evidence for a new character, and for a change of step 6.
 3. How far to measure the hidden values of layer 2, and where standard estimates are enough.
 4. Whether to add grammar to gcsl (§3). The roadmap defers extensions during migration; a later proposal can revisit this.
+5. **Enka data (§4): decided 2026-11-05.** The showcase API stays; existing store-derived mappings are legacy data; new mappings are recorded from observed showcases.

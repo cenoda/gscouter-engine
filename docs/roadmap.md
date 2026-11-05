@@ -1,6 +1,6 @@
 # Roadmap
 
-> Status: Phases 0 to 3 done for the library; Phase 4 live in Gscouter (4,447 teams on release `e6c8a07`, approved 2026-11-04); Phase 5, upkeep, now; Phase 6, independence from gcsim, planned · Last updated: 2026-11-04
+> Status: Phases 0 to 3 done for the library; Phase 4 live in Gscouter (4,447 teams on release `e6c8a07`, approved 2026-11-04); Phase 5, upkeep, now; Phase 6, independence from gcsim, planned · Last updated: 2026-11-05
 
 What it takes for this engine to score Gscouter's results, and where that stands. The measurements and step-by-step records of the finished phases are in `docs/history.md`.
 
@@ -84,7 +84,7 @@ New characters wait until step 3 is complete and are then implemented only in th
 
 ## 4. Decisions for the owner
 
-The earlier integration decisions below are answered. In Phase 6, keeping existing data as a legacy exception is decided (2026-11-04); decisions on evidence sufficiency and estimates remain open in `docs/independence.md` §7.
+The earlier integration decisions below are answered. In Phase 6, keeping existing data as a legacy exception is decided (2026-11-04), as is the use of Enka data (2026-11-05: showcase API kept, new mappings observed from showcases); decisions on evidence sufficiency and estimates remain open in `docs/independence.md` §7.
 
 1. **Scores that move.** A team on the engine scores within 1% of gcsim, not to the bit. Allowed per team, by the owner's approval (2026-11-04), with a `/updates` entry for each release that moves teams.
 2. **Fillers can flip.** When two candidates are within 1%, the engines can pick different ones. Decided 2026-11-04: an engine team runs its own search, ranked on 50 iterations (Gscouter `docs/engine.md` §5).
