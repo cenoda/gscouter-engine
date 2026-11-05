@@ -782,6 +782,41 @@ impl Parser {
     }
 
     pub fn parse(mut self) -> R<ParsedConfig> {
+        self.parse_rows()?;
+        let c = &self.cfg;
+        if c.chars.len() > 4 {
+            return Err(format!("config contains a total of {} characters; cannot exceed 4", c.chars.len()));
+        }
+        match c.active {
+            None => return Err("config does not contain active char".into()),
+            Some(a) if !c.chars.iter().any(|x| x.key == a) => return Err(format!("active char {} not found in team", char_name(a))),
+            _ => {}
+        }
+        if c.targets.is_empty() {
+            return Err("config does not contain any targets".into());
+        }
+        Ok(self.finish())
+    }
+
+    /// The config as written, without the checks of a whole config (the
+    /// team's size, its active character, a target), which gcsim reports
+    /// in its `Errors` and does not stop at: a build's setup lines alone
+    /// parse. `parse_api` reports those checks itself.
+    pub fn parse_setup(mut self) -> R<ParsedConfig> {
+        self.parse_rows()?;
+        Ok(self.finish())
+    }
+
+    fn finish(mut self) -> ParsedConfig {
+        for t in &mut self.cfg.targets {
+            if t.radius == 0.0 {
+                t.radius = 1.0;
+            }
+        }
+        self.cfg
+    }
+
+    fn parse_rows(&mut self) -> R<()> {
         loop {
             let n = self.peek();
             match n.typ {
@@ -825,32 +860,26 @@ impl Parser {
                     self.next();
                     self.parse_options()?;
                 }
-                Tok::Eof => break,
+                Tok::Eof => return Ok(()),
                 Tok::ActionKey => return Err(format!("ln{}: unexpected line starts with an action: {}", n.line, n.val)),
+                Tok::Identifier => {
+                    // a setup line of a name gcsl does not know: gcsim
+                    // fails on it as an expression; name it instead
+                    self.next();
+                    let after = self.peek().typ;
+                    self.backup();
+                    if matches!(after, Tok::Char | Tok::Add) {
+                        return Err(format!("ln{}: unknown character {}", n.line, n.val));
+                    }
+                    let s = self.parse_statement()?;
+                    self.cfg.program.0.push(s);
+                }
                 _ => {
                     let s = self.parse_statement()?;
                     self.cfg.program.0.push(s);
                 }
             }
         }
-        let c = &self.cfg;
-        if c.chars.len() > 4 {
-            return Err(format!("config contains a total of {} characters; cannot exceed 4", c.chars.len()));
-        }
-        match c.active {
-            None => return Err("config does not contain active char".into()),
-            Some(a) if !c.chars.iter().any(|x| x.key == a) => return Err(format!("active char {} not found in team", char_name(a))),
-            _ => {}
-        }
-        if c.targets.is_empty() {
-            return Err("config does not contain any targets".into());
-        }
-        for t in &mut self.cfg.targets {
-            if t.radius == 0.0 {
-                t.radius = 1.0;
-            }
-        }
-        Ok(self.cfg)
     }
 
     // ------------------------------------------------------------ setup lines
@@ -968,7 +997,7 @@ impl Parser {
     fn parse_add_set(&mut self) -> R<()> {
         let x = self.seq(&[Tok::Assign, Tok::String])?;
         let s = Self::quoted(&x);
-        let key = set_key(&s).ok_or_else(|| format!("invalid set {s}"))?;
+        let key = set_key(&s).ok_or_else(|| format!("ln{}: invalid set {s}", x.line))?;
         let mut count = 0;
         loop {
             let n = self.next();
@@ -999,7 +1028,7 @@ impl Parser {
     fn parse_add_weapon(&mut self) -> R<()> {
         let x = self.seq(&[Tok::Assign, Tok::String])?;
         let s = Self::quoted(&x);
-        let key = weapon_key(&s).ok_or_else(|| format!("invalid weapon {s}"))?;
+        let key = weapon_key(&s).ok_or_else(|| format!("ln{}: invalid weapon {s}", x.line))?;
         self.cur().weapon.key = key;
         let (mut lvl, mut refine) = (false, false);
         loop {

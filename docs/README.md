@@ -11,6 +11,7 @@ What each document is for. The conventions are Gscouter's (its `docs/README.md`)
 | `docs/roadmap.md` | Where it stands, what done means, the phases and what remains |
 | `docs/verification.md` | How it is checked against gcsim: `compare`'s rules, probes, CI and its caches, releases |
 | `docs/porting.md` | How to port from gcsim, the gcsim behaviour matched on purpose, the pitfalls found so far, how the content data, its provenance and the key catalog are maintained (§4), and how to add new content from a record (§5) |
+| `docs/parse-api.md` | The versioned parse API (`gse --parse`, `gse_parse`) Gscouter's input path reads in place of gcsim's parser, and its agreement check with gcsim (`reference/parsecheck`) |
 | `docs/content-format.md` | The content record format (values with their sources), its validator and its converter to the engine's data (`content/`, Phase 6 step 1) |
 | `docs/phase4-approval.md` | How the owner approves teams for Gscouter: groups A and B, carry-forward, the owner's decisions |
 | `docs/independence.md` | The plan to stop depending on gcsim (Phase 6): why, what stays, where data comes from, the steps, what remains |

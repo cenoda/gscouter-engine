@@ -1,0 +1,2 @@
+# expect: syntax
+hutao char lvl=90/80 cons=0 talent=9,9,9;

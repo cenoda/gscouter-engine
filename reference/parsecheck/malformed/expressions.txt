@@ -1,0 +1,6 @@
+# expect: ok
+hutao char lvl=90/90 cons=0 talent=9,9,9;
+hutao add weapon="homa" refine=1 lvl=90/90;
+hutao add stats hp=4780 atk=311 cr=0.1+0.2*2 cd=-(0.5-1) em=(10+20)/3;
+active hutao;
+target lvl=100 resist=0.1 pyro=0.2;

@@ -17,6 +17,10 @@
 //!   run it; an error is the config's parse error.
 //! - `gse_catalog()`: the key catalog (`gse --catalog`, the engine's
 //!   `catalog.rs`) as versioned JSON; never an error.
+//! - `gse_parse(cfg, len)`: what the config's setup lines say
+//!   (`gse --parse`, the engine's `parse.rs`) as versioned JSON; status 1
+//!   when it does not parse, and the body is then the error as JSON (its
+//!   class, line and message), or a message if the config is not UTF-8.
 
 use gse::api;
 
@@ -65,6 +69,13 @@ pub unsafe extern "C" fn gse_check(cfg: *const u8, len: u32) -> *mut u8 {
         let items: Vec<String> = list.iter().map(|s| api::json_string(s)).collect();
         format!("[{}]", items.join(","))
     }))
+}
+
+/// # Safety
+/// `cfg` and `len` are a buffer from `gse_alloc` holding UTF-8.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn gse_parse(cfg: *const u8, len: u32) -> *mut u8 {
+    result(unsafe { text(cfg, len) }.and_then(api::parse))
 }
 
 #[unsafe(no_mangle)]

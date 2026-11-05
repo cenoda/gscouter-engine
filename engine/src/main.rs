@@ -6,11 +6,14 @@
 //!   gse <config> [iterations] [warmup] [threads] [--seed N]
 //!   gse --check <config>
 //!   gse --catalog
+//!   gse --parse <config>
 //!
 //! iterations defaults to the config's `options iteration`; iteration i
 //! uses seed N + i (N defaults to 1). --check prints what the config needs
 //! that the engine does not implement, as {"unsupported": [...]}, without
 //! running it. --catalog prints the key catalog (`catalog.rs`) as JSON.
+//! --parse prints what the config's setup lines say (`parse.rs`) as
+//! versioned JSON, and exits with 1 when the config does not parse.
 
 // The modules are compiled into the command itself, not taken from the
 // library (`lib.rs`): through the library the same fights ran 0.4% more
@@ -26,6 +29,7 @@ mod eval;
 mod gamedata;
 mod gcsl;
 mod nightsoul;
+mod parse;
 mod profile;
 mod provenance;
 mod queue;
@@ -57,6 +61,18 @@ fn main() {
         print!("{}", catalog::json());
         return;
     }
+    if let Some(i) = args.iter().position(|a| a == "--parse") {
+        let path = args.get(i + 1).unwrap_or_else(|| fail("--parse needs a config"));
+        let src = std::fs::read_to_string(path).unwrap_or_else(|e| fail(&format!("{path}: {e}")));
+        match parse::parse(&src) {
+            Ok(j) => print!("{j}"),
+            Err(j) => {
+                print!("{j}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     let mut seed: u64 = 1;
     if let Some(i) = args.iter().position(|a| a == "--seed") {
         seed = args.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or_else(|| fail("--seed needs a number"));
@@ -70,7 +86,7 @@ fn main() {
         None => false,
     };
     let Some(path) = args.first() else {
-        eprintln!("usage: gse <config> [iterations] [warmup] [threads] [--seed N]\n       gse --check <config>\n       gse --catalog");
+        eprintln!("usage: gse <config> [iterations] [warmup] [threads] [--seed N]\n       gse --check <config>\n       gse --catalog\n       gse --parse <config>");
         std::process::exit(2);
     };
     let src = std::fs::read_to_string(path).unwrap_or_else(|e| fail(&format!("{path}: {e}")));

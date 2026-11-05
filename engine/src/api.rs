@@ -83,6 +83,14 @@ pub fn catalog() -> String {
     crate::catalog::json()
 }
 
+/// What the config's setup lines say, as versioned JSON (`parse.rs`), as
+/// `gse --parse` prints it: Ok when it parsed, Err (also JSON, with the
+/// error's class, line and message) when it did not. Support for
+/// simulation is not checked (`unsupported`).
+pub fn parse(src: &str) -> Result<String, String> {
+    crate::parse::parse(src)
+}
+
 /// Gscouter's `summarize` of one fight.
 fn summarize(sim: &sim::Sim, names: &[&'static str]) -> Iteration {
     let n = names.len();

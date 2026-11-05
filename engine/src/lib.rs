@@ -12,6 +12,7 @@ pub mod eval;
 mod gamedata;
 pub mod gcsl;
 mod nightsoul;
+pub mod parse;
 pub mod profile;
 pub mod provenance;
 mod queue;

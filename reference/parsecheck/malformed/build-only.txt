@@ -1,0 +1,3 @@
+# expect: ok no_active_character,no_targets
+hutao char lvl=90/90 cons=0 talent=9,9,9;
+hutao add weapon="homa" refine=1 lvl=90/90;
