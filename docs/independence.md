@@ -77,7 +77,7 @@ From HoYoverse's official HoYoWiki (wiki.hoyolab.com):
 | Multipliers up to level 15 | Talent multipliers grow by fixed shared ratios from level 1 |
 | Base stats and ascension bonuses | HoYoWiki's tables; the growth curves are shared with existing characters and already in the engine |
 | Conditions, durations and amounts of passives and constellations | The official descriptions |
-| Damage formula | HoYoWiki's damage formula page |
+| Damage formula | HoYoWiki's damage formula page, filed under "Gameplay Research": recorded as a community source on the official site, not as `official` (owner, 2026-11-05) |
 | **A check** | Enka showcases, which Gscouter already reads, carry each character's actual base HP, ATK and DEF: a new character's showcases check our stats automatically |
 
 ### Layer 2: values the game does not show
@@ -109,7 +109,7 @@ What not to take: its ICD, hitlag, hitboxes, durability and particles come from 
 Two kinds of Enka data are used, and they are treated differently (owner, 2026-11-05):
 
 - **The showcase API** (a player's build from their UID) returns what the game's own Character Showcase publishes. It is official data the player chose to show, not extracted data, and it stays the site's input.
-- **Enka's store data** (`EnkaNetwork/API-docs`, `store/gi/`: ID-to-name mappings, in-game names; read by Gscouter's `internal/enka/gennames`) and gcsim's UI copies of Enka mappings (`character.dm.json`, `weapon.dm.json`, `artifact.dm.json`) are built from the game's files. The existing mappings are kept under the same legacy exception as above, with their provenance recorded. New mappings are not taken from them: for a new character or weapon, the session that adds it reads one showcase that has it and records the observed `avatarId` (or weapon `itemId`) against the key, with the showcase as the source. This is an observation of the official API, not extracted data.
+- **Enka's store data** (`EnkaNetwork/API-docs`, `store/gi/`: ID-to-name mappings, in-game names; read by Gscouter's `internal/enka/gennames`) and gcsim's UI copies of Enka mappings (`character.dm.json`, `weapon.dm.json`, `artifact.dm.json`) are built from the game's files. The existing mappings are kept under the same legacy exception as above, with their provenance recorded. New mappings are not taken from them. They are observed from the showcases Gscouter already receives (owner, 2026-11-05): when a showcase carries an `avatarId` (or weapon `itemId`) missing from the mapping, Gscouter records the ID with the character's level, ascension and base HP/ATK/DEF, **without the UID or any other player data**. The ID is matched to its key by those base stats against the official base stats (layer 1); HP and DEF match to float precision, ATK within 0.5 because the weapon's base ATK is shown rounded (`docs/pilot-xiangling/official.md` §6). The recorded showcase values are the source. This is an observation of the official API, not extracted data, and needs no one to look for a UID. It is part of step 2.
 
 ## 5. Steps
 
@@ -193,8 +193,14 @@ gscouter-optimizer was planned on the engine from the start and has nothing to r
 ## 7. For the owner to decide
 
 1. **Existing data (§4): decided 2026-11-04.** Kept as a documented legacy exception (`legacy_gcsim` provenance); new content and step 6 corrections use the independent sources of §4.
-2. The game checks of step 3: what counts as enough evidence for a new character, and for a change of step 6.
-3. How far to measure the hidden values of layer 2, and where standard estimates are enough.
+2. **Evidence and accuracy for new characters: decided 2026-11-05.**
+   - Existing teams keep the 1% bar and the regression unchanged.
+   - Talent values at the official page's display precision are accepted for new characters, recorded as official and rounded (the rounding is at most about 0.45% of a multiplier, `docs/pilot-xiangling/official.md` §4), and refined from public damage numbers where possible.
+   - Per-hit checks: public in-game damage numbers reproduced with the same build, within 1% per hit.
+   - Team DPS of a new character: a 5% target, shown as provisional until its layer 2 values are measured. It cannot be checked against another simulator; the label says so.
+   - Estimate sensitivity: if replacing a consequential estimate with a plausible alternative moves DPS by more than 5%, the result is marked as highly uncertain.
+   - Step 6 changes: still one mechanic at a time with evidence, an affected-team report and the owner's approval (§5).
+3. **Layer 2 estimates: decided 2026-11-05**, with item 2: standard estimates are enough while they keep DPS within the 5% sensitivity check; past it, the value is measured or the result stays marked as highly uncertain.
 4. Whether to add grammar to gcsl (§3). The roadmap defers extensions during migration; a later proposal can revisit this.
 5. **Automated reading (§4): decided 2026-11-05.** Allowed within robots.txt, politely; the terms on automated access remain to be found.
 6. **Enka data (§4): decided 2026-11-05.** The showcase API stays; existing store-derived mappings are legacy data; new mappings are recorded from observed showcases.

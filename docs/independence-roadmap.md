@@ -35,7 +35,7 @@ Step 6 corrections and engine-only new characters can proceed after the step 3 t
 2. Produce the source pilot on a released character already in the legacy data, diff it against that data, and list missing official or measured fields.
 3. Inventory Gscouter runtime imports and data initialization (first pass recorded in `docs/independence.md` step 2, 2026-11-05), including boss presets and full build parsing; define the metadata/parse contract before wiring consumers.
 4. Preserve the current probes and start the controlled Arlecchino investigation to inform the proposed evidence gate.
-5. Finalize evidence sufficiency, provisional-result behavior and release approval at step 3b. Defer gcsl grammar extensions during migration.
+5. Evidence sufficiency and provisional-result behavior for new characters: decided 2026-11-05 (`docs/independence.md` §7.2–7.3: 1% per hit, 5% provisional DPS target, 5% estimate-sensitivity check; existing teams keep 1%). Finalize release approval at step 3b. Defer gcsl grammar extensions during migration.
 
 ## Progress reporting
 
