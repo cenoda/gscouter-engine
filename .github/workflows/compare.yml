@@ -350,6 +350,10 @@ jobs:
         if: matrix.part == 0
         working-directory: engine
         run: cargo test --release
+      - name: Content records, their validator and converter
+        if: matrix.part == 0
+        working-directory: content
+        run: cargo test --release
       - name: WebAssembly module gives the engine's results
         if: matrix.part == 0
         run: wasm/parity.sh
