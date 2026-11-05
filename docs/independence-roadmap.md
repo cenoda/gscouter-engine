@@ -1,6 +1,6 @@
 # Independence execution roadmap
 
-> Status: Planned; documentation updated 2026-11-05, no implementation milestone complete. Existing verification and approval rules remain active.
+> Status: Milestone 0 complete (2026-11-05); milestones 1 to 6 planned. Existing verification and approval rules remain active.
 
 This is the execution companion to [the independence plan](independence.md), Phase 6 of [the project roadmap](roadmap.md). Milestone numbers match the plan. Engine changes belong here; site changes belong on Gscouter's own `claude/...` branches under its rules. This roadmap does not approve unresolved policy choices or a production release.
 
@@ -39,4 +39,13 @@ Step 6 corrections and engine-only new characters can proceed after the step 3 t
 
 ## Progress reporting
 
-For each milestone, record its status, implementation commits, validation report and remaining blockers here. Mark a milestone complete only with the completion evidence above. At this revision all milestones are planned; no simulator code, data, active accuracy rule or production approval has changed.
+For each milestone, record its status, implementation commits, validation report and remaining blockers here. Mark a milestone complete only with the completion evidence above. Milestones 1 to 6 are planned; no simulator code, data, active accuracy rule or production approval has changed.
+
+### Milestone 0: complete (2026-11-05)
+
+- **Reports:** [`docs/pilot-xiangling/official.md`](pilot-xiangling/official.md) (layer 1), [`docs/pilot-xiangling/hidden.md`](pilot-xiangling/hidden.md) (layer 2). Commits `6013044`, `3c5b5a0`, merged in `3f2d241`, `b20d2d5`.
+- **Layer 1:** 301 official values compared with `legacy_gcsim`; 301 agree at the page's display precision, none differs. The page covers every reachable talent level, so nothing was derived; growth ratios are shared within a family of rows only (plunges leave the normal-attack sequence at Lv.11). The page must be rendered in a browser; the reading method and its requests are recorded. Deviation: the pilot's browser loads used the default User-Agent (the rule changed mid-pilot).
+- **Layer 2:** 47 rows: 12 measured, 8 stated, 7 fixed by official text, 3 standard estimates, 17 unresolved (hitlag, strike type and hitboxes have no public source). Public evidence disagrees with legacy in four places (C0 spin hits 8 vs 9; two spin hits per rotation against large enemies; a snapshot frame; Guoba's breath interval read literally). The standard ICD estimate is wrong for the spin and Guoba.
+- **Estimate sensitivity** (a test team, against §7.2's 5% check): Pyronado hit rate team +16 to +28%, Xiangling +46 to +57%; standard ICD on the spin team −4.9%, Xiangling −12%; C0 spin count team −3.4%, Xiangling −12%; one fewer Guoba particle −27% on an energy-starved build, under 0.4% otherwise. A new character like Xiangling built on standard estimates would be marked highly uncertain until its geometry and ICD are measured.
+- **Dispositions:** Xiangling's Enka `avatarId` was not observed; new IDs come from Gscouter's received showcases in step 2 (§4, Enka data). Full-precision talent values and growth between breakpoints stay legacy.
+- **Carried forward, not blockers for step 1:** measure Pyronado against a single enemy of Gscouter's target size; count Guoba's breaths and the burst's cast frames; the owner's decision on whether "by analogy with an existing character" is an allowed estimate for hitlag and hitboxes; the C0 spin-count disagreement as a step 6 candidate.
