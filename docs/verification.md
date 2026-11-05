@@ -1,6 +1,6 @@
 # Verification
 
-> Status: In use (rules of the owner, 2026-11-02 and 2026-11-04) · Last updated: 2026-11-04
+> Status: In use (rules of the owner, 2026-11-02 and 2026-11-04) · Last updated: 2026-11-05
 
 How the engine is checked against gcsim: what `reference/compare` decides and how, the probes, CI and its caches, and the release that Gscouter pins. How a team then moves to the engine in Gscouter is `docs/phase4-approval.md` and Gscouter's `docs/engine.md`.
 
@@ -35,7 +35,7 @@ Selecting what to run:
 
 ## 3. Probes
 
-A library build checks only the constellations, weapons, refinements and sets it carries (Lisa's are 19 of 21 at C6). What no library build reaches is checked by a probe: a library team with some lines changed. Every constellation of a ported character, refinements 1 and 5 of a weapon and two and four pieces of a set each have one; there are 918 (2026-11-04). Code no comparison reaches is unverified, whatever its source: say so, and add the probe that reaches it. What the probes of the last weapons and sets cannot reach (kills, enemy HP and attacks, range, stamina and others) is listed in `docs/roadmap.md` §3.
+A library build checks only the constellations, weapons, refinements and sets it carries (Lisa's are 19 of 21 at C6). What no library build reaches is checked by a probe: a library team with some lines changed. There are 918 (2026-11-04). Every constellation of a ported character, refinements 1 and 5 of a weapon and two and four pieces of a set should be reached by a verified library build or a probe; the coverage map (`docs/probe-coverage.md`, `reference/probes/coverage.json`, checked in CI) records which, and lists the 114 items that neither reaches yet (2026-11-05). Code no comparison reaches is unverified, whatever its source: say so, and add the probe that reaches it. What the probes of the last weapons and sets cannot reach (kills, enemy HP and attacks, range, stamina and others) is listed in `docs/roadmap.md` §3 and, item by item, in `reference/coverage/gaps.txt`.
 
 A probe is `reference/probes/<name>.txt`, reported as `probe:<name>`:
 
