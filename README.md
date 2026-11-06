@@ -1,6 +1,6 @@
 # gscouter-engine
 
-A Rust port of gcsim, written only for [Gscouter](https://github.com/cenoda/Gscouter): it scores Gscouter's teams within 1% of gcsim, several times faster. Bit-exact agreement is not a goal. It is ported from the source of Gscouter's fork of gcsim (`cenoda/gcsim@eb21884`, fixed by `reference/go.mod`), and runs Gscouter's looped conditions (450 s, scored from 150 s, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12).
+A Rust port of gcsim, written only for [Gscouter](https://github.com/cenoda/Gscouter): it scores Gscouter's teams within 1% of gcsim, several times faster. Bit-exact agreement is not a goal. It is ported from the source of Gscouter's fork of gcsim (`cenoda/gcsim@eb21884`, fixed by `reference/go.mod`), and runs Gscouter's looped conditions (120 s from full energy, scored up to the end of the last completed cycle, Lv. 100 enemy at 10% resistance, energy every 8–12 s, swap delay 12; `engine/src/window.rs`). Until 2026-11-06 the window was 150–450 s; the two fixed scores of `CLAUDE.md` still run that way, with a warmup of 150 on the 450 s configs in `configs/`.
 
 ## Status
 

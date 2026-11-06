@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/genshinsim/gcsim/pkg/core/action"
 	"github.com/genshinsim/gcsim/pkg/core/event"
 	"github.com/genshinsim/gcsim/pkg/core/info"
 	"github.com/genshinsim/gcsim/pkg/gcs/ast"
@@ -64,6 +65,10 @@ func Run(cfg string, n int, warmup float64, seed int64, workers int, abil bool) 
 	}
 	simcfg.Settings.CollectStats = []string{"damage", "action", "shield"}
 	startBucket := int(warmup*60) / bucketFrames
+	cycles := cutsAtCycles(warmup, simcfg.Settings.Duration)
+	if cycles {
+		markCycles(gcsl)
+	}
 	ab := &abils{on: abil, start: startBucket * bucketFrames, total: map[string][2]float64{}}
 
 	start := time.Now()
@@ -76,12 +81,12 @@ func Run(cfg string, n int, warmup float64, seed int64, workers int, abil bool) 
 		go func() {
 			defer wg.Done()
 			for i := range jobs {
-				res, err := once(file, simcfg, gcsl, seed+int64(i), ab)
+				res, endFrame, err := once(file, simcfg, gcsl, seed+int64(i), ab, cycles)
 				if err != nil {
 					errs[i] = err
 					continue
 				}
-				results[i] = summarize(&res, startBucket)
+				results[i] = summarize(&res, startBucket, endFrame)
 			}
 		}()
 	}
@@ -136,22 +141,32 @@ type abils struct {
 	total map[string][2]float64
 }
 
-func once(file *ast.File, simcfg *info.ActionList, gcsl ast.Node, seed int64, ab *abils) (stats.Result, error) {
+// once runs one fight, and returns the frame its window ends on: the
+// fight's end, or with cycles the end of the last completed cycle.
+// Hits and damage by ability count to the fight's end either way.
+func once(file *ast.File, simcfg *info.ActionList, gcsl ast.Node, seed int64, ab *abils, cycles bool) (stats.Result, int, error) {
 	cfg := simcfg.Copy()
 	c, err := simulation.NewCore(seed, false, cfg)
 	if err != nil {
-		return stats.Result{}, err
+		return stats.Result{}, 0, err
 	}
 	ev, err := eval.NewEvaluator(file, gcsl.Copy(), c)
 	if err != nil {
-		return stats.Result{}, err
+		return stats.Result{}, 0, err
 	}
-	sim, err := simulation.New(cfg, ev, c)
+	var run action.Evaluator = ev
+	var guard *cycleGuard
+	if cycles {
+		guard = &cycleGuard{syncEvaluator: ev, c: c}
+		run = guard
+	}
+	sim, err := simulation.New(cfg, run, c)
 	if err != nil {
-		return stats.Result{}, err
+		return stats.Result{}, 0, err
 	}
+	var local map[string][2]float64
 	if ab.on {
-		local := map[string][2]float64{}
+		local = map[string][2]float64{}
 		c.Events.Subscribe(event.OnEnemyDamage, func(args ...any) {
 			if c.F < ab.start {
 				return
@@ -163,7 +178,9 @@ func once(file *ast.File, simcfg *info.ActionList, gcsl ast.Node, seed int64, ab
 			v[1] += args[2].(float64)
 			local[k] = v
 		}, "abil")
-		res, err := sim.Run()
+	}
+	res, err := sim.Run()
+	if ab.on {
 		ab.mu.Lock()
 		for k, v := range local {
 			a := ab.total[k]
@@ -172,19 +189,32 @@ func once(file *ast.File, simcfg *info.ActionList, gcsl ast.Node, seed int64, ab
 			ab.total[k] = a
 		}
 		ab.mu.Unlock()
-		return res, err
 	}
-	return sim.Run()
+	endFrame := res.Duration
+	if guard != nil {
+		endFrame = guard.endFrame(res.Duration)
+	}
+	return res, endFrame, err
 }
 
-// summarize is Gscouter's window: damage from startBucket to the end.
-func summarize(res *stats.Result, startBucket int) iteration {
+// summarize is Gscouter's window: damage from startBucket to endFrame,
+// which, before the fight's end, is taken to the bucket boundary nearest it.
+func summarize(res *stats.Result, startBucket, endFrame int) iteration {
 	startFrame := startBucket * bucketFrames
-	window := float64(res.Duration-startFrame) / 60
-	it := iteration{chars: make([]float64, len(res.Characters)), names: make([]string, len(res.Characters)), frames: res.Duration, waits: make([]map[string]float64, len(res.Characters))}
-	cumulative := make([]float64, len(res.DamageBuckets))
+	if endFrame <= 0 || endFrame > res.Duration {
+		endFrame = res.Duration
+	}
+	endBucket := len(res.DamageBuckets)
+	if endFrame < res.Duration {
+		endBucket = (endFrame + bucketFrames/2) / bucketFrames
+		endFrame = endBucket * bucketFrames
+	}
+	window := float64(endFrame-startFrame) / 60
+	it := iteration{chars: make([]float64, len(res.Characters)), names: make([]string, len(res.Characters)), frames: endFrame, waits: make([]map[string]float64, len(res.Characters))}
+	nBuckets := min(endBucket, len(res.DamageBuckets))
+	cumulative := make([]float64, nBuckets)
 	var sum float64
-	for i, d := range res.DamageBuckets {
+	for i, d := range res.DamageBuckets[:nBuckets] {
 		sum += d
 		cumulative[i] = sum
 		if i >= startBucket {
@@ -207,7 +237,7 @@ func summarize(res *stats.Result, startBucket int) iteration {
 		}
 		it.waits[c] = map[string]float64{}
 		for _, f := range res.Characters[c].FailedActions {
-			if overlap := min(f.End, res.Duration) - max(f.Start, startFrame); overlap > 0 {
+			if overlap := min(f.End, endFrame) - max(f.Start, startFrame); overlap > 0 {
 				it.waits[c][f.Reason] += float64(overlap) / 60
 			}
 		}

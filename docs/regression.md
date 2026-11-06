@@ -13,7 +13,7 @@ The engine's own regression: every library build and every probe on fixed config
 - `src/`: the runner `regress` (crate `gse-regress`, no dependencies): `run`, `diff`, `merge`.
 - `update.sh`: regenerates the inputs or the baseline.
 
-The runs are 50 iterations from seed 1, warmup 150 s, one thread per build (the engine's sums depend on how fights are split between threads; one thread is the native order). Determinism makes 50 enough: any change to the code those 2,744,000 fights reach moves the hash. The accuracy of a score is the gate's business, not this one's (owner, 2026-11-02).
+The runs are 50 iterations from seed 1, warmup 0 on the 120 s fights the inputs hold (the site's window, up to the last completed cycle, `engine/src/window.rs`), one thread per build (the engine's sums depend on how fights are split between threads; one thread is the native order). Determinism makes 50 enough: any change to the code those 2,744,000 fights reach moves the hash. The accuracy of a score is the gate's business, not this one's (owner, 2026-11-02).
 
 ## 2. Why the inputs are committed
 
@@ -33,7 +33,7 @@ regression/update.sh baseline    # the engine alone: about 7 minutes on 4 cores
 By hand:
 
 ```
-regress run --gse engine/target/release/gse --configs <dir> [--iter 50] [--seed 1] [--warmup 150] [--jobs N] [--shard k/n] -o results.txt
+regress run --gse engine/target/release/gse --configs <dir> [--iter 50] [--seed 1] [--warmup 0] [--jobs N] [--shard k/n] -o results.txt
 regress diff regression/baseline.txt results.txt [--shard k/n]     # exits 1 on any difference
 regress merge results-*.txt -o baseline.txt                          # shards into one file
 ```

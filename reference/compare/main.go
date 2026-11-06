@@ -117,7 +117,7 @@ var (
 	settle        = flag.Bool("settle", true, "decide a verdict still inconclusive at -max-iter, and on the seeds past it that gcsim's cache holds, by its estimate: pass inside the bound, fail outside it")
 	charShare     = flag.Float64("char-share", 0.10, "characters below this share of gcsim's team DPS are reported, not judged")
 	sampleN       = flag.Int("sample", 0, "variants, build space and pages: run at most this many builds of each kind per team, chosen by a hash of team and build (0: every one); the page's one-pass configs are always run, and builds the engine cannot run are all reported")
-	warmup        = flag.Float64("warmup", 150, "seconds of the looped fight excluded from the window")
+	warmup        = flag.Float64("warmup", 0, "seconds of the looped fight excluded from the window; with 0, a fight with a duration is scored up to its last completed cycle (the site's window)")
 	workers       = flag.Int("j", runtime.NumCPU(), "workers")
 	jsonOut       = flag.String("json", "", "write the results as JSON to this file")
 	mdOut         = flag.String("md", "", "also write the report to this file")
@@ -1857,7 +1857,7 @@ func markdown(rep *Report) string {
 		if rep.Settle {
 			w(", and an interval still across it at %d iterations is decided by its estimate (settled)", rep.MaxIter)
 		}
-		w(". Builds run %d iterations, and up to %d when they fail or are inconclusive there. Characters below %.0f%% of gcsim's team DPS are shown, not judged (minor). DPS over the window from %.0f s.\n\n", rep.Iter, rep.MaxIter, 100*rep.Share, rep.Warmup)
+		w(". Builds run %d iterations, and up to %d when they fail or are inconclusive there. Characters below %.0f%% of gcsim's team DPS are shown, not judged (minor). %s.\n\n", rep.Iter, rep.MaxIter, 100*rep.Share, windowText(rep.Warmup))
 		if d := rep.Drift; d != nil {
 			w("Drift: the team's difference averages %+.3f%% ± %.3f%% (95%%) over the %d builds compared.\n\n", 100*d.Mean, 100*z*d.SE, d.Builds)
 		}
@@ -2045,4 +2045,12 @@ func markdown(rep *Report) string {
 		}
 	}
 	return b.String()
+}
+
+// windowText says what window the report's DPS is over.
+func windowText(warmup float64) string {
+	if warmup == 0 {
+		return "DPS over the site's window: from the fight's start, up to the last completed cycle of a looped fight"
+	}
+	return fmt.Sprintf("DPS over the window from %.0f s", warmup)
 }

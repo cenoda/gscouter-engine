@@ -5,11 +5,16 @@
 //! The reduction follows Gscouter's `summarize` (internal/score/score.go):
 //! the window starts at the 0.5 s bucket the warmup falls in and ends with
 //! the fight; its halves split at a bucket boundary; waits are seconds in
-//! the window by gcsim's reason names.
+//! the window by gcsim's reason names. With no warmup on a fight with a
+//! duration (the site's 0–120 s from full energy), the program's loop is
+//! marked into cycles (`mark_cycles`) and the window ends at the bucket
+//! boundary nearest the last completed cycle (`Sim::window_end`), as
+//! Gscouter's does.
 
 use std::fmt::Write as _;
 
 use crate::types::{FAILURE_NAMES, N_FAILURES};
+use crate::window::{cuts_at_cycles, mark_cycles};
 use crate::{check, eval, gcsl, profile, sim};
 
 /// gcsim's damage bucket, 0.5 s.
@@ -42,7 +47,7 @@ pub fn run_iterations(src: &str, warmup: f64, seed: i64, first: usize, count: us
     if count == 0 {
         return Err("iterations must be positive".into());
     }
-    let parsed = gcsl::parse(src)?;
+    let mut parsed = gcsl::parse(src)?;
     let missing = check::unsupported(&parsed);
     if !missing.is_empty() {
         // each names itself as unsupported
@@ -52,6 +57,10 @@ pub fn run_iterations(src: &str, warmup: f64, seed: i64, first: usize, count: us
     if parsed.duration > 0.0 && parsed.duration <= warmup {
         return Err(format!("duration {}s must be longer than warmup {}s", parsed.duration, warmup));
     }
+    let cycles = cuts_at_cycles(warmup, parsed.duration);
+    if cycles {
+        mark_cycles(&mut parsed.program);
+    }
     let cfg = profile::config(&parsed).map_err(|e| e.join("; "))?;
     let names: Vec<&'static str> = parsed.chars.iter().map(|c| gcsl::char_name(c.key)).collect();
     let mut out = Vec::with_capacity(count);
@@ -59,6 +68,7 @@ pub fn run_iterations(src: &str, warmup: f64, seed: i64, first: usize, count: us
         let i = first + j;
         let s = seed.wrapping_add(i as i64);
         let mut sim = sim::Sim::new(&cfg, s as u64, warmup);
+        sim.track_cycles = cycles;
         eval::run(&mut sim, &parsed.program).map_err(|e| format!("iteration {i} (seed {s}): {e}"))?;
         sim.close_waits();
         out.push(summarize(&sim, &names));
@@ -93,6 +103,9 @@ pub fn parse(src: &str) -> Result<String, String> {
 
 /// Gscouter's `summarize` of one fight.
 fn summarize(sim: &sim::Sim, names: &[&'static str]) -> Iteration {
+    if sim.track_cycles && sim.window_end() < sim.f {
+        return summarize_cut(sim, names, sim.window_end());
+    }
     let n = names.len();
     let start = sim.window_start;
     let end = sim.f;
@@ -127,6 +140,49 @@ fn summarize(sim: &sim::Sim, names: &[&'static str]) -> Iteration {
             let frames = sim.waits[c][k];
             if frames > 0 {
                 it.waits[c].push((FAILURE_NAMES[k], frames as f64 / 60.0));
+            }
+        }
+    }
+    it
+}
+
+/// Gscouter's `summarize` of a fight whose window ends at `end_frame`,
+/// before the fight's end: at the bucket boundary nearest it.
+fn summarize_cut(sim: &sim::Sim, names: &[&'static str], end_frame: i32) -> Iteration {
+    let n = names.len();
+    let start = sim.window_start;
+    let start_bucket = start / BUCKET;
+    let end_bucket = (end_frame + BUCKET / 2) / BUCKET;
+    let end = end_bucket * BUCKET;
+    let mut it = Iteration { dps: 0.0, first: 0.0, second: 0.0, chars: vec![0.0; n], waits: vec![Vec::new(); n], frames: end, names: names.to_vec() };
+    let window = (end - start) as f64 / 60.0;
+    if window <= 0.0 {
+        return it;
+    }
+    let mid_bucket = (start + end) / 2 / BUCKET;
+    let mid_frame = mid_bucket * BUCKET;
+    let last = ((end_bucket - start_bucket).max(0) as usize).min(sim.window_buckets.len());
+    for (b, d) in sim.window_buckets[..last].iter().enumerate() {
+        if start_bucket + b as i32 >= mid_bucket {
+            it.second += d;
+        } else {
+            it.first += d;
+        }
+    }
+    it.dps = (it.first + it.second) / window;
+    if mid_frame > start {
+        it.first /= (mid_frame - start) as f64 / 60.0;
+        it.second /= (end - mid_frame) as f64 / 60.0;
+    } else {
+        it.first = it.dps;
+        it.second = it.dps;
+    }
+    let (chars, waits) = sim.cut_totals(end);
+    for c in 0..n {
+        it.chars[c] = chars[c] / window;
+        for k in 0..N_FAILURES {
+            if waits[c][k] > 0 {
+                it.waits[c].push((FAILURE_NAMES[k], waits[c][k] as f64 / 60.0));
             }
         }
     }
@@ -291,6 +347,20 @@ mod tests {
         let its = run_iterations(&src, 0.0, 1, 0, 1).unwrap();
         assert_eq!(its[0].frames, crate::sim::MAX_FIGHT_FRAMES);
         assert_eq!(its[0].dps, 0.0);
+    }
+
+    #[test]
+    fn the_window_ends_at_the_last_completed_cycle() {
+        let src = std::fs::read_to_string(format!("{}/../configs/team-looped.txt", env!("CARGO_MANIFEST_DIR"))).unwrap().replace("duration=450", "duration=120");
+        let its = run_iterations(&src, 0.0, 1, 0, 4).unwrap();
+        for it in &its {
+            assert!(it.frames < 7200 && it.frames > 3600 && it.frames % 30 == 0, "{}", it.frames);
+            let chars: f64 = it.chars.iter().sum();
+            assert!((chars - it.dps).abs() < 1e-6 * it.dps, "{chars} {}", it.dps);
+        }
+        // with a warmup the window runs to the fight's end, as before
+        let its = run_iterations(&src, 30.0, 1, 0, 2).unwrap();
+        assert!(its.iter().all(|it| it.frames == 7200));
     }
 
     #[test]

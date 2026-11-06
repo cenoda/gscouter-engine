@@ -25,7 +25,7 @@ import (
 )
 
 // harnessCacheVersion is harness.Cache's version, part of every key.
-const harnessCacheVersion = 1
+const harnessCacheVersion = 2
 
 // cacheView reads the chunks of harness.Cache's directory.
 type cacheView struct {

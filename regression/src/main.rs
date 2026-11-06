@@ -1,6 +1,6 @@
 //! `regress`: the engine's own library regression (docs/regression.md).
 //!
-//!     regress run --gse <gse> --configs <dir> [--iter 50] [--seed 1] [--warmup 150]
+//!     regress run --gse <gse> --configs <dir> [--iter 50] [--seed 1] [--warmup 0]
 //!                 [--jobs N] [--shard k/n] [--engine <commit>] [--gscouter <commit>] [-o <file>]
 //!     regress diff <baseline> <results>... [--shard k/n]
 //!     regress merge <results>... [-o <file>]
@@ -212,7 +212,7 @@ fn run(args: &[String]) -> Result<ExitCode, String> {
     let gse = o.get("gse").ok_or("--gse is needed")?.clone();
     let dir = PathBuf::from(o.get("configs").ok_or("--configs is needed")?);
     let get = |k: &str, d: &str| o.get(k).cloned().unwrap_or_else(|| d.to_string());
-    let (iter, seed, warmup) = (get("iter", "50"), get("seed", "1"), get("warmup", "150"));
+    let (iter, seed, warmup) = (get("iter", "50"), get("seed", "1"), get("warmup", "0"));
     let sh = shard(&o)?;
     let jobs: usize = match o.get("jobs") {
         Some(j) => j.parse().map_err(|_| "--jobs is a number")?,

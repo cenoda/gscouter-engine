@@ -39,6 +39,7 @@ mod sim;
 mod stellar;
 mod types;
 mod weapons;
+mod window;
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
@@ -120,21 +121,41 @@ fn main() {
     let chunk = iters.div_ceil(threads).max(1);
     // each thread parses the config itself: the program's AST is not Sync
     let run_part = |t: usize, part: &mut [Row]| -> Result<(), String> {
-        let parsed = gcsl::parse(&src)?;
+        let mut parsed = gcsl::parse(&src)?;
+        // Gscouter's site window: 0–120 s up to the last completed cycle
+        let cycles = window::cuts_at_cycles(warmup, parsed.duration);
+        if cycles {
+            window::mark_cycles(&mut parsed.program);
+        }
         let cfg = profile::config(&parsed).map_err(|e| e.join("; "))?;
         let mut local: BTreeMap<String, (f64, f64)> = BTreeMap::new();
         for (j, r) in part.iter_mut().enumerate() {
             let i = t * chunk + j;
             let mut sim = sim::Sim::new(&cfg, seed + i as u64, warmup);
+            sim.track_cycles = cycles;
             eval::run(&mut sim, &parsed.program).map_err(|e| format!("iteration {i}: {e}"))?;
-            let window = (sim.f - sim.window_start) as f64 / 60.0;
-            for c in 0..n_chars {
-                r.chars[c] = sim.window_char[c] / window;
+            sim.close_waits();
+            let end = sim.window_end();
+            if cycles && end < sim.f {
+                // the window ends at the bucket boundary nearest the cycle's
+                // end; hits and damage by ability still count to the fight's
+                let end = (end + 15) / 30 * 30;
+                let (chars, waits) = sim.cut_totals(end);
+                let window = (end - sim.window_start) as f64 / 60.0;
+                for c in 0..n_chars {
+                    r.chars[c] = if window > 0.0 { chars[c] / window } else { 0.0 };
+                }
+                r.waits = waits;
+                r.frames = end;
+            } else {
+                let window = (sim.f - sim.window_start) as f64 / 60.0;
+                for c in 0..n_chars {
+                    r.chars[c] = sim.window_char[c] / window;
+                }
+                r.waits = sim.waits;
+                r.frames = sim.f;
             }
             r.team = r.chars.iter().sum();
-            sim.close_waits();
-            r.waits = sim.waits;
-            r.frames = sim.f;
             for c in 0..n_chars {
                 for (name, hits, dmg) in &sim.abils[c] {
                     let e = local.entry(format!("{}/{name}", names[c])).or_default();

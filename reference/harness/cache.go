@@ -18,7 +18,7 @@ const Chunk = 500
 
 // version is part of every cache key. Raise it when Run or summarize
 // changes what it measures, so that old results are not read back.
-const version = 1
+const version = 2
 
 // Cache stores gcsim's results by config and chunk of seeds. gcsim is
 // fixed by go.mod and a seed always gives the same fight, so a stored

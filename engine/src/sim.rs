@@ -1244,6 +1244,10 @@ pub const XIANYUN_AIRBORNE: ModKey = ModKey::new("xianyun-airborne-buff");
 /// as at the end of its duration, so that a fight without one whose
 /// rotation never ends, or whose enemy never dies, stops. gcsim has no such
 /// end; Gscouter adds it.
+/// Gscouter's marker (`score.Marker`): a delay of this many frames or more
+/// marks a point of the program and is not played.
+pub const MARKER: i64 = 987654;
+
 pub const MAX_FIGHT_FRAMES: i32 = 100_000 * 60;
 
 /// Gscouter's maxStillActions: more actions than this handed to the sim on
@@ -1655,6 +1659,23 @@ pub struct Sim {
     wait_open: [[Option<(i32, Failure)>; N_ACTIONS]; 4],
     /// Hits and damage in the window by character and ability.
     pub abils: [Vec<(&'static str, u32, f64)>; 4],
+    /// Gscouter's cycle markers (`api::mark_cycles`, its stillGuard): how
+    /// many the program reached on a later frame than the last, the frame
+    /// of the last, and the longest cycle between two.
+    pub cycles: u32,
+    pub cycle_end: i32,
+    pub max_cycle: i32,
+    /// Set when the window may end at the last completed cycle
+    /// (`window_end`): then damage by bucket and character, and each
+    /// wait's frames, are kept so that the window can be cut after the
+    /// fight.
+    pub track_cycles: bool,
+    /// Damage in the window by 0.5 s bucket from `window_start` and by
+    /// character, with `track_cycles`.
+    pub window_char_buckets: Vec<[f64; 4]>,
+    /// Each ended wait: character, reason, first and last frame (gcsim's
+    /// FailedActions), with `track_cycles`.
+    pub wait_log: Vec<(u8, u8, i32, i32)>,
 }
 
 impl Sim {
@@ -1792,6 +1813,12 @@ impl Sim {
             waits: [[0; N_FAILURES]; 4],
             wait_open: [[None; N_ACTIONS]; 4],
             abils: Default::default(),
+            cycles: 0,
+            cycle_end: 0,
+            max_cycle: 0,
+            track_cycles: false,
+            window_char_buckets: Vec::new(),
+            wait_log: Vec::new(),
         };
         // AddCharacter sets the starting energy before any Init reads it
         for (i, c) in cfg.chars.iter().enumerate() {
@@ -5202,6 +5229,12 @@ impl Sim {
                 self.window_buckets.resize(b + 1, 0.0);
             }
             self.window_buckets[b] += ev.damage;
+            if self.track_cycles {
+                if b >= self.window_char_buckets.len() {
+                    self.window_char_buckets.resize(b + 1, [0.0; 4]);
+                }
+                self.window_char_buckets[b][ci] += ev.damage;
+            }
             let abils = &mut self.abils[ci];
             let name = ev.info.abil;
             match abils.iter_mut().find(|a| std::ptr::eq(a.0, name) || a.0 == name) {
@@ -5888,6 +5921,9 @@ impl Sim {
     /// Ends an action's wait, counting its frames in the window.
     fn wait_done(&mut self, ci: usize, a: usize) {
         if let Some((start, why)) = self.wait_open[ci][a].take() {
+            if self.track_cycles {
+                self.wait_log.push((ci as u8, why as u8, start, self.f));
+            }
             let n = self.f - start.max(self.window_start);
             if n > 0 {
                 self.waits[ci][why as usize] += n as u32;
@@ -6125,6 +6161,52 @@ impl Sim {
             }
         }
         !self.done
+    }
+
+    /// A cycle marker reached (Gscouter's stillGuard): a cycle ends on
+    /// this frame, unless the last one ended on it too.
+    pub fn mark_cycle(&mut self) {
+        if self.f > self.cycle_end {
+            self.cycles += 1;
+            self.max_cycle = self.max_cycle.max(self.f - self.cycle_end);
+            self.cycle_end = self.f;
+        }
+    }
+
+    /// The frame the window ends on once the fight is over (Gscouter's
+    /// simulateWith): the end of the last completed cycle when there were
+    /// two cycles or the last ended past the fight's middle, and the fight
+    /// did not run on after it for more than one and a half of its longest
+    /// cycle (a rotation stalled waiting); the fight's end otherwise.
+    pub fn window_end(&self) -> i32 {
+        let d = self.f;
+        if self.cycle_end > 0 && (self.cycles >= 2 || self.cycle_end > d / 2) && d - self.cycle_end <= self.max_cycle * 3 / 2 {
+            self.cycle_end
+        } else {
+            d
+        }
+    }
+
+    /// Damage by character and wait frames by character and reason in the
+    /// window cut at frame `end` (Gscouter's summarize): damage in the
+    /// buckets before `end`, a bucket boundary, and each wait's frames
+    /// between the window's start and `end`. Needs `track_cycles`.
+    pub fn cut_totals(&self, end: i32) -> ([f64; 4], [[u32; N_FAILURES]; 4]) {
+        let last = (((end - self.window_start) / 30).max(0) as usize).min(self.window_char_buckets.len());
+        let mut chars = [0.0; 4];
+        for d in &self.window_char_buckets[..last] {
+            for c in 0..4 {
+                chars[c] += d[c];
+            }
+        }
+        let mut waits = [[0u32; N_FAILURES]; 4];
+        for &(c, why, s, e) in &self.wait_log {
+            let overlap = e.min(end) - s.max(self.window_start);
+            if overlap > 0 {
+                waits[c as usize][why as usize] += overlap as u32;
+            }
+        }
+        (chars, waits)
     }
 
     /// gcsim's delay(f): frames to wait before the next action is used.

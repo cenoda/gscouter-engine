@@ -22,6 +22,7 @@ pub mod sim;
 mod stellar;
 pub mod types;
 mod weapons;
+pub mod window;
 
 #[cfg(test)]
 mod tests {

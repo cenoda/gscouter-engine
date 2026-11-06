@@ -440,6 +440,15 @@ impl<'s> Eval<'s> {
             }
             Builtin::Delay => {
                 let f = self.num(args, line, env)?.i();
+                // Gscouter's stillGuard takes a marker before gcsim sees it:
+                // it plays nothing, takes no frame and is not counted
+                if f >= crate::sim::MARKER {
+                    if self.sim.done {
+                        return Err(Stop::Terminated);
+                    }
+                    self.sim.mark_cycle();
+                    return Ok(Value::Null);
+                }
                 if f >= 0 {
                     if !self.sim.count_action() {
                         return err(crate::sim::STUCK.into());
