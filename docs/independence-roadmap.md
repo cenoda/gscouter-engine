@@ -8,7 +8,7 @@ This is the execution companion to [the independence plan](independence.md), Pha
 
 `0 → 1 → 2 → 3 pilot → 3 gate transition → 4 → 5`
 
-Step 6 corrections and engine-only new characters can proceed after the step 3 transition. Evidence gathering for the pilot can start earlier; score-changing releases still follow the active rules. Existing regression checks remain active throughout.
+Step 6 corrections can proceed after the step 3 transition. Engine-only new characters come last, after the other steps (owner, 2026-11-05; `docs/independence.md` §5). Evidence gathering for the pilot can start earlier; score-changing releases still follow the active rules. Existing regression checks remain active throughout.
 
 | Milestone | Deliverables | Completion evidence |
 |---|---|---|
