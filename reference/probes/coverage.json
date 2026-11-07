@@ -1,15 +1,15 @@
 {
  "comment": "Written by reference/coverage (docs/probe-coverage.md). Do not edit; regenerate.",
- "gscouter_commit": "e4d5796bc32fb4d8b2b79678c7e67b1b40ab150f",
- "release_engine_commit": "c0a324820f6a490d925b51ac03d0433906f9bcc0",
+ "gscouter_commit": "63f0ae4260a24e6e7c6f8c8430cd13741f7792d6",
+ "release_engine_commit": "211d58804456dd0bb1a65f9e25b642fd93249b69",
  "counts": {
   "probes": 1026,
-  "probes_on_verified_teams": 1014,
+  "probes_on_verified_teams": 1022,
   "library_teams": 4570,
-  "library_teams_verified": 4430,
+  "library_teams_verified": 4447,
   "items": 1412,
-  "covered_by_library": 975,
-  "covered_by_probe_only": 431,
+  "covered_by_library": 976,
+  "covered_by_probe_only": 430,
   "gaps_explained": 6,
   "gaps_new": 0,
   "gaps_unexplained": 0,
@@ -16771,7 +16771,7 @@
    "name": "nefer-c1",
    "team": "nefer-lauma-columbina-nahida",
    "description": "Nefer at C1, Ascendant Gleam (library builds carry C0).",
-   "team_verified": false,
+   "team_verified": true,
    "changed": [
     {
      "char": "nefer",
@@ -16797,7 +16797,7 @@
    "name": "nefer-c2",
    "team": "nefer-lauma-columbina-nahida",
    "description": "Nefer at C2, Ascendant Gleam (library builds carry C0).",
-   "team_verified": false,
+   "team_verified": true,
    "changed": [
     {
      "char": "nefer",
@@ -16824,7 +16824,7 @@
    "name": "nefer-c3",
    "team": "nefer-lauma-columbina-nahida",
    "description": "Nefer at C3, Ascendant Gleam (library builds carry C0).",
-   "team_verified": false,
+   "team_verified": true,
    "changed": [
     {
      "char": "nefer",
@@ -16852,7 +16852,7 @@
    "name": "nefer-c4",
    "team": "nefer-lauma-columbina-nahida",
    "description": "Nefer at C4, Ascendant Gleam (library builds carry C0).",
-   "team_verified": false,
+   "team_verified": true,
    "changed": [
     {
      "char": "nefer",
@@ -16881,7 +16881,7 @@
    "name": "nefer-c5",
    "team": "nefer-lauma-columbina-nahida",
    "description": "Nefer at C5, Ascendant Gleam (library builds carry C0).",
-   "team_verified": false,
+   "team_verified": true,
    "changed": [
     {
      "char": "nefer",
@@ -16911,7 +16911,7 @@
    "name": "nefer-c6-charge",
    "team": "nefer-lauma-columbina-nahida",
    "description": "Nefer at C6 with tapped and briefly held charged attacks (C6's Phantasm hits on both routes, C2's and C4's Verdant Dew and Veil).",
-   "team_verified": false,
+   "team_verified": true,
    "changed": [
     {
      "char": "nefer",
@@ -16949,7 +16949,7 @@
    "name": "nefer-c6",
    "team": "nefer-lauma-columbina-nahida",
    "description": "Nefer at C6, Ascendant Gleam (library builds carry C0).",
-   "team_verified": false,
+   "team_verified": true,
    "changed": [
     {
      "char": "nefer",
@@ -16980,7 +16980,7 @@
    "name": "nefer-charge",
    "team": "nefer-lauma-columbina-nahida",
    "description": "Nefer's normal attacks, tapped charged attacks (Phantasm Performance with Dew, the ordinary charged attack without) and, once the skill's three Phantasm charges are spent, a tap and a short Slither that end in the ordinary charged attack (no library rotation taps or holds briefly).",
-   "team_verified": false,
+   "team_verified": true,
    "changed": [
     {
      "char": "nefer",
@@ -29143,8 +29143,7 @@
   {
    "id": "char:aino:c1",
    "status": "library",
-   "library_builds": 24,
-   "library_builds_unverified": 6,
+   "library_builds": 30,
    "probes": [
     "favoniusgreatsword-r1-aino"
    ]
@@ -29152,8 +29151,7 @@
   {
    "id": "char:aino:c2",
    "status": "library",
-   "library_builds": 24,
-   "library_builds_unverified": 6,
+   "library_builds": 30,
    "probes": [
     "favoniusgreatsword-r1-aino"
    ]
@@ -29161,8 +29159,7 @@
   {
    "id": "char:aino:c3",
    "status": "library",
-   "library_builds": 24,
-   "library_builds_unverified": 6,
+   "library_builds": 30,
    "probes": [
     "favoniusgreatsword-r1-aino"
    ]
@@ -29170,8 +29167,7 @@
   {
    "id": "char:aino:c4",
    "status": "library",
-   "library_builds": 24,
-   "library_builds_unverified": 6,
+   "library_builds": 30,
    "probes": [
     "favoniusgreatsword-r1-aino"
    ]
@@ -29179,8 +29175,7 @@
   {
    "id": "char:aino:c5",
    "status": "library",
-   "library_builds": 24,
-   "library_builds_unverified": 6,
+   "library_builds": 30,
    "probes": [
     "favoniusgreatsword-r1-aino"
    ]
@@ -29188,8 +29183,7 @@
   {
    "id": "char:aino:c6",
    "status": "library",
-   "library_builds": 24,
-   "library_builds_unverified": 6,
+   "library_builds": 30,
    "probes": [
     "favoniusgreatsword-r1-aino"
    ]
@@ -30438,8 +30432,7 @@
   {
    "id": "char:collei:c1",
    "status": "library",
-   "library_builds": 85,
-   "library_builds_unverified": 1,
+   "library_builds": 86,
    "probes": [
     "collei-asc0",
     "collei-attacks",
@@ -30451,8 +30444,7 @@
   {
    "id": "char:collei:c2",
    "status": "library",
-   "library_builds": 85,
-   "library_builds_unverified": 1,
+   "library_builds": 86,
    "probes": [
     "collei-asc0",
     "collei-attacks",
@@ -30463,8 +30455,7 @@
   {
    "id": "char:collei:c3",
    "status": "library",
-   "library_builds": 85,
-   "library_builds_unverified": 1,
+   "library_builds": 86,
    "probes": [
     "collei-asc0",
     "collei-attacks",
@@ -30474,8 +30465,7 @@
   {
    "id": "char:collei:c4",
    "status": "library",
-   "library_builds": 85,
-   "library_builds_unverified": 1,
+   "library_builds": 86,
    "probes": [
     "collei-asc0",
     "collei-attacks",
@@ -30485,8 +30475,7 @@
   {
    "id": "char:collei:c5",
    "status": "library",
-   "library_builds": 85,
-   "library_builds_unverified": 1,
+   "library_builds": 86,
    "probes": [
     "collei-asc0",
     "collei-attacks"
@@ -30495,8 +30484,7 @@
   {
    "id": "char:collei:c6",
    "status": "library",
-   "library_builds": 85,
-   "library_builds_unverified": 1,
+   "library_builds": 86,
    "probes": [
     "collei-asc0",
     "collei-attacks"
@@ -32655,8 +32643,7 @@
   {
    "id": "char:kukishinobu:c1",
    "status": "library",
-   "library_builds": 169,
-   "library_builds_unverified": 4,
+   "library_builds": 173,
    "probes": [
     "kuki-c1",
     "kuki-c4",
@@ -32667,8 +32654,7 @@
   {
    "id": "char:kukishinobu:c2",
    "status": "library",
-   "library_builds": 169,
-   "library_builds_unverified": 4,
+   "library_builds": 173,
    "probes": [
     "kuki-c4",
     "kuki-c5",
@@ -32678,8 +32664,7 @@
   {
    "id": "char:kukishinobu:c3",
    "status": "library",
-   "library_builds": 168,
-   "library_builds_unverified": 4,
+   "library_builds": 172,
    "probes": [
     "kuki-c4",
     "kuki-c5",
@@ -32689,8 +32674,7 @@
   {
    "id": "char:kukishinobu:c4",
    "status": "library",
-   "library_builds": 167,
-   "library_builds_unverified": 4,
+   "library_builds": 171,
    "probes": [
     "kuki-c4",
     "kuki-c5",
@@ -32700,8 +32684,7 @@
   {
    "id": "char:kukishinobu:c5",
    "status": "library",
-   "library_builds": 167,
-   "library_builds_unverified": 4,
+   "library_builds": 171,
    "probes": [
     "kuki-c5",
     "kuki-c6"
@@ -32710,8 +32693,7 @@
   {
    "id": "char:kukishinobu:c6",
    "status": "library",
-   "library_builds": 167,
-   "library_builds_unverified": 4,
+   "library_builds": 171,
    "probes": [
     "kuki-c6"
    ]
@@ -35225,8 +35207,7 @@
   {
    "id": "char:sucrose:c1",
    "status": "library",
-   "library_builds": 207,
-   "library_builds_unverified": 3,
+   "library_builds": 210,
    "probes": [
     "celestialgift-rite",
     "guoba-swirl-sucrose",
@@ -35239,8 +35220,7 @@
   {
    "id": "char:sucrose:c2",
    "status": "library",
-   "library_builds": 207,
-   "library_builds_unverified": 3,
+   "library_builds": 210,
    "probes": [
     "celestialgift-rite",
     "guoba-swirl-sucrose",
@@ -35253,8 +35233,7 @@
   {
    "id": "char:sucrose:c3",
    "status": "library",
-   "library_builds": 207,
-   "library_builds_unverified": 3,
+   "library_builds": 210,
    "probes": [
     "celestialgift-rite",
     "guoba-swirl-sucrose",
@@ -35267,8 +35246,7 @@
   {
    "id": "char:sucrose:c4",
    "status": "library",
-   "library_builds": 207,
-   "library_builds_unverified": 3,
+   "library_builds": 210,
    "probes": [
     "celestialgift-rite",
     "guoba-swirl-sucrose",
@@ -35281,8 +35259,7 @@
   {
    "id": "char:sucrose:c5",
    "status": "library",
-   "library_builds": 207,
-   "library_builds_unverified": 3,
+   "library_builds": 210,
    "probes": [
     "celestialgift-rite",
     "guoba-swirl-sucrose",
@@ -35295,8 +35272,7 @@
   {
    "id": "char:sucrose:c6",
    "status": "library",
-   "library_builds": 207,
-   "library_builds_unverified": 3,
+   "library_builds": 210,
    "probes": [
     "celestialgift-rite",
     "guoba-swirl-sucrose",
@@ -37129,8 +37105,7 @@
   {
    "id": "weapon:balladofthefjords:r1",
    "status": "library",
-   "library_builds": 209,
-   "library_builds_unverified": 1,
+   "library_builds": 210,
    "probes": [
     "arlecchino-burst",
     "arlecchino-c1",
@@ -37405,8 +37380,7 @@
   {
    "id": "weapon:blacktassel:r5",
    "status": "library",
-   "library_builds": 1,
-   "library_builds_unverified": 1
+   "library_builds": 2
   },
   {
    "id": "weapon:bladeofatonement:r1",
@@ -37714,9 +37688,8 @@
   },
   {
    "id": "weapon:dawningfrost:r5",
-   "status": "probe",
-   "library_builds": 0,
-   "library_builds_unverified": 16,
+   "status": "library",
+   "library_builds": 16,
    "probes": [
     "nefer-c1",
     "nefer-c2",
@@ -37731,8 +37704,8 @@
   {
    "id": "weapon:deathmatch:r1",
    "status": "library",
-   "library_builds": 923,
-   "library_builds_unverified": 20,
+   "library_builds": 925,
+   "library_builds_unverified": 18,
    "probes": [
     "berserker-hutao",
     "bloodstained-rosaria",
@@ -37982,8 +37955,7 @@
   {
    "id": "weapon:etherlightspindlelute:r5",
    "status": "library",
-   "library_builds": 32,
-   "library_builds_unverified": 14,
+   "library_builds": 46,
    "probes": [
     "lauma-c1",
     "lauma-c2",
@@ -38077,8 +38049,7 @@
   {
    "id": "weapon:favoniuscodex:r5",
    "status": "library",
-   "library_builds": 90,
-   "library_builds_unverified": 3,
+   "library_builds": 93,
    "probes": [
     "charlotte-burst-charge",
     "charlotte-c0",
@@ -38140,8 +38111,7 @@
   {
    "id": "weapon:favoniussword:r5",
    "status": "library",
-   "library_builds": 152,
-   "library_builds_unverified": 4,
+   "library_builds": 156,
    "probes": [
     "favoniussword-xingqiu",
     "favoniussword-xingqiu-er0",
@@ -38159,8 +38129,7 @@
   {
    "id": "weapon:favoniuswarbow:r5",
    "status": "library",
-   "library_builds": 59,
-   "library_builds_unverified": 1,
+   "library_builds": 60,
    "probes": [
     "furina-c6",
     "furina-hutao",
@@ -39464,8 +39433,8 @@
   {
    "id": "weapon:prototypeamber:r5",
    "status": "library",
-   "library_builds": 199,
-   "library_builds_unverified": 12,
+   "library_builds": 203,
+   "library_builds_unverified": 8,
    "probes": [
     "heizou-c0",
     "heizou-c1",
@@ -39795,8 +39764,7 @@
   {
    "id": "weapon:sacrificialfragments:r5",
    "status": "library",
-   "library_builds": 58,
-   "library_builds_unverified": 4,
+   "library_builds": 62,
    "probes": [
     "lanyan-asc0",
     "lanyan-attacks",
@@ -39885,8 +39853,7 @@
   {
    "id": "weapon:sapwoodblade:r5",
    "status": "library",
-   "library_builds": 135,
-   "library_builds_unverified": 4,
+   "library_builds": 139,
    "probes": [
     "kirara-c0",
     "kirara-c3",
@@ -40236,8 +40203,7 @@
   {
    "id": "weapon:slingshot:r5",
    "status": "library",
-   "library_builds": 228,
-   "library_builds_unverified": 2,
+   "library_builds": 230,
    "probes": [
     "celestialgift-not-hexerei",
     "chasca-slingshot",
@@ -40829,8 +40795,7 @@
   {
    "id": "weapon:thewidsith:r5",
    "status": "library",
-   "library_builds": 45,
-   "library_builds_unverified": 2
+   "library_builds": 47
   },
   {
    "id": "weapon:thrillingtalesofdragonslayers:r1",
@@ -41450,8 +41415,7 @@
   {
    "id": "set:aubadeofmorningstarandmoon:2",
    "status": "library",
-   "library_builds": 95,
-   "library_builds_unverified": 1,
+   "library_builds": 96,
    "probes": [
     "aubade-ineffa",
     "fracturedhalo-r1-ineffa"
@@ -41460,8 +41424,7 @@
   {
    "id": "set:aubadeofmorningstarandmoon:4",
    "status": "library",
-   "library_builds": 95,
-   "library_builds_unverified": 1,
+   "library_builds": 96,
    "probes": [
     "aubade-ineffa",
     "fracturedhalo-r1-ineffa"
@@ -41687,8 +41650,7 @@
   {
    "id": "set:deepwoodmemories:2",
    "status": "library",
-   "library_builds": 930,
-   "library_builds_unverified": 16,
+   "library_builds": 946,
    "probes": [
     "alhaitham-c1",
     "alhaitham-c2",
@@ -41722,8 +41684,7 @@
   {
    "id": "set:deepwoodmemories:4",
    "status": "library",
-   "library_builds": 930,
-   "library_builds_unverified": 16,
+   "library_builds": 946,
    "probes": [
     "alhaitham-c1",
     "alhaitham-c2",
@@ -42171,8 +42132,7 @@
   {
    "id": "set:gildeddreams:2",
    "status": "library",
-   "library_builds": 413,
-   "library_builds_unverified": 4,
+   "library_builds": 417,
    "probes": [
     "blackclifflongsword-r1-alhaitham",
     "blackclifflongsword-r5-alhaitham",
@@ -42235,8 +42195,7 @@
   {
    "id": "set:gildeddreams:4",
    "status": "library",
-   "library_builds": 391,
-   "library_builds_unverified": 4,
+   "library_builds": 395,
    "probes": [
     "blackclifflongsword-r1-alhaitham",
     "blackclifflongsword-r5-alhaitham",
@@ -42309,8 +42268,8 @@
   {
    "id": "set:goldentroupe:2",
    "status": "library",
-   "library_builds": 1845,
-   "library_builds_unverified": 7,
+   "library_builds": 1847,
+   "library_builds_unverified": 5,
    "probes": [
     "calamityofeshu-chiori",
     "chevreuse-charge",
@@ -42363,8 +42322,8 @@
   {
    "id": "set:goldentroupe:4",
    "status": "library",
-   "library_builds": 1844,
-   "library_builds_unverified": 7,
+   "library_builds": 1846,
+   "library_builds_unverified": 5,
    "probes": [
     "calamityofeshu-chiori",
     "chevreuse-charge",
@@ -42477,8 +42436,7 @@
   {
    "id": "set:huskofopulentdreams:2",
    "status": "library",
-   "library_builds": 162,
-   "library_builds_unverified": 2,
+   "library_builds": 164,
    "probes": [
     "cinnabarspindle-r1-albedo",
     "footprintoftherainbow-r1-yunjin",
@@ -42503,8 +42461,7 @@
   {
    "id": "set:huskofopulentdreams:4",
    "status": "library",
-   "library_builds": 158,
-   "library_builds_unverified": 2,
+   "library_builds": 160,
    "probes": [
     "cinnabarspindle-r1-albedo",
     "footprintoftherainbow-r1-yunjin",
@@ -42527,8 +42484,7 @@
   {
    "id": "set:instructor:2",
    "status": "library",
-   "library_builds": 314,
-   "library_builds_unverified": 8,
+   "library_builds": 322,
    "probes": [
     "aloy-c1",
     "aloy-c2",
@@ -42555,8 +42511,7 @@
   {
    "id": "set:instructor:4",
    "status": "library",
-   "library_builds": 314,
-   "library_builds_unverified": 8,
+   "library_builds": 322,
    "probes": [
     "aloy-c1",
     "aloy-c2",
@@ -42923,8 +42878,7 @@
   {
    "id": "set:nightoftheskysunveiling:2",
    "status": "library",
-   "library_builds": 79,
-   "library_builds_unverified": 17,
+   "library_builds": 96,
    "probes": [
     "flins-c6",
     "nefer-c1",
@@ -42950,8 +42904,7 @@
   {
    "id": "set:nightoftheskysunveiling:4",
    "status": "library",
-   "library_builds": 79,
-   "library_builds_unverified": 17,
+   "library_builds": 96,
    "probes": [
     "flins-c6",
     "nefer-c1",
@@ -43026,8 +42979,8 @@
   {
    "id": "set:noblesseoblige:2",
    "status": "library",
-   "library_builds": 1979,
-   "library_builds_unverified": 108,
+   "library_builds": 1980,
+   "library_builds_unverified": 107,
    "probes": [
     "blizzard-2pc",
     "breezebornerefrain-r1-diona",
@@ -43092,8 +43045,8 @@
   {
    "id": "set:noblesseoblige:4",
    "status": "library",
-   "library_builds": 1979,
-   "library_builds_unverified": 108,
+   "library_builds": 1980,
+   "library_builds_unverified": 107,
    "probes": [
     "breezebornerefrain-r1-diona",
     "breezebornerefrain-r5-diona",
@@ -43613,8 +43566,7 @@
   {
    "id": "set:silkenmoonsserenade:2",
    "status": "library",
-   "library_builds": 186,
-   "library_builds_unverified": 16,
+   "library_builds": 202,
    "probes": [
     "aino-c0",
     "columbina-c1",
@@ -43637,8 +43589,7 @@
   {
    "id": "set:silkenmoonsserenade:4",
    "status": "library",
-   "library_builds": 185,
-   "library_builds_unverified": 16,
+   "library_builds": 201,
    "probes": [
     "aino-c0",
     "columbina-c1",
@@ -43684,8 +43635,8 @@
   {
    "id": "set:tenacityofthemillelith:2",
    "status": "library",
-   "library_builds": 1317,
-   "library_builds_unverified": 106,
+   "library_builds": 1318,
+   "library_builds_unverified": 105,
    "probes": [
     "blacktassel-r1-zhongli",
     "bloodsoakedruins-r1-ineffa",
@@ -43735,8 +43686,8 @@
   {
    "id": "set:tenacityofthemillelith:4",
    "status": "library",
-   "library_builds": 1247,
-   "library_builds_unverified": 106,
+   "library_builds": 1248,
+   "library_builds_unverified": 105,
    "probes": [
     "blacktassel-r1-zhongli",
     "bloodsoakedruins-r1-ineffa",
