@@ -8,15 +8,15 @@ Rotation search belongs to [gscouter-optimizer](https://github.com/cenoda/gscout
 
 ## 1. Where it stands
 
-Measured 2026-11-04 (release run of `e6c8a07`, Gscouter at `e4d5796`):
+Measured 2026-11-07 (release run 506 of `84c50aa`, Gscouter at `63f0ae4`, on the 0–120 s last-completed-cycle window):
 
 | | |
 |---|---|
-| Library teams | 4,570; all supported by the census |
-| Verified (library build and probes within 1%) | 4,447 |
-| Approved by the owner, on the engine in Gscouter | 4,447 (4,436 group A, 11 group B) |
-| Not verified | 121 idle rotations, 1 unsupported at the release (`amber-furina-bennett-rosaria`), 1 error in both engines (`mavuika-citlali-xilonen-bennett`) |
-| Drift over 5,365 builds | −0.01% (bound ±0.2%) |
+| Library teams | 4,570; all supported by the census but one |
+| Verified (library build and probes within 1%) | 4,569, all in group A |
+| Approved by the owner, on the engine in Gscouter | 4,569 (2026-11-04 and 2026-11-07) |
+| Not verified | 1 unsupported |
+| Drift over 5,595 builds | −0.022% (bound ±0.2%) |
 | Content | every library character (C0 to C6), 252 weapons, 55 sets, every resonance and reaction |
 | Probes | 918 at the release; 1,026 on `main` since 2026-11-05 (every constellation, refinement and set count reached but the cryo Traveler's C1–C6, `docs/probe-coverage.md`) |
 
