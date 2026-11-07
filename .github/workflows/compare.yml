@@ -317,7 +317,11 @@ jobs:
     needs: plan
     if: needs.plan.outputs.library == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    # part 0 also runs the checks before compare; since Gscouter 70b8243
+    # its -dump of every config compiles the engine's module each time
+    # (about 1 h 45 min for the parse check alone), so a part that runs
+    # every build without -reuse needs more than 180 minutes
+    timeout-minutes: 355
     strategy:
       fail-fast: false
       matrix:
