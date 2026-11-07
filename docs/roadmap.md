@@ -8,13 +8,13 @@ Rotation search belongs to [gscouter-optimizer](https://github.com/cenoda/gscout
 
 ## 1. Where it stands
 
-Measured 2026-11-07 (release run 506 of `84c50aa`, Gscouter at `63f0ae4`, on the 0–120 s last-completed-cycle window):
+Measured 2026-11-08 (release run 506 of `84c50aa`, Gscouter at `63f0ae4`, on the 0–120 s last-completed-cycle window):
 
 | | |
 |---|---|
 | Library teams | 4,570; all supported by the census but one |
 | Verified (library build and probes within 1%) | 4,569, all in group A |
-| Approved by the owner, on the engine in Gscouter | 4,569 (2026-11-04 and 2026-11-07) |
+| Approved by the owner, on the engine in Gscouter | 4,569 (2026-11-04 and 2026-11-08) |
 | Not verified | 1 unsupported |
 | Drift over 5,595 builds | −0.022% (bound ±0.2%) |
 | Content | every library character (C0 to C6), 252 weapons, 55 sets, every resonance and reaction |

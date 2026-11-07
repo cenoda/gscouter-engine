@@ -4,11 +4,11 @@ A Rust port of gcsim, written only for [Gscouter](https://github.com/cenoda/Gsco
 
 ## Status
 
-> 2026-11-07 · release of engine `84c50aa` (module `121c36975e03`), Gscouter at `63f0ae4`, on the site's 0–120 s last-completed-cycle window
+> 2026-11-08 · release of engine `84c50aa` (module `121c36975e03`), Gscouter at `63f0ae4`, on the site's 0–120 s last-completed-cycle window
 
 - **Content.** Every character the library's 4,570 teams use (168 member keys, each Traveler element once), each C0 to C6 with every action and param of its gcsim package; all 252 weapons (refinements 1 to 5) and 55 sets (two and four pieces) of gcsim's catalog; every resonance; every reaction, Lunar and Stellar ones included. The census counts all 4,570 library teams supported.
 - **Verified.** The release of `84c50aa` (CI run 506 with `release=true`; the first on the 0–120 s last-completed-cycle window, `engine/src/window.rs`) verified 4,569 of the 4,570 library teams: each library build within 1% of gcsim for team DPS and every character with at least 10% of it, with the 1,026 probes; every verified team is in group A (team DPS within 0.5%). Drift −0.022% ± 0.002% over 5,595 builds. The one team left is unsupported.
-- **In Gscouter.** Gscouter pinned the release on 2026-11-07 (its `70d4a8f`): the 4,436 approvals that held carried forward, and the owner approved the 133 other group A teams (the 11 approved from group B before among them), so 4,569 teams score on the engine on the site, in the browser and on the server (Gscouter `docs/engine.md`). A config the engine refuses runs on gcsim.
+- **In Gscouter.** Gscouter pinned the release on 2026-11-08 (its `70d4a8f`): the 4,436 approvals that held carried forward, and the owner approved the 133 other group A teams (the 11 approved from group B before among them), so 4,569 teams score on the engine on the site, in the browser and on the server (Gscouter `docs/engine.md`). A config the engine refuses runs on gcsim.
 - **Speed.** 500 iterations of `configs/team-looped.txt` on one thread take about 1.3 s natively (2026-11-04, this session's 4-CPU machine), against about 10 s for gcsim natively (Phase 0). On Gscouter's pages that search for fillers, a result takes about half the time on the engine (Gscouter `docs/engine.md` §5).
 
 What comes next is in `docs/roadmap.md`; how the engine is checked, `docs/verification.md`; the measurements and records of Phases 0 to 3, `docs/history.md`. All documents: `docs/README.md`.
