@@ -140,7 +140,7 @@ func TestCarryForward(t *testing.T) {
 		"gone":  {Why: []string{"library: fail"}},
 		"new":   {Verified: true, Group: "A"},
 	}}
-	approved, err := parseApproved("# x\nkept 2026-11-04\nleft 2026-11-04\nb-now 2026-11-04 release=fedcba9876543210\ngone 2026-11-04\n")
+	approved, err := parseApproved("# x\nkept 2026-11-04\nleft 2026-11-04\nb-now 2026-11-04 release=fedcba9876543210 carried=0123456789abcdef:identical:2026-11-05\ngone 2026-11-04\n")
 	if err != nil {
 		t.Fatal(err)
 	}

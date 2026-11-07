@@ -163,9 +163,11 @@ func reasonOf(why string) string {
 // approvedTeam is a line of Gscouter's approved list
 // (internal/engine/approved.txt): a team id, the date of the owner's
 // answer, and for a team approved from group B, release=<first 16 hex
-// digits of the module's SHA-256>.
+// digits of the module's SHA-256>, followed, when Gscouter's pinengine
+// carried the approval to that module, by carried=<old module>:identical:
+// <date of the pin> (Gscouter's engine.Carry).
 type approvedTeam struct {
-	team, date, release string
+	team, date, release, carried string
 }
 
 // parseApproved reads Gscouter's approved list.
@@ -176,16 +178,23 @@ func parseApproved(text string) ([]approvedTeam, error) {
 		if len(f) == 0 || strings.HasPrefix(f[0], "#") {
 			continue
 		}
-		if len(f) != 2 && len(f) != 3 {
+		if len(f) < 2 || len(f) > 4 {
 			return nil, fmt.Errorf("approved list, line %d: %q", n+1, line)
 		}
 		a := approvedTeam{team: f[0], date: f[1]}
-		if len(f) == 3 {
+		if len(f) >= 3 {
 			r, ok := strings.CutPrefix(f[2], "release=")
 			if !ok || len(r) != 16 {
 				return nil, fmt.Errorf("approved list, line %d: %q", n+1, line)
 			}
 			a.release = r
+		}
+		if len(f) == 4 {
+			c, ok := strings.CutPrefix(f[3], "carried=")
+			if p := strings.Split(c, ":"); !ok || len(p) != 3 || len(p[0]) != 16 || p[1] != "identical" {
+				return nil, fmt.Errorf("approved list, line %d: %q", n+1, line)
+			}
+			a.carried = c
 		}
 		out = append(out, a)
 	}
